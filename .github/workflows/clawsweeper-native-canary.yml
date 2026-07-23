@@ -1,0 +1,43 @@
+name: ClawSweeper native canary
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Exact open pull request number to review
+        required: true
+        type: string
+      expected_base_sha:
+        description: Exact current main SHA to review against
+        required: true
+        type: string
+      expected_head_sha:
+        description: Exact pull request head SHA to review
+        required: true
+        type: string
+      publish:
+        description: Publish the native comment, labels, and durable state record
+        required: true
+        type: boolean
+        default: false
+
+permissions: {}
+
+jobs:
+  clawsweeper:
+    name: Run pinned native ClawSweeper
+    permissions:
+      actions: read
+      contents: read
+    uses: dinkuskit/clawsweeper/.github/workflows/dinkuskit-native-canary.yml@f647f227c333164088dac49e5700a37beb28a41a
+    with:
+      target_repository: inventory
+      target_repository_id: "1307843786"
+      pr_number: ${{ inputs.pr_number }}
+      expected_base_sha: ${{ inputs.expected_base_sha }}
+      expected_head_sha: ${{ inputs.expected_head_sha }}
+      engine_sha: f647f227c333164088dac49e5700a37beb28a41a
+      publish: ${{ inputs.publish }}
+    secrets:
+      CLAWSWEEPER_APP_PRIVATE_KEY: ${{ secrets.CLAWSWEEPER_APP_PRIVATE_KEY }}
+      COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
