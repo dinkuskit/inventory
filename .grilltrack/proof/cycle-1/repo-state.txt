@@ -1,0 +1,18 @@
+# repo state at cycle-1 verification (2026-07-24)
+{"defaultBranchRef":{"name":"main"},"description":"Advanced inventory operations for AICommerce on EmDash — pools, movements, reservations, and reconciliation","name":"inventory","visibility":"PUBLIC"}
+
+## tree
+./.github/workflows/clawsweeper-comment-trigger.yml
+./.github/workflows/clawsweeper-native-canary.yml
+./.gitignore
+./.grilltrack/.gitignore
+./.grilltrack/events.jsonl
+./.grilltrack/ledger.json
+./.grilltrack/proof/cycle-1/repo-state.txt
+./AGENTS.md
+./LICENSE
+./README.md
+./docs/CHARTER.md
+./package.json
+./scripts/clawsweeper-comment-admission.mjs
+./tests/workflows/clawsweeper-comment-admission.test.mjs

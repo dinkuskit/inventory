@@ -1,7 +1,7 @@
 {
   "name": "@dinkuskit/inventory",
   "version": "0.0.0",
-  "description": "Advanced inventory operations for AICommerce on EmDash",
+  "description": "The inventory ledger for EmDash sites",
   "type": "module",
   "private": true,
   "license": "MIT",

@@ -1,0 +1,184 @@
+{
+  "closeout": null,
+  "created_at": "2026-07-24T16:41:45+00:00",
+  "current_focus": {
+    "cadence": "sequential",
+    "confirmed": true,
+    "confirmed_at": "2026-07-24T16:41:45+00:00",
+    "domain": "product identity & home",
+    "started_at": "2026-07-24T16:41:45+00:00",
+    "status": "inspected",
+    "summary": "Cycle 1 implementation: replace stub framing with charter recording identity-001/exit-001/home-001; docs + ledger only, no code; lands via PR for operator merge"
+  },
+  "decisions": [
+    {
+      "baseline_ref": null,
+      "candidate_refs": [],
+      "choice": "One product: the Katana-exit successor ledger IS v1, EmDash-native (platform-neutral kernel + in-dashboard EmDash admin plugin), no storefront-shaped base code",
+      "context_ref": "x-api:plans/product/commerce-critical-path-20260713.md",
+      "created_at": "2026-07-24T16:41:45+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [],
+      "domain": "product identity & home",
+      "history": [
+        {
+          "at": "2026-07-24T16:41:45+00:00",
+          "choice": "One product: the Katana-exit successor ledger IS v1, EmDash-native (platform-neutral kernel + in-dashboard EmDash admin plugin), no storefront-shaped base code",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-07-24T16:41:45+00:00",
+          "choice": "One product: the Katana-exit successor ledger IS v1, EmDash-native (platform-neutral kernel + in-dashboard EmDash admin plugin), no storefront-shaped base code",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-07-24T16:41:56+00:00",
+          "choice": "One product: the Katana-exit successor ledger IS v1, EmDash-native (platform-neutral kernel + in-dashboard EmDash admin plugin), no storefront-shaped base code",
+          "from": "implemented",
+          "implementation_ref": "file:docs/CHARTER.md",
+          "note": "verification recorded in cumulative context",
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "identity-001",
+      "implementation_ref": "file:docs/CHARTER.md",
+      "question": "What is Dinkuskit Inventory v1?",
+      "rationale": "Durable investment must survive the first tenant storefront migration to EmDash; kernel/adapter split proven in AICommerce makes that structural",
+      "review_ref": null,
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-07-24T16:41:56+00:00",
+      "verification_ref": "proof:.grilltrack/proof/cycle-1/repo-state.txt"
+    },
+    {
+      "baseline_ref": null,
+      "candidate_refs": [],
+      "choice": "One thin born-disposable WooCommerce adapter: shadow validation while Katana runs, low-volume tail decrement after 2026-12-01, deleted at storefront migration; labels stay WooCommerce->Shiptheory native",
+      "context_ref": null,
+      "created_at": "2026-07-24T16:41:45+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "identity-001"
+      ],
+      "domain": "product identity & home",
+      "history": [
+        {
+          "at": "2026-07-24T16:41:45+00:00",
+          "choice": "One thin born-disposable WooCommerce adapter: shadow validation while Katana runs, low-volume tail decrement after 2026-12-01, deleted at storefront migration; labels stay WooCommerce->Shiptheory native",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-07-24T16:41:45+00:00",
+          "choice": "One thin born-disposable WooCommerce adapter: shadow validation while Katana runs, low-volume tail decrement after 2026-12-01, deleted at storefront migration; labels stay WooCommerce->Shiptheory native",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-07-24T16:41:56+00:00",
+          "choice": "One thin born-disposable WooCommerce adapter: shadow validation while Katana runs, low-volume tail decrement after 2026-12-01, deleted at storefront migration; labels stay WooCommerce->Shiptheory native",
+          "from": "implemented",
+          "implementation_ref": "file:docs/CHARTER.md",
+          "note": "verification recorded in cumulative context",
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "exit-001",
+      "implementation_ref": "file:docs/CHARTER.md",
+      "question": "How does the Katana exit execute by 2026-12-01?",
+      "rationale": "Keeps real-flow validation without investing base code in a storefront being retired; adapter doubles as the product-shape learning lab",
+      "review_ref": null,
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-07-24T16:41:56+00:00",
+      "verification_ref": "file:docs/CHARTER.md"
+    },
+    {
+      "baseline_ref": null,
+      "candidate_refs": [],
+      "choice": "dinkuskit/inventory permanent home, born public, @dinkuskit/* namespace; publish gates are releases not repository visibility",
+      "context_ref": null,
+      "created_at": "2026-07-24T16:41:45+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "identity-001"
+      ],
+      "domain": "product identity & home",
+      "history": [
+        {
+          "at": "2026-07-24T16:41:45+00:00",
+          "choice": "dinkuskit/inventory permanent home, born public, @dinkuskit/* namespace; publish gates are releases not repository visibility",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-07-24T16:41:45+00:00",
+          "choice": "dinkuskit/inventory permanent home, born public, @dinkuskit/* namespace; publish gates are releases not repository visibility",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-07-24T16:41:56+00:00",
+          "choice": "dinkuskit/inventory permanent home, born public, @dinkuskit/* namespace; publish gates are releases not repository visibility",
+          "from": "implemented",
+          "implementation_ref": "file:README.md",
+          "note": "verification recorded in cumulative context",
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "home-001",
+      "implementation_ref": "file:README.md",
+      "question": "Where does Dinkuskit Inventory live, with what visibility?",
+      "rationale": "Initial private-until-release preference revised on discovering the pre-existing public stub and that git history survives visibility flips; public-safe content discipline is mandatory either way",
+      "review_ref": null,
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-07-24T16:41:56+00:00",
+      "verification_ref": "proof:.grilltrack/proof/cycle-1/repo-state.txt"
+    }
+  ],
+  "last_activation": {
+    "at": "2026-07-24T16:41:45+00:00",
+    "mechanism": "implicit"
+  },
+  "recommendation": {
+    "alternatives": [
+      "v1 movement/schema vocabulary grill",
+      "WooCommerce exit-adapter learning-lab plan"
+    ],
+    "reason": "Schema, sync, and hosting all depend on the storage/architecture decision; it is also the operator's stated area of interest",
+    "recommended": "Storage substrate & kernel architecture: where stock truth lives, and the relationship to AICommerce's inventory-provider contract",
+    "recorded_at": "2026-07-24T16:41:45+00:00"
+  },
+  "schema_version": "grilltrack/v0.1",
+  "status": "active",
+  "title": "Dinkuskit Inventory v1",
+  "track_id": "dinkuskit-inventory-v1",
+  "updated_at": "2026-07-24T16:41:56+00:00"
+}
