@@ -2,8 +2,8 @@
 
 Recorded from GrillTrack cycle 1 on 2026-07-24 (product identity and home),
 then extended on 2026-08-25 with the canonical architecture, operating model,
-manual cutover, command/receipt boundary, CLI, public EmDash plugin, and
-Commerce provider locks. Durable decision ledger: `.grilltrack/ledger.json`.
+manual cutover, command/receipt boundary, and CLI locks. Durable decision
+ledger: `.grilltrack/ledger.json`.
 Business-sensitive rationale (figures, forecasts, tenant specifics) lives in
 the operator's private planning repo — cross-referenced here by issue or path —
 and is deliberately never committed to this repository.
@@ -48,13 +48,12 @@ reservation or movement to commit atomically under one writer. Site-local CMS
 storage and reporting projections may hold settings or caches, but never
 authoritative balances.
 
-EmDash is the authenticated human administration surface. Commerce consumes a
-thin Inventory provider boundary for availability, reserve, commit, release,
-expiry, packing, and balance reads when a product is stock-managed through
-Dinkuskit Inventory. Those critical calls must be network-aware, awaited,
-idempotent, and fail closed; the current AICommerce in-process synchronous
+EmDash is the authenticated human administration surface. AICommerce consumes
+a thin Inventory provider boundary for availability, reserve, commit, release,
+expiry, packing, and balance reads. Those critical calls must be network-aware,
+awaited, idempotent, and fail closed; the current in-process synchronous
 contract must not be treated as production transport. A missing or unhealthy
-configured provider never falls back to a local counter.
+provider never falls back to a local counter.
 
 The Durable Object topology is a locked production direction, not a deployment
 claim. It must still pass bounded concurrency, idempotency, export/restore, and
@@ -144,50 +143,6 @@ replay contents; and preserve terminal business rejections. The existing
 atomic reservation, compensation, fail-closed provider, and exactly-once pack
 conformance behavior must remain proven through that migration.
 
-## emdash-plugin-distribution-016 — one public Block Kit admin plugin (locked)
-
-Dinkuskit Inventory ships its human administration surface as one generic
-standard-format sandboxed EmDash plugin. EmDash renders the real GUI through
-Block Kit; authenticated plugin routes call the canonical Inventory service
-through declared network access. A native React plugin is not the public
-distribution path because it would require npm/configuration/redeployment and
-could not use EmDash's one-click Marketplace or experimental Registry path.
-
-The first proof sequence is:
-
-1. run the plugin against one pinned current EmDash fixture;
-2. run the exact same artifact against the pinned SmokyClub EmDash version; and
-3. install that unchanged artifact in SmokyClub for the first real inventory
-   workflow.
-
-SmokyClub is the first user, not the source of Inventory product rules. Exact
-service hosting and authentication, package identity, minimum EmDash version,
-MCP timing, listing, publication, deployment, and production configuration
-remain separate grills or gates.
-
-## commerce-stock-provider-017 — simple product choice, advanced provider choice (locked)
-
-Commerce exposes one plain `Manage stock?` setting on each product:
-
-- **Off:** Inventory does not constrain that product and Commerce sends no
-  availability, reservation, release, commit, or packing commands for it.
-  Other product rules may still apply, but no stock quantity is enforced.
-- **On:** Commerce uses exactly one inventory provider configured for that
-  EmDash site/store. Dinkuskit Inventory is the default and only first-party v1
-  provider, giving humans and agents the EmDash-administered experience.
-
-Advanced site/plugin settings may replace the default with one user-supplied
-provider that conforms to Commerce's inventory contract. Provider selection is
-not repeated on every product page. Commerce never fans one product out to
-multiple providers, automatically fails over, or keeps its own production
-stock ledger. A managed product with a missing, incompatible, or unhealthy
-configured provider fails closed.
-
-Commerce owns the checkbox, provider setting, and conformance seam. Inventory
-owns only its provider implementation, service, ledger, and admin surface. The
-exact advanced-settings screen and any external-provider implementation remain
-for the Commerce-owned track; this charter does not claim they exist today.
-
 ## cli-interface-013 — first-class thin CLI (locked)
 
 Inventory v1 plans one standalone `dinkus-inventory` executable from the
@@ -228,35 +183,29 @@ privacy added nothing.
 ## Banked (not locked) — storage schema and migration mechanics
 
 The public command behavior, results, receipt facts, explicit location rules,
-CLI surface, public plugin format, and Commerce consumer policy are locked. The
-executable vertical slice still needs exact TypeScript schemas, persistence
-tables/indexes, migration numbering, Durable Object export/restore mechanics,
-service authentication, and pinned EmDash compatibility proof. Purchase orders
-remain out of scope.
+and CLI surface are locked. The executable vertical slice still needs exact
+TypeScript schemas, persistence tables/indexes, migration numbering, and
+Durable Object export/restore mechanics. Purchase orders remain out of scope.
 
 ## v1 scope fence (inherited)
 
 In: tenant/site-scoped SKU/variant identity; explicit locations;
 on-hand/reserved/available/expected; immutable movement receipts; exact
 decimal/unit handling; explicit site-to-pool and site-to-source-location
-mappings; manual opening balances; operator-visible exceptions; one generic
-standard-format EmDash admin plugin; the first-party Commerce provider; a thin
+mappings; manual opening balances; operator-visible exceptions; a thin
 first-class CLI; scoped support for jobs and agents.
 
 Out: manufacturing orders, recipes/BOM, materials/batches, purchasing,
 production scheduling, costing, forecasting, general MRP; WooCommerce/Katana
-adapters, imports, shadow synchronization, and tail synchronization; Commerce
-product settings and external inventory-provider implementations.
+adapters, imports, shadow synchronization, and tail synchronization.
 
 ## Next focused grill
 
-Coordinate the first visible SmokyClub sale across three product-owned tracks.
-Inventory's first checkpoint is one real `Set initial stock` service action and
-the genuine Block Kit GUI that previews, confirms, persists, refreshes, and
-shows its receipt. Commerce owns the product checkbox/provider setting and the
-awaited reserve/commit/release/pack adapter. SmokyClub owns the exact-product
-identity bridge and the final edit -> stock -> storefront -> buy -> pack ->
-audit proof. Keep each implementation and proof in its owning repository.
+Build the smallest executable opening-balance vertical slice: versioned command
+and receipt schemas, one SKU-location balance, exact replay/conflict behavior,
+stored rejection, atomic receipt commit, and focused tests. Keep the service,
+EmDash UI, AICommerce migration, and full CLI outside that first kernel slice;
+they become consumers after the invariant is executable.
 
 ## Cross-references
 

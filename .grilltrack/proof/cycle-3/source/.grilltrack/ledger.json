@@ -4,11 +4,11 @@
   "current_focus": {
     "cadence": "sequential",
     "confirmed": true,
-    "confirmed_at": "2026-08-25T14:19:16+00:00",
-    "domain": "public EmDash administration and Commerce stock-provider boundary",
-    "started_at": "2026-08-25T14:19:14+00:00",
-    "status": "inspected",
-    "summary": "Dinkuskit Inventory will ship one generic Marketplace-compatible standard EmDash plugin with a real Block Kit GUI and prove the same artifact in SmokyClub. Commerce will expose Manage stock? per product: off means no inventory enforcement; on means use exactly one site-configured provider. Dinkuskit Inventory is the default and only first-party v1 provider, while advanced settings may select a user-supplied conforming provider. Managed stock never silently falls back or forks into a Commerce-local ledger. This bounded implementation updates public contracts, durable state, and proof only; it does not implement runtime code, external adapters, accounts, publication, deployment, or production changes."
+    "confirmed_at": "2026-08-25T12:55:06+00:00",
+    "domain": "async command and receipt boundary",
+    "started_at": "2026-08-25T04:10:03+00:00",
+    "status": "confirmed",
+    "summary": "Confirmed docs/spec-only slice: define the public asynchronous inventory command and immutable receipt boundary; specify a lightweight first-class DinkusKit Inventory CLI for humans and agents with explicit pool/location context, generated command IDs, status recovery, JSON/plain output, preview/dry-run, confirmation and non-interactive safety; document EmDash, AICommerce, CLI, job, agent, and future Discord surfaces as scoped clients of the same canonical service; update public charter/README and retained proof; verify and independently review exact-source results. No runtime service, executable CLI, Discord bot, commit, push, PR, deployment, credentials, or production mutation in this slice."
   },
   "decisions": [
     {
@@ -457,20 +457,6 @@
           "review_source_identity": null,
           "to": "implemented",
           "verification_ref": null
-        },
-        {
-          "at": "2026-08-25T13:05:52+00:00",
-          "choice": "Every authoritative stock mutation uses an awaited command-and-receipt flow. A caller reports success only after Dinkuskit Inventory atomically commits the command and returns its immutable receipt. A timeout or transport failure has an unknown outcome until the caller looks up or retries the same command identity; it never assumes failure or creates a replacement mutation. Only non-authoritative reporting, notification, and reconciliation follow-up may be queued for later.",
-          "from": "implemented",
-          "implementation_ref": "file:docs/COMMAND-RECEIPT-CONTRACT.md",
-          "note": "verification recorded in cumulative context",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "verified",
-          "verification_ref": null
         }
       ],
       "id": "command-outcome-005",
@@ -479,29 +465,14 @@
       "rationale": "This keeps the canonical ledger honest across network failures, prevents duplicate stock movements, gives checkout and human operators a definite outcome, and still permits non-critical follow-up work to happen asynchronously.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T13:06:56+00:00",
-          "source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292"
-        },
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:28:57+00:00",
-          "source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e"
-        }
-      ],
-      "review_ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e",
-      "status": "verified",
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "implemented",
       "superseded_by": null,
-      "updated_at": "2026-08-25T14:28:57+00:00",
-      "verification_ref": "proof:.grilltrack/proof/cycle-3/PROOF.md"
+      "updated_at": "2026-08-25T13:04:20+00:00",
+      "verification_ref": null
     },
     {
       "baseline_ref": "git:ac5686f3d0395ab9b061515f83967bf61abd8280",
@@ -543,20 +514,6 @@
           "review_source_identity": null,
           "to": "implemented",
           "verification_ref": null
-        },
-        {
-          "at": "2026-08-25T13:05:52+00:00",
-          "choice": "The initiating client creates one globally unique command ID before its first send and persists that ID for the life of the business action. Every retry and outcome lookup reuses it. Inventory stores the command identity with its normalized contents and terminal receipt: the same ID with identical contents returns the original result, while the same ID with different contents is rejected as a conflict. The ID is automatic plumbing, available in support details but never something a human must type or manage.",
-          "from": "implemented",
-          "implementation_ref": "file:docs/COMMAND-RECEIPT-CONTRACT.md",
-          "note": "verification recorded in cumulative context",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "verified",
-          "verification_ref": null
         }
       ],
       "id": "command-identity-006",
@@ -565,29 +522,14 @@
       "rationale": "A caller-generated identity exists even when the first response is lost, lets Inventory distinguish a safe retry from a new action, and prevents duplicate reservations, receipts, transfers, and adjustments.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T13:06:56+00:00",
-          "source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292"
-        },
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:28:58+00:00",
-          "source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e"
-        }
-      ],
-      "review_ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e",
-      "status": "verified",
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "implemented",
       "superseded_by": null,
-      "updated_at": "2026-08-25T14:28:58+00:00",
-      "verification_ref": "proof:.grilltrack/proof/cycle-3/PROOF.md"
+      "updated_at": "2026-08-25T13:04:20+00:00",
+      "verification_ref": null
     },
     {
       "baseline_ref": "git:ac5686f3d0395ab9b061515f83967bf61abd8280",
@@ -629,20 +571,6 @@
           "review_source_identity": null,
           "to": "implemented",
           "verification_ref": null
-        },
-        {
-          "at": "2026-08-25T13:05:52+00:00",
-          "choice": "Every command identity reaches one stable terminal result: either a committed immutable receipt or a structured business rejection that creates no stock movement. Inventory stores both outcomes. Retrying the same command ID always returns that original terminal result, even if circumstances later change; a genuinely new attempt uses a new command ID. Transport failures and timeouts remain non-terminal unknown outcomes until the original identity is resolved.",
-          "from": "implemented",
-          "implementation_ref": "file:docs/COMMAND-RECEIPT-CONTRACT.md",
-          "note": "verification recorded in cumulative context",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "verified",
-          "verification_ref": null
         }
       ],
       "id": "command-result-007",
@@ -651,29 +579,14 @@
       "rationale": "Stable success and rejection results prevent a retry from changing the meaning of an already completed action, while keeping network uncertainty distinct from a real inventory refusal.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T13:06:56+00:00",
-          "source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292"
-        },
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:28:58+00:00",
-          "source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e"
-        }
-      ],
-      "review_ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e",
-      "status": "verified",
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "implemented",
       "superseded_by": null,
-      "updated_at": "2026-08-25T14:28:58+00:00",
-      "verification_ref": "proof:.grilltrack/proof/cycle-3/PROOF.md"
+      "updated_at": "2026-08-25T13:04:20+00:00",
+      "verification_ref": null
     },
     {
       "baseline_ref": "git:ac5686f3d0395ab9b061515f83967bf61abd8280",
@@ -716,20 +629,6 @@
           "review_source_identity": null,
           "to": "implemented",
           "verification_ref": null
-        },
-        {
-          "at": "2026-08-25T13:05:52+00:00",
-          "choice": "Every committed stock mutation creates one immutable receipt that is machine-stable and plainly visible in the EmDash audit experience. It records receipt and command identity, actor or calling system, command type, committed time, reason, pool and affected locations, exact SKU and quantity effects, relevant order, transfer, receiving, or external references, and resulting balance/version facts without unnecessary customer data. Corrections create linked reversal or compensating receipts rather than editing history. Transfer, adjustment, receiving, and fulfillment histories are filtered views over this one canonical receipt ledger, not separate stock ledgers or writers.",
-          "from": "implemented",
-          "implementation_ref": "file:docs/COMMAND-RECEIPT-CONTRACT.md",
-          "note": "verification recorded in cumulative context",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "verified",
-          "verification_ref": null
         }
       ],
       "id": "receipt-audit-008",
@@ -738,29 +637,14 @@
       "rationale": "The operator values Katana's durable activity histories. One receipt ledger preserves that traceability while keeping the single-writer architecture and allowing each workflow to have a focused human view.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T13:06:56+00:00",
-          "source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292"
-        },
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:28:59+00:00",
-          "source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e"
-        }
-      ],
-      "review_ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e",
-      "status": "verified",
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "implemented",
       "superseded_by": null,
-      "updated_at": "2026-08-25T14:28:59+00:00",
-      "verification_ref": "proof:.grilltrack/proof/cycle-3/PROOF.md"
+      "updated_at": "2026-08-25T13:04:20+00:00",
+      "verification_ref": null
     },
     {
       "baseline_ref": "git:ac5686f3d0395ab9b061515f83967bf61abd8280",
@@ -803,20 +687,6 @@
           "review_source_identity": null,
           "to": "implemented",
           "verification_ref": null
-        },
-        {
-          "at": "2026-08-25T13:05:52+00:00",
-          "choice": "A product or SKU is visible at every active location with a logical starting balance of zero, but each SKU-location balance is independent. A receipt, adjustment, opening balance, reservation, or fulfillment command changes only the explicitly named location. Other locations remain unchanged at zero or their own prior balance. Stock reaches another location only through a separately committed receipt at that location or a staged transfer between locations; Inventory never copies a quantity across locations implicitly.",
-          "from": "implemented",
-          "implementation_ref": "file:docs/COMMAND-RECEIPT-CONTRACT.md",
-          "note": "verification recorded in cumulative context",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "verified",
-          "verification_ref": null
         }
       ],
       "id": "location-balance-009",
@@ -825,29 +695,14 @@
       "rationale": "The operator manages the same catalog across several physical locations but needs exact physical truth at each one. Independent SKU-location balances prevent stock received or counted at one location from appearing elsewhere.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T13:06:56+00:00",
-          "source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292"
-        },
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:28:59+00:00",
-          "source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e"
-        }
-      ],
-      "review_ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e",
-      "status": "verified",
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "implemented",
       "superseded_by": null,
-      "updated_at": "2026-08-25T14:28:59+00:00",
-      "verification_ref": "proof:.grilltrack/proof/cycle-3/PROOF.md"
+      "updated_at": "2026-08-25T13:04:20+00:00",
+      "verification_ref": null
     },
     {
       "baseline_ref": "git:ac5686f3d0395ab9b061515f83967bf61abd8280",
@@ -890,20 +745,6 @@
           "review_source_identity": null,
           "to": "implemented",
           "verification_ref": null
-        },
-        {
-          "at": "2026-08-25T13:05:53+00:00",
-          "choice": "For each SKU-location with no committed stock history, EmDash shows Set initial stock. The action stages an Opening Balance adjustment for that one location, showing the proposed quantity and reason for human review and confirmation without requiring a separate approver. Commit creates the location's immutable opening-balance receipt and changes no other location. After stock history exists, the ordinary Adjust stock action replaces the initial-stock affordance; later corrections create new adjustment or reversal receipts rather than rewriting the opening balance.",
-          "from": "implemented",
-          "implementation_ref": "file:docs/COMMAND-RECEIPT-CONTRACT.md",
-          "note": "verification recorded in cumulative context",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "verified",
-          "verification_ref": null
         }
       ],
       "id": "opening-balance-010",
@@ -912,29 +753,14 @@
       "rationale": "This borrows Katana's understandable initial-stock workflow without making quantity a silently editable field or adding an unintended approval bureaucracy.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T13:06:56+00:00",
-          "source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292"
-        },
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:28:59+00:00",
-          "source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e"
-        }
-      ],
-      "review_ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e",
-      "status": "verified",
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "implemented",
       "superseded_by": null,
-      "updated_at": "2026-08-25T14:28:59+00:00",
-      "verification_ref": "proof:.grilltrack/proof/cycle-3/PROOF.md"
+      "updated_at": "2026-08-25T13:04:20+00:00",
+      "verification_ref": null
     },
     {
       "baseline_ref": "git:ac5686f3d0395ab9b061515f83967bf61abd8280",
@@ -977,20 +803,6 @@
           "review_source_identity": null,
           "to": "implemented",
           "verification_ref": null
-        },
-        {
-          "at": "2026-08-25T13:05:53+00:00",
-          "choice": "Every authoritative stock command carries explicit pool and location identity; Inventory never infers either from SKU, hostname, site name, or another default. The EmDash admin stays visibly scoped to a selected location and repeats that location in the review/confirmation step. An ecommerce connection supplies its separately configured fulfillment-source location automatically. A transfer explicitly names both origin and destination. Missing, unauthorized, or ambiguous location context is rejected rather than guessed.",
-          "from": "implemented",
-          "implementation_ref": "file:docs/COMMAND-RECEIPT-CONTRACT.md",
-          "note": "verification recorded in cumulative context",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "verified",
-          "verification_ref": null
         }
       ],
       "id": "command-location-011",
@@ -999,29 +811,14 @@
       "rationale": "Location is part of physical stock truth. Making it explicit prevents a correct quantity from being committed to the wrong building while keeping routine admin work usable through a persistent visible location context.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T13:06:56+00:00",
-          "source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292"
-        },
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:29:00+00:00",
-          "source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e"
-        }
-      ],
-      "review_ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e",
-      "status": "verified",
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "implemented",
       "superseded_by": null,
-      "updated_at": "2026-08-25T14:29:00+00:00",
-      "verification_ref": "proof:.grilltrack/proof/cycle-3/PROOF.md"
+      "updated_at": "2026-08-25T13:04:21+00:00",
+      "verification_ref": null
     },
     {
       "baseline_ref": "git:ac5686f3d0395ab9b061515f83967bf61abd8280",
@@ -1064,20 +861,6 @@
           "review_source_identity": null,
           "to": "implemented",
           "verification_ref": null
-        },
-        {
-          "at": "2026-08-25T13:05:53+00:00",
-          "choice": "All callers use the same Inventory-owned command engine and canonical receipt ledger through authenticated adapters, but each receives explicit capabilities. EmDash administrators may manage opening balances, receiving, adjustments, transfers, reconciliation, and audit reads. AICommerce storefront connections may read availability and perform only the reservation, release, commit, and fulfillment operations needed for sales. Jobs, CLIs, bots, and agents receive named scopes for only their approved operations and locations, use the same command identities and receipts, and never gain direct database access or hidden powers.",
-          "from": "implemented",
-          "implementation_ref": "file:docs/COMMAND-RECEIPT-CONTRACT.md",
-          "note": "verification recorded in cumulative context",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "verified",
-          "verification_ref": null
         }
       ],
       "id": "surface-permissions-012",
@@ -1086,29 +869,14 @@
       "rationale": "Different interfaces need different jobs, but placing them over one permissioned command engine keeps the human in charge, prevents alternate write paths, and makes every automated action auditable.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T13:06:57+00:00",
-          "source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292"
-        },
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:29:00+00:00",
-          "source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e"
-        }
-      ],
-      "review_ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e",
-      "status": "verified",
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "implemented",
       "superseded_by": null,
-      "updated_at": "2026-08-25T14:29:00+00:00",
-      "verification_ref": "proof:.grilltrack/proof/cycle-3/PROOF.md"
+      "updated_at": "2026-08-25T13:04:21+00:00",
+      "verification_ref": null
     },
     {
       "baseline_ref": "git:ac5686f3d0395ab9b061515f83967bf61abd8280",
@@ -1152,20 +920,6 @@
           "review_source_identity": null,
           "to": "implemented",
           "verification_ref": null
-        },
-        {
-          "at": "2026-08-25T13:05:53+00:00",
-          "choice": "Inventory v1 includes a lightweight first-class CLI as a thin authenticated adapter over the Inventory service and shared client library; it never reads the database directly or reimplements inventory rules. It defaults to clear human output and provides stable JSON and plain modes for agents and scripts. Every command carries explicit site/pool/location context and command identity, returns structured rejections or immutable receipt references, and obeys the same scoped permissions as other adapters. Mutations support preview/dry-run and deliberate confirmation, including non-interactive no-input behavior without weakening the gate. Exit codes remain small and stable, diagnostics stay off data output, and credentials never appear in flags or logs. Exact binary name, command tree, framework, and credential mechanism remain for the bounded CLI-spec implementation.",
-          "from": "implemented",
-          "implementation_ref": "file:docs/CLI-SPEC.md",
-          "note": "verification recorded in cumulative context",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "verified",
-          "verification_ref": null
         }
       ],
       "id": "cli-interface-013",
@@ -1174,29 +928,14 @@
       "rationale": "The operator plans to manage inventory through coding agents and needs a durable, scriptable surface that remains as safe and auditable as EmDash while avoiding another business-logic or writer path.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T13:06:57+00:00",
-          "source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292"
-        },
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:29:00+00:00",
-          "source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e"
-        }
-      ],
-      "review_ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e",
-      "status": "verified",
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "implemented",
       "superseded_by": null,
-      "updated_at": "2026-08-25T14:29:00+00:00",
-      "verification_ref": "proof:.grilltrack/proof/cycle-3/PROOF.md"
+      "updated_at": "2026-08-25T13:04:21+00:00",
+      "verification_ref": null
     },
     {
       "baseline_ref": "git:ac5686f3d0395ab9b061515f83967bf61abd8280",
@@ -1239,20 +978,6 @@
           "review_source_identity": null,
           "to": "implemented",
           "verification_ref": null
-        },
-        {
-          "at": "2026-08-25T13:05:53+00:00",
-          "choice": "The Inventory API, permission model, command identities, location context, structured results, and receipts are designed so a Discord adapter can use them without a new business-logic path. The bot is not a first-launch blocker: first prove the canonical service through EmDash administration, AICommerce sales flow, and the first-class CLI, then add Discord as a thin follow-up adapter over that proven client boundary. No Discord account, token, installation, server mutation, or message send is authorized by this decision.",
-          "from": "implemented",
-          "implementation_ref": "file:docs/COMMAND-RECEIPT-CONTRACT.md",
-          "note": "verification recorded in cumulative context",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "verified",
-          "verification_ref": null
         }
       ],
       "id": "discord-sequencing-014",
@@ -1261,29 +986,14 @@
       "rationale": "The operator intends to manage commerce through Discord, but sequencing the bot after the core API and CLI avoids expanding launch risk while preserving the intended interface from the beginning.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T13:06:57+00:00",
-          "source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292"
-        },
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:29:01+00:00",
-          "source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e"
-        }
-      ],
-      "review_ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e",
-      "status": "verified",
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "implemented",
       "superseded_by": null,
-      "updated_at": "2026-08-25T14:29:01+00:00",
-      "verification_ref": "proof:.grilltrack/proof/cycle-3/PROOF.md"
+      "updated_at": "2026-08-25T13:04:21+00:00",
+      "verification_ref": null
     },
     {
       "baseline_ref": "git:ac5686f3d0395ab9b061515f83967bf61abd8280",
@@ -1327,20 +1037,6 @@
           "review_source_identity": null,
           "to": "implemented",
           "verification_ref": null
-        },
-        {
-          "at": "2026-08-25T13:05:53+00:00",
-          "choice": "Use one Discord bot application and adapter service for all EmDash websites, while binding each Discord installation, server, or approved channel to explicit site, pool, allowed locations, Discord roles, and Inventory capabilities. The bot always displays site and location context, previews human-requested mutations, obtains deliberate confirmation, submits one command identity, and returns the resulting receipt or rejection. It never receives an implicit all-sites context; cross-site operations require explicit site selection and authorization. The bot shares the Inventory client library and never reads the database or shells out to the CLI as its business boundary.",
-          "from": "implemented",
-          "implementation_ref": "file:docs/COMMAND-RECEIPT-CONTRACT.md",
-          "note": "verification recorded in cumulative context",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "verified",
-          "verification_ref": null
         }
       ],
       "id": "discord-topology-015",
@@ -1349,204 +1045,14 @@
       "rationale": "One maintained bot avoids duplicated integrations while per-installation scopes preserve isolation and keep a shared bot from becoming an omnipotent alternate writer.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T13:06:57+00:00",
-          "source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292"
-        },
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:29:01+00:00",
-          "source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e"
-        }
-      ],
-      "review_ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e",
-      "status": "verified",
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "implemented",
       "superseded_by": null,
-      "updated_at": "2026-08-25T14:29:01+00:00",
-      "verification_ref": "proof:.grilltrack/proof/cycle-3/PROOF.md"
-    },
-    {
-      "baseline_ref": "git:ac5686f3d0395ab9b061515f83967bf61abd8280",
-      "candidate_refs": [],
-      "choice": "Ship one generic standard-format sandboxed EmDash plugin with a real host-rendered Block Kit admin GUI. The plugin calls the canonical Inventory service through authenticated, declared network routes; it remains Marketplace and experimental Registry compatible, is first proven in a clean exact-version fixture and then installed unchanged in SmokyClub, and never becomes a SmokyClub-specific fork. Native React administration is not the public distribution path. Exact service hosting/authentication, package identity, minimum EmDash version, MCP timing, listing, publication, and deployment remain separate grills or gates.",
-      "context_ref": "emdash-cms/emdash:main exact-source plugin format and Block Kit inspection",
-      "created_at": "2026-08-25T14:19:15+00:00",
-      "deferred_reason": null,
-      "delivery_ref": null,
-      "dependencies": [
-        "identity-001",
-        "architecture-002",
-        "surface-permissions-012"
-      ],
-      "domain": "public EmDash administration and Commerce stock-provider boundary",
-      "history": [
-        {
-          "at": "2026-08-25T14:19:15+00:00",
-          "choice": "Ship one generic standard-format sandboxed EmDash plugin with a real host-rendered Block Kit admin GUI. The plugin calls the canonical Inventory service through authenticated, declared network routes; it remains Marketplace and experimental Registry compatible, is first proven in a clean exact-version fixture and then installed unchanged in SmokyClub, and never becomes a SmokyClub-specific fork. Native React administration is not the public distribution path. Exact service hosting/authentication, package identity, minimum EmDash version, MCP timing, listing, publication, and deployment remain separate grills or gates.",
-          "from": "proposed",
-          "implementation_ref": null,
-          "note": "user accepted the scoped decision",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "locked",
-          "verification_ref": null
-        },
-        {
-          "at": "2026-08-25T14:22:51+00:00",
-          "choice": "Ship one generic standard-format sandboxed EmDash plugin with a real host-rendered Block Kit admin GUI. The plugin calls the canonical Inventory service through authenticated, declared network routes; it remains Marketplace and experimental Registry compatible, is first proven in a clean exact-version fixture and then installed unchanged in SmokyClub, and never becomes a SmokyClub-specific fork. Native React administration is not the public distribution path. Exact service hosting/authentication, package identity, minimum EmDash version, MCP timing, listing, publication, and deployment remain separate grills or gates.",
-          "from": "locked",
-          "implementation_ref": null,
-          "note": "bounded implementation recorded",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "implemented",
-          "verification_ref": null
-        },
-        {
-          "at": "2026-08-25T14:24:45+00:00",
-          "choice": "Ship one generic standard-format sandboxed EmDash plugin with a real host-rendered Block Kit admin GUI. The plugin calls the canonical Inventory service through authenticated, declared network routes; it remains Marketplace and experimental Registry compatible, is first proven in a clean exact-version fixture and then installed unchanged in SmokyClub, and never becomes a SmokyClub-specific fork. Native React administration is not the public distribution path. Exact service hosting/authentication, package identity, minimum EmDash version, MCP timing, listing, publication, and deployment remain separate grills or gates.",
-          "from": "implemented",
-          "implementation_ref": "file:docs/CHARTER.md",
-          "note": "verification recorded in cumulative context",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "verified",
-          "verification_ref": null
-        }
-      ],
-      "id": "emdash-plugin-distribution-016",
-      "implementation_ref": "file:docs/CHARTER.md",
-      "question": "How does Dinkuskit Inventory deliver a human GUI that can be dogfooded in SmokyClub and installed by other EmDash users?",
-      "rationale": "The standard sandboxed format is the upstream one-click distribution path and Block Kit can represent the first human stock workflow without trading away open installation.",
-      "repair_required": false,
-      "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-4/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:26:12+00:00",
-          "source_identity": "sha256:8415a5e51e5cdaf789966698c48256d697a09cde3214e7372cc9600095cc6392"
-        },
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-4/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:29:01+00:00",
-          "source_identity": "sha256:f1ee96f8abf0b52663153eb65e926bc7d1b77526058a43d115d3360897045669"
-        }
-      ],
-      "review_ref": "proof:.grilltrack/proof/cycle-4/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "sha256:f1ee96f8abf0b52663153eb65e926bc7d1b77526058a43d115d3360897045669",
-      "status": "verified",
-      "superseded_by": null,
-      "updated_at": "2026-08-25T14:29:01+00:00",
-      "verification_ref": "proof:.grilltrack/proof/cycle-4/PROOF.md"
-    },
-    {
-      "baseline_ref": "git:ac5686f3d0395ab9b061515f83967bf61abd8280",
-      "candidate_refs": [],
-      "choice": "Commerce exposes a per-product Manage stock? setting. When off, Inventory does not constrain that product and Commerce sends no stock commands for it. When on, Commerce uses exactly one inventory provider configured for that EmDash site/store. Dinkuskit Inventory is the default and only first-party v1 provider, giving humans and agents the EmDash-administered experience. Advanced site/plugin settings may replace it with one user-supplied conforming provider. There is no automatic fallback, provider fan-out, or Commerce-owned production stock ledger; a missing or unhealthy configured provider fails closed. The exact advanced-settings screen and external-provider implementations remain deferred to the Commerce-owned track.",
-      "context_ref": "user:confirmed Commerce Manage stock and advanced provider policy",
-      "created_at": "2026-08-25T14:19:15+00:00",
-      "deferred_reason": null,
-      "delivery_ref": null,
-      "dependencies": [
-        "architecture-002",
-        "surface-permissions-012"
-      ],
-      "domain": "public EmDash administration and Commerce stock-provider boundary",
-      "history": [
-        {
-          "at": "2026-08-25T14:19:16+00:00",
-          "choice": "Commerce exposes a per-product Manage stock? setting. When off, Inventory does not constrain that product and Commerce sends no stock commands for it. When on, Commerce uses exactly one inventory provider configured for that EmDash site/store. Dinkuskit Inventory is the default and only first-party v1 provider, giving humans and agents the EmDash-administered experience. Advanced site/plugin settings may replace it with one user-supplied conforming provider. There is no automatic fallback, provider fan-out, or Commerce-owned production stock ledger; a missing or unhealthy configured provider fails closed. The exact advanced-settings screen and external-provider implementations remain deferred to the Commerce-owned track.",
-          "from": "proposed",
-          "implementation_ref": null,
-          "note": "user accepted the scoped decision",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "locked",
-          "verification_ref": null
-        },
-        {
-          "at": "2026-08-25T14:22:51+00:00",
-          "choice": "Commerce exposes a per-product Manage stock? setting. When off, Inventory does not constrain that product and Commerce sends no stock commands for it. When on, Commerce uses exactly one inventory provider configured for that EmDash site/store. Dinkuskit Inventory is the default and only first-party v1 provider, giving humans and agents the EmDash-administered experience. Advanced site/plugin settings may replace it with one user-supplied conforming provider. There is no automatic fallback, provider fan-out, or Commerce-owned production stock ledger; a missing or unhealthy configured provider fails closed. The exact advanced-settings screen and external-provider implementations remain deferred to the Commerce-owned track.",
-          "from": "locked",
-          "implementation_ref": null,
-          "note": "bounded implementation recorded",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "implemented",
-          "verification_ref": null
-        },
-        {
-          "at": "2026-08-25T14:24:45+00:00",
-          "choice": "Commerce exposes a per-product Manage stock? setting. When off, Inventory does not constrain that product and Commerce sends no stock commands for it. When on, Commerce uses exactly one inventory provider configured for that EmDash site/store. Dinkuskit Inventory is the default and only first-party v1 provider, giving humans and agents the EmDash-administered experience. Advanced site/plugin settings may replace it with one user-supplied conforming provider. There is no automatic fallback, provider fan-out, or Commerce-owned production stock ledger; a missing or unhealthy configured provider fails closed. The exact advanced-settings screen and external-provider implementations remain deferred to the Commerce-owned track.",
-          "from": "implemented",
-          "implementation_ref": "file:docs/CHARTER.md",
-          "note": "verification recorded in cumulative context",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "verified",
-          "verification_ref": null
-        }
-      ],
-      "id": "commerce-stock-provider-017",
-      "implementation_ref": "file:docs/CHARTER.md",
-      "question": "How does Commerce decide whether a product is stock-tracked and which inventory system owns that stock?",
-      "rationale": "This keeps the everyday product page as simple as WooCommerce while making Dinkuskit Inventory the useful default and preserving a narrow escape hatch for users who already have a stock system.",
-      "repair_required": false,
-      "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-4/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:26:12+00:00",
-          "source_identity": "sha256:8415a5e51e5cdaf789966698c48256d697a09cde3214e7372cc9600095cc6392"
-        },
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-4/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:29:02+00:00",
-          "source_identity": "sha256:f1ee96f8abf0b52663153eb65e926bc7d1b77526058a43d115d3360897045669"
-        }
-      ],
-      "review_ref": "proof:.grilltrack/proof/cycle-4/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "sha256:f1ee96f8abf0b52663153eb65e926bc7d1b77526058a43d115d3360897045669",
-      "status": "verified",
-      "superseded_by": null,
-      "updated_at": "2026-08-25T14:29:02+00:00",
-      "verification_ref": "proof:.grilltrack/proof/cycle-4/PROOF.md"
+      "updated_at": "2026-08-25T13:04:21+00:00",
+      "verification_ref": null
     }
   ],
   "last_activation": {
@@ -1555,16 +1061,16 @@
   },
   "recommendation": {
     "alternatives": [
-      "Build the Inventory Set initial stock service and GUI slice first",
-      "Migrate the Commerce InventoryProvider and checkout saga to the awaited location-bound contract first"
+      "Exact movement and storage schema vocabulary",
+      "SQLite Durable Object concurrency and export/restore spike"
     ],
-    "reason": "The product boundaries are now clear enough to coordinate one visible edit-to-audit sale without collapsing three repositories into one track; locking Commerce identity prevents the integration work from landing under a transitional name.",
-    "recommended": "Create the federated SmokyClub First Sale program, first locking Commerce public identity/home and then proving Inventory Set initial stock through the genuine Block Kit GUI",
-    "recorded_at": "2026-08-25T14:24:45+00:00"
+    "reason": "The ownership and cutover direction are locked; the next dependency is the small network-aware contract that lets every surface use the same commands before the full schema or UI is implemented.",
+    "recommended": "Async command and receipt boundary across EmDash, AICommerce, jobs, and the Inventory service",
+    "recorded_at": "2026-08-25T03:45:56+00:00"
   },
   "schema_version": "grilltrack/v0.1",
   "status": "active",
   "title": "Dinkuskit Inventory v1",
   "track_id": "dinkuskit-inventory-v1",
-  "updated_at": "2026-08-25T14:29:02+00:00"
+  "updated_at": "2026-08-25T13:04:21+00:00"
 }
