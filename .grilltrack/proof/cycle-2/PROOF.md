@@ -77,6 +77,13 @@ The manifest and review are retained at:
 - `.grilltrack/proof/cycle-2/source/`
 - `.grilltrack/proof/cycle-2/REVIEW.md`
 
+## Delivery
+
+- delivery ref: `github-pr:https://github.com/dinkuskit/inventory/pull/4`
+- branch: `codex/inventory-architecture-grill-20260825`
+- authorized scope: commit, push, and pull request only
+- excluded: merge, deploy, production mutation, and destructive cleanup
+
 ## Next focused grill
 
 Define the async command and receipt boundary shared by EmDash, AICommerce,
