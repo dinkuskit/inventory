@@ -239,21 +239,13 @@
       "rationale": "The inventory ledger must survive any individual site rebuild or outage, serialize multi-item stock decisions, preserve one writer per pool, and remain human-operable through EmDash.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-2/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T03:49:15+00:00",
-          "source_identity": "sha256:84e1b70589913af549c35e90751825ed0adb0de14d4acb5a57d55fec4884bf92"
-        }
-      ],
-      "review_ref": "proof:.grilltrack/proof/cycle-2/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "sha256:84e1b70589913af549c35e90751825ed0adb0de14d4acb5a57d55fec4884bf92",
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-25T03:49:15+00:00",
+      "updated_at": "2026-08-25T03:46:59+00:00",
       "verification_ref": "proof:.grilltrack/proof/cycle-2/PROOF.md"
     },
     {
@@ -319,21 +311,13 @@
       "rationale": "The operator manages shared physical stock across receiving and fulfillment locations and needs exact location truth without creating a ledger per storefront.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-2/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T03:49:15+00:00",
-          "source_identity": "sha256:84e1b70589913af549c35e90751825ed0adb0de14d4acb5a57d55fec4884bf92"
-        }
-      ],
-      "review_ref": "proof:.grilltrack/proof/cycle-2/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "sha256:84e1b70589913af549c35e90751825ed0adb0de14d4acb5a57d55fec4884bf92",
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-25T03:49:15+00:00",
+      "updated_at": "2026-08-25T03:47:00+00:00",
       "verification_ref": "proof:.grilltrack/proof/cycle-2/PROOF.md"
     },
     {
@@ -399,21 +383,13 @@
       "rationale": "The small legacy catalog does not justify integration work; a deliberate physical count and one-time opening balance is simpler while preserving a single writer after cutover.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-2/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T03:49:15+00:00",
-          "source_identity": "sha256:84e1b70589913af549c35e90751825ed0adb0de14d4acb5a57d55fec4884bf92"
-        }
-      ],
-      "review_ref": "proof:.grilltrack/proof/cycle-2/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "sha256:84e1b70589913af549c35e90751825ed0adb0de14d4acb5a57d55fec4884bf92",
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-25T03:49:15+00:00",
+      "updated_at": "2026-08-25T03:47:00+00:00",
       "verification_ref": "proof:.grilltrack/proof/cycle-2/PROOF.md"
     }
   ],
@@ -434,5 +410,5 @@
   "status": "active",
   "title": "Dinkuskit Inventory v1",
   "track_id": "dinkuskit-inventory-v1",
-  "updated_at": "2026-08-25T03:49:15+00:00"
+  "updated_at": "2026-08-25T03:47:00+00:00"
 }
