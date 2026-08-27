@@ -14,10 +14,8 @@ records how that works: [docs/CHARTER.md](docs/CHARTER.md).
 
 ## v1 boundary
 
-- EmDash-native: a platform-neutral inventory kernel plus one generic
-  standard-format sandboxed EmDash plugin with a real host-rendered Block Kit
-  admin GUI. The same installable artifact is proven in SmokyClub; no
-  storefront-shaped base code or site-specific plugin fork.
+- EmDash-native: a platform-neutral inventory kernel plus an in-dashboard
+  EmDash admin plugin. No storefront-shaped base code.
 - Canonical production truth lives behind an Inventory-owned service. The
   Cloudflare adapter uses one SQLite-backed Durable Object per physical pool;
   every site and location mapped to that pool shares the same ledger.
@@ -28,14 +26,9 @@ records how that works: [docs/CHARTER.md](docs/CHARTER.md).
   canonical writer committed the balance effects and immutable receipt
   together; a timeout remains unknown until the same command identity is
   resolved.
-- EmDash, Commerce, the CLI, jobs, agents, and a future Discord adapter are
+- EmDash, AICommerce, the CLI, jobs, agents, and a future Discord adapter are
   permissioned clients of that same command engine. None reads the database or
   silently falls back to another stock counter.
-- Commerce exposes `Manage stock?` per product. Managed products use exactly
-  one site-configured provider: Dinkuskit Inventory by default, or one
-  user-supplied conforming provider selected in advanced settings. Dinkuskit
-  Inventory is the only first-party v1 integration. Unmanaged products send no
-  stock commands, and Commerce owns no fallback production ledger.
 - WooCommerce and Katana stay untouched until a separately approved manual
   cutover. The operator disables the migrated products there, performs a
   physical count, and records reviewed opening balances in Dinkuskit
@@ -55,7 +48,8 @@ The durable decision ledger is under `.grilltrack/`. There is no runtime,
 installable plugin, executable CLI, or published npm package yet. The package
 manifest is private at `0.0.0` to prevent accidental publication.
 
-Part of [Dinkus](https://github.com/dinkuskit): blocks, Commerce, extensions,
-and templates for [EmDash](https://github.com/emdash-cms/emdash) sites.
+Part of [Dinkus](https://github.com/dinkuskit): blocks, AICommerce, commerce
+extensions, and templates for [EmDash](https://github.com/emdash-cms/emdash)
+sites.
 
 Under construction, dogfooding in the open. MIT.

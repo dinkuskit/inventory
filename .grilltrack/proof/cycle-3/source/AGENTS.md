@@ -26,15 +26,9 @@ issue or path only.
 - Manufacturing/MRP, checkout, orders, payments, and shipping labels are not
   owned here.
 - Dinkuskit Inventory owns canonical stock truth. EmDash is its human admin
-  surface through one generic standard-format sandboxed plugin with a real
-  Block Kit GUI. The public plugin calls the Inventory service through
-  authenticated, declared network routes; it is not a site-specific native
-  React fork.
-- Dinkuskit Commerce owns the per-product `Manage stock?` choice and retains a
-  narrow provider seam. Dinkuskit Inventory is the default and only first-party
-  v1 provider, while advanced site settings may select one user-supplied
-  conforming provider. A managed product has exactly one provider: never fan
-  out, silently fall back, or create a Commerce-local production stock ledger.
+  surface and AICommerce is an authenticated, network-aware client of its
+  provider boundary. Neither may read the database directly or silently fall
+  back to site-local stock.
 - Authoritative stock mutations use the awaited command-and-receipt contract in
   [docs/COMMAND-RECEIPT-CONTRACT.md](docs/COMMAND-RECEIPT-CONTRACT.md). A
   timeout is an unknown outcome resolved under the original command identity,

@@ -486,21 +486,14 @@
           "result": "clean",
           "reviewed_at": "2026-08-25T13:06:56+00:00",
           "source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292"
-        },
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:28:57+00:00",
-          "source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e"
         }
       ],
       "review_ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
       "review_result": "clean",
-      "review_source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e",
+      "review_source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-25T14:28:57+00:00",
+      "updated_at": "2026-08-25T13:06:56+00:00",
       "verification_ref": "proof:.grilltrack/proof/cycle-3/PROOF.md"
     },
     {
@@ -572,21 +565,14 @@
           "result": "clean",
           "reviewed_at": "2026-08-25T13:06:56+00:00",
           "source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292"
-        },
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:28:58+00:00",
-          "source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e"
         }
       ],
       "review_ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
       "review_result": "clean",
-      "review_source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e",
+      "review_source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-25T14:28:58+00:00",
+      "updated_at": "2026-08-25T13:06:56+00:00",
       "verification_ref": "proof:.grilltrack/proof/cycle-3/PROOF.md"
     },
     {
@@ -658,21 +644,14 @@
           "result": "clean",
           "reviewed_at": "2026-08-25T13:06:56+00:00",
           "source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292"
-        },
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:28:58+00:00",
-          "source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e"
         }
       ],
       "review_ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
       "review_result": "clean",
-      "review_source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e",
+      "review_source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-25T14:28:58+00:00",
+      "updated_at": "2026-08-25T13:06:56+00:00",
       "verification_ref": "proof:.grilltrack/proof/cycle-3/PROOF.md"
     },
     {
@@ -745,21 +724,14 @@
           "result": "clean",
           "reviewed_at": "2026-08-25T13:06:56+00:00",
           "source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292"
-        },
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:28:59+00:00",
-          "source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e"
         }
       ],
       "review_ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
       "review_result": "clean",
-      "review_source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e",
+      "review_source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-25T14:28:59+00:00",
+      "updated_at": "2026-08-25T13:06:56+00:00",
       "verification_ref": "proof:.grilltrack/proof/cycle-3/PROOF.md"
     },
     {
@@ -832,21 +804,14 @@
           "result": "clean",
           "reviewed_at": "2026-08-25T13:06:56+00:00",
           "source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292"
-        },
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:28:59+00:00",
-          "source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e"
         }
       ],
       "review_ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
       "review_result": "clean",
-      "review_source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e",
+      "review_source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-25T14:28:59+00:00",
+      "updated_at": "2026-08-25T13:06:56+00:00",
       "verification_ref": "proof:.grilltrack/proof/cycle-3/PROOF.md"
     },
     {
@@ -919,21 +884,14 @@
           "result": "clean",
           "reviewed_at": "2026-08-25T13:06:56+00:00",
           "source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292"
-        },
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:28:59+00:00",
-          "source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e"
         }
       ],
       "review_ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
       "review_result": "clean",
-      "review_source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e",
+      "review_source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-25T14:28:59+00:00",
+      "updated_at": "2026-08-25T13:06:56+00:00",
       "verification_ref": "proof:.grilltrack/proof/cycle-3/PROOF.md"
     },
     {
@@ -1006,21 +964,14 @@
           "result": "clean",
           "reviewed_at": "2026-08-25T13:06:56+00:00",
           "source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292"
-        },
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:29:00+00:00",
-          "source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e"
         }
       ],
       "review_ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
       "review_result": "clean",
-      "review_source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e",
+      "review_source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-25T14:29:00+00:00",
+      "updated_at": "2026-08-25T13:06:56+00:00",
       "verification_ref": "proof:.grilltrack/proof/cycle-3/PROOF.md"
     },
     {
@@ -1093,21 +1044,14 @@
           "result": "clean",
           "reviewed_at": "2026-08-25T13:06:57+00:00",
           "source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292"
-        },
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:29:00+00:00",
-          "source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e"
         }
       ],
       "review_ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
       "review_result": "clean",
-      "review_source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e",
+      "review_source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-25T14:29:00+00:00",
+      "updated_at": "2026-08-25T13:06:57+00:00",
       "verification_ref": "proof:.grilltrack/proof/cycle-3/PROOF.md"
     },
     {
@@ -1181,21 +1125,14 @@
           "result": "clean",
           "reviewed_at": "2026-08-25T13:06:57+00:00",
           "source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292"
-        },
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:29:00+00:00",
-          "source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e"
         }
       ],
       "review_ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
       "review_result": "clean",
-      "review_source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e",
+      "review_source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-25T14:29:00+00:00",
+      "updated_at": "2026-08-25T13:06:57+00:00",
       "verification_ref": "proof:.grilltrack/proof/cycle-3/PROOF.md"
     },
     {
@@ -1268,21 +1205,14 @@
           "result": "clean",
           "reviewed_at": "2026-08-25T13:06:57+00:00",
           "source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292"
-        },
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:29:01+00:00",
-          "source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e"
         }
       ],
       "review_ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
       "review_result": "clean",
-      "review_source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e",
+      "review_source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-25T14:29:01+00:00",
+      "updated_at": "2026-08-25T13:06:57+00:00",
       "verification_ref": "proof:.grilltrack/proof/cycle-3/PROOF.md"
     },
     {
@@ -1356,21 +1286,14 @@
           "result": "clean",
           "reviewed_at": "2026-08-25T13:06:57+00:00",
           "source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292"
-        },
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:29:01+00:00",
-          "source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e"
         }
       ],
       "review_ref": "proof:.grilltrack/proof/cycle-3/REVIEW.md",
       "review_result": "clean",
-      "review_source_identity": "sha256:ca2d551246cd8a70ef4164d79ec0dc579a8c0e831bd8cf5346b4d9f068bae94e",
+      "review_source_identity": "sha256:6dc0b944e54c96889ee74b49f98ad30ad83d3b13a06323930b8848dc0d850292",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-25T14:29:01+00:00",
+      "updated_at": "2026-08-25T13:06:57+00:00",
       "verification_ref": "proof:.grilltrack/proof/cycle-3/PROOF.md"
     },
     {
@@ -1437,28 +1360,13 @@
       "rationale": "The standard sandboxed format is the upstream one-click distribution path and Block Kit can represent the first human stock workflow without trading away open installation.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-4/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:26:12+00:00",
-          "source_identity": "sha256:8415a5e51e5cdaf789966698c48256d697a09cde3214e7372cc9600095cc6392"
-        },
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-4/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:29:01+00:00",
-          "source_identity": "sha256:f1ee96f8abf0b52663153eb65e926bc7d1b77526058a43d115d3360897045669"
-        }
-      ],
-      "review_ref": "proof:.grilltrack/proof/cycle-4/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "sha256:f1ee96f8abf0b52663153eb65e926bc7d1b77526058a43d115d3360897045669",
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-25T14:29:01+00:00",
+      "updated_at": "2026-08-25T14:24:45+00:00",
       "verification_ref": "proof:.grilltrack/proof/cycle-4/PROOF.md"
     },
     {
@@ -1524,28 +1432,13 @@
       "rationale": "This keeps the everyday product page as simple as WooCommerce while making Dinkuskit Inventory the useful default and preserving a narrow escape hatch for users who already have a stock system.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-4/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:26:12+00:00",
-          "source_identity": "sha256:8415a5e51e5cdaf789966698c48256d697a09cde3214e7372cc9600095cc6392"
-        },
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-4/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-25T14:29:02+00:00",
-          "source_identity": "sha256:f1ee96f8abf0b52663153eb65e926bc7d1b77526058a43d115d3360897045669"
-        }
-      ],
-      "review_ref": "proof:.grilltrack/proof/cycle-4/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "sha256:f1ee96f8abf0b52663153eb65e926bc7d1b77526058a43d115d3360897045669",
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-25T14:29:02+00:00",
+      "updated_at": "2026-08-25T14:24:45+00:00",
       "verification_ref": "proof:.grilltrack/proof/cycle-4/PROOF.md"
     }
   ],
@@ -1566,5 +1459,5 @@
   "status": "active",
   "title": "Dinkuskit Inventory v1",
   "track_id": "dinkuskit-inventory-v1",
-  "updated_at": "2026-08-25T14:29:02+00:00"
+  "updated_at": "2026-08-25T14:24:45+00:00"
 }
