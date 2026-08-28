@@ -48,6 +48,9 @@ issue or path only.
 
 - Product decisions flow through GrillTrack; no code lands before its domain
   is grilled and locked.
+- `FEATURE_MAP.md` is the machine-checked ownership contract. Migrated features
+  expose one `src/features/<domain>/index.ts`; outside code may not import their
+  internals. `bin/verify-inventory quick|full` is the canonical repository gate.
 - Implementation goes through isolated branches or worktrees and PRs with
   tests and proof. Docs-only PRs may skip code review rails; code PRs may
   not.

@@ -186,7 +186,8 @@ runtime call.
 
 Direct Inventory consumers:
 
-- `src/domain/managed-sku.ts` and `src/application/register-managed-sku.ts`;
+- `src/features/managed-sku/domain.ts`,
+  `src/features/managed-sku/register.ts`, and its public `index.ts`;
 - the shared command/result union in `src/domain/location-registry.ts`;
 - `src/storage/inventory-store.ts` and both SQLite adapters;
 - aggregate/read, opening-preview, and opening-commit code that resolve

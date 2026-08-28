@@ -3,7 +3,7 @@ import { runInDurableObject } from "cloudflare:test";
 import { describe, it } from "vitest";
 
 import { createSetOpeningBalance } from "../../src/application/set-opening-balance.ts";
-import { createRegisterManagedSku } from "../../src/application/register-managed-sku.ts";
+import { createRegisterManagedSku } from "../../src/features/managed-sku/index.ts";
 import {
 	createExecuteLocationCommand,
 	createListLocations,

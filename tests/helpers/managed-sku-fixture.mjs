@@ -1,4 +1,4 @@
-import { createRegisterManagedSku } from "../../src/application/register-managed-sku.ts";
+import { createRegisterManagedSku } from "../../src/features/managed-sku/index.ts";
 
 const fixturePrincipal = Object.freeze({
 	kind: "system",

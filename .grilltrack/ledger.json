@@ -4,11 +4,11 @@
   "current_focus": {
     "cadence": "sequential",
     "confirmed": true,
-    "confirmed_at": "2026-08-28T22:46:53+00:00",
-    "domain": "fresh Cloudflare schema initialization",
-    "started_at": "2026-08-28T22:46:52+00:00",
+    "confirmed_at": "2026-08-28T23:16:55+00:00",
+    "domain": "repository feature architecture and verification foundation",
+    "started_at": "2026-08-28T23:16:54+00:00",
     "status": "confirmed",
-    "summary": "Repair the reopened Cloudflare schema policy and managed-SKU registration together: preserve fresh v3 initialization, add one atomic exact-v2 migration with complete record preservation and legacy identity backfill, leave incompatible storage unchanged, align registration to the Commerce hidden-ID/register-or-return/display-name contract, retain immutable setup actor audit without a stock receipt, and re-verify opening admission against the upgraded storage. No live database, deployment, or production mutation is authorized."
+    "summary": "On exact Inventory PR #12 head 670c539, repair the stale opening-balance verifier fixture first, then add a no-behavior-change repository foundation: FEATURE_MAP.md maps every current domain and infrastructure boundary; bin/verify-inventory quick|full becomes the canonical verification entry while focused scripts remain available; machine checks enforce the map, package-root composition, and cross-feature index barriers; managed-SKU alone becomes the first src/features pilot with root export parity. Preserve all ledger, idempotency, receipt, schema-v3 migration, Cloudflare, location, and stock-read behavior. Defer moving the other domains, UI, transport, deployment, publication, and production mutation."
   },
   "decisions": [
     {
@@ -3399,6 +3399,64 @@
       "superseded_by": null,
       "updated_at": "2026-08-28T22:54:56+00:00",
       "verification_ref": "proof:.grilltrack/proof/cycle-12/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:670c539303ba77db916f50012070bdd83ead4e4e",
+      "candidate_refs": [],
+      "choice": "Add a complete FEATURE_MAP.md over current Inventory domains, one canonical bin/verify-inventory quick|full front door that retains focused verifiers as delegates, executable architecture and import-boundary checks in CI, and one behavior-preserving managed-SKU pilot under src/features/managed-sku/index.ts. Preserve root API and all storage/command behavior; map opening balance, locations, and stock reads at current paths for later focused migrations.",
+      "context_ref": "user:stack-feature-foundation-on-pr12",
+      "created_at": "2026-08-28T23:16:54+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "architecture-002",
+        "managed-sku-registration-036"
+      ],
+      "domain": "repository feature architecture and verification foundation",
+      "history": [
+        {
+          "at": "2026-08-28T23:16:55+00:00",
+          "choice": "Add a complete FEATURE_MAP.md over current Inventory domains, one canonical bin/verify-inventory quick|full front door that retains focused verifiers as delegates, executable architecture and import-boundary checks in CI, and one behavior-preserving managed-SKU pilot under src/features/managed-sku/index.ts. Preserve root API and all storage/command behavior; map opening balance, locations, and stock reads at current paths for later focused migrations.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T23:25:18+00:00",
+          "choice": "Add a complete FEATURE_MAP.md over current Inventory domains, one canonical bin/verify-inventory quick|full front door that retains focused verifiers as delegates, executable architecture and import-boundary checks in CI, and one behavior-preserving managed-SKU pilot under src/features/managed-sku/index.ts. Preserve root API and all storage/command behavior; map opening balance, locations, and stock reads at current paths for later focused migrations.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        }
+      ],
+      "id": "repository-feature-foundation-037",
+      "implementation_ref": "file:docs/implementation/repository-feature-foundation.md",
+      "question": "How should Inventory adopt the DinkusKit feature architecture without destabilizing its proven ledger?",
+      "rationale": "This implements the x-api #568 Dune convention incrementally, makes the shortest agent path verifiable, and follows the proven Blocks migration model rather than attempting a risky whole-repository move.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "implemented",
+      "superseded_by": null,
+      "updated_at": "2026-08-28T23:25:18+00:00",
+      "verification_ref": null
     }
   ],
   "last_activation": {
@@ -3417,5 +3475,5 @@
   "status": "active",
   "title": "Dinkuskit Inventory v1",
   "track_id": "dinkuskit-inventory-v1",
-  "updated_at": "2026-08-28T22:54:57+00:00"
+  "updated_at": "2026-08-28T23:25:18+00:00"
 }

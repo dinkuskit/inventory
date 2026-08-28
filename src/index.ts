@@ -31,14 +31,14 @@ export {
 	REGISTER_MANAGED_SKU_TYPE,
 	digestRegisterManagedSkuCommand,
 	normalizeRegisterManagedSkuCommand,
-} from "./domain/managed-sku.ts";
+} from "./features/managed-sku/index.ts";
 export type {
 	InventorySkuIdentity,
 	ManagedSkuRecord,
 	RegisterManagedSkuCommandV1,
 	RegisterManagedSkuRejectionCode,
 	RegisterManagedSkuResult,
-} from "./domain/managed-sku.ts";
+} from "./features/managed-sku/index.ts";
 export type {
 	ArchiveLocationCommandV1,
 	CreateLocationCommandV1,
@@ -106,12 +106,12 @@ export type {
 export {
 	createSetOpeningBalance,
 } from "./application/set-opening-balance.ts";
-export { createRegisterManagedSku } from "./application/register-managed-sku.ts";
+export { createRegisterManagedSku } from "./features/managed-sku/index.ts";
 export type {
 	RegisterManagedSku,
 	RegisterManagedSkuDependencies,
 	RegisterManagedSkuExecution,
-} from "./application/register-managed-sku.ts";
+} from "./features/managed-sku/index.ts";
 export {
 	createExecuteLocationCommand,
 	createListLocations,

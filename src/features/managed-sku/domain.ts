@@ -4,7 +4,7 @@ import {
 	digestCanonicalValue,
 	type CommandPrincipal,
 	type ExternalReference,
-} from "./opening-balance.ts";
+} from "../../domain/opening-balance.ts";
 
 export const REGISTER_MANAGED_SKU_TYPE = "sku.register" as const;
 export const MANAGED_SKU_UNIT = "each" as const;

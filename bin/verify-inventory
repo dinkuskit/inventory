@@ -1,0 +1,42 @@
+#!/usr/bin/env node
+import { spawnSync } from "node:child_process";
+import { performance } from "node:perf_hooks";
+import { resolve } from "node:path";
+
+const root = resolve(import.meta.dirname, "..");
+const scope = process.argv[2] ?? "quick";
+const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+const quick = [
+	[process.execPath, ["--test", "tests/workflows/repository-architecture.test.mjs"]],
+	[process.execPath, ["scripts/check-architecture.mjs"]],
+	[npm, ["run", "typecheck:cloudflare"]],
+	[npm, ["run", "test:node"]],
+];
+const scopes = {
+	quick,
+	full: [
+		...quick,
+		[resolve(root, "bin/verify-cloudflare-storage"), []],
+	],
+};
+
+if (!(scope in scopes)) {
+	console.error("Usage: bin/verify-inventory [quick|full]");
+	process.exit(64);
+}
+
+const started = performance.now();
+for (const [program, arguments_] of scopes[scope]) {
+	const result = spawnSync(program, arguments_, { cwd: root, stdio: "inherit" });
+	if (result.error) throw result.error;
+	if (result.status !== 0) {
+		console.error(
+			`verify-inventory ${scope} failed after ${((performance.now() - started) / 1000).toFixed(2)}s`,
+		);
+		process.exit(result.status ?? 1);
+	}
+}
+
+console.log(
+	`verify-inventory ${scope} passed in ${((performance.now() - started) / 1000).toFixed(2)}s`,
+);

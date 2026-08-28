@@ -16,7 +16,7 @@ import type { OpeningBalanceReceiptV2 } from "../domain/opening-balance.ts";
 import type {
 	ManagedSkuRecord,
 	RegisterManagedSkuResult,
-} from "../domain/managed-sku.ts";
+} from "../features/managed-sku/index.ts";
 
 export type StoredCommandResult<
 	TResult extends InventoryCommandResult = InventoryCommandResult,

@@ -119,6 +119,15 @@ at merge.
 npm ci
 npm test
 npm ls emdash --depth=0
+bin/verify-inventory quick
+bin/verify-inventory full
+```
+
+The canonical verifier enforces [FEATURE_MAP.md](FEATURE_MAP.md), feature
+entries, import boundaries, platform-neutral behavior, the Cloudflare workerd
+runtime, and deployment dry-run. Focused diagnostics remain available:
+
+```bash
 bin/verify-opening-balance
 bin/verify-location-registry
 bin/verify-aggregate-stock-read
