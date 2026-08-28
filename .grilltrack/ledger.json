@@ -3441,6 +3441,20 @@
           "review_source_identity": null,
           "to": "implemented",
           "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T23:26:55+00:00",
+          "choice": "Add a complete FEATURE_MAP.md over current Inventory domains, one canonical bin/verify-inventory quick|full front door that retains focused verifiers as delegates, executable architecture and import-boundary checks in CI, and one behavior-preserving managed-SKU pilot under src/features/managed-sku/index.ts. Preserve root API and all storage/command behavior; map opening balance, locations, and stock reads at current paths for later focused migrations.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/repository-feature-foundation.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
         }
       ],
       "id": "repository-feature-foundation-037",
@@ -3449,14 +3463,22 @@
       "rationale": "This implements the x-api #568 Dune convention incrementally, makes the shortest agent path verifiable, and follows the proven Blocks migration model rather than attempting a risky whole-repository move.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
-      "status": "implemented",
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": "proof:.grilltrack/proof/cycle-13/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T23:26:55+00:00",
+          "source_identity": "git:59c2713d5211bfb634cba271afc80270d8c990c6"
+        }
+      ],
+      "review_ref": "proof:.grilltrack/proof/cycle-13/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "git:59c2713d5211bfb634cba271afc80270d8c990c6",
+      "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-28T23:25:18+00:00",
-      "verification_ref": null
+      "updated_at": "2026-08-28T23:26:55+00:00",
+      "verification_ref": "proof:.grilltrack/proof/cycle-13/PROOF.md"
     }
   ],
   "last_activation": {
@@ -3475,5 +3497,5 @@
   "status": "active",
   "title": "Dinkuskit Inventory v1",
   "track_id": "dinkuskit-inventory-v1",
-  "updated_at": "2026-08-28T23:25:18+00:00"
+  "updated_at": "2026-08-28T23:26:55+00:00"
 }
