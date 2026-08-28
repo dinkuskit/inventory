@@ -1,0 +1,17 @@
+#!/usr/bin/env sh
+set -eu
+
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+repo_root=$(dirname -- "$script_dir")
+cd "$repo_root"
+
+verify_temp=$(mktemp -d)
+trap 'rm -rf -- "$verify_temp"' EXIT HUP INT TERM
+
+npm run typecheck:cloudflare
+node --test tests/workflows/cloudflare-deployment-contract.test.mjs
+npm run test:cloudflare
+npm exec -- wrangler deploy \
+	--config wrangler.jsonc \
+	--dry-run \
+	--outdir "$verify_temp"

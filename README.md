@@ -67,13 +67,18 @@ the trusted EmDash user ID, display-name snapshot, and originating surface;
 actor-like command fields cannot override it, and account renames do not alter
 history or break exact retry.
 
-The real local SQLite test adapter is explicitly development/test-only and
-refuses production mode or in-memory use. It is not the final storage layer and
-makes no production schema or deployment claim; the separately gated
-Cloudflare SQLite Durable Object remains the production direction. There is
-still no runtime service, installable plugin, executable CLI, or published npm
-package. The package manifest remains private at `0.0.0` to prevent accidental
-publication.
+The real local SQLite test adapter remains explicitly development/test-only and
+refuses production mode or in-memory use. It is not the final storage layer.
+The first production-storage checkpoint is a private `dinkuskit-inventory`
+Cloudflare Worker with a SQLite-backed Durable Object namespace and one object
+database per explicit pool. Workers.dev and preview URLs are disabled, no route
+is deployed, and the only remote operation is a same-account read inspection.
+One production-intended pool has initialized schema version 1 and contains no
+balance, command, confirmation, or receipt. Opening-balance mutation is not
+remotely exposed, no storefront traffic is bound, and no physical stock cutover
+has happened. There is still no installable plugin, executable CLI, or published
+npm package. The package manifest remains private at `0.0.0` to prevent
+accidental publication.
 
 Scaffold development is pinned to exact `emdash@0.35.0` with a lockfile. This
 is the implementation target for the first standard-format plugin fixture, not
@@ -81,18 +86,20 @@ a claim that the unimplemented plugin already has a proven runtime or minimum
 compatible version.
 
 The locked development toolchain requires Node `>=22.12.0`. Its dependency tree
-declares third-party lifecycle scripts, including install scripts for `esbuild`
-and `better-sqlite3`. On the proof host, npm 11.19 reports both scripts as not
-covered by `allowScripts` and does not approve them; another npm version or
-operator policy may execute them during `npm ci`. The repository adds no
-lifecycle approval or bypass. Accepting this development-only supply-chain
-boundary remains an explicit maintainer decision at merge.
+declares third-party lifecycle scripts, including install scripts for
+`esbuild`, `better-sqlite3`, and `workerd`. On the proof host, npm 11.19 reports
+those scripts as not covered by `allowScripts` and does not approve them;
+another npm version or operator policy may execute them during `npm ci`. The
+repository adds no lifecycle approval or bypass. Accepting this
+development-only supply-chain boundary remains an explicit maintainer decision
+at merge.
 
 ```bash
 npm ci
 npm test
 npm ls emdash --depth=0
 bin/verify-opening-balance
+bin/verify-cloudflare-storage
 ```
 
 Part of [Dinkus](https://github.com/dinkuskit): blocks, Commerce, extensions,

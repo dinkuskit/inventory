@@ -4,11 +4,11 @@
   "current_focus": {
     "cadence": "sequential",
     "confirmed": true,
-    "confirmed_at": "2026-08-28T13:33:43+00:00",
-    "domain": "authoritative balance and receipt read-back",
-    "started_at": "2026-08-28T13:25:02+00:00",
+    "confirmed_at": "2026-08-28T13:51:08+00:00",
+    "domain": "production Cloudflare inventory pool",
+    "started_at": "2026-08-28T13:51:07+00:00",
     "status": "inspected",
-    "summary": "Implement a platform-neutral read-only boundary over the verified opening-balance kernel. One query reads the current balance only for an explicit pool, location, and SKU. One mutation lookup accepts exactly one receiptId for audit/viewing or commandId for timeout recovery; committed results return their immutable receipt, stable rejections return no receipt, and missing identity returns explicit not-found without guessing a latest record. Human receipts freeze the trusted signed-in user's stable EmDash user ID, public-safe display-name snapshot, and originating surface; command payloads cannot choose the actor. Confirmation binds to stable principal identity rather than mutable display text, so account renames do not break exact retry and never rewrite historical receipts. Extend the existing local test-only SQLite proof and repo-owned verifier for both lookup paths, rejection/not-found behavior, persistence, actor spoof resistance, and historical-name stability. Defer GUI/history lists, real EmDash auth/session wiring, service transport, Cloudflare deployment, package publication, and production cutover. No commit, push, PR, merge, deployment, or publication is authorized."
+    "summary": "Bobby approved deploying the real production-intended Cloudflare database while leaving the live hat SKU without an opening balance until a physical count. The implementation will use one SQLite-backed Durable Object per explicit pool, no public route or SmokyClub traffic binding, and a same-account read-only remote probe for SC-FLEXFIT-BLK that must return not-found. Public source stays generic; live tenant/account identifiers stay in runtime proof only."
   },
   "decisions": [
     {
@@ -2005,6 +2005,88 @@
       "superseded_by": null,
       "updated_at": "2026-08-28T13:41:11+00:00",
       "verification_ref": "proof:.grilltrack/proof/cycle-7/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:08a4fef09dfdb33091d444fe03bb53f1aeba754d",
+      "candidate_refs": [],
+      "choice": "Deploy an Inventory-owned Worker with a SQLite-backed Durable Object namespace and one object database per explicit physical pool. Disable workers.dev and public routes; permit only same-account service RPC. Initialize the future SmokyClub pool schema and prove it read-only with live SKU SC-FLEXFIT-BLK returning explicit not-found. No stock balance, command, or receipt exists until a human physical count is confirmed, and no SmokyClub traffic is bound during this slice. Tenant and account identifiers remain runtime/proof data outside committed public source.",
+      "context_ref": "user:approved-real-cloudflare-db-no-opening-balance",
+      "created_at": "2026-08-28T13:51:08+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "architecture-002",
+        "opening-balance-storage-019",
+        "opening-balance-confirmation-020",
+        "read-back-021"
+      ],
+      "domain": "production Cloudflare inventory pool",
+      "history": [
+        {
+          "at": "2026-08-28T13:51:08+00:00",
+          "choice": "Deploy an Inventory-owned Worker with a SQLite-backed Durable Object namespace and one object database per explicit physical pool. Disable workers.dev and public routes; permit only same-account service RPC. Initialize the future SmokyClub pool schema and prove it read-only with live SKU SC-FLEXFIT-BLK returning explicit not-found. No stock balance, command, or receipt exists until a human physical count is confirmed, and no SmokyClub traffic is bound during this slice. Tenant and account identifiers remain runtime/proof data outside committed public source.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T14:13:20+00:00",
+          "choice": "Deploy an Inventory-owned Worker with a SQLite-backed Durable Object namespace and one object database per explicit physical pool. Disable workers.dev and public routes; permit only same-account service RPC. Initialize the future SmokyClub pool schema and prove it read-only with live SKU SC-FLEXFIT-BLK returning explicit not-found. No stock balance, command, or receipt exists until a human physical count is confirmed, and no SmokyClub traffic is bound during this slice. Tenant and account identifiers remain runtime/proof data outside committed public source.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T14:13:20+00:00",
+          "choice": "Deploy an Inventory-owned Worker with a SQLite-backed Durable Object namespace and one object database per explicit physical pool. Disable workers.dev and public routes; permit only same-account service RPC. Initialize the future SmokyClub pool schema and prove it read-only with live SKU SC-FLEXFIT-BLK returning explicit not-found. No stock balance, command, or receipt exists until a human physical count is confirmed, and no SmokyClub traffic is bound during this slice. Tenant and account identifiers remain runtime/proof data outside committed public source.",
+          "from": "implemented",
+          "implementation_ref": "docs/implementation/cloudflare-production-pool.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "cloudflare-pool-023",
+      "implementation_ref": "docs/implementation/cloudflare-production-pool.md",
+      "question": "How should the first real Cloudflare Inventory database be created and proven without silently cutting over SmokyClub stock?",
+      "rationale": "This creates the real remote durable storage Bobby approved while preserving the manual physical-count cutover, preventing the public website's displayed quantity from becoming canonical by accident, and avoiding public unauthenticated inventory access.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-8/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T14:15:10+00:00",
+          "source_identity": "sha256:530156e4d0406ebfd8aab60106a391fe3ecdb1f3d0067de1e226972a7d94da49"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-8/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:530156e4d0406ebfd8aab60106a391fe3ecdb1f3d0067de1e226972a7d94da49",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-08-28T14:15:10+00:00",
+      "verification_ref": "machine-proof:inventory-cloudflare-pool-20260828/PROOF.md"
     }
   ],
   "last_activation": {
@@ -2013,16 +2095,16 @@
   },
   "recommendation": {
     "alternatives": [
-      "Inventory-owned service request/response contract without authentication or deployment",
-      "Read-only receipt history contract with explicit pagination and filters"
+      "Define the authenticated Inventory service command boundary after the deployed source is review-visible",
+      "Grill the Block Kit opening-balance GUI after the deployed source is review-visible"
     ],
-    "reason": "The command, confirmation, balance read, and immutable receipt read-back paths are now verified. Proving the planned remote durable adapter next directly protects the lock that Bobby's machine is test-only, while accounts, deployment, transport, UI, and production cutover remain separately gated.",
-    "recommended": "Undeployed Cloudflare SQLite Durable Object adapter conformance against the platform-neutral transaction and read ports",
-    "recorded_at": "2026-08-28T13:41:12+00:00"
+    "reason": "The private production pool is live and empty, but its exact source is still only in the isolated worktree. Making that source review-visible is the smallest safe next step before expanding runtime authority.",
+    "recommended": "Commit, push, open a stacked Inventory PR, and run exact-head OpenClaw review for the deployed Cloudflare storage source",
+    "recorded_at": "2026-08-28T14:15:10+00:00"
   },
   "schema_version": "grilltrack/v0.1",
   "status": "active",
   "title": "Dinkuskit Inventory v1",
   "track_id": "dinkuskit-inventory-v1",
-  "updated_at": "2026-08-28T13:41:12+00:00"
+  "updated_at": "2026-08-28T14:15:10+00:00"
 }
