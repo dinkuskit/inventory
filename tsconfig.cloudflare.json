@@ -12,6 +12,7 @@
 	"include": [
 		"src/cloudflare/**/*.ts",
 		"src/storage/cloudflare-sqlite-inventory-store.ts",
-		"tools/cloudflare-remote-probe.ts"
+		"tools/cloudflare-remote-probe.ts",
+		"tools/aggregate-stock-read-local-probe.ts"
 	]
 }

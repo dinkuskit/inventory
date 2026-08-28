@@ -363,6 +363,82 @@ describe("Inventory Cloudflare storage boundary", () => {
 			});
 	});
 
+	it("reads one SKU across active locations through the Durable Object service", async ({
+		expect,
+	}) => {
+		const stub = env.INVENTORY_POOLS.getByName("pool_aggregate");
+		await runInDurableObject(stub, async (_instance, state) => {
+			const store = createCloudflareSqliteInventoryStore({
+				storage: state.storage,
+				poolId: "pool_aggregate",
+			});
+			await createFixtureLocation(store, {
+				poolId: "pool_aggregate",
+				locationId: "location_home",
+				name: "Home",
+			});
+			await createFixtureLocation(store, {
+				poolId: "pool_aggregate",
+				locationId: "location_warehouse",
+				name: "Warehouse",
+			});
+			await createSetOpeningBalance({
+				store,
+				now: () => new Date("2026-08-28T12:00:00.000Z"),
+				createReceiptId: () => "rcpt_aggregate",
+			})(
+				command({
+					commandId: "cmd_aggregate",
+					poolId: "pool_aggregate",
+					locationId: "location_home",
+					value: "5",
+				}),
+				{ principal },
+			);
+		});
+
+		const input = {
+			poolId: "pool_aggregate",
+			skuId: "sku_test_hat",
+			scope: { kind: "all_locations" },
+		};
+		const expected = {
+			schema: "dinkuskit.inventory.sku-stock-read-result/v1",
+			outcome: "found",
+			poolId: "pool_aggregate",
+			skuId: "sku_test_hat",
+			scope: { kind: "all_locations" },
+			stock: {
+				onHand: { value: "5", unit: "each" },
+				reserved: { value: "0", unit: "each" },
+				available: { value: "5", unit: "each" },
+			},
+			locations: [
+				{
+					locationId: "location_home",
+					name: "Home",
+					stock: {
+						onHand: { value: "5", unit: "each" },
+						reserved: { value: "0", unit: "each" },
+						available: { value: "5", unit: "each" },
+					},
+				},
+				{
+					locationId: "location_warehouse",
+					name: "Warehouse",
+					stock: {
+						onHand: { value: "0", unit: "each" },
+						reserved: { value: "0", unit: "each" },
+						available: { value: "0", unit: "each" },
+					},
+				},
+			],
+		};
+
+		expect(await stub.readSkuStock(input)).toEqual(expected);
+		expect(await exports.default.readSkuStock(input)).toEqual(expected);
+	});
+
 	it("persists and consumes the five-minute confirmation through the production adapter", async ({
 		expect,
 	}) => {

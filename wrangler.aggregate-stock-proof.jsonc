@@ -1,0 +1,13 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "dinkuskit-inventory-aggregate-stock-read-proof",
+	"main": "tools/aggregate-stock-read-local-probe.ts",
+	"compatibility_date": "2026-08-28",
+	"services": [
+		{
+			"binding": "INVENTORY_SERVICE",
+			"service": "dinkuskit-inventory",
+			"remote": false
+		}
+	]
+}

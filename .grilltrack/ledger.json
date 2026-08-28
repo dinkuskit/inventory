@@ -4,11 +4,11 @@
   "current_focus": {
     "cadence": "sequential",
     "confirmed": true,
-    "confirmed_at": "2026-08-28T18:54:49+00:00",
-    "domain": "active-location opening-balance admission",
-    "started_at": "2026-08-28T18:54:49+00:00",
+    "confirmed_at": "2026-08-28T19:54:47+00:00",
+    "domain": "one-location and all-locations stock view",
+    "started_at": "2026-08-28T19:54:47+00:00",
     "status": "inspected",
-    "summary": "Repair PR #10 so opening-balance execution accepts only an existing active location in the explicit pool. Perform the check after exact command replay lookup and inside the same serialized transaction as rejection or stock commit. Store stable location_not_found or location_not_active rejections; create no balance or receipt on rejection; keep confirmed retries exact. Prove local SQLite and Cloudflare Durable Object behavior, refresh repository-owned verification and durable proof, and do not deploy or merge."
+    "summary": "Implement an Inventory-owned read for one caller-supplied SKU in an explicit pool. Location scope returns that active location's on-hand, reserved, and available quantities. All-locations scope returns same-unit totals plus every active location, including explicit zeros. The slice is read-only and does not discover, register, or synchronize Commerce products; it adds no GUI, reservation-order detail, deployment, or production mutation. Verify domain normalization, application aggregation, local SQLite, Cloudflare Durable Object storage, public exports, and a repo-owned executable verifier."
   },
   "decisions": [
     {
@@ -2277,22 +2277,72 @@
           "review_source_identity": null,
           "to": "locked",
           "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T20:02:42+00:00",
+          "choice": "A one-location inventory view shows that selected location's stock. The all-locations view shows the combined stock total for the SKU across the explicit pool and a per-location breakdown, such as 13 total with Home storage 5 and Warehouse 8. Both views are read-only.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T20:02:43+00:00",
+          "choice": "A one-location inventory view shows that selected location's stock. The all-locations view shows the combined stock total for the SKU across the explicit pool and a per-location breakdown, such as 13 total with Home storage 5 and Warehouse 8. Both views are read-only.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/aggregate-stock-read.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
         }
       ],
       "id": "aggregate-stock-view-026",
-      "implementation_ref": null,
+      "implementation_ref": "file:docs/implementation/aggregate-stock-read.md",
       "question": "What should one-location and all-locations inventory show for each SKU?",
       "rationale": "This matches the Katana behavior Bobby approved while keeping location-specific quantities visible and auditable instead of hiding them behind one aggregate.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
-      "status": "locked",
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-11/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T20:02:43+00:00",
+          "source_identity": "sha256:570972f72d75464d9eab0b13dbe5cb5e846bcea5c9069154ee26e911c39195ef"
+        },
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-11/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T20:58:28+00:00",
+          "source_identity": "sha256:e7fcef5e7203edccad25695c34931828159fb71a8d6e05aef2a57260df14c8e0"
+        },
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-11/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T21:00:13+00:00",
+          "source_identity": "sha256:e99044222c6009b4d4e2ec97193744b7a585181f2d46cff66ae59243d197c5bf"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-11/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:e99044222c6009b4d4e2ec97193744b7a585181f2d46cff66ae59243d197c5bf",
+      "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-28T15:15:38+00:00",
-      "verification_ref": null
+      "updated_at": "2026-08-28T21:00:13+00:00",
+      "verification_ref": "proof:.grilltrack/proof/cycle-11/PROOF.md"
     },
     {
       "baseline_ref": "sha256:1c71bf104cc432119aa35274ca7204c29ff5585e647f3cde59fcb824a25fdc4f",
@@ -2321,22 +2371,72 @@
           "review_source_identity": null,
           "to": "locked",
           "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T20:02:43+00:00",
+          "choice": "For every SKU, show on-hand, reserved, and available quantities, with on-hand as the main number. One-location values come from that exact location. All-locations values are the same-unit sums across the explicit pool, and the per-location breakdown shows the same three quantities. Available remains derived from on-hand minus reserved rather than becoming a separately writable counter.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T20:02:43+00:00",
+          "choice": "For every SKU, show on-hand, reserved, and available quantities, with on-hand as the main number. One-location values come from that exact location. All-locations values are the same-unit sums across the explicit pool, and the per-location breakdown shows the same three quantities. Available remains derived from on-hand minus reserved rather than becoming a separately writable counter.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/aggregate-stock-read.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
         }
       ],
       "id": "aggregate-stock-quantities-027",
-      "implementation_ref": null,
+      "implementation_ref": "file:docs/implementation/aggregate-stock-read.md",
       "question": "Which stock quantities should the one-location and all-locations views show?",
       "rationale": "Bobby wants physical stock to remain the headline while still making order commitments and sellable quantity visible; preserving all three quantities matches the existing canonical balance model.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
-      "status": "locked",
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-11/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T20:02:43+00:00",
+          "source_identity": "sha256:570972f72d75464d9eab0b13dbe5cb5e846bcea5c9069154ee26e911c39195ef"
+        },
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-11/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T20:58:28+00:00",
+          "source_identity": "sha256:e7fcef5e7203edccad25695c34931828159fb71a8d6e05aef2a57260df14c8e0"
+        },
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-11/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T21:00:13+00:00",
+          "source_identity": "sha256:e99044222c6009b4d4e2ec97193744b7a585181f2d46cff66ae59243d197c5bf"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-11/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:e99044222c6009b4d4e2ec97193744b7a585181f2d46cff66ae59243d197c5bf",
+      "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-28T15:17:45+00:00",
-      "verification_ref": null
+      "updated_at": "2026-08-28T21:00:13+00:00",
+      "verification_ref": "proof:.grilltrack/proof/cycle-11/PROOF.md"
     },
     {
       "baseline_ref": "sha256:1c71bf104cc432119aa35274ca7204c29ff5585e647f3cde59fcb824a25fdc4f",
@@ -2424,22 +2524,72 @@
           "review_source_identity": null,
           "to": "locked",
           "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T20:02:43+00:00",
+          "choice": "Every active location appears in the all-locations SKU breakdown even when its on-hand, reserved, and available quantities are all zero. Zero is displayed explicitly so an empty location cannot be confused with a missing, unauthorized, or unknown location.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T20:02:43+00:00",
+          "choice": "Every active location appears in the all-locations SKU breakdown even when its on-hand, reserved, and available quantities are all zero. Zero is displayed explicitly so an empty location cannot be confused with a missing, unauthorized, or unknown location.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/aggregate-stock-read.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
         }
       ],
       "id": "zero-stock-location-029",
-      "implementation_ref": null,
+      "implementation_ref": "file:docs/implementation/aggregate-stock-read.md",
       "question": "Should an active location with zero stock still appear in the all-locations breakdown?",
       "rationale": "Bobby prefers an explicit Warehouse 0 row because it communicates known emptiness instead of silently hiding the location.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
-      "status": "locked",
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-11/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T20:02:44+00:00",
+          "source_identity": "sha256:570972f72d75464d9eab0b13dbe5cb5e846bcea5c9069154ee26e911c39195ef"
+        },
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-11/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T20:58:28+00:00",
+          "source_identity": "sha256:e7fcef5e7203edccad25695c34931828159fb71a8d6e05aef2a57260df14c8e0"
+        },
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-11/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T21:00:13+00:00",
+          "source_identity": "sha256:e99044222c6009b4d4e2ec97193744b7a585181f2d46cff66ae59243d197c5bf"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-11/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:e99044222c6009b4d4e2ec97193744b7a585181f2d46cff66ae59243d197c5bf",
+      "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-28T15:25:07+00:00",
-      "verification_ref": null
+      "updated_at": "2026-08-28T21:00:13+00:00",
+      "verification_ref": "proof:.grilltrack/proof/cycle-11/PROOF.md"
     },
     {
       "baseline_ref": "sha256:1c71bf104cc432119aa35274ca7204c29ff5585e647f3cde59fcb824a25fdc4f",
@@ -2971,16 +3121,16 @@
   },
   "recommendation": {
     "alternatives": [
-      "ordinary stock-adjustment command with editable reason",
-      "preview-time active-location warning"
+      "ordinary stock-adjustment command with required editable reason",
+      "pause Inventory until the active Commerce foundation PR completes"
     ],
-    "reason": "The active-location write guard is now proven; the smallest next Katana-style slice is a read-only selector contract that shows one location or combined totals without creating mutation authority.",
-    "recommended": "one-location/all-locations aggregate stock read",
-    "recorded_at": "2026-08-28T19:08:17+00:00"
+    "reason": "The aggregate read is proven, and the aligned Commerce grill requires a managed SKU to exist in Inventory at zero before Set Initial Stock; registration is the smallest Inventory-owned prerequisite that avoids catalog synchronization or a second ledger.",
+    "recommended": "Inventory-owned managed SKU registration at logical zero",
+    "recorded_at": "2026-08-28T20:02:44+00:00"
   },
   "schema_version": "grilltrack/v0.1",
   "status": "active",
   "title": "Dinkuskit Inventory v1",
   "track_id": "dinkuskit-inventory-v1",
-  "updated_at": "2026-08-28T19:08:17+00:00"
+  "updated_at": "2026-08-28T21:00:13+00:00"
 }

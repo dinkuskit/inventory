@@ -1,9 +1,15 @@
 import { DurableObject, WorkerEntrypoint } from "cloudflare:workers";
 
-import { createReadSkuLocationBalance } from "../application/read-inventory.ts";
+import {
+	createReadSkuLocationBalance,
+	createReadSkuStock,
+} from "../application/read-inventory.ts";
 import {
 	normalizeReadSkuLocationBalanceInput,
+	normalizeReadSkuStockInput,
 	type ReadSkuLocationBalanceInput,
+	type ReadSkuStockInput,
+	type SkuStockReadResult,
 	type SkuLocationBalanceReadResult,
 } from "../domain/inventory-read.ts";
 import { createCloudflareSqliteInventoryStore } from "../storage/cloudflare-sqlite-inventory-store.ts";
@@ -48,12 +54,26 @@ export class InventoryPool extends DurableObject<InventoryWorkerEnv> {
 		return createReadSkuLocationBalance({ store })(key);
 	}
 
+	async readSkuStock(input: ReadSkuStockInput): Promise<SkuStockReadResult> {
+		const query = normalizeReadSkuStockInput(input);
+		const store = createCloudflareSqliteInventoryStore({
+			storage: this.ctx.storage,
+			poolId: query.poolId,
+		});
+		return createReadSkuStock({ store })(query);
+	}
+
 	async recordCounts(): Promise<CloudflareInventoryRecordCounts> {
 		return readCloudflareInventoryRecordCounts(this.ctx.storage);
 	}
 }
 
 export default class InventoryService extends WorkerEntrypoint<InventoryWorkerEnv> {
+	async readSkuStock(input: ReadSkuStockInput): Promise<SkuStockReadResult> {
+		const query = normalizeReadSkuStockInput(input);
+		return this.env.INVENTORY_POOLS.getByName(query.poolId).readSkuStock(query);
+	}
+
 	async inspectSkuLocation(
 		input: ReadSkuLocationBalanceInput,
 	): Promise<InventoryInspection> {
