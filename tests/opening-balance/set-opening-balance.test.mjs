@@ -13,6 +13,7 @@ import {
 	createFixtureLocation,
 	restoreFixtureLocation,
 } from "../helpers/location-fixture.mjs";
+import { createFixtureManagedSku } from "../helpers/managed-sku-fixture.mjs";
 
 const principal = Object.freeze({
 	kind: "human",
@@ -168,6 +169,7 @@ test("commits one opening balance with its immutable receipt and no other locati
 	const store = createLocalSqliteTestStore({ filePath });
 	t.after(() => store.close());
 	await createFixtureLocation(store);
+	await createFixtureManagedSku(store);
 	const setOpeningBalance = executor(store);
 	const command = openingBalanceCommand({ value: "005.000" });
 
@@ -246,6 +248,7 @@ test("returns the byte-stable original result for normalized replay after reopen
 	const filePath = await databasePath(t, "replay");
 	let store = createLocalSqliteTestStore({ filePath });
 	await createFixtureLocation(store);
+	await createFixtureManagedSku(store);
 	let setOpeningBalance = executor(store);
 	const first = await setOpeningBalance(
 		openingBalanceCommand({ value: "005.000" }),
@@ -269,6 +272,7 @@ test("rejects changed content under one command ID while preserving the original
 	const store = createLocalSqliteTestStore({ filePath });
 	t.after(() => store.close());
 	await createFixtureLocation(store);
+	await createFixtureManagedSku(store);
 	const setOpeningBalance = executor(store);
 	const original = await setOpeningBalance(openingBalanceCommand(), {
 		principal,
@@ -300,6 +304,7 @@ test("stores a second-opening rejection and replays it after reopen", async (t) 
 	const filePath = await databasePath(t, "rejection");
 	let store = createLocalSqliteTestStore({ filePath });
 	await createFixtureLocation(store);
+	await createFixtureManagedSku(store);
 	let setOpeningBalance = executor(store, {
 		receiptIds: ["rcpt_first"],
 	});
@@ -335,6 +340,7 @@ test("serializes competing command IDs so only one opening balance commits", asy
 	const store = createLocalSqliteTestStore({ filePath });
 	t.after(() => store.close());
 	await createFixtureLocation(store);
+	await createFixtureManagedSku(store);
 	const setOpeningBalance = executor(store, {
 		receiptIds: ["rcpt_race_1", "rcpt_race_2"],
 	});
@@ -376,6 +382,7 @@ test("rolls back balance and command state when receipt persistence fails", asyn
 	let store = createLocalSqliteTestStore({ filePath });
 	await createFixtureLocation(store);
 	await createFixtureLocation(store, { locationId: "location_south" });
+	await createFixtureManagedSku(store);
 	let setOpeningBalance = executor(store, {
 		receiptIds: ["rcpt_duplicate"],
 	});
@@ -449,6 +456,7 @@ test("requires a final human-readable reason and freezes an edited value", async
 	const store = createLocalSqliteTestStore({ filePath });
 	t.after(() => store.close());
 	await createFixtureLocation(store);
+	await createFixtureManagedSku(store);
 	const setOpeningBalance = executor(store, {
 		receiptIds: ["rcpt_reason"],
 	});

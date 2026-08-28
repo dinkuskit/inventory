@@ -1,6 +1,6 @@
 export const CLOUDFLARE_INVENTORY_SCHEMA =
 	"dinkuskit.inventory.cloudflare-schema-status/v1" as const;
-export const CLOUDFLARE_INVENTORY_SCHEMA_VERSION = 2 as const;
+export const CLOUDFLARE_INVENTORY_SCHEMA_VERSION = 3 as const;
 
 export const CLOUDFLARE_INVENTORY_TABLES = [
 	"inventory_balances",
@@ -9,6 +9,7 @@ export const CLOUDFLARE_INVENTORY_TABLES = [
 	"inventory_opening_balance_confirmations",
 	"inventory_receipts",
 	"inventory_schema_migrations",
+	"inventory_skus",
 ] as const;
 
 export type CloudflareInventorySchemaStatus = Readonly<{
@@ -22,6 +23,7 @@ export type CloudflareInventoryRecordCounts = Readonly<{
 	commandResults: number;
 	confirmations: number;
 	receipts: number;
+	skus: number;
 }>;
 
 type SqlRow = Record<string, SqlStorageValue>;
@@ -136,6 +138,18 @@ export function initializeCloudflareInventorySchema(
 			.toArray();
 		storage.sql
 			.exec(
+				`CREATE TABLE inventory_skus (
+					pool_id TEXT NOT NULL,
+					sku_id TEXT NOT NULL,
+					unit TEXT NOT NULL CHECK (unit = 'each'),
+					version INTEGER NOT NULL CHECK (version = 1),
+					registered_at TEXT NOT NULL,
+					PRIMARY KEY (pool_id, sku_id)
+				) STRICT`,
+			)
+			.toArray();
+		storage.sql
+			.exec(
 				`CREATE TABLE inventory_receipts (
 					receipt_id TEXT PRIMARY KEY,
 					command_id TEXT NOT NULL UNIQUE,
@@ -163,7 +177,7 @@ export function initializeCloudflareInventorySchema(
 				`INSERT INTO inventory_schema_migrations (version, applied_at)
 				 VALUES (?, ?)`,
 				CLOUDFLARE_INVENTORY_SCHEMA_VERSION,
-				"2026-08-28T16:00:00.000Z",
+				"2026-08-28T21:56:06.000Z",
 			)
 			.toArray();
 		assertExactSchema(storage);
@@ -187,6 +201,7 @@ function rowCount(storage: DurableObjectStorage, table: string): number {
 		"inventory_command_results",
 		"inventory_opening_balance_confirmations",
 		"inventory_receipts",
+		"inventory_skus",
 	]);
 	if (!allowed.has(table)) {
 		throw new Error("Unsupported Inventory table count.");
@@ -205,5 +220,6 @@ export function readCloudflareInventoryRecordCounts(
 			"inventory_opening_balance_confirmations",
 		),
 		receipts: rowCount(storage, "inventory_receipts"),
+		skus: rowCount(storage, "inventory_skus"),
 	};
 }

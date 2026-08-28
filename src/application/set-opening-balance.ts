@@ -57,6 +57,26 @@ function alreadySet(commandId: string): OpeningBalanceResult {
 	};
 }
 
+function skuNotRegistered(commandId: string): OpeningBalanceResult {
+	return {
+		schema: COMMAND_RESULT_SCHEMA,
+		outcome: "rejected",
+		commandId,
+		code: "sku_not_registered",
+		message: "This SKU is not set up for inventory.",
+	};
+}
+
+function skuUnitMismatch(commandId: string): OpeningBalanceResult {
+	return {
+		schema: COMMAND_RESULT_SCHEMA,
+		outcome: "rejected",
+		commandId,
+		code: "sku_unit_mismatch",
+		message: "The stock quantity unit does not match this SKU.",
+	};
+}
+
 function locationRejection(
 	commandId: string,
 	code: Extract<
@@ -124,6 +144,26 @@ export function executeSetOpeningBalanceInTransaction(
 			"location_not_active",
 			"The location is archived and cannot receive stock.",
 		);
+		transaction.storeRejection({
+			commandId: command.commandId,
+			commandDigest,
+			result,
+		});
+		return result;
+	}
+
+	const managedSku = transaction.getManagedSku(command.payload.skuId);
+	if (managedSku === null) {
+		const result = skuNotRegistered(command.commandId);
+		transaction.storeRejection({
+			commandId: command.commandId,
+			commandDigest,
+			result,
+		});
+		return result;
+	}
+	if (managedSku.unit !== command.payload.quantity.unit) {
+		const result = skuUnitMismatch(command.commandId);
 		transaction.storeRejection({
 			commandId: command.commandId,
 			commandDigest,

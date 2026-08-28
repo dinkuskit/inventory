@@ -25,6 +25,20 @@ export {
 	normalizeLocationCommand,
 	normalizeLocationName,
 } from "./domain/location-registry.ts";
+export {
+	InvalidManagedSkuCommandError,
+	MANAGED_SKU_UNIT,
+	REGISTER_MANAGED_SKU_TYPE,
+	digestRegisterManagedSkuCommand,
+	normalizeRegisterManagedSkuCommand,
+} from "./domain/managed-sku.ts";
+export type {
+	ManagedSkuReceiptV2,
+	ManagedSkuRecord,
+	RegisterManagedSkuCommandV1,
+	RegisterManagedSkuRejectionCode,
+	RegisterManagedSkuResult,
+} from "./domain/managed-sku.ts";
 export type {
 	ArchiveLocationCommandV1,
 	CreateLocationCommandV1,
@@ -92,6 +106,12 @@ export type {
 export {
 	createSetOpeningBalance,
 } from "./application/set-opening-balance.ts";
+export { createRegisterManagedSku } from "./application/register-managed-sku.ts";
+export type {
+	RegisterManagedSku,
+	RegisterManagedSkuDependencies,
+	RegisterManagedSkuExecution,
+} from "./application/register-managed-sku.ts";
 export {
 	createExecuteLocationCommand,
 	createListLocations,
@@ -133,6 +153,7 @@ export type {
 	ConfirmOpeningBalanceDependencies,
 	ConfirmOpeningBalanceExecution,
 	OpeningBalanceConfirmationErrorCode,
+	OpeningBalancePreviewErrorCode,
 	PreviewOpeningBalance,
 	PreviewOpeningBalanceDependencies,
 	PreviewOpeningBalanceExecution,
@@ -145,7 +166,9 @@ export type {
 	ListReceiptsQuery,
 	ReadSkuActiveLocationSnapshotQuery,
 	LocationCommit,
+	ManagedSkuCommit,
 	OpeningBalanceCommit,
+	ReadManagedSkuQuery,
 	ReceiptListCursor,
 	StoredOpeningBalanceConfirmation,
 	StoredCommandResult,

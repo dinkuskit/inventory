@@ -13,6 +13,7 @@ import {
 	archiveFixtureLocation,
 	createFixtureLocation,
 } from "../helpers/location-fixture.mjs";
+import { createFixtureManagedSku } from "../helpers/managed-sku-fixture.mjs";
 
 const principal = Object.freeze({
 	kind: "human",
@@ -112,6 +113,7 @@ test("reads one location or all active locations from durable SQLite", async (t)
 		locationId: "location_archived",
 		name: "Archived",
 	});
+	await createFixtureManagedSku(store, { skuId: "sku_hat" });
 	await setOpeningBalance(
 		store,
 		openingBalanceCommand({
@@ -252,7 +254,16 @@ test("sums signed exact decimals, derives available, and fails closed on mixed u
 		},
 	];
 	const read = createReadSkuStock({
-		store: { readSkuActiveLocationSnapshot: async () => snapshots },
+		store: {
+			readManagedSku: async () => ({
+				poolId: "pool_test",
+				skuId: "sku_hat",
+				unit: "each",
+				version: "1",
+				registeredAt: "2026-08-28T09:00:00.000Z",
+			}),
+			readSkuActiveLocationSnapshot: async () => snapshots,
+		},
 	});
 	const result = await read({
 		poolId: "pool_test",
@@ -272,6 +283,13 @@ test("sums signed exact decimals, derives available, and fails closed on mixed u
 
 	const mixed = createReadSkuStock({
 		store: {
+			readManagedSku: async () => ({
+				poolId: "pool_test",
+				skuId: "sku_hat",
+				unit: "each",
+				version: "1",
+				registeredAt: "2026-08-28T09:00:00.000Z",
+			}),
 			readSkuActiveLocationSnapshot: async () => [
 				snapshots[0],
 				{

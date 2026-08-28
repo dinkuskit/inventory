@@ -8,12 +8,14 @@ Status: confirmed implementation contract for GrillTrack decisions
 
 This slice owns one platform-neutral, read-only query for a caller-supplied SKU
 inside one explicit Inventory pool. It returns either one active location or an
-all-active-locations aggregate. It does not discover, register, or synchronize
-Commerce products, mutate stock, expose reservation order details, add a GUI,
-deploy a Worker, or create production data.
+all-active-locations aggregate. It does not discover or synchronize Commerce
+catalog data, mutate stock, expose reservation order details, add a GUI, deploy
+a Worker, or create production data. The later managed-SKU slice supplies the
+durable registered identity and unit consumed by this read.
 
 Commerce continues to own products and canonical SKU strings. Inventory owns
-the balance rows and location registry that this query reads.
+the registered SKU identity, balance rows, and location registry that this
+query reads.
 
 ## Public contract
 
@@ -69,6 +71,8 @@ type ActiveLocationBalanceSnapshot = Readonly<{
 }>;
 
 interface InventoryStore {
+	readManagedSku(query: ReadManagedSkuQuery):
+		Promise<ManagedSkuRecord | null>;
 	readSkuActiveLocationSnapshot(
 		query: ReadSkuActiveLocationSnapshotQuery,
 	): Promise<readonly ActiveLocationBalanceSnapshot[]>;
@@ -87,12 +91,11 @@ query without adding an HTTP route.
 - All-locations output is ordered by the existing location selector order:
   normalized name, then permanent location ID.
 - Every active location appears in all-locations output. A missing balance row
-  becomes explicit zero only when another active balance establishes the SKU's
-  unit.
+  becomes explicit zero using the registered SKU's unit.
 - Location scope returns one row. An active location with no balance is zero
   when the SKU exists at another active location.
-- No active balance for the SKU returns `not_found`; this slice does not invent
-  a unit or create a registration record.
+- A missing registration returns `not_found`. A registered SKU with no active
+  balance rows returns `found` at logical zero.
 - On-hand and reserved are read from canonical balances. Available is always
   derived as exact `onHand - reserved`, never trusted as a separate authority.
 - All-locations totals use exact signed-decimal arithmetic, not JavaScript

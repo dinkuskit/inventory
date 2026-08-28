@@ -157,14 +157,14 @@ pool-scoped and deterministically ordered by name key and permanent ID.
 
 ## Durable schema
 
-Cloudflare schema version 2 is the first complete real-database schema and
-includes `inventory_locations` beside the stock tables. A fresh empty Durable
-Object creates the complete schema directly and records only version 2. This
+Cloudflare schema version 3 is the complete current real-database schema and
+includes `inventory_locations` and `inventory_skus` beside the stock tables. A fresh empty Durable
+Object creates the complete schema directly and records only version 3. This
 release has no legacy migration: existing older, partial, or unexpected
 Inventory schemas fail closed without modification.
 
-The local development/test schema moves to `opening-balance-local/v4` and adds
-the same table. It remains explicit-path, non-production, and rejects unrelated
+The local development/test schema is now `opening-balance-local/v5` and includes
+the same registries. It remains explicit-path, non-production, and rejects unrelated
 or incompatible SQLite files instead of claiming them.
 
 Location receipts share `inventory_receipts`, and terminal results share

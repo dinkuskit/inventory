@@ -12,6 +12,7 @@ import type {
 	LocationRecord,
 } from "../domain/location-registry.ts";
 import type { OpeningBalanceReceiptV2 } from "../domain/opening-balance.ts";
+import type { ManagedSkuRecord } from "../domain/managed-sku.ts";
 import type {
 	ActiveLocationBalanceSnapshot,
 	InventoryStore,
@@ -19,20 +20,23 @@ import type {
 	ListLocationsQuery,
 	ListReceiptsQuery,
 	LocationCommit,
+	ManagedSkuCommit,
 	OpeningBalanceCommit,
+	ReadManagedSkuQuery,
 	ReadSkuActiveLocationSnapshotQuery,
 	StoredOpeningBalanceConfirmation,
 	StoredCommandResult,
 } from "./inventory-store.ts";
 
 const STORAGE_ROLE = "local-development-test-only";
-const SCHEMA_VERSION = "opening-balance-local/v4";
+const SCHEMA_VERSION = "opening-balance-local/v5";
 const EXPECTED_TABLES = [
 	"inventory_balances",
 	"inventory_command_results",
 	"inventory_locations",
 	"inventory_opening_balance_confirmations",
 	"inventory_receipts",
+	"inventory_skus",
 	"inventory_storage_metadata",
 ] as const;
 
@@ -73,6 +77,19 @@ function locationFrom(row: DatabaseRow | undefined): LocationRecord | null {
 		createdAt: String(row.created_at),
 		updatedAt: String(row.updated_at),
 		archivedAt: row.archived_at === null ? null : String(row.archived_at),
+	};
+}
+
+function managedSkuFrom(row: DatabaseRow | undefined): ManagedSkuRecord | null {
+	if (row === undefined) {
+		return null;
+	}
+	return {
+		poolId: String(row.pool_id),
+		skuId: String(row.sku_id),
+		unit: "each",
+		version: "1",
+		registeredAt: String(row.registered_at),
 	};
 }
 
@@ -157,6 +174,18 @@ class SqliteInventoryTransaction implements InventoryTransaction {
 			| DatabaseRow
 			| undefined;
 		return balanceFrom(row);
+	}
+
+	getManagedSku(skuId: string): ManagedSkuRecord | null {
+		return managedSkuFrom(
+			this.#database
+				.prepare(
+					`SELECT pool_id, sku_id, unit, version, registered_at
+					 FROM inventory_skus
+					 WHERE pool_id = ? AND sku_id = ?`,
+				)
+				.get(this.#poolId, skuId) as DatabaseRow | undefined,
+		);
 	}
 
 	getLocation(locationId: string): LocationRecord | null {
@@ -397,6 +426,47 @@ class SqliteInventoryTransaction implements InventoryTransaction {
 				JSON.stringify(input.result),
 			);
 	}
+
+	commitManagedSku(input: ManagedSkuCommit): void {
+		if (input.sku.poolId !== this.#poolId) {
+			throw new Error("A transaction cannot cross inventory pools.");
+		}
+		this.#database
+			.prepare(
+				`INSERT INTO inventory_skus
+				   (pool_id, sku_id, unit, version, registered_at)
+				 VALUES (?, ?, ?, ?, ?)`,
+			)
+			.run(
+				input.sku.poolId,
+				input.sku.skuId,
+				input.sku.unit,
+				Number(input.sku.version),
+				input.sku.registeredAt,
+			);
+		this.#database
+			.prepare(
+				`INSERT INTO inventory_receipts
+				   (receipt_id, command_id, receipt_json)
+				 VALUES (?, ?, ?)`,
+			)
+			.run(
+				input.receipt.receiptId,
+				input.commandId,
+				JSON.stringify(input.receipt),
+			);
+		this.#database
+			.prepare(
+				`INSERT INTO inventory_command_results
+				   (command_id, command_digest, terminal_result_json)
+				 VALUES (?, ?, ?)`,
+			)
+			.run(
+				input.commandId,
+				input.commandDigest,
+				JSON.stringify(input.result),
+			);
+	}
 }
 
 export class LocalSqliteTestInventoryStore implements InventoryStore {
@@ -472,6 +542,14 @@ export class LocalSqliteTestInventoryStore implements InventoryStore {
 					(status = 'active' AND archived_at IS NULL) OR
 					(status = 'archived' AND archived_at IS NOT NULL)
 				)
+			) STRICT;
+			CREATE TABLE inventory_skus (
+				pool_id TEXT NOT NULL,
+				sku_id TEXT NOT NULL,
+				unit TEXT NOT NULL CHECK (unit = 'each'),
+				version INTEGER NOT NULL CHECK (version = 1),
+				registered_at TEXT NOT NULL,
+				PRIMARY KEY (pool_id, sku_id)
 			) STRICT;
 			CREATE TABLE inventory_receipts (
 				receipt_id TEXT PRIMARY KEY,
@@ -574,6 +652,20 @@ export class LocalSqliteTestInventoryStore implements InventoryStore {
 			| DatabaseRow
 			| undefined;
 		return balanceFrom(row);
+	}
+
+	async readManagedSku(
+		query: ReadManagedSkuQuery,
+	): Promise<ManagedSkuRecord | null> {
+		return managedSkuFrom(
+			this.#openDatabase()
+				.prepare(
+					`SELECT pool_id, sku_id, unit, version, registered_at
+					 FROM inventory_skus
+					 WHERE pool_id = ? AND sku_id = ?`,
+				)
+				.get(query.poolId, query.skuId) as DatabaseRow | undefined,
+		);
 	}
 
 	async readSkuActiveLocationSnapshot(

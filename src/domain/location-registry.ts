@@ -9,6 +9,10 @@ import {
 	type OpeningBalanceReceiptV2,
 	type OpeningBalanceResult,
 } from "./opening-balance.ts";
+import type {
+	ManagedSkuReceiptV2,
+	RegisterManagedSkuResult,
+} from "./managed-sku.ts";
 
 export const CREATE_LOCATION_TYPE = "location.create" as const;
 export const RENAME_LOCATION_TYPE = "location.rename" as const;
@@ -137,8 +141,14 @@ export type LocationCommandResult =
 			blockers: readonly LocationBalanceBlocker[];
 	  }>;
 
-export type InventoryCommandResult = OpeningBalanceResult | LocationCommandResult;
-export type InventoryReceiptV2 = OpeningBalanceReceiptV2 | LocationReceiptV2;
+export type InventoryCommandResult =
+	| OpeningBalanceResult
+	| LocationCommandResult
+	| RegisterManagedSkuResult;
+export type InventoryReceiptV2 =
+	| OpeningBalanceReceiptV2
+	| LocationReceiptV2
+	| ManagedSkuReceiptV2;
 
 export type ListLocationsInput = Readonly<{
 	poolId: string;

@@ -147,7 +147,9 @@ a second writer or a fresh command ID.
 Typical stable business rejection codes include:
 
 - `invalid_context` or `unauthorized_context`;
-- `sku_not_found`, `location_not_found`, or `location_not_active`;
+- `sku_not_found`, `sku_not_registered`, `sku_unit_mismatch`,
+  `location_not_found`, or `location_not_active`;
+- `sku_already_registered`;
 - `location_name_conflict` or `location_not_empty`;
 - `opening_balance_already_set`;
 - `insufficient_available`;
@@ -178,6 +180,21 @@ command likewise commits its location record, immutable receipt, and terminal
 result in one transaction. There is no interval where only some facts are
 authoritative. A receipt, its effects, and the command's `committed` result
 cannot disagree.
+
+## Managed SKU registration
+
+`sku.register` is the Inventory-owned enrollment boundary called after Commerce
+turns `Manage stock` on. It names an explicit site context and physical pool,
+plus one opaque Commerce-owned SKU. V1 accepts only the literal unit `each` and
+stores no copied catalog presentation data.
+
+The first command atomically inserts the pool-scoped SKU identity, an immutable
+actor-bearing receipt, and the terminal result. The receipt has a null `before`
+and the complete registered record as `after`; it has no free-text reason. An
+exact retry returns that original result. A new command ID for an existing SKU
+stores `sku_already_registered`, creates no receipt, and is replayable. Opening
+preview or commit cannot bypass registration, and the opening quantity unit
+must match the registered unit.
 
 ## Location lifecycle
 
@@ -248,7 +265,8 @@ At minimum it records:
 
 - receipt, command, schema, and command-content-digest identity;
 - authenticated actor or calling system and originating surface;
-- command type, committed time, and reason;
+- command type and committed time, plus a reason when the command semantics
+  require one;
 - pool and affected location identities;
 - each SKU and exact quantity effect;
 - resulting balance facts and monotonically advancing version for every
@@ -262,6 +280,11 @@ contract and freezes the location record before and after the change. A create
 receipt has a null `before` snapshot. Lifecycle receipts share the canonical
 receipt and command-result tables with stock receipts so command IDs remain
 unique across mutation types.
+
+A managed-SKU registration receipt uses the same identity, actor, context, and
+retry contract and freezes the new SKU record with a null `before` snapshot. It
+deliberately has no location, quantity effect, catalog data, or free-text
+reason.
 
 An effect records deltas for the balance dimensions it changes and the complete
 post-commit balance needed for audit. `available` is derived from on-hand and
@@ -350,6 +373,8 @@ filtered views over this one receipt ledger, not separate ledgers.
 
 - An active SKU is logically visible at every active location with zero stock,
   even if no physical balance row has been materialized.
+- A SKU becomes active only through committed `sku.register` state. Opening
+  preview and commit fail closed when that state is absent or its unit differs.
 - Each SKU-location balance is independent. A change at one location does not
   change any other location.
 - `Set initial stock` is available only when that SKU-location has no committed

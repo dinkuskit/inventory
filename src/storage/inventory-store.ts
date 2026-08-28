@@ -13,6 +13,11 @@ import type {
 	LocationStatus,
 } from "../domain/location-registry.ts";
 import type { OpeningBalanceReceiptV2 } from "../domain/opening-balance.ts";
+import type {
+	ManagedSkuReceiptV2,
+	ManagedSkuRecord,
+	RegisterManagedSkuResult,
+} from "../domain/managed-sku.ts";
 
 export type StoredCommandResult<
 	TResult extends InventoryCommandResult = InventoryCommandResult,
@@ -37,6 +42,14 @@ export type LocationCommit = Readonly<{
 	location: LocationRecord;
 	receipt: LocationReceiptV2;
 	result: LocationCommandResult;
+}>;
+
+export type ManagedSkuCommit = Readonly<{
+	commandId: string;
+	commandDigest: string;
+	sku: ManagedSkuRecord;
+	receipt: ManagedSkuReceiptV2;
+	result: RegisterManagedSkuResult;
 }>;
 
 export type StoredOpeningBalanceConfirmation = Readonly<{
@@ -71,6 +84,11 @@ export type ReadSkuActiveLocationSnapshotQuery = Readonly<{
 	skuId: string;
 }>;
 
+export type ReadManagedSkuQuery = Readonly<{
+	poolId: string;
+	skuId: string;
+}>;
+
 export type ActiveLocationBalanceSnapshot = Readonly<{
 	location: LocationRecord;
 	balance: BalanceRecord | null;
@@ -81,6 +99,7 @@ export interface InventoryTransaction {
 		commandId: string,
 	): StoredCommandResult<TResult> | null;
 	getBalance(key: SkuLocationKey): BalanceRecord | null;
+	getManagedSku(skuId: string): ManagedSkuRecord | null;
 	getLocation(locationId: string): LocationRecord | null;
 	getLocationByNameKey(nameKey: string): LocationRecord | null;
 	listLocationBalanceBlockers(
@@ -99,6 +118,7 @@ export interface InventoryTransaction {
 	storeRejection(record: StoredCommandResult): void;
 	commitOpeningBalance(input: OpeningBalanceCommit): void;
 	commitLocation(input: LocationCommit): void;
+	commitManagedSku(input: ManagedSkuCommit): void;
 }
 
 export interface InventoryStore {
@@ -107,6 +127,7 @@ export interface InventoryStore {
 		operation: (transaction: InventoryTransaction) => T,
 	): Promise<T>;
 	readBalance(key: SkuLocationKey): Promise<BalanceRecord | null>;
+	readManagedSku(query: ReadManagedSkuQuery): Promise<ManagedSkuRecord | null>;
 	readSkuActiveLocationSnapshot(
 		query: ReadSkuActiveLocationSnapshotQuery,
 	): Promise<readonly ActiveLocationBalanceSnapshot[]>;

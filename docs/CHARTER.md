@@ -168,6 +168,30 @@ transaction as a successful balance and receipt commit. Exact retries return
 the original result even if the location is later created, archived, or
 restored.
 
+## managed-sku-registration-036 — managed products begin at logical zero (locked)
+
+Turning Commerce `Manage stock` on submits one awaited Inventory
+`sku.register` command for an explicit pool. Inventory requires a unique,
+non-empty, Commerce-owned SKU, stores no duplicated product name, image,
+description, price, or category, and registers only the v1 individual-item unit
+`each`. The registered SKU immediately reads as zero at every active location
+before any physical balance row exists.
+
+The first registration atomically commits the SKU record, immutable receipt,
+and terminal command result. The receipt freezes the trusted signed-in actor
+and needs no typed reason because the action identifies itself. An exact retry
+returns the original result and receipt. A new command for the same SKU durably
+returns `sku_already_registered` with `This SKU is already set up.`, without a
+duplicate record or second receipt; changed contents under one command ID still
+conflict.
+
+Opening-balance preview fails for an unregistered SKU. Opening-balance commit
+durably rejects an unregistered SKU as `sku_not_registered` and rejects a unit
+different from the registered SKU as `sku_unit_mismatch`; neither creates
+stock or a receipt. Case/box conversion and turning `Manage stock` off are
+deferred until Inventory, Commerce, and Blocks pass a real-store end-to-end
+proof.
+
 Deactivation archives rather than deletes. Archived locations disappear from
 normal selectors and inventory views, remain accessible in an explicit Archive
 view with their full history, and can be restored with the same ID. Archive is

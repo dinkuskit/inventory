@@ -4,11 +4,11 @@
   "current_focus": {
     "cadence": "sequential",
     "confirmed": true,
-    "confirmed_at": "2026-08-28T19:54:47+00:00",
-    "domain": "one-location and all-locations stock view",
-    "started_at": "2026-08-28T19:54:47+00:00",
+    "confirmed_at": "2026-08-28T21:56:06+00:00",
+    "domain": "managed SKU registration at logical zero",
+    "started_at": "2026-08-28T21:56:06+00:00",
     "status": "inspected",
-    "summary": "Implement an Inventory-owned read for one caller-supplied SKU in an explicit pool. Location scope returns that active location's on-hand, reserved, and available quantities. All-locations scope returns same-unit totals plus every active location, including explicit zeros. The slice is read-only and does not discover, register, or synchronize Commerce products; it adds no GUI, reservation-order detail, deployment, or production mutation. Verify domain normalization, application aggregation, local SQLite, Cloudflare Durable Object storage, public exports, and a repo-owned executable verifier."
+    "summary": "Implement one platform-neutral sku.register command and atomic Inventory-owned SQLite boundary. Require a unique explicit SKU and only unit each; store no catalog fields or reason; freeze the authenticated actor on the immutable receipt; replay exact command IDs; durably reject a new duplicate as already set up; use registration as the aggregate zero-stock unit authority; and fail opening preview/commit for absent registration or unit mismatch. Verify TDD behavior, local close/reopen, rollback, Cloudflare schema v3 and pool storage, aggregate zeros, full regressions, and typecheck. Defer Manage stock OFF, case/box conversion, GUI, integrations, deployment, publication, and production data."
   },
   "decisions": [
     {
@@ -3113,6 +3113,88 @@
       "superseded_by": null,
       "updated_at": "2026-08-28T19:08:17+00:00",
       "verification_ref": "proof:.grilltrack/proof/cycle-10/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:e32ac165cae5efd78390bee1f0306754aa7fabbb",
+      "candidate_refs": [],
+      "choice": "Turning Commerce Manage stock on submits one awaited pool-scoped sku.register command for a required unique SKU. Inventory stores only the opaque SKU and the v1 individual-item unit each, immediately reads it as zero at every active location, and emits one immutable signed-in-actor receipt without a typed reason. Exact command retries return the original result; a new duplicate command durably says This SKU is already set up without another SKU or receipt. Opening preview and commit fail closed for unregistered or mismatched-unit stock. Product catalog fields remain in Commerce/Blocks; case or box units and turning Manage stock off are deferred until real-store Inventory/Commerce/Blocks end-to-end proof.",
+      "context_ref": "user:confirmed-managed-sku-registration-grill",
+      "created_at": "2026-08-28T21:56:06+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "commerce-stock-provider-017",
+        "location-balance-009",
+        "aggregate-stock-view-026",
+        "opening-balance-location-admission-035"
+      ],
+      "domain": "managed SKU registration at logical zero",
+      "history": [
+        {
+          "at": "2026-08-28T21:56:06+00:00",
+          "choice": "Turning Commerce Manage stock on submits one awaited pool-scoped sku.register command for a required unique SKU. Inventory stores only the opaque SKU and the v1 individual-item unit each, immediately reads it as zero at every active location, and emits one immutable signed-in-actor receipt without a typed reason. Exact command retries return the original result; a new duplicate command durably says This SKU is already set up without another SKU or receipt. Opening preview and commit fail closed for unregistered or mismatched-unit stock. Product catalog fields remain in Commerce/Blocks; case or box units and turning Manage stock off are deferred until real-store Inventory/Commerce/Blocks end-to-end proof.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T21:58:33+00:00",
+          "choice": "Turning Commerce Manage stock on submits one awaited pool-scoped sku.register command for a required unique SKU. Inventory stores only the opaque SKU and the v1 individual-item unit each, immediately reads it as zero at every active location, and emits one immutable signed-in-actor receipt without a typed reason. Exact command retries return the original result; a new duplicate command durably says This SKU is already set up without another SKU or receipt. Opening preview and commit fail closed for unregistered or mismatched-unit stock. Product catalog fields remain in Commerce/Blocks; case or box units and turning Manage stock off are deferred until real-store Inventory/Commerce/Blocks end-to-end proof.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T21:58:33+00:00",
+          "choice": "Turning Commerce Manage stock on submits one awaited pool-scoped sku.register command for a required unique SKU. Inventory stores only the opaque SKU and the v1 individual-item unit each, immediately reads it as zero at every active location, and emits one immutable signed-in-actor receipt without a typed reason. Exact command retries return the original result; a new duplicate command durably says This SKU is already set up without another SKU or receipt. Opening preview and commit fail closed for unregistered or mismatched-unit stock. Product catalog fields remain in Commerce/Blocks; case or box units and turning Manage stock off are deferred until real-store Inventory/Commerce/Blocks end-to-end proof.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/managed-sku-registration.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "managed-sku-registration-036",
+      "implementation_ref": "file:docs/implementation/managed-sku-registration.md",
+      "question": "What durable Inventory state and audit behavior should turning Manage stock on create?",
+      "rationale": "This is the smallest Inventory-owned prerequisite for Set Initial Stock and prevents invisible unmanaged stock, duplicate catalog truth, and premature unit-conversion or deactivation design.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-12/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T21:58:33+00:00",
+          "source_identity": "sha256:65e909821319e3e6e069d9dcee58a3b33d134e81546e3612b87641c450e9475b"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-12/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:65e909821319e3e6e069d9dcee58a3b33d134e81546e3612b87641c450e9475b",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-08-28T21:58:33+00:00",
+      "verification_ref": "proof:.grilltrack/proof/cycle-12/PROOF.md"
     }
   ],
   "last_activation": {
@@ -3121,16 +3203,15 @@
   },
   "recommendation": {
     "alternatives": [
-      "ordinary stock-adjustment command with required editable reason",
-      "pause Inventory until the active Commerce foundation PR completes"
+      "pause Inventory until Commerce and Blocks are ready for the first real-store end-to-end flow"
     ],
-    "reason": "The aggregate read is proven, and the aligned Commerce grill requires a managed SKU to exist in Inventory at zero before Set Initial Stock; registration is the smallest Inventory-owned prerequisite that avoids catalog synchronization or a second ledger.",
-    "recommended": "Inventory-owned managed SKU registration at logical zero",
-    "recorded_at": "2026-08-28T20:02:44+00:00"
+    "reason": "Managed SKU registration, logical-zero reads, and opening admission are proven. Ordinary adjustment is now the smallest independent Inventory-owned mutation that reuses those locks without depending on another repository or the EmDash scheduler.",
+    "recommended": "ordinary stock-adjustment command with mandatory editable reason",
+    "recorded_at": "2026-08-28T21:58:33+00:00"
   },
   "schema_version": "grilltrack/v0.1",
   "status": "active",
   "title": "Dinkuskit Inventory v1",
   "track_id": "dinkuskit-inventory-v1",
-  "updated_at": "2026-08-28T21:00:13+00:00"
+  "updated_at": "2026-08-28T21:58:33+00:00"
 }

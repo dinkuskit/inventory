@@ -75,7 +75,11 @@ rejections without a balance or receipt. A read-only aggregate now accepts one
 caller-supplied SKU and either one active location or all active locations. The
 all-locations result returns exact on-hand, reserved, and derived-available
 totals plus a per-location breakdown, including explicit zero rows; it does not
-discover or synchronize Commerce products.
+discover or synchronize Commerce catalog data. Inventory now also owns one
+awaited `sku.register` command: it records a Commerce-owned SKU as an
+individual-item identity at logical zero, commits an actor-bearing receipt,
+and lets the aggregate read show every active location before initial stock.
+Opening previews and commands fail closed until that registration exists.
 
 The real local SQLite test adapter remains explicitly development/test-only and
 refuses production mode or in-memory use. It is not the final storage layer.
@@ -84,10 +88,10 @@ Cloudflare Worker with a SQLite-backed Durable Object namespace and one object
 database per explicit pool. Workers.dev and preview URLs are disabled, no route
 is deployed, and its remote surface remains private and read-only: same-account
 SKU-location inspection and aggregate SKU stock reads.
-The source schema defines version 2 as the first complete real-database schema,
-including the location registry. Fresh empty storage initializes directly at
-version 2; older, partial, or unexpected Inventory schemas fail closed and are
-not migrated. An earlier version-1 probe object contained zero records and is
+The source schema defines version 3 as the complete current real-database
+schema, including the location and managed-SKU registries. Fresh empty storage
+initializes directly at version 3; older, partial, or unexpected Inventory
+schemas fail closed and are not migrated. Earlier probe objects contained zero records and are
 test evidence, not a live database or migration input. This implementation is
 not a deployment claim. Opening-balance mutation is not remotely exposed, no
 storefront traffic is bound, and no physical stock cutover has happened. There

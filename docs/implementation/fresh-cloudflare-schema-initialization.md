@@ -4,10 +4,10 @@
 
 Dinkuskit Inventory is scaffolding its first real Cloudflare database. It has
 no live legacy database to upgrade. A brand-new empty Durable Object therefore
-initializes directly at the complete current schema, version 2, including the
-location registry.
+initializes directly at the complete current schema, version 3, including the
+location and managed-SKU registries.
 
-This release provides no version-1-to-version-2 data migration. Any existing,
+This release provides no migration from probe-only version 1 or 2 storage. Any existing,
 partial, older, or unexpected Inventory schema fails closed without being
 modified.
 
@@ -29,10 +29,10 @@ The accepted states are intentionally narrow:
 ```text
 no inventory_* tables
   -> atomically create all current tables
-  -> record schema version [2]
+  -> record schema version [3]
   -> validate exact tables and exact version history
 
-exact current tables + version history [2]
+exact current tables + version history [3]
   -> validate and return without writes
 
 anything else
@@ -41,7 +41,7 @@ anything else
 
 `inventory_schema_migrations` remains the version-history table so later
 migrations can be designed when a real predecessor exists. For this first
-schema, the only row is version 2; recording a fictional version 1 application
+schema, the only row is version 3; recording fictional predecessor applications
 would falsely claim an upgrade that never occurred.
 
 ## Interface
@@ -60,10 +60,10 @@ its accepted state machine, not a new caller contract.
 ## Invariants
 
 - Empty means zero tables whose names start with `inventory_`.
-- Fresh initialization creates all six expected tables in one
+- Fresh initialization creates all seven expected tables in one
   `transactionSync` callback.
-- The exact accepted version history is `[2]`.
-- Existing exact version-2 storage is idempotent and receives no writes.
+- The exact accepted version history is `[3]`.
+- Existing exact version-3 storage is idempotent and receives no writes.
 - Existing version-1-shaped storage is rejected and remains version 1-shaped.
 - Partial or extra Inventory table sets are rejected and remain unchanged.
 - A failed initialization prevents the Durable Object from serving reads or
@@ -74,7 +74,7 @@ its accepted state machine, not a new caller contract.
 | Surface | Callers/consumers | Risk | Required proof |
 | --- | --- | --- | --- |
 | `initializeCloudflareInventorySchema` | `InventoryPool` constructor and Cloudflare runtime tests | High | fresh init, exact idempotency, legacy-shape rejection, unchanged-state assertion |
-| migration history assertion | schema status and runtime inspection | Medium | exact `[2]` history assertion |
+| migration history assertion | schema status and runtime inspection | Medium | exact `[3]` history assertion |
 | deployment and architecture claims | README, implementation docs, verification skill, GrillTrack proof | Medium | exact-source review and manifest validation |
 
 The SQLite storage adapter, platform-neutral commands, location lifecycle,

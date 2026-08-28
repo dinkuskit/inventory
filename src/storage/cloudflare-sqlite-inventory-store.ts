@@ -9,6 +9,7 @@ import type {
 	LocationRecord,
 } from "../domain/location-registry.ts";
 import type { OpeningBalanceReceiptV2 } from "../domain/opening-balance.ts";
+import type { ManagedSkuRecord } from "../domain/managed-sku.ts";
 import type {
 	ActiveLocationBalanceSnapshot,
 	InventoryStore,
@@ -16,7 +17,9 @@ import type {
 	ListLocationsQuery,
 	ListReceiptsQuery,
 	LocationCommit,
+	ManagedSkuCommit,
 	OpeningBalanceCommit,
+	ReadManagedSkuQuery,
 	ReadSkuActiveLocationSnapshotQuery,
 	StoredCommandResult,
 	StoredOpeningBalanceConfirmation,
@@ -67,6 +70,19 @@ function locationFrom(row: SqlRow | undefined): LocationRecord | null {
 		createdAt: String(row.created_at),
 		updatedAt: String(row.updated_at),
 		archivedAt: row.archived_at === null ? null : String(row.archived_at),
+	};
+}
+
+function managedSkuFrom(row: SqlRow | undefined): ManagedSkuRecord | null {
+	if (row === undefined) {
+		return null;
+	}
+	return {
+		poolId: String(row.pool_id),
+		skuId: String(row.sku_id),
+		unit: "each",
+		version: "1",
+		registeredAt: String(row.registered_at),
 	};
 }
 
@@ -156,6 +172,19 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 				key.poolId,
 				key.locationId,
 				key.skuId,
+			),
+		);
+	}
+
+	getManagedSku(skuId: string): ManagedSkuRecord | null {
+		return managedSkuFrom(
+			first(
+				this.#storage,
+				`SELECT pool_id, sku_id, unit, version, registered_at
+				 FROM inventory_skus
+				 WHERE pool_id = ? AND sku_id = ?`,
+				this.#poolId,
+				skuId,
 			),
 		);
 	}
@@ -399,6 +428,44 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 			)
 			.toArray();
 	}
+
+	commitManagedSku(input: ManagedSkuCommit): void {
+		if (input.sku.poolId !== this.#poolId) {
+			throw new Error("A transaction cannot cross inventory pools.");
+		}
+		this.#storage.sql
+			.exec(
+				`INSERT INTO inventory_skus
+				   (pool_id, sku_id, unit, version, registered_at)
+				 VALUES (?, ?, ?, ?, ?)`,
+				input.sku.poolId,
+				input.sku.skuId,
+				input.sku.unit,
+				Number(input.sku.version),
+				input.sku.registeredAt,
+			)
+			.toArray();
+		this.#storage.sql
+			.exec(
+				`INSERT INTO inventory_receipts
+				   (receipt_id, command_id, receipt_json)
+				 VALUES (?, ?, ?)`,
+				input.receipt.receiptId,
+				input.commandId,
+				JSON.stringify(input.receipt),
+			)
+			.toArray();
+		this.#storage.sql
+			.exec(
+				`INSERT INTO inventory_command_results
+				   (command_id, command_digest, terminal_result_json)
+				 VALUES (?, ?, ?)`,
+				input.commandId,
+				input.commandDigest,
+				JSON.stringify(input.result),
+			)
+			.toArray();
+	}
 }
 
 export class CloudflareSqliteInventoryStore implements InventoryStore {
@@ -456,6 +523,24 @@ export class CloudflareSqliteInventoryStore implements InventoryStore {
 				key.poolId,
 				key.locationId,
 				key.skuId,
+			),
+		);
+	}
+
+	async readManagedSku(
+		query: ReadManagedSkuQuery,
+	): Promise<ManagedSkuRecord | null> {
+		if (query.poolId !== this.#poolId) {
+			throw new Error("A store cannot read across inventory pools.");
+		}
+		return managedSkuFrom(
+			first(
+				this.#storage,
+				`SELECT pool_id, sku_id, unit, version, registered_at
+				 FROM inventory_skus
+				 WHERE pool_id = ? AND sku_id = ?`,
+				query.poolId,
+				query.skuId,
 			),
 		);
 	}

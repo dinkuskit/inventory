@@ -3,6 +3,7 @@ import { runInDurableObject } from "cloudflare:test";
 import { describe, it } from "vitest";
 
 import { createSetOpeningBalance } from "../../src/application/set-opening-balance.ts";
+import { createRegisterManagedSku } from "../../src/application/register-managed-sku.ts";
 import {
 	createExecuteLocationCommand,
 	createListLocations,
@@ -22,6 +23,7 @@ import {
 	createFixtureLocation,
 	restoreFixtureLocation,
 } from "../helpers/location-fixture.mjs";
+import { createFixtureManagedSku } from "../helpers/managed-sku-fixture.mjs";
 
 const principal = Object.freeze({
 	kind: "human",
@@ -73,7 +75,7 @@ describe("Inventory Cloudflare storage boundary", () => {
 
 		expect(await alpha.schemaStatus()).toEqual({
 			schema: "dinkuskit.inventory.cloudflare-schema-status/v1",
-			version: 2,
+			version: 3,
 			tables: [
 				"inventory_balances",
 				"inventory_command_results",
@@ -81,6 +83,7 @@ describe("Inventory Cloudflare storage boundary", () => {
 				"inventory_opening_balance_confirmations",
 				"inventory_receipts",
 				"inventory_schema_migrations",
+				"inventory_skus",
 			],
 		});
 		expect(await alpha.schemaStatus()).toEqual(await alpha.schemaStatus());
@@ -94,7 +97,7 @@ describe("Inventory Cloudflare storage boundary", () => {
 		expect(await exports.default.inspectSkuLocation(key("pool_probe"))).toEqual({
 			schema: {
 				schema: "dinkuskit.inventory.cloudflare-schema-status/v1",
-				version: 2,
+				version: 3,
 				tables: [
 					"inventory_balances",
 					"inventory_command_results",
@@ -102,6 +105,7 @@ describe("Inventory Cloudflare storage boundary", () => {
 					"inventory_opening_balance_confirmations",
 					"inventory_receipts",
 					"inventory_schema_migrations",
+					"inventory_skus",
 				],
 			},
 			balance: {
@@ -114,6 +118,7 @@ describe("Inventory Cloudflare storage boundary", () => {
 				commandResults: 0,
 				confirmations: 0,
 				receipts: 0,
+				skus: 0,
 			},
 		});
 	});
@@ -127,9 +132,9 @@ describe("Inventory Cloudflare storage boundary", () => {
 				.exec("SELECT version FROM inventory_schema_migrations ORDER BY version")
 				.toArray()
 				.map((row) => Number(row.version));
-			expect(versions).toEqual([2]);
+			expect(versions).toEqual([3]);
 			expect(() => initializeCloudflareInventorySchema(state.storage)).not.toThrow();
-			expect(readCloudflareInventorySchemaStatus(state.storage).version).toBe(2);
+			expect(readCloudflareInventorySchemaStatus(state.storage).version).toBe(3);
 		});
 	});
 
@@ -227,6 +232,56 @@ describe("Inventory Cloudflare storage boundary", () => {
 		});
 	});
 
+	it("persists and exactly replays managed SKU registration through Cloudflare SQLite", async ({
+		expect,
+	}) => {
+		const stub = env.INVENTORY_POOLS.getByName("pool_managed_sku");
+		await runInDurableObject(stub, async (_instance, state) => {
+			const store = createCloudflareSqliteInventoryStore({
+				storage: state.storage,
+				poolId: "pool_managed_sku",
+			});
+			let receipts = 0;
+			const execute = createRegisterManagedSku({
+				store,
+				now: () => new Date("2026-08-28T17:00:00.000Z"),
+				createReceiptId: () => {
+					receipts += 1;
+					return "rcpt_cloudflare_register";
+				},
+			});
+			const input = {
+				schema: "dinkuskit.inventory.command/v1",
+				commandId: "cmd_cloudflare_register",
+				type: "sku.register",
+				context: {
+					siteId: "site_smokyclub",
+					poolId: "pool_managed_sku",
+				},
+				payload: { skuId: "HAT-BLACK", unit: "each" },
+				references: [],
+			};
+			const first = await execute(input, { principal });
+			const replay = await execute(input, { principal });
+
+			expect(first.outcome).toBe("committed");
+			expect(JSON.stringify(replay)).toBe(JSON.stringify(first));
+			expect(receipts).toBe(1);
+			expect(
+				await store.readManagedSku({
+					poolId: "pool_managed_sku",
+					skuId: "HAT-BLACK",
+				}),
+			).toEqual(first.receipt.effect.after);
+			expect(
+				await store.readManagedSku({
+					poolId: "pool_managed_sku",
+					skuId: "HAT-GREEN",
+				}),
+			).toBeNull();
+		});
+	});
+
 	it("admits Cloudflare opening balances only for active locations", async ({
 		expect,
 	}) => {
@@ -243,6 +298,10 @@ describe("Inventory Cloudflare storage boundary", () => {
 			await createFixtureLocation(store, {
 				poolId: "pool_location_admission",
 				locationId: "location_archived",
+			});
+			await createFixtureManagedSku(store, {
+				poolId: "pool_location_admission",
+				skuId: "sku_test_hat",
 			});
 			await archiveFixtureLocation(store, {
 				poolId: "pool_location_admission",
@@ -331,6 +390,10 @@ describe("Inventory Cloudflare storage boundary", () => {
 				poolId: "pool_commit",
 				locationId: "location_north",
 			});
+			await createFixtureManagedSku(store, {
+				poolId: "pool_commit",
+				skuId: "sku_test_hat",
+			});
 			let receipts = 0;
 			const setOpeningBalance = createSetOpeningBalance({
 				store,
@@ -381,6 +444,10 @@ describe("Inventory Cloudflare storage boundary", () => {
 				poolId: "pool_aggregate",
 				locationId: "location_warehouse",
 				name: "Warehouse",
+			});
+			await createFixtureManagedSku(store, {
+				poolId: "pool_aggregate",
+				skuId: "sku_test_hat",
 			});
 			await createSetOpeningBalance({
 				store,
@@ -451,6 +518,10 @@ describe("Inventory Cloudflare storage boundary", () => {
 			await createFixtureLocation(store, {
 				poolId: "pool_confirm",
 				locationId: "location_north",
+			});
+			await createFixtureManagedSku(store, {
+				poolId: "pool_confirm",
+				skuId: "sku_test_hat",
 			});
 			const now = () => new Date("2026-08-28T12:00:00.000Z");
 			const preview = createPreviewOpeningBalance({
@@ -528,6 +599,10 @@ describe("Inventory Cloudflare storage boundary", () => {
 				poolId: "pool_rollback",
 				locationId: "location_south",
 			});
+			await createFixtureManagedSku(store, {
+				poolId: "pool_rollback",
+				skuId: "sku_test_hat",
+			});
 			const execute = (receiptId) =>
 				createSetOpeningBalance({
 					store,
@@ -572,6 +647,10 @@ describe("Inventory Cloudflare storage boundary", () => {
 			await createFixtureLocation(store, {
 				poolId: "pool_history",
 				locationId: "location_south",
+			});
+			await createFixtureManagedSku(store, {
+				poolId: "pool_history",
+				skuId: "sku_test_hat",
 			});
 			const execute = (receiptId, committedAt) =>
 				createSetOpeningBalance({
