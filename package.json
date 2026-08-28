@@ -8,5 +8,11 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dinkuskit/inventory.git"
+  },
+  "scripts": {
+    "test": "node --test tests/workflows/*.test.mjs"
+  },
+  "devDependencies": {
+    "emdash": "0.35.0"
   }
 }
