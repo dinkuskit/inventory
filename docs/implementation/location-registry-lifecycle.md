@@ -158,12 +158,13 @@ pool-scoped and deterministically ordered by name key and permanent ID.
 ## Durable schema
 
 Cloudflare schema version 3 is the complete current real-database schema and
-includes `inventory_locations` and `inventory_skus` beside the stock tables. A fresh empty Durable
-Object creates the complete schema directly and records only version 3. This
-release has no legacy migration: existing older, partial, or unexpected
-Inventory schemas fail closed without modification.
+includes `inventory_locations` and `inventory_skus` beside the stock tables. A
+fresh empty Durable Object creates the complete schema directly and records only
+version 3. Exact v2 storage preserves the location registry and all other
+durable records while atomically adding and backfilling the SKU registry;
+incompatible shapes fail closed without a partial migration.
 
-The local development/test schema is now `opening-balance-local/v5` and includes
+The local development/test schema is now `opening-balance-local/v6` and includes
 the same registries. It remains explicit-path, non-production, and rejects unrelated
 or incompatible SQLite files instead of claiming them.
 

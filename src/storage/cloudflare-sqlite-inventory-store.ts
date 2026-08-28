@@ -2,6 +2,7 @@ import type {
 	BalanceRecord,
 	SkuLocationKey,
 } from "../domain/opening-balance.ts";
+import { normalizeCommandPrincipal } from "../domain/opening-balance.ts";
 import type {
 	InventoryCommandResult,
 	InventoryReceiptV2,
@@ -79,10 +80,13 @@ function managedSkuFrom(row: SqlRow | undefined): ManagedSkuRecord | null {
 	}
 	return {
 		poolId: String(row.pool_id),
-		skuId: String(row.sku_id),
+		inventorySkuId: String(row.inventory_sku_id),
+		sku: String(row.sku),
+		displayName: String(row.display_name),
 		unit: "each",
 		version: "1",
 		registeredAt: String(row.registered_at),
+		registeredBy: normalizeCommandPrincipal(json(row.registered_by_json)),
 	};
 }
 
@@ -176,15 +180,30 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 		);
 	}
 
-	getManagedSku(skuId: string): ManagedSkuRecord | null {
+	getManagedSku(inventorySkuId: string): ManagedSkuRecord | null {
 		return managedSkuFrom(
 			first(
 				this.#storage,
-				`SELECT pool_id, sku_id, unit, version, registered_at
+				`SELECT pool_id, inventory_sku_id, sku, display_name, unit,
+				        version, registered_at, registered_by_json
 				 FROM inventory_skus
-				 WHERE pool_id = ? AND sku_id = ?`,
+				 WHERE pool_id = ? AND inventory_sku_id = ?`,
 				this.#poolId,
-				skuId,
+				inventorySkuId,
+			),
+		);
+	}
+
+	getManagedSkuBySku(sku: string): ManagedSkuRecord | null {
+		return managedSkuFrom(
+			first(
+				this.#storage,
+				`SELECT pool_id, inventory_sku_id, sku, display_name, unit,
+				        version, registered_at, registered_by_json
+				 FROM inventory_skus
+				 WHERE pool_id = ? AND sku = ?`,
+				this.#poolId,
+				sku,
 			),
 		);
 	}
@@ -308,7 +327,7 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 		}
 	}
 
-	storeRejection(record: StoredCommandResult): void {
+	storeCommandResult(record: StoredCommandResult): void {
 		this.#storage.sql
 			.exec(
 				`INSERT INTO inventory_command_results
@@ -319,6 +338,10 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 				JSON.stringify(record.result),
 			)
 			.toArray();
+	}
+
+	storeRejection(record: StoredCommandResult): void {
+		this.storeCommandResult(record);
 	}
 
 	commitOpeningBalance(input: OpeningBalanceCommit): void {
@@ -436,35 +459,20 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 		this.#storage.sql
 			.exec(
 				`INSERT INTO inventory_skus
-				   (pool_id, sku_id, unit, version, registered_at)
-				 VALUES (?, ?, ?, ?, ?)`,
+				   (pool_id, inventory_sku_id, sku, display_name, unit, version,
+				    registered_at, registered_by_json)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 				input.sku.poolId,
-				input.sku.skuId,
+				input.sku.inventorySkuId,
+				input.sku.sku,
+				input.sku.displayName,
 				input.sku.unit,
 				Number(input.sku.version),
 				input.sku.registeredAt,
+				JSON.stringify(input.sku.registeredBy),
 			)
 			.toArray();
-		this.#storage.sql
-			.exec(
-				`INSERT INTO inventory_receipts
-				   (receipt_id, command_id, receipt_json)
-				 VALUES (?, ?, ?)`,
-				input.receipt.receiptId,
-				input.commandId,
-				JSON.stringify(input.receipt),
-			)
-			.toArray();
-		this.#storage.sql
-			.exec(
-				`INSERT INTO inventory_command_results
-				   (command_id, command_digest, terminal_result_json)
-				 VALUES (?, ?, ?)`,
-				input.commandId,
-				input.commandDigest,
-				JSON.stringify(input.result),
-			)
-			.toArray();
+		this.storeCommandResult(input);
 	}
 }
 
@@ -536,9 +544,10 @@ export class CloudflareSqliteInventoryStore implements InventoryStore {
 		return managedSkuFrom(
 			first(
 				this.#storage,
-				`SELECT pool_id, sku_id, unit, version, registered_at
+				`SELECT pool_id, inventory_sku_id, sku, display_name, unit,
+				        version, registered_at, registered_by_json
 				 FROM inventory_skus
-				 WHERE pool_id = ? AND sku_id = ?`,
+				 WHERE pool_id = ? AND inventory_sku_id = ?`,
 				query.poolId,
 				query.skuId,
 			),

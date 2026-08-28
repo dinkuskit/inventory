@@ -1,25 +1,29 @@
-# Managed SKU registration at logical zero
+# Managed SKU register-or-return at logical zero
 
-Status: confirmed implementation contract for the next Inventory GrillTrack
-slice.
+Status: confirmed repair contract for Inventory PR #12.
 
-## Boundary
+Commerce `main` at `7b09a25749ce2c650f294a0bd5ab7d99132d2ce5`
+defines the provider-neutral registration handshake. This repair supersedes the
+earlier direct-SKU registration shape in PR #12 and resolves the accepted
+Cloudflare v2-to-v3 compatibility finding.
 
-This slice owns one platform-neutral command that enrolls a Commerce-owned SKU
-in an explicit Inventory pool before any stock history exists. Registration is
-the durable fact that lets Inventory show the SKU at zero across every active
-location and admit a later `Set Initial Stock` command.
+## Boundary and ownership
 
-Inventory owns the registered SKU identity, quantity unit, command result, and
-immutable registration receipt. It does not store a product name, image,
-description, price, category, or other Commerce/Blocks catalog data. It does
-not implement the Commerce checkbox, Block Kit GUI, service authentication,
-deployment, publication, or production data.
+Commerce owns the catalog SKU, product title, `Manage stock?` choice, provider
+binding, and explicit confirmation when Inventory returns an existing pooled
+record. Inventory owns the permanent opaque `inventorySkuId`, the pool-unique
+visible SKU, its independent operational display name, its unit, and all stock.
 
-V1 registers individual items only. Case, box, and unit-conversion behavior is
-deferred until Inventory, Commerce, and Blocks have passed a real-store
-end-to-end proof. Turning `Manage stock` off is also deferred; this slice does
-not delete, archive, or deactivate a registered SKU.
+Registration is pool-scoped and location-free. It creates no balance or stock
+receipt. A new record preserves the trusted execution principal and registration
+time as immutable setup audit metadata. That metadata is not a stock receipt and
+does not enter receipt history. The result returned to Commerce contains only the
+provider-neutral identity needed by its accepted contract.
+
+V1 supports the exact unit `each`. Case/box conversion, SKU or display-name
+editing, UI, provider transport, authentication deployment, publication,
+deployment, production mutation, and ordinary stock adjustment remain outside
+this repair.
 
 ## Public contract
 
@@ -27,12 +31,21 @@ not delete, archive, or deactivate a registered SKU.
 const REGISTER_MANAGED_SKU_TYPE = "sku.register" as const;
 const MANAGED_SKU_UNIT = "each" as const;
 
+type InventorySkuIdentity = Readonly<{
+	inventorySkuId: string;
+	sku: string;
+	displayName: string;
+}>;
+
 type ManagedSkuRecord = Readonly<{
 	poolId: string;
-	skuId: string;
+	inventorySkuId: string;
+	sku: string;
+	displayName: string;
 	unit: typeof MANAGED_SKU_UNIT;
 	version: "1";
 	registeredAt: string;
+	registeredBy: CommandPrincipal;
 }>;
 
 type RegisterManagedSkuCommandV1 = Readonly<{
@@ -41,162 +54,172 @@ type RegisterManagedSkuCommandV1 = Readonly<{
 	type: typeof REGISTER_MANAGED_SKU_TYPE;
 	context: Readonly<{ siteId: string; poolId: string }>;
 	payload: Readonly<{
-		skuId: string;
+		sku: string;
+		displayNameIfNew: string;
 		unit: typeof MANAGED_SKU_UNIT;
 	}>;
-	references: readonly ExternalReference[];
-}>;
-
-type ManagedSkuReceiptV2 = Readonly<{
-	schema: "dinkuskit.inventory.receipt/v2";
-	receiptId: string;
-	commandId: string;
-	commandDigest: string;
-	status: "committed";
-	type: typeof REGISTER_MANAGED_SKU_TYPE;
-	committedAt: string;
-	principal: CommandPrincipal;
-	context: Readonly<{ siteId: string; poolId: string }>;
-	effect: Readonly<{ before: null; after: ManagedSkuRecord }>;
 	references: readonly ExternalReference[];
 }>;
 
 type RegisterManagedSkuResult =
 	| Readonly<{
 			schema: "dinkuskit.inventory.command-result/v1";
-			outcome: "committed";
+			outcome: "registered" | "existing";
 			commandId: string;
-			receipt: ManagedSkuReceiptV2;
+			inventorySku: InventorySkuIdentity;
 	  }>
 	| Readonly<{
 			schema: "dinkuskit.inventory.command-result/v1";
 			outcome: "rejected";
 			commandId: string;
-			code: "command_id_conflict" | "sku_already_registered";
+			code: "command_id_conflict";
 			message: string;
 	  }>;
-
-type RegisterManagedSku = (
-	command: RegisterManagedSkuCommandV1,
-	execution: Readonly<{ principal: CommandPrincipal }>,
-) => Promise<RegisterManagedSkuResult>;
 ```
 
-`skuId`, command/context IDs, principal facts, and references use the existing
-trimmed non-empty normalization rules. SKU identity remains an opaque,
-case-sensitive Commerce-owned string in this slice. The only accepted unit is
-the exact literal `each`. There is no free-text reason because the registration
-action is self-explanatory.
+`createRegisterManagedSku` additionally requires a synchronous
+`createInventorySkuId(): string` dependency. The factory validates the generated
+value before writing. The trusted principal comes from execution context, never
+from command contents.
 
-## State and invariants
+The visible SKU and `displayNameIfNew` are trimmed, non-empty, case-sensitive
+strings. Inventory stores the first display name once. A later registration for
+the same visible SKU ignores its proposed display name and returns the original
+identity. Catalog fields other than the one-time display name remain rejected.
 
-- One `inventory_skus` row exists per `(pool_id, sku_id)` and contains no
-  catalog data.
-- A registration command always names an explicit pool and never invents or
-  defaults a location.
-- A first registration atomically inserts the SKU row, immutable receipt, and
-  terminal command result in the canonical pool transaction.
-- The receipt freezes the trusted signed-in principal supplied by the execution
-  boundary. Command contents cannot claim the actor.
-- An exact retry with the same command ID and normalized contents returns the
-  original terminal result and receipt without minting another ID.
-- Reusing a command ID with changed contents returns
+Stock commands and reads continue to call their opaque identity field `skuId`;
+after this repair that value is always the permanent `inventorySkuId`, never the
+Commerce-visible SKU. This keeps the existing stock protocol stable while making
+its meaning explicit.
+
+## State and concurrency invariants
+
+- One row exists per `(pool_id, inventory_sku_id)` and visible SKU is also
+  unique per pool.
+- The serialized pool transaction checks command identity before SKU identity.
+  An exact retry returns the original terminal result, including the minted ID.
+- Reusing a command ID with different normalized contents returns
   `command_id_conflict` without replacing the original result.
-- A new command ID for an already registered SKU durably rejects as
-  `sku_already_registered` with the safe message `This SKU is already set up.`
-  It creates no second SKU or receipt. Retrying that rejection returns it
-  exactly.
-- A later opening-balance command for an unregistered SKU durably rejects as
-  `sku_not_registered`; it creates no balance or receipt. This prevents
-  unmanaged or invisible stock from bypassing registration.
-- Opening-balance preview fails before issuing durable confirmation state when
-  the SKU is unregistered or its proposed unit differs from the registered
-  unit. The command boundary durably rejects a unit mismatch as
-  `sku_unit_mismatch` with no balance or receipt.
-- `createReadSkuStock` uses the registered record as the existence and unit
-  authority. A registered SKU with no balance rows returns `found`, with exact
-  zero quantities for every active location and the pool total. An unknown SKU
-  remains `not_found`.
-- Stored balance units must match the registered SKU unit. Any mismatch fails
-  closed as corrupt state.
+- If the visible SKU is absent, one transaction mints and inserts the managed
+  record and terminal `registered` result. No balance or receipt row is written.
+- If the visible SKU exists, one transaction stores and returns an `existing`
+  terminal result containing the original ID, visible SKU, and display name. It
+  does not mint an ID, rename the record, or create a receipt.
+- The record freezes `registeredBy` and `registeredAt`; later register-or-return
+  calls cannot overwrite either field.
+- A registered record reads as logical zero at every active location until a
+  balance exists. Opening preview and commit use the permanent Inventory ID and
+  fail closed when it is unknown or has the wrong unit.
+- Stored balance units must match the registered record. Any mismatch is corrupt
+  state and fails closed.
 
-## Durable storage boundary
+## Storage contract
 
-Both SQLite adapters gain the same transaction and read capabilities:
+Both SQLite adapters expose identity lookup and visible-SKU lookup inside the
+same pool transaction:
 
 ```ts
 interface InventoryTransaction {
-	getManagedSku(skuId: string): ManagedSkuRecord | null;
+	getManagedSku(inventorySkuId: string): ManagedSkuRecord | null;
+	getManagedSkuBySku(sku: string): ManagedSkuRecord | null;
+	storeCommandResult(record: StoredCommandResult): void;
 	commitManagedSku(input: ManagedSkuCommit): void;
 }
 
-interface InventoryStore {
-	readManagedSku(query: ReadManagedSkuQuery):
-		Promise<ManagedSkuRecord | null>;
-}
+type ManagedSkuCommit = Readonly<{
+	commandId: string;
+	commandDigest: string;
+	sku: ManagedSkuRecord;
+	result: RegisterManagedSkuResult;
+}>;
 ```
 
-The fresh Cloudflare schema advances to version 3 and the local test schema to
-its next exact version. Both add:
+The v3 table is:
 
 ```sql
 CREATE TABLE inventory_skus (
 	pool_id TEXT NOT NULL,
-	sku_id TEXT NOT NULL,
+	inventory_sku_id TEXT NOT NULL,
+	sku TEXT NOT NULL,
+	display_name TEXT NOT NULL,
 	unit TEXT NOT NULL CHECK (unit = 'each'),
 	version INTEGER NOT NULL CHECK (version = 1),
 	registered_at TEXT NOT NULL,
-	PRIMARY KEY (pool_id, sku_id)
+	registered_by_json TEXT NOT NULL,
+	PRIMARY KEY (pool_id, inventory_sku_id),
+	UNIQUE (pool_id, sku)
 ) STRICT;
 ```
 
-There is no live Inventory database, so initialization remains fresh-only.
-Older, partial, or unexpected shapes fail closed without modification; this
-slice does not fabricate a migration for nonexistent production data.
+## Cloudflare v2-to-v3 migration
+
+Initialization recognizes exactly three states:
+
+1. Empty storage: create the complete v3 schema and record migration history
+   `[3]`.
+2. Exact v2 storage: require the six v2 tables and migration history `[2]`, then
+   atomically create `inventory_skus`, backfill legacy identities, append
+   migration 3, and verify the complete v3 shape and history `[2, 3]`.
+3. Exact v3 storage: accept either valid history `[3]` or `[2, 3]` and perform no
+   writes.
+
+Every distinct legacy `inventory_balances.sku_id` is backfilled with:
+
+- `inventory_sku_id = legacy sku_id`, preserving all existing stock callers;
+- `sku = legacy sku_id` and `display_name = legacy sku_id` as safe temporary
+  fallbacks where v2 had no visible metadata;
+- unit copied from the balance, which must be one consistent `each` value across
+  all rows for that key; and
+- an immutable system principal identifying the v2-to-v3 migration.
+
+Conflicting units, a partial table set, unexpected migration history, or any
+other incompatible shape throws inside `transactionSync`. The transaction
+rolls back completely. v1 and fabricated partial states remain untouched and
+fail closed.
 
 ## Blast radius
 
-Risk: high inside Inventory because this adds a database table, extends shared
-command/receipt unions, and tightens opening-balance admission. It adds no
-cross-repository call, network route, deployment, or production mutation.
+Risk is high: this changes a public command/result shape, the managed-SKU row,
+both SQLite adapters, a durable Cloudflare migration, and the meaning of the
+opaque stock `skuId` field. It does not add a network route or cross-repository
+runtime call.
 
-Affected production files:
+Direct Inventory consumers:
 
-- `src/domain/managed-sku.ts`: new command, record, receipt, normalization, and
-  digest contract.
-- `src/application/register-managed-sku.ts`: serialized registration behavior.
-- `src/domain/location-registry.ts`: additive shared command/result/receipt
-  unions.
-- `src/domain/opening-balance.ts` and
-  `src/application/set-opening-balance.ts`: additive
-  `sku_not_registered` rejection and same-transaction admission check.
-- `src/application/read-inventory.ts`: registered identity/unit authority for
-  zero-stock reads.
-- `src/storage/inventory-store.ts`: additive SKU transaction/read methods and
-  commit types.
-- Both SQLite adapters: SKU row reads and atomic commit.
-- `src/cloudflare/schema.ts`: fresh exact schema v3 with `inventory_skus`.
-- `src/index.ts`: additive platform-neutral exports.
+- `src/domain/managed-sku.ts` and `src/application/register-managed-sku.ts`;
+- the shared command/result union in `src/domain/location-registry.ts`;
+- `src/storage/inventory-store.ts` and both SQLite adapters;
+- aggregate/read, opening-preview, and opening-commit code that resolve
+  registered identity;
+- `src/cloudflare/schema.ts`, Worker record counts, public exports, fixtures,
+  and all registration/opening/read tests; and
+- docs and `bin/verify-managed-sku`.
 
-Direct consumers of `InventoryStore` are the two repository-owned adapters,
-application factories, and test doubles. All must be updated together.
-Commerce, Blocks, SmokyClub, EmDash, and the review conductor are out of scope.
+Cross-repository contract consumer:
 
-## Verification plan
+- Commerce `ManagedSkuRegistrationRequest` sends `poolId`, `sku`, and
+  `displayNameIfNew` and accepts `registered | existing` plus
+  `{ inventorySkuId, sku, displayName }`. Commerce strips Inventory-only extras
+  and requires explicit review before activating an existing identity.
 
-Strict TDD must first prove failure for:
+Blocks, SmokyClub, EmDash, Commerce source, and shared review-conductor source
+are not modified by this repair.
 
-- valid first registration, actor-bearing receipt, durable read-back, and exact
-  retry;
-- changed-content command conflict and a durable `sku_already_registered`
-  result for a new command ID;
-- rejection of missing identity, catalog fields, reasons, and units other than
-  `each`;
-- local SQLite close/reopen persistence and atomic rollback on receipt conflict;
-- a registered zero-stock SKU across zero, one, and multiple active locations;
-- `sku_not_registered` opening-balance rejection and exact replay;
-- unregistered preview rejection and durable opening-unit mismatch rejection;
-- Cloudflare fresh schema v3, pool isolation, atomic registration, zero-stock
-  read, and type safety;
-- complete regression through all existing Node tests, Cloudflare tests,
-  Cloudflare typecheck, and a repo-owned `verify:managed-sku` command.
+## TDD and verification plan
+
+Red tests must first prove:
+
+- new registration mints a hidden ID, seeds the display name, freezes actor/time,
+  writes no balance or receipt, and exactly replays after reopen;
+- a different command for the same visible SKU returns the original identity
+  as `existing`, ignores `displayNameIfNew`, mints no ID, and replays durably;
+- changed command contents conflict and malformed/catalog payloads fail closed;
+- generated-ID or write conflicts roll back record and command result together;
+- stock reads and opening admission use `inventorySkuId`, not visible SKU;
+- fresh v3 initialization is exact;
+- exact v2 workerd Durable Object storage migrates in one transaction, retains
+  balances, locations, receipts, command results, and confirmations, backfills
+  readable managed identities, and remains idempotent;
+- incompatible v2-shaped data rolls back without partial v3 state; and
+- all Node, Cloudflare runtime, typecheck, source-manifest, and repo-owned
+  verification commands pass.

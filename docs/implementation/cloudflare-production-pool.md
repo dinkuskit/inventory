@@ -102,10 +102,12 @@ Schema version 3 is the complete current real-database schema and owns exactly:
 The business tables preserve the verified local-test shape, but there is no
 test-role marker and no compatibility with disposable local database files.
 Fresh schema creation executes inside `DurableObjectStorage.transactionSync`
-and records only version 3. No live predecessor exists, so this release does
-not implement an upgrade from probe-only version 1 or 2 storage. Any older, partial, or unexpected Inventory
-schema is rejected without modification. Future migrations remain a separate
-design once a real predecessor exists.
+and records only version 3. Exact committed v2 storage with history `[2]`
+upgrades inside the same atomic boundary: it creates the managed-SKU registry,
+backfills every legacy balanced SKU key without changing its identity, preserves
+the other six tables, and records history `[2, 3]`. Version 1, partial,
+conflicting-unit, extra-table, or otherwise incompatible storage is rejected
+without a partial write.
 
 `CloudflareSqliteInventoryStore.runTransaction` also uses
 `transactionSync`. The callback must remain synchronous, matching the existing

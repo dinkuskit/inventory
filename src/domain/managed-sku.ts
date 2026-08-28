@@ -1,7 +1,6 @@
 import {
 	COMMAND_RESULT_SCHEMA,
 	COMMAND_SCHEMA,
-	RECEIPT_SCHEMA,
 	digestCanonicalValue,
 	type CommandPrincipal,
 	type ExternalReference,
@@ -10,12 +9,21 @@ import {
 export const REGISTER_MANAGED_SKU_TYPE = "sku.register" as const;
 export const MANAGED_SKU_UNIT = "each" as const;
 
+export type InventorySkuIdentity = Readonly<{
+	inventorySkuId: string;
+	sku: string;
+	displayName: string;
+}>;
+
 export type ManagedSkuRecord = Readonly<{
 	poolId: string;
-	skuId: string;
+	inventorySkuId: string;
+	sku: string;
+	displayName: string;
 	unit: typeof MANAGED_SKU_UNIT;
 	version: "1";
 	registeredAt: string;
+	registeredBy: CommandPrincipal;
 }>;
 
 export type RegisterManagedSkuCommandV1 = Readonly<{
@@ -24,39 +32,21 @@ export type RegisterManagedSkuCommandV1 = Readonly<{
 	type: typeof REGISTER_MANAGED_SKU_TYPE;
 	context: Readonly<{ siteId: string; poolId: string }>;
 	payload: Readonly<{
-		skuId: string;
+		sku: string;
+		displayNameIfNew: string;
 		unit: typeof MANAGED_SKU_UNIT;
 	}>;
 	references: readonly ExternalReference[];
 }>;
 
-export type ManagedSkuReceiptV2 = Readonly<{
-	schema: typeof RECEIPT_SCHEMA;
-	receiptId: string;
-	commandId: string;
-	commandDigest: string;
-	status: "committed";
-	type: typeof REGISTER_MANAGED_SKU_TYPE;
-	committedAt: string;
-	principal: CommandPrincipal;
-	context: Readonly<{ siteId: string; poolId: string }>;
-	effect: Readonly<{
-		before: null;
-		after: ManagedSkuRecord;
-	}>;
-	references: readonly ExternalReference[];
-}>;
-
-export type RegisterManagedSkuRejectionCode =
-	| "command_id_conflict"
-	| "sku_already_registered";
+export type RegisterManagedSkuRejectionCode = "command_id_conflict";
 
 export type RegisterManagedSkuResult =
 	| Readonly<{
 			schema: typeof COMMAND_RESULT_SCHEMA;
-			outcome: "committed";
+			outcome: "registered" | "existing";
 			commandId: string;
-			receipt: ManagedSkuReceiptV2;
+			inventorySku: InventorySkuIdentity;
 	  }>
 	| Readonly<{
 			schema: typeof COMMAND_RESULT_SCHEMA;
@@ -142,7 +132,7 @@ export function normalizeRegisterManagedSkuCommand(
 	const context = record(command.context, "context");
 	exactKeys(context, "context", ["siteId", "poolId"]);
 	const payload = record(command.payload, "payload");
-	exactKeys(payload, "payload", ["skuId", "unit"]);
+	exactKeys(payload, "payload", ["sku", "displayNameIfNew", "unit"]);
 	if (payload.unit !== MANAGED_SKU_UNIT) {
 		invalid(`payload.unit must be ${MANAGED_SKU_UNIT}.`);
 	}
@@ -156,7 +146,11 @@ export function normalizeRegisterManagedSkuCommand(
 			poolId: nonEmptyString(context.poolId, "context.poolId"),
 		},
 		payload: {
-			skuId: nonEmptyString(payload.skuId, "payload.skuId"),
+			sku: nonEmptyString(payload.sku, "payload.sku"),
+			displayNameIfNew: nonEmptyString(
+				payload.displayNameIfNew,
+				"payload.displayNameIfNew",
+			),
 			unit: MANAGED_SKU_UNIT,
 		},
 		references: normalizeReferences(command.references),

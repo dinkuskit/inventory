@@ -1,90 +1,78 @@
-# Fresh Cloudflare schema initialization
+# Cloudflare schema v3 initialization and v2 upgrade
 
 ## Decision
 
-Dinkuskit Inventory is scaffolding its first real Cloudflare database. It has
-no live legacy database to upgrade. A brand-new empty Durable Object therefore
-initializes directly at the complete current schema, version 3, including the
-location and managed-SKU registries.
+A brand-new empty Durable Object initializes directly at complete schema v3 and
+records history `[3]`. The committed v2 schema is a supported predecessor:
+exact v2 storage with history `[2]` upgrades atomically, preserves every durable
+record, backfills its legacy balanced SKU identities, and records `[2, 3]`.
 
-This release provides no migration from probe-only version 1 or 2 storage. Any existing,
-partial, older, or unexpected Inventory schema fails closed without being
-modified.
-
-## Boundaries
-
-| Component | Owns | Does not own |
-| --- | --- | --- |
-| Cloudflare schema initializer | Detecting empty storage, creating the complete current schema atomically, validating exact existing current schema | Guessing legacy location names, backfilling old data, destructive cleanup |
-| Durable Object constructor | Blocking object use until initialization or validation succeeds | Migration policy or operator mapping |
-| Schema status read | Reporting the exact accepted current schema | Repairing incompatible storage |
-
-No Worker route, authentication, stock command, account configuration,
-deployment, or live database mutation is part of this repair.
+Version 1, partial, conflicting-unit, extra-table, or otherwise incompatible
+storage fails closed without a partial migration. No live database, deployment,
+or production mutation is part of this source repair.
 
 ## State contract
 
-The accepted states are intentionally narrow:
-
 ```text
 no inventory_* tables
-  -> atomically create all current tables
-  -> record schema version [3]
-  -> validate exact tables and exact version history
+  -> create complete v3 atomically
+  -> history [3]
 
-exact current tables + version history [3]
+exact six-table v2 + history [2]
+  -> validate every legacy balance unit
+  -> create inventory_skus
+  -> backfill stable legacy identities
+  -> preserve all six predecessor tables and rows
+  -> append version 3
+  -> validate complete v3 + history [2, 3]
+
+exact seven-table v3 + history [3] or [2, 3]
   -> validate and return without writes
 
 anything else
-  -> throw incompatible-schema error without writes
+  -> throw and leave storage unchanged
 ```
 
-`inventory_schema_migrations` remains the version-history table so later
-migrations can be designed when a real predecessor exists. For this first
-schema, the only row is version 3; recording fictional predecessor applications
-would falsely claim an upgrade that never occurred.
+## Legacy identity policy
 
-## Interface
+Version 2 stored only the opaque stock key in `inventory_balances.sku_id`. For
+every distinct `(pool_id, sku_id)`, migration creates one v3 managed record with
+the same value as `inventory_sku_id`. That preserves existing callers, balances,
+receipts, and history. Because v2 had no visible SKU or display name, both use
+the legacy key as a temporary fallback. The registration actor is the immutable
+system principal `inventory_schema_migration_v3`.
 
-The public TypeScript surface does not change:
-
-```ts
-function initializeCloudflareInventorySchema(
-  storage: DurableObjectStorage,
-): void;
-```
-
-The function keeps its synchronous, transaction-owned behavior. The change is
-its accepted state machine, not a new caller contract.
+Migration accepts only one consistent `each` unit for each legacy identity. A
+conflicting or unsupported unit throws before the SKU table or migration row can
+commit.
 
 ## Invariants
 
 - Empty means zero tables whose names start with `inventory_`.
 - Fresh initialization creates all seven expected tables in one
   `transactionSync` callback.
-- The exact accepted version history is `[3]`.
-- Existing exact version-3 storage is idempotent and receives no writes.
-- Existing version-1-shaped storage is rejected and remains version 1-shaped.
-- Partial or extra Inventory table sets are rejected and remain unchanged.
-- A failed initialization prevents the Durable Object from serving reads or
+- Exact v2 means the six committed v2 tables and exactly history `[2]`.
+- Migration preserves balances, locations, receipts, command results, opening
+  confirmations, and schema history.
+- Exact current storage is idempotent and receives no writes.
+- Any thrown initialization or migration rolls back the entire callback.
+- A failed initializer prevents the Durable Object from serving reads or
   mutations.
 
-## Blast radius
+## Blast radius and proof
 
-| Surface | Callers/consumers | Risk | Required proof |
-| --- | --- | --- | --- |
-| `initializeCloudflareInventorySchema` | `InventoryPool` constructor and Cloudflare runtime tests | High | fresh init, exact idempotency, legacy-shape rejection, unchanged-state assertion |
-| migration history assertion | schema status and runtime inspection | Medium | exact `[3]` history assertion |
-| deployment and architecture claims | README, implementation docs, verification skill, GrillTrack proof | Medium | exact-source review and manifest validation |
+| Surface | Risk | Required proof |
+| --- | --- | --- |
+| schema state classifier | High | fresh v3, exact v2, exact v3, incompatible shape |
+| legacy SKU backfill | High | identity/unit/audit assertions and readable preserved balance |
+| transaction rollback | High | unsupported-unit and partial-shape unchanged-state assertions |
+| Durable Object constructor | High | real workerd runtime upgrade and repeat initialization |
+| docs/proof | Medium | exact-source manifest and review |
 
-The SQLite storage adapter, platform-neutral commands, location lifecycle,
-receipt shapes, and Worker HTTP surface do not change.
+The public initializer signature remains synchronous and unchanged:
 
-## Zero-implementation review
-
-Checking for existing tables must happen before creating
-`inventory_schema_migrations`; otherwise an incompatible database would be
-modified before it is rejected. Fresh initialization should use ordinary
-`CREATE TABLE` statements, not `IF NOT EXISTS`, because emptiness was already
-proven and a collision must roll back the transaction. Exact current storage
-is validated without issuing DDL.
+```ts
+function initializeCloudflareInventorySchema(
+  storage: DurableObjectStorage,
+): void;
+```

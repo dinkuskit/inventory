@@ -8,12 +8,17 @@ const fixturePrincipal = Object.freeze({
 
 export async function createFixtureManagedSku(
 	store,
-	{ poolId = "pool_test", skuId = "sku_keychain" } = {},
+	{
+		poolId = "pool_test",
+		skuId = "sku_keychain",
+		sku = `VISIBLE-${skuId}`,
+		displayName = `Inventory item ${skuId}`,
+	} = {},
 ) {
 	const execute = createRegisterManagedSku({
 		store,
 		now: () => new Date("2026-08-28T09:00:00.000Z"),
-		createReceiptId: () => `rcpt_fixture_register_${poolId}_${skuId}`,
+		createInventorySkuId: () => skuId,
 	});
 	const result = await execute(
 		{
@@ -21,13 +26,13 @@ export async function createFixtureManagedSku(
 			commandId: `cmd_fixture_register_${poolId}_${skuId}`,
 			type: "sku.register",
 			context: { siteId: "site_test", poolId },
-			payload: { skuId, unit: "each" },
+			payload: { sku, displayNameIfNew: displayName, unit: "each" },
 			references: [],
 		},
 		{ principal: fixturePrincipal },
 	);
-	if (result.outcome !== "committed") {
-		throw new Error(`Managed SKU fixture failed: ${result.code}`);
+	if (result.outcome !== "registered") {
+		throw new Error("Managed SKU fixture failed to register a new identity.");
 	}
 	return result;
 }

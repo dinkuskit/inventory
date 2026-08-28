@@ -1,15 +1,13 @@
 import {
 	COMMAND_RESULT_SCHEMA,
-	RECEIPT_SCHEMA,
 	normalizeCommandPrincipal,
 	type CommandPrincipal,
 } from "../domain/opening-balance.ts";
 import {
 	MANAGED_SKU_UNIT,
-	REGISTER_MANAGED_SKU_TYPE,
 	digestRegisterManagedSkuCommand,
 	normalizeRegisterManagedSkuCommand,
-	type ManagedSkuReceiptV2,
+	type InventorySkuIdentity,
 	type ManagedSkuRecord,
 	type RegisterManagedSkuCommandV1,
 	type RegisterManagedSkuResult,
@@ -28,7 +26,7 @@ export type RegisterManagedSku = (
 export type RegisterManagedSkuDependencies = Readonly<{
 	store: InventoryStore;
 	now: () => Date;
-	createReceiptId: () => string;
+	createInventorySkuId: () => string;
 }>;
 
 function conflict(commandId: string): RegisterManagedSkuResult {
@@ -41,22 +39,25 @@ function conflict(commandId: string): RegisterManagedSkuResult {
 	};
 }
 
-function alreadyRegistered(commandId: string): RegisterManagedSkuResult {
+function identityFrom(sku: ManagedSkuRecord): InventorySkuIdentity {
 	return {
-		schema: COMMAND_RESULT_SCHEMA,
-		outcome: "rejected",
-		commandId,
-		code: "sku_already_registered",
-		message: "This SKU is already set up.",
+		inventorySkuId: sku.inventorySkuId,
+		sku: sku.sku,
+		displayName: sku.displayName,
 	};
 }
 
-function receiptIdFrom(createReceiptId: () => string): string {
-	const receiptId = createReceiptId();
-	if (typeof receiptId !== "string" || receiptId.trim().length === 0) {
-		throw new TypeError("createReceiptId must return a non-empty string.");
+function inventorySkuIdFrom(createInventorySkuId: () => string): string {
+	const inventorySkuId = createInventorySkuId();
+	if (
+		typeof inventorySkuId !== "string" ||
+		inventorySkuId.trim().length === 0
+	) {
+		throw new TypeError(
+			"createInventorySkuId must return a non-empty string.",
+		);
 	}
-	return receiptId.trim();
+	return inventorySkuId.trim();
 }
 
 function committedAtFrom(now: () => Date): string {
@@ -76,8 +77,8 @@ export function createRegisterManagedSku(
 	if (typeof dependencies.now !== "function") {
 		throw new TypeError("now is required.");
 	}
-	if (typeof dependencies.createReceiptId !== "function") {
-		throw new TypeError("createReceiptId is required.");
+	if (typeof dependencies.createInventorySkuId !== "function") {
+		throw new TypeError("createInventorySkuId is required.");
 	}
 
 	return async function registerManagedSku(
@@ -100,9 +101,15 @@ export function createRegisterManagedSku(
 						: conflict(command.commandId);
 				}
 
-				if (transaction.getManagedSku(command.payload.skuId) !== null) {
-					const result = alreadyRegistered(command.commandId);
-					transaction.storeRejection({
+				const existingSku = transaction.getManagedSkuBySku(command.payload.sku);
+				if (existingSku !== null) {
+					const result: RegisterManagedSkuResult = {
+						schema: COMMAND_RESULT_SCHEMA,
+						outcome: "existing",
+						commandId: command.commandId,
+						inventorySku: identityFrom(existingSku),
+					};
+					transaction.storeCommandResult({
 						commandId: command.commandId,
 						commandDigest,
 						result,
@@ -110,38 +117,29 @@ export function createRegisterManagedSku(
 					return result;
 				}
 
-				const committedAt = committedAtFrom(dependencies.now);
+				const registeredAt = committedAtFrom(dependencies.now);
 				const sku: ManagedSkuRecord = {
 					poolId: command.context.poolId,
-					skuId: command.payload.skuId,
+					inventorySkuId: inventorySkuIdFrom(
+						dependencies.createInventorySkuId,
+					),
+					sku: command.payload.sku,
+					displayName: command.payload.displayNameIfNew,
 					unit: MANAGED_SKU_UNIT,
 					version: "1",
-					registeredAt: committedAt,
-				};
-				const receipt: ManagedSkuReceiptV2 = {
-					schema: RECEIPT_SCHEMA,
-					receiptId: receiptIdFrom(dependencies.createReceiptId),
-					commandId: command.commandId,
-					commandDigest,
-					status: "committed",
-					type: REGISTER_MANAGED_SKU_TYPE,
-					committedAt,
-					principal,
-					context: command.context,
-					effect: { before: null, after: sku },
-					references: command.references,
+					registeredAt,
+					registeredBy: principal,
 				};
 				const result: RegisterManagedSkuResult = {
 					schema: COMMAND_RESULT_SCHEMA,
-					outcome: "committed",
+					outcome: "registered",
 					commandId: command.commandId,
-					receipt,
+					inventorySku: identityFrom(sku),
 				};
 				transaction.commitManagedSku({
 					commandId: command.commandId,
 					commandDigest,
 					sku,
-					receipt,
 					result,
 				});
 				return result;

@@ -14,7 +14,6 @@ import type {
 } from "../domain/location-registry.ts";
 import type { OpeningBalanceReceiptV2 } from "../domain/opening-balance.ts";
 import type {
-	ManagedSkuReceiptV2,
 	ManagedSkuRecord,
 	RegisterManagedSkuResult,
 } from "../domain/managed-sku.ts";
@@ -48,7 +47,6 @@ export type ManagedSkuCommit = Readonly<{
 	commandId: string;
 	commandDigest: string;
 	sku: ManagedSkuRecord;
-	receipt: ManagedSkuReceiptV2;
 	result: RegisterManagedSkuResult;
 }>;
 
@@ -99,7 +97,8 @@ export interface InventoryTransaction {
 		commandId: string,
 	): StoredCommandResult<TResult> | null;
 	getBalance(key: SkuLocationKey): BalanceRecord | null;
-	getManagedSku(skuId: string): ManagedSkuRecord | null;
+	getManagedSku(inventorySkuId: string): ManagedSkuRecord | null;
+	getManagedSkuBySku(sku: string): ManagedSkuRecord | null;
 	getLocation(locationId: string): LocationRecord | null;
 	getLocationByNameKey(nameKey: string): LocationRecord | null;
 	listLocationBalanceBlockers(
@@ -115,6 +114,7 @@ export interface InventoryTransaction {
 		confirmationDigest: string,
 		commandId: string,
 	): void;
+	storeCommandResult(record: StoredCommandResult): void;
 	storeRejection(record: StoredCommandResult): void;
 	commitOpeningBalance(input: OpeningBalanceCommit): void;
 	commitLocation(input: LocationCommit): void;

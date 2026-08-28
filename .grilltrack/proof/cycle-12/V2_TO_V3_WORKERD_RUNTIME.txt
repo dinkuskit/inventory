@@ -1,0 +1,22 @@
+$ npx vitest run --config vitest.config.ts tests/cloudflare/inventory-pool.test.mjs -t "atomically upgrades an exact v2 pool|rolls back the v2 upgrade"
+
+ RUN  v4.1.11 /home/smoky/Developer/worktrees/inventory-codex-managed-sku-registration-20260828
+
+ Test Files  1 passed (1)
+      Tests  2 passed | 12 skipped (14)
+   Start at  17:49:39
+   Duration  2.10s (transform 198ms, setup 0ms, import 332ms, tests 23ms, environment 0ms)
+
+Runtime: @cloudflare/vitest-plugin backed by workerd Durable Object SQLite.
+
+Covered behavior:
+- an exact six-table schema-v2 pool with balances, a location, a command result,
+  a receipt, and an opening confirmation upgrades atomically to schema v3;
+- migration history advances from [2] to [2, 3];
+- the prior records remain present and the legacy balanced SKU becomes readable
+  through its preserved permanent identity; and
+- conflicting legacy units abort migration and leave history [2], both balances,
+  and the absence of inventory_skus unchanged.
+
+No remote account, deployed Worker, live database, credential, customer data,
+or production pool was used.

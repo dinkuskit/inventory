@@ -135,6 +135,11 @@ authenticated command it accepts for business evaluation:
 | `committed` | The transaction and immutable receipt were committed together. | Exactly the effects named by the receipt. |
 | `rejected` | A stable business rule rejected the command. The rejection code and safe details are stored. | None. |
 
+The identity-only `sku.register` command instead returns terminal `registered`
+or `existing` outcomes with the Inventory SKU identity. Neither outcome changes
+stock or creates a stock receipt. They use the same command-ID replay and
+conflict rules as stock commands.
+
 A client may also observe `unknown` after a timeout, disconnect, or malformed
 transport response. `unknown` is not a terminal Inventory result and does not
 mean failure. The client must expose the original command ID and resolve it by
@@ -149,7 +154,6 @@ Typical stable business rejection codes include:
 - `invalid_context` or `unauthorized_context`;
 - `sku_not_found`, `sku_not_registered`, `sku_unit_mismatch`,
   `location_not_found`, or `location_not_active`;
-- `sku_already_registered`;
 - `location_name_conflict` or `location_not_empty`;
 - `opening_balance_already_set`;
 - `insufficient_available`;
@@ -170,8 +174,9 @@ transaction:
 2. normalize the envelope and compare its digest with any existing command;
 3. return an existing terminal result on an exact replay;
 4. validate business invariants and expected versions;
-5. store a terminal rejection, or apply all balance/workflow effects and create
-   one immutable receipt;
+5. store a terminal identity/business result, or apply all balance/workflow
+   effects and create one immutable receipt when the command changes stock or
+   lifecycle state;
 6. store the terminal result; and
 7. return that stored result.
 
@@ -185,16 +190,18 @@ cannot disagree.
 
 `sku.register` is the Inventory-owned enrollment boundary called after Commerce
 turns `Manage stock` on. It names an explicit site context and physical pool,
-plus one opaque Commerce-owned SKU. V1 accepts only the literal unit `each` and
-stores no copied catalog presentation data.
+plus the Commerce-visible SKU and `displayNameIfNew`. V1 accepts only the
+literal unit `each`.
 
-The first command atomically inserts the pool-scoped SKU identity, an immutable
-actor-bearing receipt, and the terminal result. The receipt has a null `before`
-and the complete registered record as `after`; it has no free-text reason. An
-exact retry returns that original result. A new command ID for an existing SKU
-stores `sku_already_registered`, creates no receipt, and is replayable. Opening
-preview or commit cannot bypass registration, and the opening quantity unit
-must match the registered unit.
+A new registration atomically mints a permanent opaque `inventorySkuId`, stores
+the visible SKU, one-time independent display name, trusted setup actor and
+timestamp, and terminal `registered` result. It creates no balance or stock
+receipt. A later command for the same visible SKU atomically stores and returns
+an `existing` result with the original identity and name; it cannot rename the
+record or mint another ID. Commerce owns explicit confirmation of that existing
+record. Exact retries return their original terminal result. Opening preview,
+opening commit, and later stock commands use the permanent Inventory ID and
+cannot bypass registration.
 
 ## Location lifecycle
 
@@ -281,10 +288,9 @@ receipt has a null `before` snapshot. Lifecycle receipts share the canonical
 receipt and command-result tables with stock receipts so command IDs remain
 unique across mutation types.
 
-A managed-SKU registration receipt uses the same identity, actor, context, and
-retry contract and freezes the new SKU record with a null `before` snapshot. It
-deliberately has no location, quantity effect, catalog data, or free-text
-reason.
+Managed-SKU registration has immutable setup audit metadata but deliberately
+creates no receipt because it has no quantity or lifecycle effect. Its terminal
+command result remains durable and replayable.
 
 An effect records deltas for the balance dimensions it changes and the complete
 post-commit balance needed for audit. `available` is derived from on-hand and

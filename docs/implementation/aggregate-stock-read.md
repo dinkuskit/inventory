@@ -6,16 +6,16 @@ Status: confirmed implementation contract for GrillTrack decisions
 
 ## Boundary
 
-This slice owns one platform-neutral, read-only query for a caller-supplied SKU
-inside one explicit Inventory pool. It returns either one active location or an
+This slice owns one platform-neutral, read-only query for a caller-supplied
+permanent Inventory SKU ID inside one explicit pool. It returns either one active location or an
 all-active-locations aggregate. It does not discover or synchronize Commerce
 catalog data, mutate stock, expose reservation order details, add a GUI, deploy
 a Worker, or create production data. The later managed-SKU slice supplies the
 durable registered identity and unit consumed by this read.
 
-Commerce continues to own products and canonical SKU strings. Inventory owns
-the registered SKU identity, balance rows, and location registry that this
-query reads.
+Commerce continues to own products and canonical visible SKU strings. Inventory
+owns the permanent opaque identity carried in this query's `skuId`, plus balance
+rows and the location registry.
 
 ## Public contract
 

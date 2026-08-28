@@ -5,6 +5,7 @@ import type {
 	BalanceRecord,
 	SkuLocationKey,
 } from "../domain/opening-balance.ts";
+import { normalizeCommandPrincipal } from "../domain/opening-balance.ts";
 import type {
 	InventoryCommandResult,
 	InventoryReceiptV2,
@@ -29,7 +30,7 @@ import type {
 } from "./inventory-store.ts";
 
 const STORAGE_ROLE = "local-development-test-only";
-const SCHEMA_VERSION = "opening-balance-local/v5";
+const SCHEMA_VERSION = "opening-balance-local/v6";
 const EXPECTED_TABLES = [
 	"inventory_balances",
 	"inventory_command_results",
@@ -86,10 +87,13 @@ function managedSkuFrom(row: DatabaseRow | undefined): ManagedSkuRecord | null {
 	}
 	return {
 		poolId: String(row.pool_id),
-		skuId: String(row.sku_id),
+		inventorySkuId: String(row.inventory_sku_id),
+		sku: String(row.sku),
+		displayName: String(row.display_name),
 		unit: "each",
 		version: "1",
 		registeredAt: String(row.registered_at),
+		registeredBy: normalizeCommandPrincipal(json(row.registered_by_json)),
 	};
 }
 
@@ -176,15 +180,29 @@ class SqliteInventoryTransaction implements InventoryTransaction {
 		return balanceFrom(row);
 	}
 
-	getManagedSku(skuId: string): ManagedSkuRecord | null {
+	getManagedSku(inventorySkuId: string): ManagedSkuRecord | null {
 		return managedSkuFrom(
 			this.#database
 				.prepare(
-					`SELECT pool_id, sku_id, unit, version, registered_at
+					`SELECT pool_id, inventory_sku_id, sku, display_name, unit,
+					        version, registered_at, registered_by_json
 					 FROM inventory_skus
-					 WHERE pool_id = ? AND sku_id = ?`,
+					 WHERE pool_id = ? AND inventory_sku_id = ?`,
 				)
-				.get(this.#poolId, skuId) as DatabaseRow | undefined,
+				.get(this.#poolId, inventorySkuId) as DatabaseRow | undefined,
+		);
+	}
+
+	getManagedSkuBySku(sku: string): ManagedSkuRecord | null {
+		return managedSkuFrom(
+			this.#database
+				.prepare(
+					`SELECT pool_id, inventory_sku_id, sku, display_name, unit,
+					        version, registered_at, registered_by_json
+					 FROM inventory_skus
+					 WHERE pool_id = ? AND sku = ?`,
+				)
+				.get(this.#poolId, sku) as DatabaseRow | undefined,
 		);
 	}
 
@@ -299,7 +317,7 @@ class SqliteInventoryTransaction implements InventoryTransaction {
 		}
 	}
 
-	storeRejection(record: StoredCommandResult): void {
+	storeCommandResult(record: StoredCommandResult): void {
 		this.#database
 			.prepare(
 				`INSERT INTO inventory_command_results
@@ -311,6 +329,10 @@ class SqliteInventoryTransaction implements InventoryTransaction {
 				record.commandDigest,
 				JSON.stringify(record.result),
 			);
+	}
+
+	storeRejection(record: StoredCommandResult): void {
+		this.storeCommandResult(record);
 	}
 
 	commitOpeningBalance(input: OpeningBalanceCommit): void {
@@ -434,38 +456,21 @@ class SqliteInventoryTransaction implements InventoryTransaction {
 		this.#database
 			.prepare(
 				`INSERT INTO inventory_skus
-				   (pool_id, sku_id, unit, version, registered_at)
-				 VALUES (?, ?, ?, ?, ?)`,
+				   (pool_id, inventory_sku_id, sku, display_name, unit, version,
+				    registered_at, registered_by_json)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 			)
 			.run(
 				input.sku.poolId,
-				input.sku.skuId,
+				input.sku.inventorySkuId,
+				input.sku.sku,
+				input.sku.displayName,
 				input.sku.unit,
 				Number(input.sku.version),
 				input.sku.registeredAt,
+				JSON.stringify(input.sku.registeredBy),
 			);
-		this.#database
-			.prepare(
-				`INSERT INTO inventory_receipts
-				   (receipt_id, command_id, receipt_json)
-				 VALUES (?, ?, ?)`,
-			)
-			.run(
-				input.receipt.receiptId,
-				input.commandId,
-				JSON.stringify(input.receipt),
-			);
-		this.#database
-			.prepare(
-				`INSERT INTO inventory_command_results
-				   (command_id, command_digest, terminal_result_json)
-				 VALUES (?, ?, ?)`,
-			)
-			.run(
-				input.commandId,
-				input.commandDigest,
-				JSON.stringify(input.result),
-			);
+		this.storeCommandResult(input);
 	}
 }
 
@@ -545,11 +550,15 @@ export class LocalSqliteTestInventoryStore implements InventoryStore {
 			) STRICT;
 			CREATE TABLE inventory_skus (
 				pool_id TEXT NOT NULL,
-				sku_id TEXT NOT NULL,
+				inventory_sku_id TEXT NOT NULL,
+				sku TEXT NOT NULL,
+				display_name TEXT NOT NULL,
 				unit TEXT NOT NULL CHECK (unit = 'each'),
 				version INTEGER NOT NULL CHECK (version = 1),
 				registered_at TEXT NOT NULL,
-				PRIMARY KEY (pool_id, sku_id)
+				registered_by_json TEXT NOT NULL,
+				PRIMARY KEY (pool_id, inventory_sku_id),
+				UNIQUE (pool_id, sku)
 			) STRICT;
 			CREATE TABLE inventory_receipts (
 				receipt_id TEXT PRIMARY KEY,
@@ -660,9 +669,10 @@ export class LocalSqliteTestInventoryStore implements InventoryStore {
 		return managedSkuFrom(
 			this.#openDatabase()
 				.prepare(
-					`SELECT pool_id, sku_id, unit, version, registered_at
+					`SELECT pool_id, inventory_sku_id, sku, display_name, unit,
+					        version, registered_at, registered_by_json
 					 FROM inventory_skus
-					 WHERE pool_id = ? AND sku_id = ?`,
+					 WHERE pool_id = ? AND inventory_sku_id = ?`,
 				)
 				.get(query.poolId, query.skuId) as DatabaseRow | undefined,
 		);

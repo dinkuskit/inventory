@@ -33,7 +33,7 @@ export {
 	normalizeRegisterManagedSkuCommand,
 } from "./domain/managed-sku.ts";
 export type {
-	ManagedSkuReceiptV2,
+	InventorySkuIdentity,
 	ManagedSkuRecord,
 	RegisterManagedSkuCommandV1,
 	RegisterManagedSkuRejectionCode,
