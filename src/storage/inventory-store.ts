@@ -66,6 +66,16 @@ export type ListLocationsQuery = Readonly<{
 	status: LocationStatus;
 }>;
 
+export type ReadSkuActiveLocationSnapshotQuery = Readonly<{
+	poolId: string;
+	skuId: string;
+}>;
+
+export type ActiveLocationBalanceSnapshot = Readonly<{
+	location: LocationRecord;
+	balance: BalanceRecord | null;
+}>;
+
 export interface InventoryTransaction {
 	getCommand<TResult extends InventoryCommandResult = InventoryCommandResult>(
 		commandId: string,
@@ -97,6 +107,9 @@ export interface InventoryStore {
 		operation: (transaction: InventoryTransaction) => T,
 	): Promise<T>;
 	readBalance(key: SkuLocationKey): Promise<BalanceRecord | null>;
+	readSkuActiveLocationSnapshot(
+		query: ReadSkuActiveLocationSnapshotQuery,
+	): Promise<readonly ActiveLocationBalanceSnapshot[]>;
 	readCommand<TResult extends InventoryCommandResult = InventoryCommandResult>(
 		commandId: string,
 	): Promise<StoredCommandResult<TResult> | null>;

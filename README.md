@@ -71,14 +71,19 @@ records, atomic create/rename/archive/restore receipts, active/archive reads,
 and archive rejection for positive, negative, or reserved stock. A new opening
 balance now resolves that registry inside its stock transaction: active
 locations may commit, while unknown or archived locations receive stable
-rejections without a balance or receipt.
+rejections without a balance or receipt. A read-only aggregate now accepts one
+caller-supplied SKU and either one active location or all active locations. The
+all-locations result returns exact on-hand, reserved, and derived-available
+totals plus a per-location breakdown, including explicit zero rows; it does not
+discover or synchronize Commerce products.
 
 The real local SQLite test adapter remains explicitly development/test-only and
 refuses production mode or in-memory use. It is not the final storage layer.
 The first production-storage checkpoint is a private `dinkuskit-inventory`
 Cloudflare Worker with a SQLite-backed Durable Object namespace and one object
 database per explicit pool. Workers.dev and preview URLs are disabled, no route
-is deployed, and the only remote operation is a same-account read inspection.
+is deployed, and its remote surface remains private and read-only: same-account
+SKU-location inspection and aggregate SKU stock reads.
 The source schema defines version 2 as the first complete real-database schema,
 including the location registry. Fresh empty storage initializes directly at
 version 2; older, partial, or unexpected Inventory schemas fail closed and are
@@ -109,6 +114,7 @@ npm test
 npm ls emdash --depth=0
 bin/verify-opening-balance
 bin/verify-location-registry
+bin/verify-aggregate-stock-read
 bin/verify-cloudflare-storage
 ```
 

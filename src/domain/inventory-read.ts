@@ -1,5 +1,6 @@
 import type {
 	BalanceRecord,
+	ExactQuantity,
 	OpeningBalanceReceiptV2,
 	SkuLocationKey,
 } from "./opening-balance.ts";
@@ -11,6 +12,8 @@ export const MUTATION_READ_RESULT_SCHEMA =
 	"dinkuskit.inventory.mutation-read-result/v1" as const;
 export const RECEIPT_HISTORY_READ_RESULT_SCHEMA =
 	"dinkuskit.inventory.receipt-history-read-result/v1" as const;
+export const SKU_STOCK_READ_RESULT_SCHEMA =
+	"dinkuskit.inventory.sku-stock-read-result/v1" as const;
 export const RECEIPT_HISTORY_DEFAULT_LIMIT = 50 as const;
 export const RECEIPT_HISTORY_MAX_LIMIT = 100 as const;
 
@@ -81,10 +84,57 @@ export type ReceiptHistoryReadResult = Readonly<{
 	next: ReceiptHistoryCursor | null;
 }>;
 
+export type SkuStockScope = ReceiptHistoryScope;
+
+export type ReadSkuStockInput = Readonly<{
+	poolId: string;
+	skuId: string;
+	scope: SkuStockScope;
+}>;
+
+export type NormalizedReadSkuStockInput = ReadSkuStockInput;
+
+export type StockQuantities = Readonly<{
+	onHand: ExactQuantity;
+	reserved: ExactQuantity;
+	available: ExactQuantity;
+}>;
+
+export type SkuStockLocation = Readonly<{
+	locationId: string;
+	name: string;
+	stock: StockQuantities;
+}>;
+
+export type SkuStockReadResult =
+	| Readonly<{
+			schema: typeof SKU_STOCK_READ_RESULT_SCHEMA;
+			outcome: "found";
+			poolId: string;
+			skuId: string;
+			scope: SkuStockScope;
+			stock: StockQuantities;
+			locations: readonly SkuStockLocation[];
+	  }>
+	| Readonly<{
+			schema: typeof SKU_STOCK_READ_RESULT_SCHEMA;
+			outcome: "not_found";
+			poolId: string;
+			skuId: string;
+			scope: SkuStockScope;
+	  }>;
+
 export class InvalidInventoryReadQueryError extends Error {
 	constructor(message: string) {
 		super(message);
 		this.name = "InvalidInventoryReadQueryError";
+	}
+}
+
+export class InconsistentSkuStockUnitError extends Error {
+	constructor() {
+		super("A SKU must use one quantity unit across all active locations.");
+		this.name = "InconsistentSkuStockUnitError";
 	}
 }
 
@@ -195,4 +245,30 @@ export function normalizeReadReceiptHistoryInput(
 		limit: normalizedLimit(query.limit),
 	};
 	return before === undefined ? normalized : { ...normalized, before };
+}
+
+export function normalizeReadSkuStockInput(
+	input: unknown,
+): NormalizedReadSkuStockInput {
+	const query = record(input, "SKU stock query");
+	const scopeInput = record(query.scope, "scope");
+	let scope: SkuStockScope;
+	if (scopeInput.kind === "location") {
+		scope = {
+			kind: "location",
+			locationId: nonEmptyString(scopeInput.locationId, "scope.locationId"),
+		};
+	} else if (scopeInput.kind === "all_locations") {
+		if (Object.prototype.hasOwnProperty.call(scopeInput, "locationId")) {
+			invalid("All-locations scope cannot include a locationId.");
+		}
+		scope = { kind: "all_locations" };
+	} else {
+		invalid('scope.kind must be "location" or "all_locations".');
+	}
+	return {
+		poolId: nonEmptyString(query.poolId, "poolId"),
+		skuId: nonEmptyString(query.skuId, "skuId"),
+		scope,
+	};
 }

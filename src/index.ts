@@ -64,9 +64,12 @@ export {
 	RECEIPT_HISTORY_DEFAULT_LIMIT,
 	RECEIPT_HISTORY_MAX_LIMIT,
 	RECEIPT_HISTORY_READ_RESULT_SCHEMA,
+	SKU_STOCK_READ_RESULT_SCHEMA,
+	InconsistentSkuStockUnitError,
 	normalizeInventoryMutationLookup,
 	normalizeReadReceiptHistoryInput,
 	normalizeReadSkuLocationBalanceInput,
+	normalizeReadSkuStockInput,
 } from "./domain/inventory-read.ts";
 export type {
 	InventoryMutationLookup,
@@ -78,6 +81,12 @@ export type {
 	ReceiptHistoryCursor,
 	ReceiptHistoryReadResult,
 	ReceiptHistoryScope,
+	ReadSkuStockInput,
+	NormalizedReadSkuStockInput,
+	SkuStockLocation,
+	SkuStockReadResult,
+	SkuStockScope,
+	StockQuantities,
 	SkuLocationBalanceReadResult,
 } from "./domain/inventory-read.ts";
 export {
@@ -110,12 +119,14 @@ export {
 	createReadInventoryMutation,
 	createReadReceiptHistory,
 	createReadSkuLocationBalance,
+	createReadSkuStock,
 } from "./application/read-inventory.ts";
 export type {
 	ReadInventoryDependencies,
 	ReadInventoryMutation,
 	ReadReceiptHistory,
 	ReadSkuLocationBalance,
+	ReadSkuStock,
 } from "./application/read-inventory.ts";
 export type {
 	ConfirmOpeningBalance,
@@ -129,8 +140,10 @@ export type {
 export type {
 	InventoryStore,
 	InventoryTransaction,
+	ActiveLocationBalanceSnapshot,
 	ListLocationsQuery,
 	ListReceiptsQuery,
+	ReadSkuActiveLocationSnapshotQuery,
 	LocationCommit,
 	OpeningBalanceCommit,
 	ReceiptListCursor,

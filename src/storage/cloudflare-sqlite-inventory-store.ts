@@ -10,12 +10,14 @@ import type {
 } from "../domain/location-registry.ts";
 import type { OpeningBalanceReceiptV2 } from "../domain/opening-balance.ts";
 import type {
+	ActiveLocationBalanceSnapshot,
 	InventoryStore,
 	InventoryTransaction,
 	ListLocationsQuery,
 	ListReceiptsQuery,
 	LocationCommit,
 	OpeningBalanceCommit,
+	ReadSkuActiveLocationSnapshotQuery,
 	StoredCommandResult,
 	StoredOpeningBalanceConfirmation,
 } from "./inventory-store.ts";
@@ -66,6 +68,38 @@ function locationFrom(row: SqlRow | undefined): LocationRecord | null {
 		updatedAt: String(row.updated_at),
 		archivedAt: row.archived_at === null ? null : String(row.archived_at),
 	};
+}
+
+function activeLocationBalanceSnapshotFrom(
+	row: SqlRow,
+): ActiveLocationBalanceSnapshot {
+	const location = locationFrom(row);
+	if (location === null) {
+		throw new Error("An active location snapshot row is required.");
+	}
+	const balance =
+		row.balance_sku_id === null
+			? null
+			: {
+					poolId: String(row.pool_id),
+					locationId: String(row.location_id),
+					skuId: String(row.balance_sku_id),
+					onHand: {
+						value: String(row.balance_on_hand_value),
+						unit: String(row.balance_unit),
+					},
+					reserved: {
+						value: String(row.balance_reserved_value),
+						unit: String(row.balance_unit),
+					},
+					available: {
+						value: String(row.balance_available_value),
+						unit: String(row.balance_unit),
+					},
+					version: String(row.balance_version),
+					hasStockHistory: Number(row.balance_has_stock_history) === 1,
+				};
+	return { location, balance };
 }
 
 function commandFrom<
@@ -424,6 +458,39 @@ export class CloudflareSqliteInventoryStore implements InventoryStore {
 				key.skuId,
 			),
 		);
+	}
+
+	async readSkuActiveLocationSnapshot(
+		query: ReadSkuActiveLocationSnapshotQuery,
+	): Promise<readonly ActiveLocationBalanceSnapshot[]> {
+		if (query.poolId !== this.#poolId) {
+			throw new Error("A store cannot read across inventory pools.");
+		}
+		return this.#storage.sql
+			.exec<SqlRow>(
+				`SELECT location.pool_id, location.location_id, location.name,
+				        location.name_key, location.status, location.version,
+				        location.created_at, location.updated_at,
+				        location.archived_at,
+				        balance.sku_id AS balance_sku_id,
+				        balance.on_hand_value AS balance_on_hand_value,
+				        balance.reserved_value AS balance_reserved_value,
+				        balance.available_value AS balance_available_value,
+				        balance.unit AS balance_unit,
+				        balance.version AS balance_version,
+				        balance.has_stock_history AS balance_has_stock_history
+				 FROM inventory_locations AS location
+				 LEFT JOIN inventory_balances AS balance
+				   ON balance.pool_id = location.pool_id
+				  AND balance.location_id = location.location_id
+				  AND balance.sku_id = ?
+				 WHERE location.pool_id = ? AND location.status = 'active'
+				 ORDER BY location.name_key, location.location_id`,
+				query.skuId,
+				query.poolId,
+			)
+			.toArray()
+			.map(activeLocationBalanceSnapshotFrom);
 	}
 
 	async readCommand<
