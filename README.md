@@ -55,6 +55,25 @@ The durable decision ledger is under `.grilltrack/`. There is no runtime,
 installable plugin, executable CLI, or published npm package yet. The package
 manifest is private at `0.0.0` to prevent accidental publication.
 
+Scaffold development is pinned to exact `emdash@0.35.0` with a lockfile. This
+is the implementation target for the first standard-format plugin fixture, not
+a claim that the unimplemented plugin already has a proven runtime or minimum
+compatible version.
+
+The locked development toolchain requires Node `>=22.12.0`. Its dependency tree
+declares third-party lifecycle scripts, including install scripts for `esbuild`
+and `better-sqlite3`. On the proof host, npm 11.19 reports both scripts as not
+covered by `allowScripts` and does not approve them; another npm version or
+operator policy may execute them during `npm ci`. The repository adds no
+lifecycle approval or bypass. Accepting this development-only supply-chain
+boundary remains an explicit maintainer decision at merge.
+
+```bash
+npm ci
+npm test
+npm ls emdash --depth=0
+```
+
 Part of [Dinkus](https://github.com/dinkuskit): blocks, Commerce, extensions,
 and templates for [EmDash](https://github.com/emdash-cms/emdash) sites.
 
