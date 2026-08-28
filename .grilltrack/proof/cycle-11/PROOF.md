@@ -7,9 +7,11 @@
 - decisions: `aggregate-stock-view-026`,
   `aggregate-stock-quantities-027`, `zero-stock-location-029`
 - reviewed source identity:
-  `sha256:570972f72d75464d9eab0b13dbe5cb5e846bcea5c9069154ee26e911c39195ef`
-- commit, push, pull request, merge, deployment, publication, production
-  database access, or stock mutation: none
+  `sha256:e99044222c6009b4d4e2ec97193744b7a585181f2d46cff66ae59243d197c5bf`
+- pull request: `https://github.com/dinkuskit/inventory/pull/11`
+- implementation commit: `a54b9a43427081dd82a7abf800df19128613c986`
+- merge, deployment, publication, production database access, or stock
+  mutation: none
 
 ## Confirmed scope
 
@@ -83,16 +85,22 @@ compile without changing behavior.
 
 Commands and results:
 
-- `npm test` -> 56 Node tests and 11 Cloudflare runtime tests passed;
+- `npm test` -> 57 Node tests and 11 Cloudflare runtime tests passed;
 - `npm run typecheck:cloudflare` -> passed;
-- `bin/verify-aggregate-stock-read` -> 3 focused Node tests, 11 Cloudflare
-  tests, and Cloudflare typecheck passed;
+- `bin/verify-aggregate-stock-read` -> 3 focused Node behavior tests, 1
+  real-proof contract test, 11 Cloudflare tests, and Cloudflare typecheck
+  passed;
+- `npm run proof:aggregate-stock-read:real` -> populated a new 65,536-byte
+  SQLite file, closed and reopened it, returned the expected found aggregate,
+  then called the production Worker through a local private service binding,
+  persisted its Durable Object state, closed and reopened the runtime, and
+  returned the same versioned result;
 - broad TypeScript compile from `src/index.ts` with NodeNext module resolution
   -> passed;
 - `git diff --check` -> passed;
 - database-artifact scan excluding `.git` and `node_modules` -> clean;
 - GrillTrack ledger validation -> passed; and
-- `sha256sum -c .grilltrack/proof/cycle-11/SOURCE_MANIFEST.sha256` -> all 29
+- `sha256sum -c .grilltrack/proof/cycle-11/SOURCE_MANIFEST.sha256` -> all 35
   entries passed.
 
 Behavioral proof covers normalized explicit scope; exact location reads;
@@ -102,13 +110,19 @@ derived available values even when a stored available value is stale; mixed
 unit rejection; local and Cloudflare pool isolation; Durable Object RPC; and
 the private service entrypoint.
 
+The redacted real-runtime transcript is
+`.grilltrack/proof/cycle-11/REAL_RUNTIME_TRANSCRIPT.txt`. Its harness contract
+is repository-tested and its proof-only Cloudflare caller is included in the
+strict Cloudflare typecheck.
+
 ## Fidelity limits and gates
 
-The local tests use temporary SQLite files and the Cloudflare tests use the
-repository's isolated Worker runtime. Neither is proof of a deployed Worker or
-live database. The query accepts one supplied SKU; it is not a catalog list,
-SKU registration command, Commerce integration, reservation/order-detail view,
-or Block Kit GUI.
+The real-runtime proof uses disposable local state, not Bobby's machine as a
+final storage layer. It proves a real SQLite file and the actual local Wrangler
+private-binding/Durable-Object topology, but it is not proof of a deployed
+Worker or live production database. The query accepts one supplied SKU; it is
+not a catalog list, SKU registration command, Commerce integration,
+reservation/order-detail view, or Block Kit GUI.
 
 No live service, remote database, Cloudflare account, real SKU, customer data,
 credential, package registry, site, or production pool was accessed. Commit,

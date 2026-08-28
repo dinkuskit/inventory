@@ -1,0 +1,96 @@
+#!/usr/bin/env sh
+set -eu
+
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+repo_root=$(dirname -- "$script_dir")
+cd "$repo_root"
+
+proof_temp=$(mktemp -d)
+proof_pid=""
+cleanup() {
+	if [ -n "$proof_pid" ]; then
+		kill "$proof_pid" 2>/dev/null || true
+		wait "$proof_pid" 2>/dev/null || true
+	fi
+	rm -rf -- "$proof_temp"
+}
+trap cleanup EXIT HUP INT TERM
+
+proof_port=${DINKUSKIT_INVENTORY_PROOF_PORT:-18787}
+case "$proof_port" in
+	*[!0-9]*|'')
+		echo "DINKUSKIT_INVENTORY_PROOF_PORT must be a port number." >&2
+		exit 2
+		;;
+esac
+
+echo '$ node --experimental-sqlite --experimental-strip-types tools/aggregate-stock-read-local-sqlite-proof.mjs <new-temporary-sqlite-file>'
+node --experimental-sqlite --experimental-strip-types \
+	tools/aggregate-stock-read-local-sqlite-proof.mjs \
+	"$proof_temp/inventory.sqlite"
+
+request='{"poolId":"pool_local_proof","skuId":"sku_local_proof_hat","scope":{"kind":"all_locations"}}'
+
+start_workers() {
+	npm exec -- wrangler dev \
+		--local \
+		--persist-to "$proof_temp/cloudflare-state" \
+		--ip 127.0.0.1 \
+		--port "$proof_port" \
+		--log-level error \
+		-c wrangler.aggregate-stock-proof.jsonc \
+		-c wrangler.jsonc \
+		>"$proof_temp/wrangler.log" 2>&1 &
+	proof_pid=$!
+}
+
+read_through_binding() {
+	attempt=0
+	while [ "$attempt" -lt 100 ]; do
+		if response=$(curl --fail --silent \
+			--request POST \
+			--header 'content-type: application/json' \
+			--data "$request" \
+			"http://127.0.0.1:$proof_port/"); then
+			printf '%s\n' "$response"
+			return 0
+		fi
+		if ! kill -0 "$proof_pid" 2>/dev/null; then
+			echo "Local Wrangler runtime exited before serving the proof request." >&2
+			sed -n '1,120p' "$proof_temp/wrangler.log" >&2
+			return 1
+		fi
+		attempt=$((attempt + 1))
+		sleep 0.1
+	done
+	echo "Timed out waiting for the local Wrangler runtime." >&2
+	return 1
+}
+
+echo '$ wrangler dev --local --persist-to <temporary-cloudflare-state> -c wrangler.aggregate-stock-proof.jsonc -c wrangler.jsonc'
+start_workers
+first_result=$(read_through_binding)
+kill "$proof_pid"
+wait "$proof_pid" 2>/dev/null || true
+proof_pid=""
+
+state_file_count=$(find "$proof_temp/cloudflare-state" -type f | wc -l | tr -d ' ')
+if [ "$state_file_count" -lt 1 ]; then
+	echo "Wrangler did not persist local Durable Object state." >&2
+	exit 1
+fi
+
+start_workers
+reopened_result=$(read_through_binding)
+kill "$proof_pid"
+wait "$proof_pid" 2>/dev/null || true
+proof_pid=""
+
+if [ "$first_result" != "$reopened_result" ]; then
+	echo "Private binding result changed after reopening persisted local state." >&2
+	exit 1
+fi
+
+printf '{"proof":"local-private-durable-object-binding","remote":false,"persistedStateFiles":%s,"closedAndReopened":true,"result":%s}\n' \
+	"$state_file_count" \
+	"$reopened_result"

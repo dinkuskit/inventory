@@ -49,3 +49,18 @@ Run the complete repository regression suite separately:
 ```bash
 npm test
 ```
+
+When review requires real local-runtime evidence rather than test-harness
+evidence, run:
+
+```bash
+npm run proof:aggregate-stock-read:real
+```
+
+That command creates a new task-owned SQLite file, closes and reopens it, then
+runs the production Worker and a proof-only caller together under local
+Wrangler. The caller reaches Inventory through a private service binding, and
+the local Durable Object state is closed and reopened before success. All state
+is created below a fresh temporary directory and removed on exit. The command
+uses `--local`, declares `remote: false`, and never contacts a Cloudflare
+account or deployed Worker.

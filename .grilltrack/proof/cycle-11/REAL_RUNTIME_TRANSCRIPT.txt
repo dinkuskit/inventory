@@ -1,0 +1,53 @@
+PR #11 contributor-supplied real behavior proof
+Captured: 2026-08-28
+Redaction: complete; temporary paths omitted; synthetic identifiers only
+Network/account boundary: loopback only; Wrangler --local; service remote=false
+
+$ npm run proof:aggregate-stock-read:real
+
+> @dinkuskit/inventory@0.0.0 proof:aggregate-stock-read:real
+> bin/prove-aggregate-stock-read-real
+
+$ node --experimental-sqlite --experimental-strip-types tools/aggregate-stock-read-local-sqlite-proof.mjs <new-temporary-sqlite-file>
+{
+  "proof": "real-local-sqlite-file",
+  "created": true,
+  "closedAndReopened": true,
+  "databaseBytes": 65536,
+  "result": {
+    "schema": "dinkuskit.inventory.sku-stock-read-result/v1",
+    "outcome": "found",
+    "poolId": "pool_local_proof",
+    "skuId": "sku_local_proof_hat",
+    "scope": {
+      "kind": "all_locations"
+    },
+    "stock": {
+      "onHand": { "value": "7.5", "unit": "each" },
+      "reserved": { "value": "0", "unit": "each" },
+      "available": { "value": "7.5", "unit": "each" }
+    },
+    "locations": [
+      {
+        "locationId": "location_home",
+        "name": "Home",
+        "stock": {
+          "onHand": { "value": "7.5", "unit": "each" },
+          "reserved": { "value": "0", "unit": "each" },
+          "available": { "value": "7.5", "unit": "each" }
+        }
+      },
+      {
+        "locationId": "location_warehouse",
+        "name": "Warehouse",
+        "stock": {
+          "onHand": { "value": "0", "unit": "each" },
+          "reserved": { "value": "0", "unit": "each" },
+          "available": { "value": "0", "unit": "each" }
+        }
+      }
+    ]
+  }
+}
+$ wrangler dev --local --persist-to <temporary-cloudflare-state> -c wrangler.aggregate-stock-proof.jsonc -c wrangler.jsonc
+{"proof":"local-private-durable-object-binding","remote":false,"persistedStateFiles":15,"closedAndReopened":true,"result":{"schema":"dinkuskit.inventory.sku-stock-read-result/v1","outcome":"not_found","poolId":"pool_local_proof","skuId":"sku_local_proof_hat","scope":{"kind":"all_locations"}}}

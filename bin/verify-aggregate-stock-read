@@ -8,6 +8,8 @@ cd "$repo_root"
 node --experimental-sqlite --experimental-strip-types \
 	--test tests/inventory/aggregate-stock-read.test.mjs
 
+node --test tests/workflows/aggregate-stock-real-proof-contract.test.mjs
+
 npm run test:cloudflare
 
 exec npm run typecheck:cloudflare

@@ -1,16 +1,34 @@
 # GrillTrack cycle 11 exact-source review
 
 - source identity:
-  `sha256:570972f72d75464d9eab0b13dbe5cb5e846bcea5c9069154ee26e911c39195ef`
+  `sha256:e99044222c6009b4d4e2ec97193744b7a585181f2d46cff66ae59243d197c5bf`
 - manifest: `.grilltrack/proof/cycle-11/SOURCE_MANIFEST.sha256`
 - baseline: `git:a4f9e1e91106886862ad4921e53424c5a21f675e`
 - result: clean local standards and source-intent review
 - remaining local findings: none
 
+## External finding resolution
+
+ClawSweeper reviewed implementation head
+`a54b9a43427081dd82a7abf800df19128613c986` and rated patch quality
+`platinum hermit`, but classified the missing contributor-supplied real-runtime
+evidence as a blocking P1 proof gap. That finding is accepted as
+`required_fix`.
+
+Repair cycle 1 adds no product behavior or public Inventory route. It adds a
+reproducible local-only harness and the redacted transcript at
+`.grilltrack/proof/cycle-11/REAL_RUNTIME_TRANSCRIPT.txt`. The transcript proves
+a populated real SQLite file after close/reopen and the production Worker
+reached through a private local Wrangler service binding after persistent
+Durable Object state close/reopen. Both runtimes are disposable and no
+Cloudflare account or deployed database is contacted. The new pushed head must
+receive fresh exact-head OpenClaw and ClawSweeper verdicts before merge
+readiness is claimed.
+
 ## Manifest verification
 
 The manifest hash matches the recorded source identity and
-`sha256sum -c` passed for all 29 entries. It covers repository instructions,
+`sha256sum -c` passed for all 35 entries. It covers repository instructions,
 the locked charter, confirmed architecture, public contract, application,
 both storage adapters, Cloudflare Worker and schema context, tests, package
 scripts, verifier, and local verification skill.
@@ -72,7 +90,9 @@ factory, and storage snapshot method. Existing command/result and receipt
 unions, table shapes, migration history, public routes, and mutation semantics
 do not change.
 
-Tests prove local file durability and isolated Cloudflare runtime behavior, not
-a deployed service. No local `required_fix`, `reject_false_positive`, `defer`,
-or `human_gate` finding remains for this manifest identity. External review
-rails must bind any later verdict to the eventual pushed commit SHA.
+Tests and the redacted contributor transcript prove local file durability plus
+an actual local Wrangler private service binding backed by persistent Durable
+Object state. They do not prove a deployed service. No local `required_fix`,
+`reject_false_positive`, `defer`, or `human_gate` finding remains for this
+manifest identity. External review rails must bind any later verdict to the
+eventual pushed commit SHA.

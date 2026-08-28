@@ -132,3 +132,11 @@ Required regression proof:
 - Cloudflare Durable Object storage and service behavior;
 - existing full Node and Cloudflare suites plus Cloudflare typecheck;
 - `bin/verify-aggregate-stock-read` and its repository-local verification skill.
+
+Review-grade real behavior proof additionally uses
+`bin/prove-aggregate-stock-read-real`. It reads a populated SQLite database only
+after closing and reopening its file, then calls the production Inventory
+Worker through a separate local Wrangler Worker's private service binding. The
+Durable Object state directory is also closed and reopened. This harness is
+local-only, disposable, declares `remote: false`, and adds no public Inventory
+route or production binding.
