@@ -99,7 +99,9 @@ dinkus-inventory commands resolve <command-id>
   workflow.
 - `receipts list|show` reads the canonical receipt ledger. Filters may select
   adjustment, transfer, receiving, or fulfillment views, but never another
-  ledger.
+  ledger. A list explicitly selects one location or all locations within one
+  pool; all locations is read-only and every returned receipt retains its
+  affected location.
 - `commands show` reads the stored result for one command identity.
 
 ### Mutation commands
@@ -153,7 +155,7 @@ last-used location. Every preview and result repeats the resolved context.
 | Flag | Contract |
 | --- | --- |
 | `--reason <code>` | Required stable reason for opening balances, receiving, adjustments, and corrections. |
-| `--note <text>` | Optional public-safe operator note; not a place for customer or payment data. |
+| `--note <text>` | Public-safe human-readable reason text; required for opening balances and not a place for customer or payment data. A future interactive opening-balance surface starts it as `Set Initial Stock`. |
 | `--reference <type:id>` | Repeatable typed external reference. |
 | `--dry-run` | Request server validation and preview, print the exact proposed effect and confirmation value, then stop without a command, receipt, or stock mutation. |
 | `--confirm <value>` | Submit only when the opaque value matches a fresh preview of the exact normalized action and current versions. |
@@ -350,7 +352,7 @@ dinkus-inventory --site site_demo --pool pool_demo --location location_north \
 ```sh
 dinkus-inventory --site site_demo --pool pool_demo --location location_north \
   stock set-initial sku_keychain --quantity 5 --unit each \
-  --reason physical_count --dry-run --json
+  --reason physical_count --note "Set Initial Stock" --dry-run --json
 ```
 
 ```json
@@ -382,7 +384,8 @@ dinkus-inventory --site site_demo --pool pool_demo --location location_north \
 ```sh
 dinkus-inventory --site site_demo --pool pool_demo --location location_north \
   stock set-initial sku_keychain --quantity 5 --unit each \
-  --reason physical_count --no-input --confirm confirm_example --json
+  --reason physical_count --note "Set Initial Stock" \
+  --no-input --confirm confirm_example --json
 ```
 
 The successful JSON shape is the committed example in the output contract. A

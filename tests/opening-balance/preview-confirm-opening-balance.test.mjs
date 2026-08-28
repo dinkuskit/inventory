@@ -162,6 +162,49 @@ test("previews the exact normalized effect for five minutes without mutating sto
 	assert.equal(await store.readReceipt("rcpt_opening_001"), null);
 });
 
+test("requires the editable reason before issuing a preview", async (t) => {
+	const filePath = await databasePath(t, "reason-required");
+	const store = createLocalSqliteTestStore({ filePath });
+	t.after(() => store.close());
+	const { preview } = boundary(store);
+	const input = previewInput();
+	delete input.reason.note;
+
+	await assert.rejects(
+		() => preview(input, { principal }),
+		{ name: "InvalidOpeningBalanceCommandError" },
+	);
+});
+
+test("binds the edited reason into confirmation", async (t) => {
+	const filePath = await databasePath(t, "reason-binding");
+	const store = createLocalSqliteTestStore({ filePath });
+	t.after(() => store.close());
+	const operations = boundary(store);
+	const input = previewInput({ reasonNote: "Set Initial Stock" });
+	const proposed = await operations.preview(input, { principal });
+	const changed = previewInput({
+		reasonNote: "Set Initial Stock - recounted shelf",
+	});
+
+	await assert.rejects(
+		() =>
+			operations.confirm(
+				proposed.confirmation.value,
+				commandFromPreview(changed),
+				{ principal },
+			),
+		{ name: "OpeningBalanceConfirmationError", code: "confirmation_mismatch" },
+	);
+	const committed = await operations.confirm(
+		proposed.confirmation.value,
+		commandFromPreview(input),
+		{ principal },
+	);
+	assert.equal(committed.outcome, "committed");
+	assert.equal(committed.receipt.reason.note, "Set Initial Stock");
+});
+
 test("confirms immediately and commits the balance and immutable receipt together", async (t) => {
 	const filePath = await databasePath(t, "immediate");
 	const store = createLocalSqliteTestStore({ filePath });

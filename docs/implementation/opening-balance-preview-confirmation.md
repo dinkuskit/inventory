@@ -33,7 +33,7 @@ type PreviewOpeningBalanceInputV1 = Readonly<{
     skuId: string;
     quantity: ExactQuantity;
   }>;
-  reason: Readonly<{ code: string; note?: string }>;
+  reason: Readonly<{ code: string; note: string }>;
   references: readonly ExternalReference[];
 }>;
 

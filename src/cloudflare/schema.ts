@@ -1,10 +1,11 @@
 export const CLOUDFLARE_INVENTORY_SCHEMA =
 	"dinkuskit.inventory.cloudflare-schema-status/v1" as const;
-export const CLOUDFLARE_INVENTORY_SCHEMA_VERSION = 1 as const;
+export const CLOUDFLARE_INVENTORY_SCHEMA_VERSION = 2 as const;
 
 export const CLOUDFLARE_INVENTORY_TABLES = [
 	"inventory_balances",
 	"inventory_command_results",
+	"inventory_locations",
 	"inventory_opening_balance_confirmations",
 	"inventory_receipts",
 	"inventory_schema_migrations",
@@ -48,7 +49,7 @@ function assertExactSchema(storage: DurableObjectStorage): void {
 		.map((row) => Number(row.version));
 	if (
 		JSON.stringify(migrations) !==
-		JSON.stringify([CLOUDFLARE_INVENTORY_SCHEMA_VERSION])
+		JSON.stringify([1, CLOUDFLARE_INVENTORY_SCHEMA_VERSION])
 	) {
 		throw new Error("Cloudflare Inventory schema migration history is invalid.");
 	}
@@ -134,8 +135,46 @@ export function initializeCloudflareInventorySchema(
 				.exec(
 					`INSERT INTO inventory_schema_migrations (version, applied_at)
 					 VALUES (?, ?)`,
-					CLOUDFLARE_INVENTORY_SCHEMA_VERSION,
+					1,
 					"2026-08-28T00:00:00.000Z",
+				)
+				.toArray();
+		}
+
+		const currentVersions = storage.sql
+			.exec<SqlRow>(
+				"SELECT version FROM inventory_schema_migrations ORDER BY version",
+			)
+			.toArray()
+			.map((row) => Number(row.version));
+		if (JSON.stringify(currentVersions) === JSON.stringify([1])) {
+			storage.sql
+				.exec(
+					`CREATE TABLE inventory_locations (
+						pool_id TEXT NOT NULL,
+						location_id TEXT NOT NULL,
+						name TEXT NOT NULL,
+						name_key TEXT NOT NULL,
+						status TEXT NOT NULL CHECK (status IN ('active', 'archived')),
+						version INTEGER NOT NULL CHECK (version >= 1),
+						created_at TEXT NOT NULL,
+						updated_at TEXT NOT NULL,
+						archived_at TEXT,
+						PRIMARY KEY (pool_id, location_id),
+						UNIQUE (pool_id, name_key),
+						CHECK (
+							(status = 'active' AND archived_at IS NULL) OR
+							(status = 'archived' AND archived_at IS NOT NULL)
+						)
+					) STRICT`,
+				)
+				.toArray();
+			storage.sql
+				.exec(
+					`INSERT INTO inventory_schema_migrations (version, applied_at)
+					 VALUES (?, ?)`,
+					CLOUDFLARE_INVENTORY_SCHEMA_VERSION,
+					"2026-08-28T16:00:00.000Z",
 				)
 				.toArray();
 		}

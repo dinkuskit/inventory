@@ -6,10 +6,11 @@ production binding exists today.
 
 ## The rule in plain language
 
-A stock change is finished only when Dinkuskit Inventory has committed it and
-returned its receipt. Every interface — EmDash, AICommerce, the CLI, a job, an
-agent, or a future Discord bot — calls the same Inventory-owned command engine.
-None of them writes stock directly or keeps a fallback balance.
+A stock or location-lifecycle change is finished only when Dinkuskit Inventory
+has committed it and returned its receipt. Every interface — EmDash,
+AICommerce, the CLI, a job, an agent, or a future Discord bot — calls the same
+Inventory-owned command engine. None of them writes stock or location records
+directly or keeps a fallback ledger.
 
 ```text
 human or integration
@@ -59,9 +60,9 @@ wire encoding may be JSON, but the following information is mandatory:
 | `type` | One explicit Inventory operation; never a generic arbitrary patch. |
 | `context.siteId` | Site or operational context that initiated the action. It is not allowed to imply pool or location. |
 | `context.poolId` | Canonical physical pool. Required for every stock command. |
-| `context.locationId` | Required for a one-location command. A transfer instead names both `fromLocationId` and `toLocationId`. |
+| `context.locationId` | Required for a one-location command. A transfer instead names both `fromLocationId` and `toLocationId`. `location.create` omits it because Inventory mints the permanent ID. |
 | `payload` | Typed SKU, quantity, reservation, transfer, or fulfillment facts for this operation. |
-| `reason` | Stable reason code and optional public-safe operator note where the operation requires one. |
+| `reason` | Stable reason code plus the required public-safe human-readable note for an opening balance. Other command types define their reason requirement before implementation. |
 | `references` | Optional typed external references, such as an order or receiving reference; never an embedded customer record. |
 | `expectedVersions` | Balance or workflow versions observed during preview when compare-and-set protection is required. |
 
@@ -96,7 +97,7 @@ Illustrative opening-balance envelope:
   },
   "reason": {
     "code": "physical_count",
-    "note": "Reviewed opening count"
+    "note": "Set Initial Stock"
   },
   "references": [],
   "expectedVersions": [
@@ -147,6 +148,7 @@ Typical stable business rejection codes include:
 
 - `invalid_context` or `unauthorized_context`;
 - `sku_not_found` or `location_not_found`;
+- `location_name_conflict` or `location_not_empty`;
 - `opening_balance_already_set`;
 - `insufficient_available`;
 - `stale_version`;
@@ -171,9 +173,30 @@ transaction:
 6. store the terminal result; and
 7. return that stored result.
 
-A multi-line reservation or transfer is all-or-nothing. There is no interval
-where only some lines are authoritative. A receipt, its balance effects, and
-the command's `committed` result cannot disagree.
+A multi-line reservation or transfer is all-or-nothing. A location lifecycle
+command likewise commits its location record, immutable receipt, and terminal
+result in one transaction. There is no interval where only some facts are
+authoritative. A receipt, its effects, and the command's `committed` result
+cannot disagree.
+
+## Location lifecycle
+
+Inventory owns a permanent opaque ID for each location. `location.create`
+mints that ID; `location.rename`, `location.archive`, and `location.restore`
+name it explicitly. A rename changes only the display name and version. Archive
+and restore retain the same identity and never rewrite history.
+
+Names are unique inside one pool across both active and archived locations.
+The normalized uniqueness key trims, Unicode-normalizes, and lowercases the
+display name, so casing or surrounding whitespace cannot create a duplicate.
+Archiving never releases a name for reuse.
+
+Archive succeeds only when every balance at that location has exactly zero
+on-hand and zero reserved. Positive on-hand, negative on-hand, or any reserved
+quantity returns the durable `location_not_empty` rejection with the exact SKU
+blockers. The active location list supplies ordinary selectors and later
+zero-stock breakdowns. Archived locations leave those lists but remain
+available in the explicit archived list and can be restored.
 
 ## Preview and confirmation
 
@@ -226,6 +249,12 @@ At minimum it records:
   external references; and
 - predecessor, reversal, or compensation links when applicable.
 
+A location lifecycle receipt uses the same identity, actor, context, and retry
+contract and freezes the location record before and after the change. A create
+receipt has a null `before` snapshot. Lifecycle receipts share the canonical
+receipt and command-result tables with stock receipts so command IDs remain
+unique across mutation types.
+
 An effect records deltas for the balance dimensions it changes and the complete
 post-commit balance needed for audit. `available` is derived from on-hand and
 reserved; it is not an independently writable counter.
@@ -251,7 +280,7 @@ Illustrative receipt fragment:
     "siteId": "site_demo",
     "poolId": "pool_demo"
   },
-  "reason": { "code": "physical_count" },
+  "reason": { "code": "physical_count", "note": "Set Initial Stock" },
   "effects": [
     {
       "skuId": "sku_keychain",
@@ -292,6 +321,14 @@ and has no receipt. Missing identity returns explicit `not_found`. Read-back
 never rebuilds historical actor or balance facts from current state and never
 creates a stock effect.
 
+Stock receipt history uses an explicit scope inside one pool. A location scope
+returns only receipts with an effect at that location. An `all_locations` scope
+returns receipts across the pool while preserving the affected location on
+every receipt. Results are bounded and newest first, with a stable continuation
+cursor. `all_locations` is read-only and is never accepted as a command
+location. Location lifecycle receipts remain available through direct mutation
+lookup; adding them to a combined GUI history is a separate read-model decision.
+
 Receipts contain the minimum facts needed for inventory audit. Customer names,
 addresses, payment details, message bodies, and unrelated order data do not
 belong in them.
@@ -310,8 +347,9 @@ filtered views over this one receipt ledger, not separate ledgers.
 - `Set initial stock` is available only when that SKU-location has no committed
   stock history. Zero after prior activity is not an opening balance.
 - An opening balance changes one location, requires review and confirmation,
-  and produces an `opening_balance` receipt. Later corrections use ordinary
-  adjustment or reversal commands.
+  and produces an `opening_balance` receipt. Its editable human reason starts
+  as `Set Initial Stock`, must remain non-empty, and is frozen on that receipt.
+  Later corrections use ordinary adjustment or reversal commands.
 - A transfer explicitly names origin and destination and progresses
   `Created -> In transit -> Received`. Stock cannot appear at the destination
   before the receive command commits.

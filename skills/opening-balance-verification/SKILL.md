@@ -1,6 +1,6 @@
 ---
 name: opening-balance-verification
-description: Verify the Inventory-owned opening-balance command, preview/confirmation flow, authoritative read-back, actor receipts, and local test-only SQLite durability boundary.
+description: Verify the Inventory-owned opening-balance command, required editable reason, preview/confirmation flow, location-scoped receipt history, authoritative read-back, actor receipts, and local test-only SQLite durability boundary.
 ---
 
 # Opening-balance verification
@@ -8,7 +8,8 @@ description: Verify the Inventory-owned opening-balance command, preview/confirm
 Use this project-local skill after changing the opening-balance domain,
 application command, preview/confirmation boundary, local SQLite test adapter,
 receipt/result shapes, balance/mutation reads, actor identity, expiry/retry
-behavior, or their tests.
+behavior, receipt-history location scope, opening-balance reason behavior, or
+their tests.
 
 ## Run
 
@@ -26,8 +27,11 @@ immediate confirmation, action/principal binding, one-command token use, and
 post-expiry exact retry. It also covers explicit balance found/not-found,
 mutation lookup by receipt and command ID, stable rejection read-back,
 historical display-name snapshots, actor spoof resistance, and restart
-durability. It never opens a repository database, Cloudflare resource,
-production service, or user-selected file.
+durability. It also covers the exact `Set Initial Stock` GUI default, required
+and editable final reason text, reason-confirmation binding, one-location and
+all-location history, bounded paging, and durable history after reopen. It
+never opens a repository database, Cloudflare resource, production service, or
+user-selected file.
 
 ## Expected result
 

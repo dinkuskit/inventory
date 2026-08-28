@@ -7,6 +7,7 @@ export const OPENING_BALANCE_PREVIEW_INPUT_SCHEMA =
 export const OPENING_BALANCE_PREVIEW_SCHEMA =
 	"dinkuskit.inventory.opening-balance-preview/v1" as const;
 export const OPENING_BALANCE_TYPE = "stock.opening_balance" as const;
+export const DEFAULT_OPENING_BALANCE_REASON_NOTE = "Set Initial Stock" as const;
 
 export type ExactQuantity = Readonly<{
 	value: string;
@@ -33,7 +34,7 @@ export type SetOpeningBalanceCommandV1 = Readonly<{
 	}>;
 	reason: Readonly<{
 		code: string;
-		note?: string;
+		note: string;
 	}>;
 	references: readonly ExternalReference[];
 	expectedVersions: readonly Readonly<{
@@ -57,7 +58,7 @@ export type PreviewOpeningBalanceInputV1 = Readonly<{
 	}>;
 	reason: Readonly<{
 		code: string;
-		note?: string;
+		note: string;
 	}>;
 	references: readonly ExternalReference[];
 }>;
@@ -141,7 +142,7 @@ export type OpeningBalanceReceiptV2 = Readonly<{
 	}>;
 	reason: Readonly<{
 		code: string;
-		note?: string;
+		note: string;
 	}>;
 	effects: readonly Readonly<{
 		skuId: string;
@@ -253,10 +254,7 @@ export function normalizeSetOpeningBalanceCommand(
 	const unit = nonEmptyString(quantity.unit, "payload.quantity.unit");
 	const value = normalizeNonNegativeDecimal(quantity.value);
 	const reasonCode = nonEmptyString(reason.code, "reason.code");
-	const reasonNote =
-		reason.note === undefined
-			? undefined
-			: nonEmptyString(reason.note, "reason.note");
+	const reasonNote = nonEmptyString(reason.note, "reason.note");
 
 	if (!Array.isArray(command.references)) {
 		invalid("references must be an array.");
@@ -299,10 +297,7 @@ export function normalizeSetOpeningBalanceCommand(
 		type: OPENING_BALANCE_TYPE,
 		context: { siteId, poolId, locationId },
 		payload: { skuId, quantity: { value, unit } },
-		reason:
-			reasonNote === undefined
-				? { code: reasonCode }
-				: { code: reasonCode, note: reasonNote },
+		reason: { code: reasonCode, note: reasonNote },
 		references,
 		expectedVersions: [{ skuId, locationId, version: "0" }],
 	};
@@ -333,10 +328,7 @@ export function normalizePreviewOpeningBalanceInput(
 	const unit = nonEmptyString(quantity.unit, "payload.quantity.unit");
 	const value = normalizeNonNegativeDecimal(quantity.value);
 	const reasonCode = nonEmptyString(reason.code, "reason.code");
-	const reasonNote =
-		reason.note === undefined
-			? undefined
-			: nonEmptyString(reason.note, "reason.note");
+	const reasonNote = nonEmptyString(reason.note, "reason.note");
 
 	if (!Array.isArray(preview.references)) {
 		invalid("references must be an array.");
@@ -354,10 +346,7 @@ export function normalizePreviewOpeningBalanceInput(
 		type: OPENING_BALANCE_TYPE,
 		context: { siteId, poolId, locationId },
 		payload: { skuId, quantity: { value, unit } },
-		reason:
-			reasonNote === undefined
-				? { code: reasonCode }
-				: { code: reasonCode, note: reasonNote },
+		reason: { code: reasonCode, note: reasonNote },
 		references,
 	};
 }
@@ -441,7 +430,7 @@ export async function digestOpaqueConfirmation(value: string): Promise<string> {
 	return digestCanonicalValue(value);
 }
 
-async function digestCanonicalValue(value: unknown): Promise<string> {
+export async function digestCanonicalValue(value: unknown): Promise<string> {
 	const bytes = new TextEncoder().encode(
 		JSON.stringify(canonicalize(value)),
 	);

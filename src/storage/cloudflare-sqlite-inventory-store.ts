@@ -1,12 +1,20 @@
 import type {
 	BalanceRecord,
-	OpeningBalanceReceiptV2,
-	OpeningBalanceResult,
 	SkuLocationKey,
 } from "../domain/opening-balance.ts";
 import type {
+	InventoryCommandResult,
+	InventoryReceiptV2,
+	LocationBalanceBlocker,
+	LocationRecord,
+} from "../domain/location-registry.ts";
+import type { OpeningBalanceReceiptV2 } from "../domain/opening-balance.ts";
+import type {
 	InventoryStore,
 	InventoryTransaction,
+	ListLocationsQuery,
+	ListReceiptsQuery,
+	LocationCommit,
 	OpeningBalanceCommit,
 	StoredCommandResult,
 	StoredOpeningBalanceConfirmation,
@@ -43,13 +51,32 @@ function balanceFrom(row: SqlRow | undefined): BalanceRecord | null {
 	};
 }
 
-function commandFrom(row: SqlRow | undefined): StoredCommandResult | null {
+function locationFrom(row: SqlRow | undefined): LocationRecord | null {
+	if (row === undefined) {
+		return null;
+	}
+	return {
+		poolId: String(row.pool_id),
+		locationId: String(row.location_id),
+		name: String(row.name),
+		nameKey: String(row.name_key),
+		status: String(row.status) as LocationRecord["status"],
+		version: String(row.version),
+		createdAt: String(row.created_at),
+		updatedAt: String(row.updated_at),
+		archivedAt: row.archived_at === null ? null : String(row.archived_at),
+	};
+}
+
+function commandFrom<
+	TResult extends InventoryCommandResult = InventoryCommandResult,
+>(row: SqlRow | undefined): StoredCommandResult<TResult> | null {
 	return row === undefined
 		? null
 		: {
 				commandId: String(row.command_id),
 				commandDigest: String(row.command_digest),
-				result: json<OpeningBalanceResult>(row.terminal_result_json),
+				result: json<TResult>(row.terminal_result_json),
 			};
 }
 
@@ -68,8 +95,10 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 		}
 	}
 
-	getCommand(commandId: string): StoredCommandResult | null {
-		return commandFrom(
+	getCommand<TResult extends InventoryCommandResult = InventoryCommandResult>(
+		commandId: string,
+	): StoredCommandResult<TResult> | null {
+		return commandFrom<TResult>(
 			first(
 				this.#storage,
 				`SELECT command_id, command_digest, terminal_result_json
@@ -95,6 +124,58 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 				key.skuId,
 			),
 		);
+	}
+
+	getLocation(locationId: string): LocationRecord | null {
+		return locationFrom(
+			first(
+				this.#storage,
+				`SELECT pool_id, location_id, name, name_key, status, version,
+				        created_at, updated_at, archived_at
+				 FROM inventory_locations
+				 WHERE pool_id = ? AND location_id = ?`,
+				this.#poolId,
+				locationId,
+			),
+		);
+	}
+
+	getLocationByNameKey(nameKey: string): LocationRecord | null {
+		return locationFrom(
+			first(
+				this.#storage,
+				`SELECT pool_id, location_id, name, name_key, status, version,
+				        created_at, updated_at, archived_at
+				 FROM inventory_locations
+				 WHERE pool_id = ? AND name_key = ?`,
+				this.#poolId,
+				nameKey,
+			),
+		);
+	}
+
+	listLocationBalanceBlockers(
+		locationId: string,
+	): readonly LocationBalanceBlocker[] {
+		return this.#storage.sql
+			.exec<SqlRow>(
+				`SELECT sku_id, on_hand_value, reserved_value, unit
+				 FROM inventory_balances
+				 WHERE pool_id = ? AND location_id = ?
+				   AND (on_hand_value <> '0' OR reserved_value <> '0')
+				 ORDER BY sku_id`,
+				this.#poolId,
+				locationId,
+			)
+			.toArray()
+			.map((row) => ({
+				skuId: String(row.sku_id),
+				onHand: { value: String(row.on_hand_value), unit: String(row.unit) },
+				reserved: {
+					value: String(row.reserved_value),
+					unit: String(row.unit),
+				},
+			}));
 	}
 
 	getOpeningBalanceConfirmation(
@@ -218,6 +299,72 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 			)
 			.toArray();
 	}
+
+	commitLocation(input: LocationCommit): void {
+		if (input.location.poolId !== this.#poolId) {
+			throw new Error("A transaction cannot cross inventory pools.");
+		}
+		if (input.previous === null) {
+			this.#storage.sql
+				.exec(
+					`INSERT INTO inventory_locations
+					   (pool_id, location_id, name, name_key, status, version,
+					    created_at, updated_at, archived_at)
+					 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+					input.location.poolId,
+					input.location.locationId,
+					input.location.name,
+					input.location.nameKey,
+					input.location.status,
+					Number(input.location.version),
+					input.location.createdAt,
+					input.location.updatedAt,
+					input.location.archivedAt,
+				)
+				.toArray();
+		} else {
+			const updated = this.#storage.sql
+				.exec<SqlRow>(
+					`UPDATE inventory_locations
+					 SET name = ?, name_key = ?, status = ?, version = ?,
+					     updated_at = ?, archived_at = ?
+					 WHERE pool_id = ? AND location_id = ?
+					 RETURNING location_id`,
+					input.location.name,
+					input.location.nameKey,
+					input.location.status,
+					Number(input.location.version),
+					input.location.updatedAt,
+					input.location.archivedAt,
+					input.location.poolId,
+					input.location.locationId,
+				)
+				.toArray();
+			if (updated.length !== 1) {
+				throw new Error("Location update lost its target row.");
+			}
+		}
+		this.#storage.sql
+			.exec(
+				`INSERT INTO inventory_receipts
+				   (receipt_id, command_id, receipt_json)
+				 VALUES (?, ?, ?)`,
+				input.receipt.receiptId,
+				input.commandId,
+				JSON.stringify(input.receipt),
+			)
+			.toArray();
+		this.#storage.sql
+			.exec(
+				`INSERT INTO inventory_command_results
+				   (command_id, command_digest, terminal_result_json)
+				 VALUES (?, ?, ?)`,
+				input.commandId,
+				input.commandDigest,
+				JSON.stringify(input.result),
+			)
+			.toArray();
+	}
 }
 
 export class CloudflareSqliteInventoryStore implements InventoryStore {
@@ -279,8 +426,10 @@ export class CloudflareSqliteInventoryStore implements InventoryStore {
 		);
 	}
 
-	async readCommand(commandId: string): Promise<StoredCommandResult | null> {
-		return commandFrom(
+	async readCommand<
+		TResult extends InventoryCommandResult = InventoryCommandResult,
+	>(commandId: string): Promise<StoredCommandResult<TResult> | null> {
+		return commandFrom<TResult>(
 			first(
 				this.#storage,
 				`SELECT command_id, command_digest, terminal_result_json
@@ -291,10 +440,12 @@ export class CloudflareSqliteInventoryStore implements InventoryStore {
 		);
 	}
 
-	async readCommandByReceiptId(
+	async readCommandByReceiptId<
+		TResult extends InventoryCommandResult = InventoryCommandResult,
+	>(
 		receiptId: string,
-	): Promise<StoredCommandResult | null> {
-		return commandFrom(
+	): Promise<StoredCommandResult<TResult> | null> {
+		return commandFrom<TResult>(
 			first(
 				this.#storage,
 				`SELECT result.command_id, result.command_digest,
@@ -310,7 +461,7 @@ export class CloudflareSqliteInventoryStore implements InventoryStore {
 
 	async readReceipt(
 		receiptId: string,
-	): Promise<OpeningBalanceReceiptV2 | null> {
+	): Promise<InventoryReceiptV2 | null> {
 		const row = first(
 			this.#storage,
 			"SELECT receipt_json FROM inventory_receipts WHERE receipt_id = ?",
@@ -318,7 +469,79 @@ export class CloudflareSqliteInventoryStore implements InventoryStore {
 		);
 		return row === undefined
 			? null
-			: json<OpeningBalanceReceiptV2>(row.receipt_json);
+			: json<InventoryReceiptV2>(row.receipt_json);
+	}
+
+	async listReceipts(
+		query: ListReceiptsQuery,
+	): Promise<readonly OpeningBalanceReceiptV2[]> {
+		if (query.poolId !== this.#poolId) {
+			throw new Error("A store cannot read across inventory pools.");
+		}
+		const clauses = [
+			"json_extract(receipt_json, '$.context.poolId') = ?",
+			"json_extract(receipt_json, '$.type') = 'stock.opening_balance'",
+		];
+		const bindings: Array<string | number> = [query.poolId];
+		if (query.locationId !== undefined) {
+			clauses.push(
+				`EXISTS (
+					SELECT 1
+					FROM json_each(inventory_receipts.receipt_json, '$.effects') AS effect
+					WHERE json_extract(effect.value, '$.locationId') = ?
+				)`,
+			);
+			bindings.push(query.locationId);
+		}
+		if (query.before !== undefined) {
+			clauses.push(
+				`(
+					json_extract(receipt_json, '$.committedAt') < ? OR
+					(
+						json_extract(receipt_json, '$.committedAt') = ? AND
+						receipt_id < ?
+					)
+				)`,
+			);
+			bindings.push(
+				query.before.committedAt,
+				query.before.committedAt,
+				query.before.receiptId,
+			);
+		}
+		bindings.push(query.limit);
+		return this.#storage.sql
+			.exec<SqlRow>(
+				`SELECT receipt_json
+				 FROM inventory_receipts
+				 WHERE ${clauses.join(" AND ")}
+				 ORDER BY json_extract(receipt_json, '$.committedAt') DESC,
+				          receipt_id DESC
+				 LIMIT ?`,
+				...bindings,
+			)
+			.toArray()
+			.map((row) => json<OpeningBalanceReceiptV2>(row.receipt_json));
+	}
+
+	async listLocations(
+		query: ListLocationsQuery,
+	): Promise<readonly LocationRecord[]> {
+		if (query.poolId !== this.#poolId) {
+			throw new Error("A store cannot read across inventory pools.");
+		}
+		return this.#storage.sql
+			.exec<SqlRow>(
+				`SELECT pool_id, location_id, name, name_key, status, version,
+				        created_at, updated_at, archived_at
+				 FROM inventory_locations
+				 WHERE pool_id = ? AND status = ?
+				 ORDER BY name_key, location_id`,
+				query.poolId,
+				query.status,
+			)
+			.toArray()
+			.map((row) => locationFrom(row) as LocationRecord);
 	}
 
 	async close(): Promise<void> {}

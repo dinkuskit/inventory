@@ -79,7 +79,7 @@ export function executeSetOpeningBalanceInTransaction(
 	commandDigest: string,
 	dependencies: SetOpeningBalanceTransactionDependencies,
 ): OpeningBalanceResult {
-	const existing = transaction.getCommand(command.commandId);
+	const existing = transaction.getCommand<OpeningBalanceResult>(command.commandId);
 	if (existing !== null) {
 		return existing.commandDigest === commandDigest
 			? existing.result

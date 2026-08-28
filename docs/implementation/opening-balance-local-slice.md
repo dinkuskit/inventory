@@ -50,7 +50,7 @@ type SetOpeningBalanceCommandV1 = Readonly<{
     skuId: string;
     quantity: ExactQuantity;
   }>;
-  reason: Readonly<{ code: string; note?: string }>;
+  reason: Readonly<{ code: string; note: string }>;
   references: readonly Readonly<{ kind: string; id: string }>[];
   expectedVersions: readonly Readonly<{
     skuId: string;

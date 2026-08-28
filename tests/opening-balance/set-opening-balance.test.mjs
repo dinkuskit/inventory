@@ -21,6 +21,13 @@ test("keeps the local SQLite test adapter out of the platform-neutral root API",
 	assert.equal("LocalSqliteTestInventoryStore" in inventoryPublicApi, false);
 });
 
+test("exposes the exact editable opening-balance reason default", () => {
+	assert.equal(
+		inventoryPublicApi.DEFAULT_OPENING_BALANCE_REASON_NOTE,
+		"Set Initial Stock",
+	);
+});
+
 function openingBalanceCommand({
 	commandId = "cmd_opening_001",
 	siteId = "site_test",
@@ -349,6 +356,49 @@ test("rejects malformed context and quantities before storage", async (t) => {
 		}),
 		null,
 	);
+});
+
+test("requires a final human-readable reason and freezes an edited value", async (t) => {
+	const filePath = await databasePath(t, "reason");
+	const store = createLocalSqliteTestStore({ filePath });
+	t.after(() => store.close());
+	const setOpeningBalance = executor(store, {
+		receiptIds: ["rcpt_reason"],
+	});
+	const missingReason = openingBalanceCommand({
+		commandId: "cmd_missing_reason",
+		reasonNote: undefined,
+	});
+	delete missingReason.reason.note;
+
+	await assert.rejects(
+		() => setOpeningBalance(missingReason, { principal }),
+		{ name: "InvalidOpeningBalanceCommandError" },
+	);
+	await assert.rejects(
+		() =>
+			setOpeningBalance(
+				openingBalanceCommand({
+					commandId: "cmd_blank_reason",
+					reasonNote: "   ",
+				}),
+				{ principal },
+			),
+		{ name: "InvalidOpeningBalanceCommandError" },
+	);
+
+	const committed = await setOpeningBalance(
+		openingBalanceCommand({
+			commandId: "cmd_reason",
+			reasonNote: "  Set Initial Stock - physical shelf count  ",
+		}),
+		{ principal },
+	);
+	assert.equal(committed.outcome, "committed");
+	assert.deepEqual(committed.receipt.reason, {
+		code: "physical_count",
+		note: "Set Initial Stock - physical shelf count",
+	});
 });
 
 test("refuses in-memory and production-mode local storage", async (t) => {
