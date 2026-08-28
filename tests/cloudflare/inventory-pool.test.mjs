@@ -113,31 +113,54 @@ describe("Inventory Cloudflare storage boundary", () => {
 		});
 	});
 
-	it("migrates the exact version-1 schema to the location-registry schema", async ({
+	it("records only the complete current version for a fresh database", async ({
 		expect,
 	}) => {
-		const stub = env.INVENTORY_POOLS.getByName("pool_migration");
+		const stub = env.INVENTORY_POOLS.getByName("pool_fresh_schema_history");
+		await runInDurableObject(stub, async (_instance, state) => {
+			const versions = state.storage.sql
+				.exec("SELECT version FROM inventory_schema_migrations ORDER BY version")
+				.toArray()
+				.map((row) => Number(row.version));
+			expect(versions).toEqual([2]);
+			expect(() => initializeCloudflareInventorySchema(state.storage)).not.toThrow();
+			expect(readCloudflareInventorySchemaStatus(state.storage).version).toBe(2);
+		});
+	});
+
+	it("rejects version-1-shaped storage without modifying it", async ({
+		expect,
+	}) => {
+		const stub = env.INVENTORY_POOLS.getByName("pool_legacy_schema");
 		await runInDurableObject(stub, async (_instance, state) => {
 			state.storage.transactionSync(() => {
 				state.storage.sql.exec("DROP TABLE inventory_locations").toArray();
 				state.storage.sql
-					.exec("DELETE FROM inventory_schema_migrations WHERE version = 2")
+					.exec("DELETE FROM inventory_schema_migrations")
+					.toArray();
+				state.storage.sql
+					.exec(
+						"INSERT INTO inventory_schema_migrations (version, applied_at) VALUES (1, 'legacy')",
+					)
 					.toArray();
 			});
 
-			initializeCloudflareInventorySchema(state.storage);
-			expect(readCloudflareInventorySchemaStatus(state.storage)).toEqual({
-				schema: "dinkuskit.inventory.cloudflare-schema-status/v1",
-				version: 2,
-				tables: [
-					"inventory_balances",
-					"inventory_command_results",
-					"inventory_locations",
-					"inventory_opening_balance_confirmations",
-					"inventory_receipts",
-					"inventory_schema_migrations",
-				],
-			});
+			expect(() => initializeCloudflareInventorySchema(state.storage)).toThrow(
+				/older or incompatible/iu,
+			);
+			expect(
+				state.storage.sql
+					.exec("SELECT version FROM inventory_schema_migrations ORDER BY version")
+					.toArray()
+					.map((row) => Number(row.version)),
+			).toEqual([1]);
+			expect(
+				state.storage.sql
+					.exec(
+						"SELECT name FROM sqlite_schema WHERE type = 'table' AND name = 'inventory_locations'",
+					)
+					.toArray(),
+			).toEqual([]);
 		});
 	});
 

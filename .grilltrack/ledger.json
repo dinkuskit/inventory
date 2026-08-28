@@ -4,11 +4,11 @@
   "current_focus": {
     "cadence": "sequential",
     "confirmed": true,
-    "confirmed_at": "2026-08-28T15:42:10+00:00",
-    "domain": "Inventory location registry lifecycle",
-    "started_at": "2026-08-28T15:28:01+00:00",
-    "status": "inspected",
-    "summary": "Implement an Inventory-owned location registry with permanent opaque IDs; globally unique names across active and archived locations; idempotent atomic create, rename, archive, and restore commands with receipts; archive admission only when every on-hand balance is exactly zero and reserved is zero; active and archived read models; SQLite test storage and Cloudflare durable storage. Defer the EmDash GUI, auth/deployment, package delivery, and aggregate stock read to separate work."
+    "confirmed_at": "2026-08-28T18:30:20+00:00",
+    "domain": "fresh Cloudflare schema initialization",
+    "started_at": "2026-08-28T18:30:20+00:00",
+    "status": "confirmed",
+    "summary": "Scaffold the first real Cloudflare database directly at the complete location-registry schema; remove legacy migration code and claims; fail closed on any existing or incompatible schema; verify fresh initialization and rejection of legacy-shaped storage without deploying."
   },
   "decisions": [
     {
@@ -2497,10 +2497,54 @@
           "review_source_identity": null,
           "to": "verified",
           "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T18:30:20+00:00",
+          "choice": "Locations are created manually through a future EmDash admin surface, while Inventory creates and owns a permanent opaque location ID. The display name may be renamed without changing identity or history. Deactivation archives the location instead of deleting it: archived locations leave normal selectors and main inventory views, remain accessible in an Archive view with full history, and may be restored as the same location identity. No history is rewritten or deleted.",
+          "from": "verified",
+          "implementation_ref": "file:docs/implementation/location-registry-lifecycle.md",
+          "note": "adjudicated review requires a fix",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": ".grilltrack/proof/cycle-10/REVIEW.md",
+          "review_result": "clean",
+          "review_source_identity": "sha256:54a52b1c33e7b4a0aeecaf0339a24e81c6f3b6f138e8a295a2a24934e46cad6d",
+          "to": "needs_reverification",
+          "verification_ref": "proof:.grilltrack/proof/cycle-10/PROOF.md"
+        },
+        {
+          "at": "2026-08-28T18:33:03+00:00",
+          "choice": "Locations are created manually through a future EmDash admin surface, while Inventory creates and owns a permanent opaque location ID. The display name may be renamed without changing identity or history. Deactivation archives the location instead of deleting it: archived locations leave normal selectors and main inventory views, remain accessible in an Archive view with full history, and may be restored as the same location identity. No history is rewritten or deleted.",
+          "from": "needs_reverification",
+          "implementation_ref": "file:docs/implementation/location-registry-lifecycle.md",
+          "note": "bounded implementation recorded",
+          "repair_required": true,
+          "review_classifications": [
+            "required_fix"
+          ],
+          "review_ref": "https://github.com/dinkuskit/inventory/pull/10#issuecomment-5456159246",
+          "review_result": "findings",
+          "review_source_identity": "git:89c8145adc9d277262570349a2d44a04d78e2646",
+          "to": "implemented",
+          "verification_ref": "proof:.grilltrack/proof/cycle-10/PROOF.md"
+        },
+        {
+          "at": "2026-08-28T18:36:45+00:00",
+          "choice": "Locations are created manually through a future EmDash admin surface, while Inventory creates and owns a permanent opaque location ID. The display name may be renamed without changing identity or history. Deactivation archives the location instead of deleting it: archived locations leave normal selectors and main inventory views, remain accessible in an Archive view with full history, and may be restored as the same location identity. No history is rewritten or deleted.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/fresh-cloudflare-schema-initialization.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": "proof:.grilltrack/proof/cycle-10/PROOF.md"
         }
       ],
       "id": "location-lifecycle-030",
-      "implementation_ref": "file:docs/implementation/location-registry-lifecycle.md",
+      "implementation_ref": "file:docs/implementation/fresh-cloudflare-schema-initialization.md",
       "question": "How should Inventory create, rename, archive, and recover locations?",
       "rationale": "Bobby wants inactive locations out of everyday sight without losing audit history or recovery; stable identity prevents renames or archiving from breaking balances and receipts.",
       "repair_required": false,
@@ -2512,14 +2556,30 @@
           "result": "clean",
           "reviewed_at": "2026-08-28T16:00:25+00:00",
           "source_identity": "sha256:54a52b1c33e7b4a0aeecaf0339a24e81c6f3b6f138e8a295a2a24934e46cad6d"
+        },
+        {
+          "classifications": [
+            "required_fix"
+          ],
+          "ref": "https://github.com/dinkuskit/inventory/pull/10#issuecomment-5456159246",
+          "result": "findings",
+          "reviewed_at": "2026-08-28T18:30:20+00:00",
+          "source_identity": "git:89c8145adc9d277262570349a2d44a04d78e2646"
+        },
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-10/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T18:36:45+00:00",
+          "source_identity": "sha256:69f6528d61961d36a92b92863e65e1f0ccccfb338dff189aeafb50c7b483dd3d"
         }
       ],
       "review_ref": ".grilltrack/proof/cycle-10/REVIEW.md",
       "review_result": "clean",
-      "review_source_identity": "sha256:54a52b1c33e7b4a0aeecaf0339a24e81c6f3b6f138e8a295a2a24934e46cad6d",
+      "review_source_identity": "sha256:69f6528d61961d36a92b92863e65e1f0ccccfb338dff189aeafb50c7b483dd3d",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-28T16:00:25+00:00",
+      "updated_at": "2026-08-28T18:36:45+00:00",
       "verification_ref": "proof:.grilltrack/proof/cycle-10/PROOF.md"
     },
     {
@@ -2681,6 +2741,86 @@
       "superseded_by": null,
       "updated_at": "2026-08-28T16:00:27+00:00",
       "verification_ref": "proof:.grilltrack/proof/cycle-10/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:89c8145adc9d277262570349a2d44a04d78e2646",
+      "candidate_refs": [],
+      "choice": "Inventory scaffolds a brand-new empty Durable Object directly at the complete current schema. It provides no v1-to-v2 data migration because no live legacy database exists. Any non-empty, partial, older, or unexpected schema fails closed instead of being guessed, backfilled, or silently upgraded.",
+      "context_ref": "user:no-live-databases-first-scaffold",
+      "created_at": "2026-08-28T18:30:20+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "architecture-002",
+        "location-lifecycle-030"
+      ],
+      "domain": "fresh Cloudflare schema initialization",
+      "history": [
+        {
+          "at": "2026-08-28T18:30:20+00:00",
+          "choice": "Inventory scaffolds a brand-new empty Durable Object directly at the complete current schema. It provides no v1-to-v2 data migration because no live legacy database exists. Any non-empty, partial, older, or unexpected schema fails closed instead of being guessed, backfilled, or silently upgraded.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T18:33:03+00:00",
+          "choice": "Inventory scaffolds a brand-new empty Durable Object directly at the complete current schema. It provides no v1-to-v2 data migration because no live legacy database exists. Any non-empty, partial, older, or unexpected schema fails closed instead of being guessed, backfilled, or silently upgraded.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T18:36:45+00:00",
+          "choice": "Inventory scaffolds a brand-new empty Durable Object directly at the complete current schema. It provides no v1-to-v2 data migration because no live legacy database exists. Any non-empty, partial, older, or unexpected schema fails closed instead of being guessed, backfilled, or silently upgraded.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/fresh-cloudflare-schema-initialization.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "fresh-schema-initialization-034",
+      "implementation_ref": "file:docs/implementation/fresh-cloudflare-schema-initialization.md",
+      "question": "How should the first Cloudflare Inventory database acquire the location registry schema?",
+      "rationale": "This is the first real database, so a fictional compatibility path creates risk and misleading claims without preserving any actual live data.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-10/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T18:36:45+00:00",
+          "source_identity": "sha256:69f6528d61961d36a92b92863e65e1f0ccccfb338dff189aeafb50c7b483dd3d"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-10/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:69f6528d61961d36a92b92863e65e1f0ccccfb338dff189aeafb50c7b483dd3d",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-08-28T18:36:45+00:00",
+      "verification_ref": "proof:.grilltrack/proof/cycle-10/PROOF.md"
     }
   ],
   "last_activation": {
@@ -2700,5 +2840,5 @@
   "status": "active",
   "title": "Dinkuskit Inventory v1",
   "track_id": "dinkuskit-inventory-v1",
-  "updated_at": "2026-08-28T16:00:28+00:00"
+  "updated_at": "2026-08-28T18:36:45+00:00"
 }

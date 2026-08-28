@@ -157,10 +157,11 @@ pool-scoped and deterministically ordered by name key and permanent ID.
 
 ## Durable schema
 
-Cloudflare schema version 2 adds one `inventory_locations` table to the existing
-version-1 tables. Initialization applies version 1 first for a new Durable
-Object and then version 2. An existing exact version-1 database is migrated in
-place; unexpected histories or table sets fail closed.
+Cloudflare schema version 2 is the first complete real-database schema and
+includes `inventory_locations` beside the stock tables. A fresh empty Durable
+Object creates the complete schema directly and records only version 2. This
+release has no legacy migration: existing older, partial, or unexpected
+Inventory schemas fail closed without modification.
 
 The local development/test schema moves to `opening-balance-local/v4` and adds
 the same table. It remains explicit-path, non-production, and rejects unrelated
@@ -180,7 +181,7 @@ return either stock or location command results.
 | `InventoryStore` / `InventoryTransaction` | 3 application modules, 2 adapters, root type export | Medium | strict typecheck plus all Node and Cloudflare tests |
 | shared command/result and receipt tables | opening-balance execution and mutation lookup | High | exact replay, cross-type command conflict, atomic rollback, stock-history regression |
 | local SQLite exact schema | local test factory and all Node persistence tests | Medium | create/reopen, incompatible-file fence, dedicated location verifier |
-| Cloudflare schema migration | Durable Object constructor, schema inspection, runtime tests | High | fresh v2 initialization, simulated v1-to-v2 migration, pool isolation, Wrangler dry run |
+| Cloudflare schema initialization | Durable Object constructor, schema inspection, runtime tests | High | direct fresh v2 initialization, exact idempotency, legacy-shape rejection without writes, pool isolation, Wrangler dry run |
 | root platform-neutral exports | package consumers and contract tests | Medium | public API assertions and strict TypeScript check |
 | Worker HTTP surface | no change | Low | existing 404 contract test |
 
@@ -192,8 +193,9 @@ security, production, or deployment surface is changed.
 The first failing Node tests will prove normalization, globally unique names,
 successful lifecycle transitions, durable exact retries, positive/negative/
 reserved archive blockers, active/archive reads, and rollback on receipt
-failure. Cloudflare tests will first fail for the missing v2 schema/table and
-then cover lifecycle parity and version-1 migration.
+failure. Cloudflare tests first fail for the missing v2 schema/table and then
+cover lifecycle parity, direct fresh initialization, and rejection of
+legacy-shaped storage without modification.
 
 `bin/verify-location-registry` and
 `skills/location-registry-verification/SKILL.md` will own the fast deterministic

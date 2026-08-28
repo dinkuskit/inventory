@@ -24,10 +24,11 @@ as a dry run in a task-owned temporary directory. It never authenticates,
 deploys, calls a remote service, initializes a production object, or mutates
 stock.
 
-The runtime suite proves exact schema initialization, the version-1 to version-2
-location-table migration, explicit not-found reads, pool isolation, atomic
-balance/receipt/command commit, exact opening-balance and location-command
-retry, and rollback on immutable receipt conflict. The deployment contract
+The runtime suite proves direct fresh version-2 schema initialization, exact
+idempotency, fail-closed rejection of legacy-shaped storage without mutation,
+explicit not-found reads, pool isolation, atomic balance/receipt/command
+commit, exact opening-balance and location-command retry, and rollback on
+immutable receipt conflict. The deployment contract
 rejects committed account, tenant, pool, location, SKU, route, or
 public-preview defaults.
 

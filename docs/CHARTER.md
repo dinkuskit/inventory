@@ -149,6 +149,15 @@ surface asks Inventory to create it. The display name may change without
 changing identity or rewriting history, and no two locations in one pool may
 share the same normalized name even when one or both are archived.
 
+## fresh-schema-initialization-034 — first real database starts complete (locked)
+
+There is no live legacy Inventory database. A new empty Cloudflare Durable
+Object initializes directly at the complete current schema, including the
+location registry, and records only that current version. This release does not
+guess a migration for fictional legacy data. Any older, partial, or unexpected
+Inventory schema fails closed without modification; future migrations require
+a real predecessor and a separately grilled preservation contract.
+
 Deactivation archives rather than deletes. Archived locations disappear from
 normal selectors and inventory views, remain accessible in an explicit Archive
 view with their full history, and can be restored with the same ID. Archive is

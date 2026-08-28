@@ -76,15 +76,15 @@ The first production-storage checkpoint is a private `dinkuskit-inventory`
 Cloudflare Worker with a SQLite-backed Durable Object namespace and one object
 database per explicit pool. Workers.dev and preview URLs are disabled, no route
 is deployed, and the only remote operation is a same-account read inspection.
-The source schema now defines version 2, adding the location registry through
-an exact version-1 migration. This local implementation is not a deployment
-claim. One production-intended pool was last proven on deployed schema version
-1 and contains no
-balance, command, confirmation, or receipt. Opening-balance mutation is not
-remotely exposed, no storefront traffic is bound, and no physical stock cutover
-has happened. There is still no installable plugin, executable CLI, or published
-npm package. The package manifest remains private at `0.0.0` to prevent
-accidental publication.
+The source schema defines version 2 as the first complete real-database schema,
+including the location registry. Fresh empty storage initializes directly at
+version 2; older, partial, or unexpected Inventory schemas fail closed and are
+not migrated. An earlier version-1 probe object contained zero records and is
+test evidence, not a live database or migration input. This implementation is
+not a deployment claim. Opening-balance mutation is not remotely exposed, no
+storefront traffic is bound, and no physical stock cutover has happened. There
+is still no installable plugin, executable CLI, or published npm package. The
+package manifest remains private at `0.0.0` to prevent accidental publication.
 
 Scaffold development is pinned to exact `emdash@0.35.0` with a lockfile. This
 is the implementation target for the first standard-format plugin fixture, not
