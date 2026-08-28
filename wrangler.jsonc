@@ -1,0 +1,22 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "dinkuskit-inventory",
+	"main": "src/cloudflare/worker.ts",
+	"compatibility_date": "2026-08-28",
+	"workers_dev": false,
+	"preview_urls": false,
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "INVENTORY_POOLS",
+				"class_name": "InventoryPool"
+			}
+		]
+	},
+	"exports": {
+		"InventoryPool": {
+			"type": "durable-object",
+			"storage": "sqlite"
+		}
+	}
+}

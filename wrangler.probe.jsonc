@@ -1,0 +1,13 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "dinkuskit-inventory-remote-probe",
+	"main": "tools/cloudflare-remote-probe.ts",
+	"compatibility_date": "2026-08-28",
+	"services": [
+		{
+			"binding": "INVENTORY_SERVICE",
+			"service": "dinkuskit-inventory",
+			"remote": true
+		}
+	]
+}

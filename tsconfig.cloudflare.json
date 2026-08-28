@@ -1,0 +1,17 @@
+{
+	"compilerOptions": {
+		"target": "ES2023",
+		"module": "ESNext",
+		"moduleResolution": "Bundler",
+		"allowImportingTsExtensions": true,
+		"strict": true,
+		"noEmit": true,
+		"skipLibCheck": true,
+		"types": ["@cloudflare/workers-types"]
+	},
+	"include": [
+		"src/cloudflare/**/*.ts",
+		"src/storage/cloudflare-sqlite-inventory-store.ts",
+		"tools/cloudflare-remote-probe.ts"
+	]
+}
