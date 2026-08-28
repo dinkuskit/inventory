@@ -8,6 +8,8 @@
 - Commerce contract source: `7b09a25749ce2c650f294a0bd5ab7d99132d2ce5`
 - branch: `codex/managed-sku-registration-20260828`
 - PR: `https://github.com/dinkuskit/inventory/pull/12`
+- repair implementation commit:
+  `git:ab0580aaa220b8b11605f89c0f4bcc5789be18d8`
 - repaired source identity:
   `sha256:fdc7950c5cbed32bfd552d866bf731346a0429ca40924ce137017b4019c68355`
 - source manifest: `.grilltrack/proof/cycle-12/SOURCE_MANIFEST.sha256`
