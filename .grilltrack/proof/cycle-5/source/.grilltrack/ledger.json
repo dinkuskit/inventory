@@ -7,7 +7,7 @@
     "confirmed_at": "2026-08-28T12:47:52+00:00",
     "domain": "opening-balance kernel with local durability proof",
     "started_at": "2026-08-28T12:47:52+00:00",
-    "status": "inspected",
+    "status": "confirmed",
     "summary": "Implement one platform-neutral Set opening balance command for one explicit pool, location, and SKU. A real local SQLite file proves restart durability and atomic storage of command digest, stable terminal result, balance/version, and immutable receipt. Exact replay returns the original result; changed contents under one commandId conflict; only the first stock history at a SKU-location may establish the opening balance; other locations remain unchanged. The local file is development/test storage only and must never become final or production truth. Defer Block Kit, SmokyClub, Commerce, EmDash adapters, Cloudflare deployment, auth/accounts, package publication, and production cutover. Verification is repo-owned and covers replay, conflict, stable rejection, persistence, concurrency, receipt/balance agreement, and location isolation. No commit, push, PR, merge, deployment, or publication is authorized."
   },
   "decisions": [
@@ -1739,21 +1739,13 @@
       "rationale": "A real local database proves durability, replay, atomicity, and concurrency without accounts or deployment, while an explicit non-production fence prevents Bobby local machine from becoming canonical inventory infrastructure.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": "proof:.grilltrack/proof/cycle-5/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-28T13:02:07+00:00",
-          "source_identity": "sha256:ab52a65286500f004a623661d93d77005305b60c4382f32f9fce75e80d1795f6"
-        }
-      ],
-      "review_ref": "proof:.grilltrack/proof/cycle-5/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "sha256:ab52a65286500f004a623661d93d77005305b60c4382f32f9fce75e80d1795f6",
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-28T13:02:07+00:00",
+      "updated_at": "2026-08-28T12:59:16+00:00",
       "verification_ref": "proof:.grilltrack/proof/cycle-5/PROOF.md"
     }
   ],
@@ -1763,16 +1755,16 @@
   },
   "recommendation": {
     "alternatives": [
-      "Read-only balance and receipt query models for refresh and audit without a GUI",
-      "Undeployed Cloudflare Durable Object adapter conformance and export/restore spike against the platform-neutral transaction contract"
+      "Build the Inventory Set initial stock service and GUI slice first",
+      "Migrate the Commerce InventoryProvider and checkout saga to the awaited location-bound contract first"
     ],
-    "reason": "The durable command kernel is proven independently. The next human-safety dependency is binding a reviewed preview to the exact action before any Block Kit surface is added; the active EmDash scheduler work remains irrelevant.",
-    "recommended": "Opening-balance preview and confirmation boundary: server-validated preview, short-lived action-bound confirmation, and safe stale or changed-action rejection over the proven kernel",
-    "recorded_at": "2026-08-28T13:02:24+00:00"
+    "reason": "The product boundaries are now clear enough to coordinate one visible edit-to-audit sale without collapsing three repositories into one track; locking Commerce identity prevents the integration work from landing under a transitional name.",
+    "recommended": "Create the federated SmokyClub First Sale program, first locking Commerce public identity/home and then proving Inventory Set initial stock through the genuine Block Kit GUI",
+    "recorded_at": "2026-08-25T14:24:45+00:00"
   },
   "schema_version": "grilltrack/v0.1",
   "status": "active",
   "title": "Dinkuskit Inventory v1",
   "track_id": "dinkuskit-inventory-v1",
-  "updated_at": "2026-08-28T13:02:24+00:00"
+  "updated_at": "2026-08-28T12:59:16+00:00"
 }
