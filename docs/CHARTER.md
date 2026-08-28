@@ -128,6 +128,54 @@ then creates the immutable receipt. Once history exists, ordinary adjustment
 replaces that affordance even if the current balance is zero. Later corrections
 never rewrite the opening receipt.
 
+## aggregate-stock-view-026 through zero-stock-location-029 — Katana-style read scope (locked)
+
+A one-location inventory view shows only that location. An `all locations`
+view shows the combined SKU total plus a per-location breakdown. Both are
+read-only. Each row exposes on-hand, reserved, and derived available quantities,
+with on-hand as the main number. Every active location appears even when all
+three values are zero, so known emptiness cannot be confused with missing or
+unauthorized data.
+
+Reserved-order detail is deferred until Inventory owns the reservation records
+and order references needed to support it without guessing through Commerce.
+The later admin view shows order number, reserved quantity, and exact location,
+with no customer, address, payment, or other unnecessary order data.
+
+## location-lifecycle-030 through location-name-uniqueness-032 — recoverable locations (locked)
+
+Inventory owns a permanent opaque ID for each location. A future EmDash admin
+surface asks Inventory to create it. The display name may change without
+changing identity or rewriting history, and no two locations in one pool may
+share the same normalized name even when one or both are archived.
+
+## fresh-schema-initialization-034 — first real database starts complete (locked)
+
+There is no live legacy Inventory database. A new empty Cloudflare Durable
+Object initializes directly at the complete current schema, including the
+location registry, and records only that current version. This release does not
+guess a migration for fictional legacy data. Any older, partial, or unexpected
+Inventory schema fails closed without modification; future migrations require
+a real predecessor and a separately grilled preservation contract.
+
+## opening-balance-location-admission-035 — active locations only (locked)
+
+Every new opening-balance command must name an existing active location in its
+explicit pool. Unknown locations durably reject as `location_not_found` and
+archived locations durably reject as `location_not_active`; neither creates
+stock or a receipt. The check and terminal result share the same serialized
+transaction as a successful balance and receipt commit. Exact retries return
+the original result even if the location is later created, archived, or
+restored.
+
+Deactivation archives rather than deletes. Archived locations disappear from
+normal selectors and inventory views, remain accessible in an explicit Archive
+view with their full history, and can be restored with the same ID. Archive is
+blocked unless every SKU at that location has exactly zero on-hand and zero
+reserved: positive stock, negative stock, or any order reservation is returned
+as a blocker. Create, rename, archive, and restore use the same awaited,
+idempotent, actor-bearing command-and-receipt boundary as stock mutations.
+
 ## surface-permissions-012 — one engine, scoped clients (locked)
 
 EmDash administrators may receive, adjust, transfer, reconcile, establish

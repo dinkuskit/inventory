@@ -14,11 +14,12 @@
   },
   "scripts": {
     "test": "npm run test:node && npm run test:cloudflare",
-    "test:node": "node --experimental-sqlite --experimental-strip-types --test tests/workflows/*.test.mjs tests/opening-balance/*.test.mjs",
+    "test:node": "node --experimental-sqlite --experimental-strip-types --test tests/workflows/*.test.mjs tests/opening-balance/*.test.mjs tests/locations/*.test.mjs",
     "test:cloudflare": "vitest run --config vitest.config.ts",
     "typecheck:cloudflare": "tsc --project tsconfig.cloudflare.json",
     "verify:opening-balance": "bin/verify-opening-balance",
-    "verify:cloudflare-storage": "bin/verify-cloudflare-storage"
+    "verify:cloudflare-storage": "bin/verify-cloudflare-storage",
+    "verify:location-registry": "bin/verify-location-registry"
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "1.1.1",

@@ -4,10 +4,24 @@ import { describe, it } from "vitest";
 
 import { createSetOpeningBalance } from "../../src/application/set-opening-balance.ts";
 import {
+	createExecuteLocationCommand,
+	createListLocations,
+} from "../../src/application/location-registry.ts";
+import {
 	createConfirmOpeningBalance,
 	createPreviewOpeningBalance,
 } from "../../src/application/preview-confirm-opening-balance.ts";
+import * as readInventoryApplication from "../../src/application/read-inventory.ts";
 import { createCloudflareSqliteInventoryStore } from "../../src/storage/cloudflare-sqlite-inventory-store.ts";
+import {
+	initializeCloudflareInventorySchema,
+	readCloudflareInventorySchemaStatus,
+} from "../../src/cloudflare/schema.ts";
+import {
+	archiveFixtureLocation,
+	createFixtureLocation,
+	restoreFixtureLocation,
+} from "../helpers/location-fixture.mjs";
 
 const principal = Object.freeze({
 	kind: "human",
@@ -59,10 +73,11 @@ describe("Inventory Cloudflare storage boundary", () => {
 
 		expect(await alpha.schemaStatus()).toEqual({
 			schema: "dinkuskit.inventory.cloudflare-schema-status/v1",
-			version: 1,
+			version: 2,
 			tables: [
 				"inventory_balances",
 				"inventory_command_results",
+				"inventory_locations",
 				"inventory_opening_balance_confirmations",
 				"inventory_receipts",
 				"inventory_schema_migrations",
@@ -79,10 +94,11 @@ describe("Inventory Cloudflare storage boundary", () => {
 		expect(await exports.default.inspectSkuLocation(key("pool_probe"))).toEqual({
 			schema: {
 				schema: "dinkuskit.inventory.cloudflare-schema-status/v1",
-				version: 1,
+				version: 2,
 				tables: [
 					"inventory_balances",
 					"inventory_command_results",
+					"inventory_locations",
 					"inventory_opening_balance_confirmations",
 					"inventory_receipts",
 					"inventory_schema_migrations",
@@ -102,6 +118,206 @@ describe("Inventory Cloudflare storage boundary", () => {
 		});
 	});
 
+	it("records only the complete current version for a fresh database", async ({
+		expect,
+	}) => {
+		const stub = env.INVENTORY_POOLS.getByName("pool_fresh_schema_history");
+		await runInDurableObject(stub, async (_instance, state) => {
+			const versions = state.storage.sql
+				.exec("SELECT version FROM inventory_schema_migrations ORDER BY version")
+				.toArray()
+				.map((row) => Number(row.version));
+			expect(versions).toEqual([2]);
+			expect(() => initializeCloudflareInventorySchema(state.storage)).not.toThrow();
+			expect(readCloudflareInventorySchemaStatus(state.storage).version).toBe(2);
+		});
+	});
+
+	it("rejects version-1-shaped storage without modifying it", async ({
+		expect,
+	}) => {
+		const stub = env.INVENTORY_POOLS.getByName("pool_legacy_schema");
+		await runInDurableObject(stub, async (_instance, state) => {
+			state.storage.transactionSync(() => {
+				state.storage.sql.exec("DROP TABLE inventory_locations").toArray();
+				state.storage.sql
+					.exec("DELETE FROM inventory_schema_migrations")
+					.toArray();
+				state.storage.sql
+					.exec(
+						"INSERT INTO inventory_schema_migrations (version, applied_at) VALUES (1, 'legacy')",
+					)
+					.toArray();
+			});
+
+			expect(() => initializeCloudflareInventorySchema(state.storage)).toThrow(
+				/older or incompatible/iu,
+			);
+			expect(
+				state.storage.sql
+					.exec("SELECT version FROM inventory_schema_migrations ORDER BY version")
+					.toArray()
+					.map((row) => Number(row.version)),
+			).toEqual([1]);
+			expect(
+				state.storage.sql
+					.exec(
+						"SELECT name FROM sqlite_schema WHERE type = 'table' AND name = 'inventory_locations'",
+					)
+					.toArray(),
+			).toEqual([]);
+		});
+	});
+
+	it("persists and exactly replays the location lifecycle through Cloudflare SQLite", async ({
+		expect,
+	}) => {
+		const stub = env.INVENTORY_POOLS.getByName("pool_locations");
+		await runInDurableObject(stub, async (_instance, state) => {
+			const store = createCloudflareSqliteInventoryStore({
+				storage: state.storage,
+				poolId: "pool_locations",
+			});
+			let locationIds = 0;
+			let receiptIds = 0;
+			const execute = createExecuteLocationCommand({
+				store,
+				now: () => new Date("2026-08-28T16:00:00.000Z"),
+				createLocationId: () => {
+					locationIds += 1;
+					return "location_cloudflare";
+				},
+				createReceiptId: () => {
+					receiptIds += 1;
+					return "rcpt_location_cloudflare";
+				},
+			});
+			const input = {
+				schema: "dinkuskit.inventory.command/v1",
+				commandId: "cmd_location_cloudflare",
+				type: "location.create",
+				context: { siteId: "site_test", poolId: "pool_locations" },
+				payload: { name: "Warehouse" },
+				references: [],
+			};
+			const first = await execute(input, { principal });
+			const replay = await execute(input, { principal });
+
+			expect(first.outcome).toBe("committed");
+			expect(JSON.stringify(replay)).toBe(JSON.stringify(first));
+			expect({ locationIds, receiptIds }).toEqual({
+				locationIds: 1,
+				receiptIds: 1,
+			});
+			expect(
+				await createListLocations({ store })({
+					poolId: "pool_locations",
+					status: "active",
+				}),
+			).toMatchObject({
+				locations: [
+					{
+						locationId: "location_cloudflare",
+						name: "Warehouse",
+						status: "active",
+						version: "1",
+					},
+				],
+			});
+		});
+	});
+
+	it("admits Cloudflare opening balances only for active locations", async ({
+		expect,
+	}) => {
+		const stub = env.INVENTORY_POOLS.getByName("pool_location_admission");
+		await runInDurableObject(stub, async (_instance, state) => {
+			const store = createCloudflareSqliteInventoryStore({
+				storage: state.storage,
+				poolId: "pool_location_admission",
+			});
+			await createFixtureLocation(store, {
+				poolId: "pool_location_admission",
+				locationId: "location_active",
+			});
+			await createFixtureLocation(store, {
+				poolId: "pool_location_admission",
+				locationId: "location_archived",
+			});
+			await archiveFixtureLocation(store, {
+				poolId: "pool_location_admission",
+				locationId: "location_archived",
+			});
+			const execute = (receiptId) =>
+				createSetOpeningBalance({
+					store,
+					now: () => new Date("2026-08-28T12:00:00.000Z"),
+					createReceiptId: () => receiptId,
+				});
+
+			const active = await execute("rcpt_active")(
+				command({
+					commandId: "cmd_active",
+					poolId: "pool_location_admission",
+					locationId: "location_active",
+				}),
+				{ principal },
+			);
+			const archivedCommand = command({
+				commandId: "cmd_archived",
+				poolId: "pool_location_admission",
+				locationId: "location_archived",
+			});
+			const archived = await execute("rcpt_archived_should_not_exist")(
+				archivedCommand,
+				{ principal },
+			);
+			const unknown = await execute("rcpt_unknown_should_not_exist")(
+				command({
+					commandId: "cmd_unknown",
+					poolId: "pool_location_admission",
+					locationId: "location_unknown",
+				}),
+				{ principal },
+			);
+
+			expect(active.outcome).toBe("committed");
+			expect(archived).toMatchObject({
+				outcome: "rejected",
+				code: "location_not_active",
+			});
+			expect(unknown).toMatchObject({
+				outcome: "rejected",
+				code: "location_not_found",
+			});
+			expect(
+				await store.readBalance(
+					key("pool_location_admission", "location_archived"),
+				),
+			).toBeNull();
+			expect(
+				await store.readBalance(
+					key("pool_location_admission", "location_unknown"),
+				),
+			).toBeNull();
+			expect(await store.readReceipt("rcpt_archived_should_not_exist")).toBeNull();
+			expect(await store.readReceipt("rcpt_unknown_should_not_exist")).toBeNull();
+
+			await restoreFixtureLocation(store, {
+				poolId: "pool_location_admission",
+				locationId: "location_archived",
+			});
+			const replay = await createSetOpeningBalance({
+				store,
+				now: () => new Date("2026-08-28T13:00:00.000Z"),
+				createReceiptId: () => {
+					throw new Error("replay must not request a receipt ID");
+				},
+			})(archivedCommand, { principal });
+			expect(JSON.stringify(replay)).toBe(JSON.stringify(archived));
+		});
+	});
+
 	it("commits and exactly replays through the production transaction adapter", async ({
 		expect,
 	}) => {
@@ -110,6 +326,10 @@ describe("Inventory Cloudflare storage boundary", () => {
 			const store = createCloudflareSqliteInventoryStore({
 				storage: state.storage,
 				poolId: "pool_commit",
+			});
+			await createFixtureLocation(store, {
+				poolId: "pool_commit",
+				locationId: "location_north",
 			});
 			let receipts = 0;
 			const setOpeningBalance = createSetOpeningBalance({
@@ -151,6 +371,10 @@ describe("Inventory Cloudflare storage boundary", () => {
 			const store = createCloudflareSqliteInventoryStore({
 				storage: state.storage,
 				poolId: "pool_confirm",
+			});
+			await createFixtureLocation(store, {
+				poolId: "pool_confirm",
+				locationId: "location_north",
 			});
 			const now = () => new Date("2026-08-28T12:00:00.000Z");
 			const preview = createPreviewOpeningBalance({
@@ -220,6 +444,14 @@ describe("Inventory Cloudflare storage boundary", () => {
 				storage: state.storage,
 				poolId: "pool_rollback",
 			});
+			await createFixtureLocation(store, {
+				poolId: "pool_rollback",
+				locationId: "location_north",
+			});
+			await createFixtureLocation(store, {
+				poolId: "pool_rollback",
+				locationId: "location_south",
+			});
 			const execute = (receiptId) =>
 				createSetOpeningBalance({
 					store,
@@ -245,6 +477,74 @@ describe("Inventory Cloudflare storage boundary", () => {
 				await store.readBalance(key("pool_rollback", "location_south")),
 			).toBeNull();
 			expect(await store.readCommand("cmd_south")).toBeNull();
+		});
+	});
+
+	it("reads the same receipt ledger by one location or all locations", async ({
+		expect,
+	}) => {
+		const stub = env.INVENTORY_POOLS.getByName("pool_history");
+		await runInDurableObject(stub, async (_instance, state) => {
+			const store = createCloudflareSqliteInventoryStore({
+				storage: state.storage,
+				poolId: "pool_history",
+			});
+			await createFixtureLocation(store, {
+				poolId: "pool_history",
+				locationId: "location_north",
+			});
+			await createFixtureLocation(store, {
+				poolId: "pool_history",
+				locationId: "location_south",
+			});
+			const execute = (receiptId, committedAt) =>
+				createSetOpeningBalance({
+					store,
+					now: () => new Date(committedAt),
+					createReceiptId: () => receiptId,
+				});
+			await execute("rcpt_history_north", "2026-08-28T12:00:00.000Z")(
+				command({
+					commandId: "cmd_history_north",
+					poolId: "pool_history",
+					locationId: "location_north",
+				}),
+				{ principal },
+			);
+			await execute("rcpt_history_south", "2026-08-28T12:01:00.000Z")(
+				command({
+					commandId: "cmd_history_south",
+					poolId: "pool_history",
+					locationId: "location_south",
+				}),
+				{ principal },
+			);
+
+			const readHistory = readInventoryApplication.createReadReceiptHistory({
+				store,
+			});
+			const north = await readHistory({
+				poolId: "pool_history",
+				scope: { kind: "location", locationId: "location_north" },
+			});
+			const all = await readHistory({
+				poolId: "pool_history",
+				scope: { kind: "all_locations" },
+			});
+
+			expect(north.receipts.map((receipt) => receipt.receiptId)).toEqual([
+				"rcpt_history_north",
+			]);
+			expect(all.receipts.map((receipt) => receipt.receiptId)).toEqual([
+				"rcpt_history_south",
+				"rcpt_history_north",
+			]);
+			await expect(
+				readHistory({
+					poolId: "pool_other",
+					scope: { kind: "all_locations" },
+				}),
+			).rejects.toThrow("A store cannot read across inventory pools.");
 		});
 	});
 });

@@ -286,7 +286,9 @@ export function createConfirmOpeningBalance(
 							"The confirmation is already bound to another command ID.",
 						);
 					}
-					const existing = transaction.getCommand(command.commandId);
+					const existing = transaction.getCommand<OpeningBalanceResult>(
+						command.commandId,
+					);
 					if (existing === null) {
 						throw new Error(
 							"Confirmed opening-balance command result is missing.",
@@ -307,7 +309,9 @@ export function createConfirmOpeningBalance(
 					);
 				}
 
-				const existing = transaction.getCommand(command.commandId);
+				const existing = transaction.getCommand<OpeningBalanceResult>(
+					command.commandId,
+				);
 				if (existing !== null) {
 					if (existing.commandDigest !== commandDigest) {
 						return commandIdConflict(command.commandId);

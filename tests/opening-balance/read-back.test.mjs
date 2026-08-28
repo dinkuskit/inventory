@@ -12,6 +12,7 @@ import {
 	createSetOpeningBalance,
 } from "../../src/index.ts";
 import { createLocalSqliteTestStore } from "../../src/storage/local-sqlite-test-store.ts";
+import { createFixtureLocation } from "../helpers/location-fixture.mjs";
 
 const emdashPrincipal = Object.freeze({
 	kind: "human",
@@ -90,6 +91,7 @@ test("reads only one explicit SKU-location balance with explicit not-found", asy
 	const filePath = await databasePath(t, "balance");
 	const store = createLocalSqliteTestStore({ filePath });
 	t.after(() => store.close());
+	await createFixtureLocation(store);
 	const readBalance = createReadSkuLocationBalance({ store });
 	const key = {
 		poolId: " pool_test ",
@@ -137,6 +139,7 @@ test("reads only one explicit SKU-location balance with explicit not-found", asy
 test("reads one committed mutation by receipt ID or command ID after reopen", async (t) => {
 	const filePath = await databasePath(t, "committed");
 	let store = createLocalSqliteTestStore({ filePath });
+	await createFixtureLocation(store);
 	const command = openingBalanceCommand();
 	command.actor = {
 		id: "spoofed_user",
@@ -176,6 +179,7 @@ test("reads a stable rejection by command ID and never invents a receipt", async
 	const filePath = await databasePath(t, "rejection");
 	const store = createLocalSqliteTestStore({ filePath });
 	t.after(() => store.close());
+	await createFixtureLocation(store);
 	const setBalance = setOpeningBalance(store, "rcpt_first");
 	await setBalance(openingBalanceCommand({ commandId: "cmd_first" }), {
 		principal: emdashPrincipal,
@@ -243,6 +247,7 @@ test("returns explicit not-found and rejects ambiguous or blank lookups", async 
 test("binds confirmation to stable user identity and freezes the commit-time name", async (t) => {
 	const filePath = await databasePath(t, "historical-name");
 	let store = createLocalSqliteTestStore({ filePath });
+	await createFixtureLocation(store);
 	const now = () => new Date("2026-08-28T12:00:00.000Z");
 	const preview = createPreviewOpeningBalance({
 		store,
@@ -292,6 +297,7 @@ test("requires a human display name without inventing one for system receipts", 
 	const filePath = await databasePath(t, "principal-kinds");
 	const store = createLocalSqliteTestStore({ filePath });
 	t.after(() => store.close());
+	await createFixtureLocation(store);
 	const setBalance = setOpeningBalance(store, "rcpt_system");
 
 	await assert.rejects(

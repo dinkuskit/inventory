@@ -8,6 +8,7 @@ import {
 	type BalanceRecord,
 	type CommandPrincipal,
 	type OpeningBalanceReceiptV2,
+	type OpeningBalanceRejectionCode,
 	type OpeningBalanceResult,
 	type SetOpeningBalanceCommandV1,
 } from "../domain/opening-balance.ts";
@@ -56,6 +57,23 @@ function alreadySet(commandId: string): OpeningBalanceResult {
 	};
 }
 
+function locationRejection(
+	commandId: string,
+	code: Extract<
+		OpeningBalanceRejectionCode,
+		"location_not_found" | "location_not_active"
+	>,
+	message: string,
+): OpeningBalanceResult {
+	return {
+		schema: COMMAND_RESULT_SCHEMA,
+		outcome: "rejected",
+		commandId,
+		code,
+		message,
+	};
+}
+
 function receiptIdFrom(createReceiptId: () => string): string {
 	const receiptId = createReceiptId();
 	if (typeof receiptId !== "string" || receiptId.trim().length === 0) {
@@ -79,11 +97,39 @@ export function executeSetOpeningBalanceInTransaction(
 	commandDigest: string,
 	dependencies: SetOpeningBalanceTransactionDependencies,
 ): OpeningBalanceResult {
-	const existing = transaction.getCommand(command.commandId);
+	const existing = transaction.getCommand<OpeningBalanceResult>(command.commandId);
 	if (existing !== null) {
 		return existing.commandDigest === commandDigest
 			? existing.result
 			: conflict(command.commandId);
+	}
+
+	const location = transaction.getLocation(command.context.locationId);
+	if (location === null) {
+		const result = locationRejection(
+			command.commandId,
+			"location_not_found",
+			"The location does not exist in this inventory pool.",
+		);
+		transaction.storeRejection({
+			commandId: command.commandId,
+			commandDigest,
+			result,
+		});
+		return result;
+	}
+	if (location.status !== "active") {
+		const result = locationRejection(
+			command.commandId,
+			"location_not_active",
+			"The location is archived and cannot receive stock.",
+		);
+		transaction.storeRejection({
+			commandId: command.commandId,
+			commandDigest,
+			result,
+		});
+		return result;
 	}
 
 	const key = {

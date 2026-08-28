@@ -65,7 +65,13 @@ behavior. The kernel also exposes read-only, explicit-key balance lookup and
 mutation-result lookup by receipt ID or command ID. Human receipt v2 records
 the trusted EmDash user ID, display-name snapshot, and originating surface;
 actor-like command fields cannot override it, and account renames do not alter
-history or break exact retry.
+history or break exact retry. The kernel now also includes the Inventory-owned
+location registry: permanent IDs, names reserved across active and archived
+records, atomic create/rename/archive/restore receipts, active/archive reads,
+and archive rejection for positive, negative, or reserved stock. A new opening
+balance now resolves that registry inside its stock transaction: active
+locations may commit, while unknown or archived locations receive stable
+rejections without a balance or receipt.
 
 The real local SQLite test adapter remains explicitly development/test-only and
 refuses production mode or in-memory use. It is not the final storage layer.
@@ -73,12 +79,15 @@ The first production-storage checkpoint is a private `dinkuskit-inventory`
 Cloudflare Worker with a SQLite-backed Durable Object namespace and one object
 database per explicit pool. Workers.dev and preview URLs are disabled, no route
 is deployed, and the only remote operation is a same-account read inspection.
-One production-intended pool has initialized schema version 1 and contains no
-balance, command, confirmation, or receipt. Opening-balance mutation is not
-remotely exposed, no storefront traffic is bound, and no physical stock cutover
-has happened. There is still no installable plugin, executable CLI, or published
-npm package. The package manifest remains private at `0.0.0` to prevent
-accidental publication.
+The source schema defines version 2 as the first complete real-database schema,
+including the location registry. Fresh empty storage initializes directly at
+version 2; older, partial, or unexpected Inventory schemas fail closed and are
+not migrated. An earlier version-1 probe object contained zero records and is
+test evidence, not a live database or migration input. This implementation is
+not a deployment claim. Opening-balance mutation is not remotely exposed, no
+storefront traffic is bound, and no physical stock cutover has happened. There
+is still no installable plugin, executable CLI, or published npm package. The
+package manifest remains private at `0.0.0` to prevent accidental publication.
 
 Scaffold development is pinned to exact `emdash@0.35.0` with a lockfile. This
 is the implementation target for the first standard-format plugin fixture, not
@@ -99,6 +108,7 @@ npm ci
 npm test
 npm ls emdash --depth=0
 bin/verify-opening-balance
+bin/verify-location-registry
 bin/verify-cloudflare-storage
 ```
 

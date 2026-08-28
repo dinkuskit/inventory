@@ -4,11 +4,11 @@
   "current_focus": {
     "cadence": "sequential",
     "confirmed": true,
-    "confirmed_at": "2026-08-28T13:51:08+00:00",
-    "domain": "production Cloudflare inventory pool",
-    "started_at": "2026-08-28T13:51:07+00:00",
+    "confirmed_at": "2026-08-28T18:54:49+00:00",
+    "domain": "active-location opening-balance admission",
+    "started_at": "2026-08-28T18:54:49+00:00",
     "status": "inspected",
-    "summary": "Bobby approved deploying the real production-intended Cloudflare database while leaving the live hat SKU without an opening balance until a physical count. The implementation will use one SQLite-backed Durable Object per explicit pool, no public route or SmokyClub traffic binding, and a same-account read-only remote probe for SC-FLEXFIT-BLK that must return not-found. Public source stays generic; live tenant/account identifiers stay in runtime proof only."
+    "summary": "Repair PR #10 so opening-balance execution accepts only an existing active location in the explicit pool. Perform the check after exact command replay lookup and inside the same serialized transaction as rejection or stock commit. Store stable location_not_found or location_not_active rejections; create no balance or receipt on rejection; keep confirmed retries exact. Prove local SQLite and Cloudflare Durable Object behavior, refresh repository-owned verification and durable proof, and do not deploy or merge."
   },
   "decisions": [
     {
@@ -2087,6 +2087,882 @@
       "superseded_by": null,
       "updated_at": "2026-08-28T14:15:10+00:00",
       "verification_ref": "machine-proof:inventory-cloudflare-pool-20260828/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:ea8583131aae4ba63510b92b37cbcb94dff587c4",
+      "candidate_refs": [],
+      "choice": "A read-only Inventory context explicitly selects either one location or all locations within one pool. One-location receipt history returns only receipts whose effects touch that location. All-locations history returns receipts across the pool and every entry retains its affected location identity. The all-locations scope is never a mutation target; every stock command still requires one exact location.",
+      "context_ref": "user:katana-location-selector-ideology",
+      "created_at": "2026-08-28T15:04:44+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "receipt-audit-008",
+        "command-location-011",
+        "read-back-021"
+      ],
+      "domain": "location-scoped receipt history and opening-balance reason",
+      "history": [
+        {
+          "at": "2026-08-28T15:04:45+00:00",
+          "choice": "A read-only Inventory context explicitly selects either one location or all locations within one pool. One-location receipt history returns only receipts whose effects touch that location. All-locations history returns receipts across the pool and every entry retains its affected location identity. The all-locations scope is never a mutation target; every stock command still requires one exact location.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T15:12:19+00:00",
+          "choice": "A read-only Inventory context explicitly selects either one location or all locations within one pool. One-location receipt history returns only receipts whose effects touch that location. All-locations history returns receipts across the pool and every entry retains its affected location identity. The all-locations scope is never a mutation target; every stock command still requires one exact location.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T15:14:11+00:00",
+          "choice": "A read-only Inventory context explicitly selects either one location or all locations within one pool. One-location receipt history returns only receipts whose effects touch that location. All-locations history returns receipts across the pool and every entry retains its affected location identity. The all-locations scope is never a mutation target; every stock command still requires one exact location.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/location-scoped-receipt-history.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "receipt-history-scope-024",
+      "implementation_ref": "file:docs/implementation/location-scoped-receipt-history.md",
+      "question": "How should location selection scope read-only receipt history?",
+      "rationale": "This matches the proven Katana workflow Bobby wants while preserving Inventory's explicit-location mutation lock and one canonical ledger.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": "proof:.grilltrack/proof/cycle-9/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T15:14:11+00:00",
+          "source_identity": "sha256:1c71bf104cc432119aa35274ca7204c29ff5585e647f3cde59fcb824a25fdc4f"
+        }
+      ],
+      "review_ref": "proof:.grilltrack/proof/cycle-9/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:1c71bf104cc432119aa35274ca7204c29ff5585e647f3cde59fcb824a25fdc4f",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-08-28T15:14:11+00:00",
+      "verification_ref": "proof:.grilltrack/proof/cycle-9/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:ea8583131aae4ba63510b92b37cbcb94dff587c4",
+      "candidate_refs": [],
+      "choice": "The opening-balance GUI prepopulates its editable Reason field with exactly 'Set Initial Stock'. The platform-neutral preview and command require the final trimmed human-readable reason to be non-empty, bind it into confirmation and command identity, and freeze it on the immutable receipt. A stable machine reason code remains separate from the editable public-safe reason text.",
+      "context_ref": "user:set-initial-stock-default-reason",
+      "created_at": "2026-08-28T15:04:45+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "opening-balance-010",
+        "opening-balance-confirmation-020",
+        "receipt-audit-008"
+      ],
+      "domain": "location-scoped receipt history and opening-balance reason",
+      "history": [
+        {
+          "at": "2026-08-28T15:04:45+00:00",
+          "choice": "The opening-balance GUI prepopulates its editable Reason field with exactly 'Set Initial Stock'. The platform-neutral preview and command require the final trimmed human-readable reason to be non-empty, bind it into confirmation and command identity, and freeze it on the immutable receipt. A stable machine reason code remains separate from the editable public-safe reason text.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T15:12:19+00:00",
+          "choice": "The opening-balance GUI prepopulates its editable Reason field with exactly 'Set Initial Stock'. The platform-neutral preview and command require the final trimmed human-readable reason to be non-empty, bind it into confirmation and command identity, and freeze it on the immutable receipt. A stable machine reason code remains separate from the editable public-safe reason text.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T15:14:11+00:00",
+          "choice": "The opening-balance GUI prepopulates its editable Reason field with exactly 'Set Initial Stock'. The platform-neutral preview and command require the final trimmed human-readable reason to be non-empty, bind it into confirmation and command identity, and freeze it on the immutable receipt. A stable machine reason code remains separate from the editable public-safe reason text.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/location-scoped-receipt-history.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "opening-balance-reason-025",
+      "implementation_ref": "file:docs/implementation/location-scoped-receipt-history.md",
+      "question": "What reason should Set opening balance require and preserve?",
+      "rationale": "The default keeps the common physical-count action fast, while editability provides useful audit context and a required final value prevents blank receipts.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": "proof:.grilltrack/proof/cycle-9/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T15:14:12+00:00",
+          "source_identity": "sha256:1c71bf104cc432119aa35274ca7204c29ff5585e647f3cde59fcb824a25fdc4f"
+        }
+      ],
+      "review_ref": "proof:.grilltrack/proof/cycle-9/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:1c71bf104cc432119aa35274ca7204c29ff5585e647f3cde59fcb824a25fdc4f",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-08-28T15:14:12+00:00",
+      "verification_ref": "proof:.grilltrack/proof/cycle-9/PROOF.md"
+    },
+    {
+      "baseline_ref": "sha256:1c71bf104cc432119aa35274ca7204c29ff5585e647f3cde59fcb824a25fdc4f",
+      "candidate_refs": [],
+      "choice": "A one-location inventory view shows that selected location's stock. The all-locations view shows the combined stock total for the SKU across the explicit pool and a per-location breakdown, such as 13 total with Home storage 5 and Warehouse 8. Both views are read-only.",
+      "context_ref": "user:all-locations-total-plus-breakdown",
+      "created_at": "2026-08-28T15:15:38+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "location-balance-009",
+        "receipt-history-scope-024"
+      ],
+      "domain": "one-location and all-locations stock view",
+      "history": [
+        {
+          "at": "2026-08-28T15:15:38+00:00",
+          "choice": "A one-location inventory view shows that selected location's stock. The all-locations view shows the combined stock total for the SKU across the explicit pool and a per-location breakdown, such as 13 total with Home storage 5 and Warehouse 8. Both views are read-only.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        }
+      ],
+      "id": "aggregate-stock-view-026",
+      "implementation_ref": null,
+      "question": "What should one-location and all-locations inventory show for each SKU?",
+      "rationale": "This matches the Katana behavior Bobby approved while keeping location-specific quantities visible and auditable instead of hiding them behind one aggregate.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "locked",
+      "superseded_by": null,
+      "updated_at": "2026-08-28T15:15:38+00:00",
+      "verification_ref": null
+    },
+    {
+      "baseline_ref": "sha256:1c71bf104cc432119aa35274ca7204c29ff5585e647f3cde59fcb824a25fdc4f",
+      "candidate_refs": [],
+      "choice": "For every SKU, show on-hand, reserved, and available quantities, with on-hand as the main number. One-location values come from that exact location. All-locations values are the same-unit sums across the explicit pool, and the per-location breakdown shows the same three quantities. Available remains derived from on-hand minus reserved rather than becoming a separately writable counter.",
+      "context_ref": "user:on-hand-reserved-available-main-number",
+      "created_at": "2026-08-28T15:17:45+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "aggregate-stock-view-026",
+        "location-balance-009"
+      ],
+      "domain": "one-location and all-locations stock view",
+      "history": [
+        {
+          "at": "2026-08-28T15:17:45+00:00",
+          "choice": "For every SKU, show on-hand, reserved, and available quantities, with on-hand as the main number. One-location values come from that exact location. All-locations values are the same-unit sums across the explicit pool, and the per-location breakdown shows the same three quantities. Available remains derived from on-hand minus reserved rather than becoming a separately writable counter.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        }
+      ],
+      "id": "aggregate-stock-quantities-027",
+      "implementation_ref": null,
+      "question": "Which stock quantities should the one-location and all-locations views show?",
+      "rationale": "Bobby wants physical stock to remain the headline while still making order commitments and sellable quantity visible; preserving all three quantities matches the existing canonical balance model.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "locked",
+      "superseded_by": null,
+      "updated_at": "2026-08-28T15:17:45+00:00",
+      "verification_ref": null
+    },
+    {
+      "baseline_ref": "sha256:1c71bf104cc432119aa35274ca7204c29ff5585e647f3cde59fcb824a25fdc4f",
+      "candidate_refs": [],
+      "choice": "When reserved is greater than zero, the future EmDash admin exposes a hover detail with a keyboard/click equivalent. It lists only each order number, quantity of this SKU reserved to that order, and exact inventory location. It shows no customer name, address, payment, or other order data. When reserved is zero there is no detail. The data must come from Inventory's canonical reservation records rather than a guessed Commerce lookup.",
+      "context_ref": "user:reserved-hover-order-numbers",
+      "created_at": "2026-08-28T15:19:31+00:00",
+      "deferred_reason": "The current Inventory kernel has no reservation records or order-reference read model, and the Block Kit GUI is explicitly outside this slice. Preserve the confirmed UX requirement until the Inventory-owned reservation command/history slice exists; do not depend on Commerce, Blocks, or EmDash work now.",
+      "delivery_ref": null,
+      "dependencies": [
+        "aggregate-stock-quantities-027",
+        "receipt-audit-008"
+      ],
+      "domain": "one-location and all-locations stock view",
+      "history": [
+        {
+          "at": "2026-08-28T15:19:31+00:00",
+          "choice": "When reserved is greater than zero, the future EmDash admin exposes a hover detail with a keyboard/click equivalent. It lists only each order number, quantity of this SKU reserved to that order, and exact inventory location. It shows no customer name, address, payment, or other order data. When reserved is zero there is no detail. The data must come from Inventory's canonical reservation records rather than a guessed Commerce lookup.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T15:19:31+00:00",
+          "choice": "When reserved is greater than zero, the future EmDash admin exposes a hover detail with a keyboard/click equivalent. It lists only each order number, quantity of this SKU reserved to that order, and exact inventory location. It shows no customer name, address, payment, or other order data. When reserved is zero there is no detail. The data must come from Inventory's canonical reservation records rather than a guessed Commerce lookup.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "The current Inventory kernel has no reservation records or order-reference read model, and the Block Kit GUI is explicitly outside this slice. Preserve the confirmed UX requirement until the Inventory-owned reservation command/history slice exists; do not depend on Commerce, Blocks, or EmDash work now.",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "deferred",
+          "verification_ref": null
+        }
+      ],
+      "id": "reserved-order-detail-028",
+      "implementation_ref": null,
+      "question": "What should the future admin interface reveal behind a reserved quantity?",
+      "rationale": "Bobby wants to identify which orders consume stock while keeping the audit useful, location-specific, accessible beyond hover, and free of unnecessary customer data.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "deferred",
+      "superseded_by": null,
+      "updated_at": "2026-08-28T15:19:31+00:00",
+      "verification_ref": null
+    },
+    {
+      "baseline_ref": "sha256:1c71bf104cc432119aa35274ca7204c29ff5585e647f3cde59fcb824a25fdc4f",
+      "candidate_refs": [],
+      "choice": "Every active location appears in the all-locations SKU breakdown even when its on-hand, reserved, and available quantities are all zero. Zero is displayed explicitly so an empty location cannot be confused with a missing, unauthorized, or unknown location.",
+      "context_ref": "user:show-zero-stock-locations",
+      "created_at": "2026-08-28T15:25:07+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "aggregate-stock-view-026",
+        "aggregate-stock-quantities-027",
+        "location-balance-009"
+      ],
+      "domain": "one-location and all-locations stock view",
+      "history": [
+        {
+          "at": "2026-08-28T15:25:07+00:00",
+          "choice": "Every active location appears in the all-locations SKU breakdown even when its on-hand, reserved, and available quantities are all zero. Zero is displayed explicitly so an empty location cannot be confused with a missing, unauthorized, or unknown location.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        }
+      ],
+      "id": "zero-stock-location-029",
+      "implementation_ref": null,
+      "question": "Should an active location with zero stock still appear in the all-locations breakdown?",
+      "rationale": "Bobby prefers an explicit Warehouse 0 row because it communicates known emptiness instead of silently hiding the location.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "locked",
+      "superseded_by": null,
+      "updated_at": "2026-08-28T15:25:07+00:00",
+      "verification_ref": null
+    },
+    {
+      "baseline_ref": "sha256:1c71bf104cc432119aa35274ca7204c29ff5585e647f3cde59fcb824a25fdc4f",
+      "candidate_refs": [],
+      "choice": "Locations are created manually through a future EmDash admin surface, while Inventory creates and owns a permanent opaque location ID. The display name may be renamed without changing identity or history. Deactivation archives the location instead of deleting it: archived locations leave normal selectors and main inventory views, remain accessible in an Archive view with full history, and may be restored as the same location identity. No history is rewritten or deleted.",
+      "context_ref": "user:location-archive-recoverable",
+      "created_at": "2026-08-28T15:28:02+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "zero-stock-location-029",
+        "location-balance-009",
+        "receipt-audit-008"
+      ],
+      "domain": "Inventory location registry lifecycle",
+      "history": [
+        {
+          "at": "2026-08-28T15:28:02+00:00",
+          "choice": "Locations are created manually through a future EmDash admin surface, while Inventory creates and owns a permanent opaque location ID. The display name may be renamed without changing identity or history. Deactivation archives the location instead of deleting it: archived locations leave normal selectors and main inventory views, remain accessible in an Archive view with full history, and may be restored as the same location identity. No history is rewritten or deleted.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T16:00:24+00:00",
+          "choice": "Locations are created manually through a future EmDash admin surface, while Inventory creates and owns a permanent opaque location ID. The display name may be renamed without changing identity or history. Deactivation archives the location instead of deleting it: archived locations leave normal selectors and main inventory views, remain accessible in an Archive view with full history, and may be restored as the same location identity. No history is rewritten or deleted.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T16:00:25+00:00",
+          "choice": "Locations are created manually through a future EmDash admin surface, while Inventory creates and owns a permanent opaque location ID. The display name may be renamed without changing identity or history. Deactivation archives the location instead of deleting it: archived locations leave normal selectors and main inventory views, remain accessible in an Archive view with full history, and may be restored as the same location identity. No history is rewritten or deleted.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/location-registry-lifecycle.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T18:30:20+00:00",
+          "choice": "Locations are created manually through a future EmDash admin surface, while Inventory creates and owns a permanent opaque location ID. The display name may be renamed without changing identity or history. Deactivation archives the location instead of deleting it: archived locations leave normal selectors and main inventory views, remain accessible in an Archive view with full history, and may be restored as the same location identity. No history is rewritten or deleted.",
+          "from": "verified",
+          "implementation_ref": "file:docs/implementation/location-registry-lifecycle.md",
+          "note": "adjudicated review requires a fix",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": ".grilltrack/proof/cycle-10/REVIEW.md",
+          "review_result": "clean",
+          "review_source_identity": "sha256:54a52b1c33e7b4a0aeecaf0339a24e81c6f3b6f138e8a295a2a24934e46cad6d",
+          "to": "needs_reverification",
+          "verification_ref": "proof:.grilltrack/proof/cycle-10/PROOF.md"
+        },
+        {
+          "at": "2026-08-28T18:33:03+00:00",
+          "choice": "Locations are created manually through a future EmDash admin surface, while Inventory creates and owns a permanent opaque location ID. The display name may be renamed without changing identity or history. Deactivation archives the location instead of deleting it: archived locations leave normal selectors and main inventory views, remain accessible in an Archive view with full history, and may be restored as the same location identity. No history is rewritten or deleted.",
+          "from": "needs_reverification",
+          "implementation_ref": "file:docs/implementation/location-registry-lifecycle.md",
+          "note": "bounded implementation recorded",
+          "repair_required": true,
+          "review_classifications": [
+            "required_fix"
+          ],
+          "review_ref": "https://github.com/dinkuskit/inventory/pull/10#issuecomment-5456159246",
+          "review_result": "findings",
+          "review_source_identity": "git:89c8145adc9d277262570349a2d44a04d78e2646",
+          "to": "implemented",
+          "verification_ref": "proof:.grilltrack/proof/cycle-10/PROOF.md"
+        },
+        {
+          "at": "2026-08-28T18:36:45+00:00",
+          "choice": "Locations are created manually through a future EmDash admin surface, while Inventory creates and owns a permanent opaque location ID. The display name may be renamed without changing identity or history. Deactivation archives the location instead of deleting it: archived locations leave normal selectors and main inventory views, remain accessible in an Archive view with full history, and may be restored as the same location identity. No history is rewritten or deleted.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/fresh-cloudflare-schema-initialization.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": "proof:.grilltrack/proof/cycle-10/PROOF.md"
+        },
+        {
+          "at": "2026-08-28T18:54:49+00:00",
+          "choice": "Locations are created manually through a future EmDash admin surface, while Inventory creates and owns a permanent opaque location ID. The display name may be renamed without changing identity or history. Deactivation archives the location instead of deleting it: archived locations leave normal selectors and main inventory views, remain accessible in an Archive view with full history, and may be restored as the same location identity. No history is rewritten or deleted.",
+          "from": "verified",
+          "implementation_ref": "file:docs/implementation/fresh-cloudflare-schema-initialization.md",
+          "note": "adjudicated review requires a fix",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": ".grilltrack/proof/cycle-10/REVIEW.md",
+          "review_result": "clean",
+          "review_source_identity": "sha256:69f6528d61961d36a92b92863e65e1f0ccccfb338dff189aeafb50c7b483dd3d",
+          "to": "needs_reverification",
+          "verification_ref": "proof:.grilltrack/proof/cycle-10/PROOF.md"
+        },
+        {
+          "at": "2026-08-28T19:03:21+00:00",
+          "choice": "Locations are created manually through a future EmDash admin surface, while Inventory creates and owns a permanent opaque location ID. The display name may be renamed without changing identity or history. Deactivation archives the location instead of deleting it: archived locations leave normal selectors and main inventory views, remain accessible in an Archive view with full history, and may be restored as the same location identity. No history is rewritten or deleted.",
+          "from": "needs_reverification",
+          "implementation_ref": "file:docs/implementation/fresh-cloudflare-schema-initialization.md",
+          "note": "bounded implementation recorded",
+          "repair_required": true,
+          "review_classifications": [
+            "required_fix"
+          ],
+          "review_ref": "https://github.com/dinkuskit/inventory/pull/10#issuecomment-5456159246",
+          "review_result": "findings",
+          "review_source_identity": "git:d3625c643ab1b1f0a5d0653d01ef85719ad4831b",
+          "to": "implemented",
+          "verification_ref": "proof:.grilltrack/proof/cycle-10/PROOF.md"
+        },
+        {
+          "at": "2026-08-28T19:08:16+00:00",
+          "choice": "Locations are created manually through a future EmDash admin surface, while Inventory creates and owns a permanent opaque location ID. The display name may be renamed without changing identity or history. Deactivation archives the location instead of deleting it: archived locations leave normal selectors and main inventory views, remain accessible in an Archive view with full history, and may be restored as the same location identity. No history is rewritten or deleted.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/opening-balance-active-location-admission.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": "proof:.grilltrack/proof/cycle-10/PROOF.md"
+        }
+      ],
+      "id": "location-lifecycle-030",
+      "implementation_ref": "file:docs/implementation/opening-balance-active-location-admission.md",
+      "question": "How should Inventory create, rename, archive, and recover locations?",
+      "rationale": "Bobby wants inactive locations out of everyday sight without losing audit history or recovery; stable identity prevents renames or archiving from breaking balances and receipts.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-10/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T16:00:25+00:00",
+          "source_identity": "sha256:54a52b1c33e7b4a0aeecaf0339a24e81c6f3b6f138e8a295a2a24934e46cad6d"
+        },
+        {
+          "classifications": [
+            "required_fix"
+          ],
+          "ref": "https://github.com/dinkuskit/inventory/pull/10#issuecomment-5456159246",
+          "result": "findings",
+          "reviewed_at": "2026-08-28T18:30:20+00:00",
+          "source_identity": "git:89c8145adc9d277262570349a2d44a04d78e2646"
+        },
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-10/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T18:36:45+00:00",
+          "source_identity": "sha256:69f6528d61961d36a92b92863e65e1f0ccccfb338dff189aeafb50c7b483dd3d"
+        },
+        {
+          "classifications": [
+            "required_fix"
+          ],
+          "ref": "https://github.com/dinkuskit/inventory/pull/10#issuecomment-5456159246",
+          "result": "findings",
+          "reviewed_at": "2026-08-28T18:54:49+00:00",
+          "source_identity": "git:d3625c643ab1b1f0a5d0653d01ef85719ad4831b"
+        },
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-10/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T19:08:17+00:00",
+          "source_identity": "sha256:d817681efbbfe7dcf117824468412e280af5d9033b20654a229ee637f903b820"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-10/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:d817681efbbfe7dcf117824468412e280af5d9033b20654a229ee637f903b820",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-08-28T19:08:17+00:00",
+      "verification_ref": "proof:.grilltrack/proof/cycle-10/PROOF.md"
+    },
+    {
+      "baseline_ref": "sha256:1c71bf104cc432119aa35274ca7204c29ff5585e647f3cde59fcb824a25fdc4f",
+      "candidate_refs": [],
+      "choice": "Inventory blocks archiving while the location has any non-zero on-hand stock or any active reserved quantity. Stock must first be moved or adjusted to zero, and reservations must be cleared. A blocked archive returns the remaining stock and reservation blockers. Once clear, archiving preserves the same permanent location ID and full history for later restoration.",
+      "context_ref": "user:confirm-location-archive-safety",
+      "created_at": "2026-08-28T15:34:11+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "location-lifecycle-030",
+        "location-balance-009",
+        "reserved-order-detail-028"
+      ],
+      "domain": "Inventory location registry lifecycle",
+      "history": [
+        {
+          "at": "2026-08-28T15:34:12+00:00",
+          "choice": "Inventory blocks archiving while the location has any non-zero on-hand stock or any active reserved quantity. Stock must first be moved or adjusted to zero, and reservations must be cleared. A blocked archive returns the remaining stock and reservation blockers. Once clear, archiving preserves the same permanent location ID and full history for later restoration.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T16:00:25+00:00",
+          "choice": "Inventory blocks archiving while the location has any non-zero on-hand stock or any active reserved quantity. Stock must first be moved or adjusted to zero, and reservations must be cleared. A blocked archive returns the remaining stock and reservation blockers. Once clear, archiving preserves the same permanent location ID and full history for later restoration.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T16:00:26+00:00",
+          "choice": "Inventory blocks archiving while the location has any non-zero on-hand stock or any active reserved quantity. Stock must first be moved or adjusted to zero, and reservations must be cleared. A blocked archive returns the remaining stock and reservation blockers. Once clear, archiving preserves the same permanent location ID and full history for later restoration.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/location-registry-lifecycle.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "location-archive-safety-031",
+      "implementation_ref": "file:docs/implementation/location-registry-lifecycle.md",
+      "question": "When may an active location be archived?",
+      "rationale": "This prevents stock or committed orders from disappearing from normal inventory views merely because a location was archived.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-10/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T16:00:26+00:00",
+          "source_identity": "sha256:54a52b1c33e7b4a0aeecaf0339a24e81c6f3b6f138e8a295a2a24934e46cad6d"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-10/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:54a52b1c33e7b4a0aeecaf0339a24e81c6f3b6f138e8a295a2a24934e46cad6d",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-08-28T16:00:26+00:00",
+      "verification_ref": "proof:.grilltrack/proof/cycle-10/PROOF.md"
+    },
+    {
+      "baseline_ref": "sha256:1c71bf104cc432119aa35274ca7204c29ff5585e647f3cde59fcb824a25fdc4f",
+      "candidate_refs": [],
+      "choice": "No two Inventory locations may share the same display name, including when one or both locations are archived. Create, rename, and restore operations fail with a stable conflict result rather than creating an ambiguous selector entry. Archiving does not release the name for reuse.",
+      "context_ref": "user:no-duplicate-location-names",
+      "created_at": "2026-08-28T15:35:20+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "location-lifecycle-030"
+      ],
+      "domain": "Inventory location registry lifecycle",
+      "history": [
+        {
+          "at": "2026-08-28T15:35:21+00:00",
+          "choice": "No two Inventory locations may share the same display name, including when one or both locations are archived. Create, rename, and restore operations fail with a stable conflict result rather than creating an ambiguous selector entry. Archiving does not release the name for reuse.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T16:00:27+00:00",
+          "choice": "No two Inventory locations may share the same display name, including when one or both locations are archived. Create, rename, and restore operations fail with a stable conflict result rather than creating an ambiguous selector entry. Archiving does not release the name for reuse.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T16:00:27+00:00",
+          "choice": "No two Inventory locations may share the same display name, including when one or both locations are archived. Create, rename, and restore operations fail with a stable conflict result rather than creating an ambiguous selector entry. Archiving does not release the name for reuse.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/location-registry-lifecycle.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "location-name-uniqueness-032",
+      "implementation_ref": "file:docs/implementation/location-registry-lifecycle.md",
+      "question": "May two locations share the same display name?",
+      "rationale": "Bobby requires every location name to identify exactly one permanent location and never produce duplicate names in active or archived records.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-10/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T16:00:27+00:00",
+          "source_identity": "sha256:54a52b1c33e7b4a0aeecaf0339a24e81c6f3b6f138e8a295a2a24934e46cad6d"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-10/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:54a52b1c33e7b4a0aeecaf0339a24e81c6f3b6f138e8a295a2a24934e46cad6d",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-08-28T16:00:27+00:00",
+      "verification_ref": "proof:.grilltrack/proof/cycle-10/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:89c8145adc9d277262570349a2d44a04d78e2646",
+      "candidate_refs": [],
+      "choice": "Inventory scaffolds a brand-new empty Durable Object directly at the complete current schema. It provides no v1-to-v2 data migration because no live legacy database exists. Any non-empty, partial, older, or unexpected schema fails closed instead of being guessed, backfilled, or silently upgraded.",
+      "context_ref": "user:no-live-databases-first-scaffold",
+      "created_at": "2026-08-28T18:30:20+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "architecture-002",
+        "location-lifecycle-030"
+      ],
+      "domain": "fresh Cloudflare schema initialization",
+      "history": [
+        {
+          "at": "2026-08-28T18:30:20+00:00",
+          "choice": "Inventory scaffolds a brand-new empty Durable Object directly at the complete current schema. It provides no v1-to-v2 data migration because no live legacy database exists. Any non-empty, partial, older, or unexpected schema fails closed instead of being guessed, backfilled, or silently upgraded.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T18:33:03+00:00",
+          "choice": "Inventory scaffolds a brand-new empty Durable Object directly at the complete current schema. It provides no v1-to-v2 data migration because no live legacy database exists. Any non-empty, partial, older, or unexpected schema fails closed instead of being guessed, backfilled, or silently upgraded.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T18:36:45+00:00",
+          "choice": "Inventory scaffolds a brand-new empty Durable Object directly at the complete current schema. It provides no v1-to-v2 data migration because no live legacy database exists. Any non-empty, partial, older, or unexpected schema fails closed instead of being guessed, backfilled, or silently upgraded.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/fresh-cloudflare-schema-initialization.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "fresh-schema-initialization-034",
+      "implementation_ref": "file:docs/implementation/fresh-cloudflare-schema-initialization.md",
+      "question": "How should the first Cloudflare Inventory database acquire the location registry schema?",
+      "rationale": "This is the first real database, so a fictional compatibility path creates risk and misleading claims without preserving any actual live data.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-10/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T18:36:45+00:00",
+          "source_identity": "sha256:69f6528d61961d36a92b92863e65e1f0ccccfb338dff189aeafb50c7b483dd3d"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-10/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:69f6528d61961d36a92b92863e65e1f0ccccfb338dff189aeafb50c7b483dd3d",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-08-28T18:36:45+00:00",
+      "verification_ref": "proof:.grilltrack/proof/cycle-10/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:d3625c643ab1b1f0a5d0653d01ef85719ad4831b",
+      "candidate_refs": [],
+      "choice": "Every new opening-balance command must resolve its explicit location ID to an active location in the same pool inside the serialized mutation transaction. Unknown locations return a durable location_not_found rejection; archived locations return a durable location_not_active rejection. Neither creates stock or a receipt. Exact retries return the original terminal result even if location state later changes.",
+      "context_ref": "user:confirm-active-location-opening-balance-pr10",
+      "created_at": "2026-08-28T18:54:49+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "opening-balance-storage-019",
+        "opening-balance-confirmation-020",
+        "location-lifecycle-030",
+        "fresh-schema-initialization-034"
+      ],
+      "domain": "active-location opening-balance admission",
+      "history": [
+        {
+          "at": "2026-08-28T18:54:49+00:00",
+          "choice": "Every new opening-balance command must resolve its explicit location ID to an active location in the same pool inside the serialized mutation transaction. Unknown locations return a durable location_not_found rejection; archived locations return a durable location_not_active rejection. Neither creates stock or a receipt. Exact retries return the original terminal result even if location state later changes.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T19:03:21+00:00",
+          "choice": "Every new opening-balance command must resolve its explicit location ID to an active location in the same pool inside the serialized mutation transaction. Unknown locations return a durable location_not_found rejection; archived locations return a durable location_not_active rejection. Neither creates stock or a receipt. Exact retries return the original terminal result even if location state later changes.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T19:08:17+00:00",
+          "choice": "Every new opening-balance command must resolve its explicit location ID to an active location in the same pool inside the serialized mutation transaction. Unknown locations return a durable location_not_found rejection; archived locations return a durable location_not_active rejection. Neither creates stock or a receipt. Exact retries return the original terminal result even if location state later changes.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/opening-balance-active-location-admission.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "opening-balance-location-admission-035",
+      "implementation_ref": "file:docs/implementation/opening-balance-active-location-admission.md",
+      "question": "What should happen when an opening balance names an unknown or archived location?",
+      "rationale": "An archived location must stay operationally inactive and out of normal stock views; atomic admission prevents stale previews, typos, or concurrent lifecycle changes from creating hidden stock.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-10/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T19:08:17+00:00",
+          "source_identity": "sha256:d817681efbbfe7dcf117824468412e280af5d9033b20654a229ee637f903b820"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-10/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:d817681efbbfe7dcf117824468412e280af5d9033b20654a229ee637f903b820",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-08-28T19:08:17+00:00",
+      "verification_ref": "proof:.grilltrack/proof/cycle-10/PROOF.md"
     }
   ],
   "last_activation": {
@@ -2095,16 +2971,16 @@
   },
   "recommendation": {
     "alternatives": [
-      "Define the authenticated Inventory service command boundary after the deployed source is review-visible",
-      "Grill the Block Kit opening-balance GUI after the deployed source is review-visible"
+      "ordinary stock-adjustment command with editable reason",
+      "preview-time active-location warning"
     ],
-    "reason": "The private production pool is live and empty, but its exact source is still only in the isolated worktree. Making that source review-visible is the smallest safe next step before expanding runtime authority.",
-    "recommended": "Commit, push, open a stacked Inventory PR, and run exact-head OpenClaw review for the deployed Cloudflare storage source",
-    "recorded_at": "2026-08-28T14:15:10+00:00"
+    "reason": "The active-location write guard is now proven; the smallest next Katana-style slice is a read-only selector contract that shows one location or combined totals without creating mutation authority.",
+    "recommended": "one-location/all-locations aggregate stock read",
+    "recorded_at": "2026-08-28T19:08:17+00:00"
   },
   "schema_version": "grilltrack/v0.1",
   "status": "active",
   "title": "Dinkuskit Inventory v1",
   "track_id": "dinkuskit-inventory-v1",
-  "updated_at": "2026-08-28T14:15:10+00:00"
+  "updated_at": "2026-08-28T19:08:17+00:00"
 }

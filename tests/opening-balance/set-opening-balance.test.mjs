@@ -8,6 +8,11 @@ import test from "node:test";
 import * as inventoryPublicApi from "../../src/index.ts";
 import { createSetOpeningBalance } from "../../src/index.ts";
 import { createLocalSqliteTestStore } from "../../src/storage/local-sqlite-test-store.ts";
+import {
+	archiveFixtureLocation,
+	createFixtureLocation,
+	restoreFixtureLocation,
+} from "../helpers/location-fixture.mjs";
 
 const principal = Object.freeze({
 	kind: "human",
@@ -19,6 +24,13 @@ const principal = Object.freeze({
 test("keeps the local SQLite test adapter out of the platform-neutral root API", () => {
 	assert.equal("createLocalSqliteTestStore" in inventoryPublicApi, false);
 	assert.equal("LocalSqliteTestInventoryStore" in inventoryPublicApi, false);
+});
+
+test("exposes the exact editable opening-balance reason default", () => {
+	assert.equal(
+		inventoryPublicApi.DEFAULT_OPENING_BALANCE_REASON_NOTE,
+		"Set Initial Stock",
+	);
 });
 
 function openingBalanceCommand({
@@ -77,10 +89,85 @@ function executor(
 	});
 }
 
+test("durably rejects an unknown opening-balance location without stock or receipt", async (t) => {
+	const filePath = await databasePath(t, "unknown-location");
+	const store = createLocalSqliteTestStore({ filePath });
+	t.after(() => store.close());
+	const command = openingBalanceCommand({
+		commandId: "cmd_unknown_location",
+		locationId: "location_unknown",
+	});
+	const rejected = await executor(store, {
+		receiptIds: ["rcpt_unknown_should_not_exist"],
+	})(command, { principal });
+
+	assert.deepEqual(rejected, {
+		schema: "dinkuskit.inventory.command-result/v1",
+		outcome: "rejected",
+		commandId: "cmd_unknown_location",
+		code: "location_not_found",
+		message: "The location does not exist in this inventory pool.",
+	});
+	assert.equal(
+		await store.readBalance({
+			poolId: "pool_test",
+			locationId: "location_unknown",
+			skuId: "sku_keychain",
+		}),
+		null,
+	);
+	assert.equal(await store.readReceipt("rcpt_unknown_should_not_exist"), null);
+
+	await createFixtureLocation(store, { locationId: "location_unknown" });
+	const replay = await executor(store, { receiptIds: [] })(command, {
+		principal,
+	});
+	assert.equal(JSON.stringify(replay), JSON.stringify(rejected));
+});
+
+test("durably rejects an archived opening-balance location after restoration", async (t) => {
+	const filePath = await databasePath(t, "archived-location");
+	const store = createLocalSqliteTestStore({ filePath });
+	t.after(() => store.close());
+	await createFixtureLocation(store, { locationId: "location_archived" });
+	await archiveFixtureLocation(store, { locationId: "location_archived" });
+	const command = openingBalanceCommand({
+		commandId: "cmd_archived_location",
+		locationId: "location_archived",
+	});
+	const rejected = await executor(store, {
+		receiptIds: ["rcpt_archived_should_not_exist"],
+	})(command, { principal });
+
+	assert.deepEqual(rejected, {
+		schema: "dinkuskit.inventory.command-result/v1",
+		outcome: "rejected",
+		commandId: "cmd_archived_location",
+		code: "location_not_active",
+		message: "The location is archived and cannot receive stock.",
+	});
+	assert.equal(
+		await store.readBalance({
+			poolId: "pool_test",
+			locationId: "location_archived",
+			skuId: "sku_keychain",
+		}),
+		null,
+	);
+	assert.equal(await store.readReceipt("rcpt_archived_should_not_exist"), null);
+
+	await restoreFixtureLocation(store, { locationId: "location_archived" });
+	const replay = await executor(store, { receiptIds: [] })(command, {
+		principal,
+	});
+	assert.equal(JSON.stringify(replay), JSON.stringify(rejected));
+});
+
 test("commits one opening balance with its immutable receipt and no other location", async (t) => {
 	const filePath = await databasePath(t, "commit");
 	const store = createLocalSqliteTestStore({ filePath });
 	t.after(() => store.close());
+	await createFixtureLocation(store);
 	const setOpeningBalance = executor(store);
 	const command = openingBalanceCommand({ value: "005.000" });
 
@@ -158,6 +245,7 @@ test("commits one opening balance with its immutable receipt and no other locati
 test("returns the byte-stable original result for normalized replay after reopen", async (t) => {
 	const filePath = await databasePath(t, "replay");
 	let store = createLocalSqliteTestStore({ filePath });
+	await createFixtureLocation(store);
 	let setOpeningBalance = executor(store);
 	const first = await setOpeningBalance(
 		openingBalanceCommand({ value: "005.000" }),
@@ -180,6 +268,7 @@ test("rejects changed content under one command ID while preserving the original
 	const filePath = await databasePath(t, "conflict");
 	const store = createLocalSqliteTestStore({ filePath });
 	t.after(() => store.close());
+	await createFixtureLocation(store);
 	const setOpeningBalance = executor(store);
 	const original = await setOpeningBalance(openingBalanceCommand(), {
 		principal,
@@ -210,6 +299,7 @@ test("rejects changed content under one command ID while preserving the original
 test("stores a second-opening rejection and replays it after reopen", async (t) => {
 	const filePath = await databasePath(t, "rejection");
 	let store = createLocalSqliteTestStore({ filePath });
+	await createFixtureLocation(store);
 	let setOpeningBalance = executor(store, {
 		receiptIds: ["rcpt_first"],
 	});
@@ -244,6 +334,7 @@ test("serializes competing command IDs so only one opening balance commits", asy
 	const filePath = await databasePath(t, "concurrency");
 	const store = createLocalSqliteTestStore({ filePath });
 	t.after(() => store.close());
+	await createFixtureLocation(store);
 	const setOpeningBalance = executor(store, {
 		receiptIds: ["rcpt_race_1", "rcpt_race_2"],
 	});
@@ -283,6 +374,8 @@ test("serializes competing command IDs so only one opening balance commits", asy
 test("rolls back balance and command state when receipt persistence fails", async (t) => {
 	const filePath = await databasePath(t, "rollback");
 	let store = createLocalSqliteTestStore({ filePath });
+	await createFixtureLocation(store);
+	await createFixtureLocation(store, { locationId: "location_south" });
 	let setOpeningBalance = executor(store, {
 		receiptIds: ["rcpt_duplicate"],
 	});
@@ -349,6 +442,50 @@ test("rejects malformed context and quantities before storage", async (t) => {
 		}),
 		null,
 	);
+});
+
+test("requires a final human-readable reason and freezes an edited value", async (t) => {
+	const filePath = await databasePath(t, "reason");
+	const store = createLocalSqliteTestStore({ filePath });
+	t.after(() => store.close());
+	await createFixtureLocation(store);
+	const setOpeningBalance = executor(store, {
+		receiptIds: ["rcpt_reason"],
+	});
+	const missingReason = openingBalanceCommand({
+		commandId: "cmd_missing_reason",
+		reasonNote: undefined,
+	});
+	delete missingReason.reason.note;
+
+	await assert.rejects(
+		() => setOpeningBalance(missingReason, { principal }),
+		{ name: "InvalidOpeningBalanceCommandError" },
+	);
+	await assert.rejects(
+		() =>
+			setOpeningBalance(
+				openingBalanceCommand({
+					commandId: "cmd_blank_reason",
+					reasonNote: "   ",
+				}),
+				{ principal },
+			),
+		{ name: "InvalidOpeningBalanceCommandError" },
+	);
+
+	const committed = await setOpeningBalance(
+		openingBalanceCommand({
+			commandId: "cmd_reason",
+			reasonNote: "  Set Initial Stock - physical shelf count  ",
+		}),
+		{ principal },
+	);
+	assert.equal(committed.outcome, "committed");
+	assert.deepEqual(committed.receipt.reason, {
+		code: "physical_count",
+		note: "Set Initial Stock - physical shelf count",
+	});
 });
 
 test("refuses in-memory and production-mode local storage", async (t) => {

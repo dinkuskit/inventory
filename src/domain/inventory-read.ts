@@ -1,13 +1,18 @@
 import type {
 	BalanceRecord,
-	OpeningBalanceResult,
+	OpeningBalanceReceiptV2,
 	SkuLocationKey,
 } from "./opening-balance.ts";
+import type { InventoryCommandResult } from "./location-registry.ts";
 
 export const BALANCE_READ_RESULT_SCHEMA =
 	"dinkuskit.inventory.balance-read-result/v1" as const;
 export const MUTATION_READ_RESULT_SCHEMA =
 	"dinkuskit.inventory.mutation-read-result/v1" as const;
+export const RECEIPT_HISTORY_READ_RESULT_SCHEMA =
+	"dinkuskit.inventory.receipt-history-read-result/v1" as const;
+export const RECEIPT_HISTORY_DEFAULT_LIMIT = 50 as const;
+export const RECEIPT_HISTORY_MAX_LIMIT = 100 as const;
 
 export type ReadSkuLocationBalanceInput = SkuLocationKey;
 
@@ -37,13 +42,44 @@ export type InventoryMutationReadResult =
 			schema: typeof MUTATION_READ_RESULT_SCHEMA;
 			outcome: "found";
 			lookup: NormalizedInventoryMutationLookup;
-			result: OpeningBalanceResult;
+			result: InventoryCommandResult;
 	  }>
 	| Readonly<{
 			schema: typeof MUTATION_READ_RESULT_SCHEMA;
 			outcome: "not_found";
 			lookup: NormalizedInventoryMutationLookup;
 	  }>;
+
+export type ReceiptHistoryScope =
+	| Readonly<{ kind: "location"; locationId: string }>
+	| Readonly<{ kind: "all_locations" }>;
+
+export type ReceiptHistoryCursor = Readonly<{
+	committedAt: string;
+	receiptId: string;
+}>;
+
+export type ReadReceiptHistoryInput = Readonly<{
+	poolId: string;
+	scope: ReceiptHistoryScope;
+	limit?: number;
+	before?: ReceiptHistoryCursor;
+}>;
+
+export type NormalizedReadReceiptHistoryInput = Readonly<{
+	poolId: string;
+	scope: ReceiptHistoryScope;
+	limit: number;
+	before?: ReceiptHistoryCursor;
+}>;
+
+export type ReceiptHistoryReadResult = Readonly<{
+	schema: typeof RECEIPT_HISTORY_READ_RESULT_SCHEMA;
+	poolId: string;
+	scope: ReceiptHistoryScope;
+	receipts: readonly OpeningBalanceReceiptV2[];
+	next: ReceiptHistoryCursor | null;
+}>;
 
 export class InvalidInventoryReadQueryError extends Error {
 	constructor(message: string) {
@@ -74,6 +110,39 @@ function nonEmptyString(value: unknown, field: string): string {
 	return normalized;
 }
 
+function normalizedLimit(value: unknown): number {
+	if (value === undefined) {
+		return RECEIPT_HISTORY_DEFAULT_LIMIT;
+	}
+	if (
+		typeof value !== "number" ||
+		!Number.isInteger(value) ||
+		value < 1 ||
+		value > RECEIPT_HISTORY_MAX_LIMIT
+	) {
+		invalid(
+			`limit must be an integer from 1 through ${RECEIPT_HISTORY_MAX_LIMIT}.`,
+		);
+	}
+	return value;
+}
+
+function normalizedCursor(value: unknown): ReceiptHistoryCursor | undefined {
+	if (value === undefined) {
+		return undefined;
+	}
+	const cursor = record(value, "before");
+	const committedAt = nonEmptyString(cursor.committedAt, "before.committedAt");
+	const timestamp = Date.parse(committedAt);
+	if (Number.isNaN(timestamp)) {
+		invalid("before.committedAt must be a valid timestamp.");
+	}
+	return {
+		committedAt: new Date(timestamp).toISOString(),
+		receiptId: nonEmptyString(cursor.receiptId, "before.receiptId"),
+	};
+}
+
 export function normalizeReadSkuLocationBalanceInput(
 	input: unknown,
 ): ReadSkuLocationBalanceInput {
@@ -97,4 +166,33 @@ export function normalizeInventoryMutationLookup(
 	return hasReceiptId
 		? { receiptId: nonEmptyString(lookup.receiptId, "receiptId") }
 		: { commandId: nonEmptyString(lookup.commandId, "commandId") };
+}
+
+export function normalizeReadReceiptHistoryInput(
+	input: unknown,
+): NormalizedReadReceiptHistoryInput {
+	const query = record(input, "receipt history query");
+	const scopeInput = record(query.scope, "scope");
+	let scope: ReceiptHistoryScope;
+	if (scopeInput.kind === "location") {
+		scope = {
+			kind: "location",
+			locationId: nonEmptyString(scopeInput.locationId, "scope.locationId"),
+		};
+	} else if (scopeInput.kind === "all_locations") {
+		if (Object.prototype.hasOwnProperty.call(scopeInput, "locationId")) {
+			invalid("All-locations scope cannot include a locationId.");
+		}
+		scope = { kind: "all_locations" };
+	} else {
+		invalid('scope.kind must be "location" or "all_locations".');
+	}
+
+	const before = normalizedCursor(query.before);
+	const normalized = {
+		poolId: nonEmptyString(query.poolId, "poolId"),
+		scope,
+		limit: normalizedLimit(query.limit),
+	};
+	return before === undefined ? normalized : { ...normalized, before };
 }

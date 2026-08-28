@@ -1,6 +1,6 @@
 ---
 name: cloudflare-storage-verification
-description: Verify Inventory's private Cloudflare Worker, SQLite Durable Object schema, production storage adapter, pool isolation, atomic opening-balance behavior, and deployable no-route configuration.
+description: Verify Inventory's private Cloudflare Worker, versioned SQLite Durable Object schema, production storage adapter, pool isolation, atomic opening-balance and location-registry behavior, and deployable no-route configuration.
 ---
 
 # Cloudflare storage verification
@@ -24,10 +24,14 @@ as a dry run in a task-owned temporary directory. It never authenticates,
 deploys, calls a remote service, initializes a production object, or mutates
 stock.
 
-The runtime suite proves exact schema initialization, explicit not-found reads,
-pool isolation, atomic balance/receipt/command commit, exact retry, and rollback
-on immutable receipt conflict. The deployment contract rejects committed
-account, tenant, pool, location, SKU, route, or public-preview defaults.
+The runtime suite proves direct fresh version-2 schema initialization, exact
+idempotency, fail-closed rejection of legacy-shaped storage without mutation,
+explicit not-found reads, pool isolation, atomic balance/receipt/command
+commit, active-location opening-balance admission, archived/unknown rejection
+without stock or receipt, exact opening-balance and location-command retry, and
+rollback on immutable receipt conflict. The deployment contract
+rejects committed account, tenant, pool, location, SKU, route, or
+public-preview defaults.
 
 ## Expected result
 

@@ -1,10 +1,11 @@
 export const CLOUDFLARE_INVENTORY_SCHEMA =
 	"dinkuskit.inventory.cloudflare-schema-status/v1" as const;
-export const CLOUDFLARE_INVENTORY_SCHEMA_VERSION = 1 as const;
+export const CLOUDFLARE_INVENTORY_SCHEMA_VERSION = 2 as const;
 
 export const CLOUDFLARE_INVENTORY_TABLES = [
 	"inventory_balances",
 	"inventory_command_results",
+	"inventory_locations",
 	"inventory_opening_balance_confirmations",
 	"inventory_receipts",
 	"inventory_schema_migrations",
@@ -64,81 +65,107 @@ export function initializeCloudflareInventorySchema(
 	storage: DurableObjectStorage,
 ): void {
 	storage.transactionSync(() => {
+		const existingTables = inventoryTables(storage);
+		if (existingTables.length > 0) {
+			if (
+				JSON.stringify(existingTables) !==
+				JSON.stringify(CLOUDFLARE_INVENTORY_TABLES)
+			) {
+				throw new Error(
+					"Cloudflare Inventory storage uses an older or incompatible schema.",
+				);
+			}
+			assertExactSchema(storage);
+			return;
+		}
+
 		storage.sql
 			.exec(
-				`CREATE TABLE IF NOT EXISTS inventory_schema_migrations (
+				`CREATE TABLE inventory_schema_migrations (
 					version INTEGER PRIMARY KEY,
 					applied_at TEXT NOT NULL
 				) STRICT`,
 			)
 			.toArray();
-
-		const versions = storage.sql
-			.exec<SqlRow>(
-				"SELECT version FROM inventory_schema_migrations ORDER BY version",
+		storage.sql
+			.exec(
+				`CREATE TABLE inventory_command_results (
+					command_id TEXT PRIMARY KEY,
+					command_digest TEXT NOT NULL,
+					terminal_result_json TEXT NOT NULL
+				) STRICT`,
 			)
-			.toArray()
-			.map((row) => Number(row.version));
-		if (versions.length === 0) {
-			storage.sql
-				.exec(
-					`CREATE TABLE inventory_command_results (
-						command_id TEXT PRIMARY KEY,
-						command_digest TEXT NOT NULL,
-						terminal_result_json TEXT NOT NULL
-					) STRICT`,
-				)
-				.toArray();
-			storage.sql
-				.exec(
-					`CREATE TABLE inventory_balances (
-						pool_id TEXT NOT NULL,
-						location_id TEXT NOT NULL,
-						sku_id TEXT NOT NULL,
-						on_hand_value TEXT NOT NULL,
-						reserved_value TEXT NOT NULL,
-						available_value TEXT NOT NULL,
-						unit TEXT NOT NULL,
-						version INTEGER NOT NULL,
-						has_stock_history INTEGER NOT NULL
-							CHECK (has_stock_history IN (0, 1)),
-						PRIMARY KEY (pool_id, location_id, sku_id)
-					) STRICT`,
-				)
-				.toArray();
-			storage.sql
-				.exec(
-					`CREATE TABLE inventory_receipts (
-						receipt_id TEXT PRIMARY KEY,
-						command_id TEXT NOT NULL UNIQUE,
-						receipt_json TEXT NOT NULL
-					) STRICT`,
-				)
-				.toArray();
-			storage.sql
-				.exec(
-					`CREATE TABLE inventory_opening_balance_confirmations (
-						confirmation_digest TEXT PRIMARY KEY,
-						pool_id TEXT NOT NULL,
-						action_digest TEXT NOT NULL,
-						principal_digest TEXT NOT NULL,
-						issued_at TEXT NOT NULL,
-						expires_at TEXT NOT NULL,
-						command_id TEXT UNIQUE,
-						FOREIGN KEY (command_id)
-							REFERENCES inventory_command_results(command_id)
-					) STRICT`,
-				)
-				.toArray();
-			storage.sql
-				.exec(
-					`INSERT INTO inventory_schema_migrations (version, applied_at)
-					 VALUES (?, ?)`,
-					CLOUDFLARE_INVENTORY_SCHEMA_VERSION,
-					"2026-08-28T00:00:00.000Z",
-				)
-				.toArray();
-		}
+			.toArray();
+		storage.sql
+			.exec(
+				`CREATE TABLE inventory_balances (
+					pool_id TEXT NOT NULL,
+					location_id TEXT NOT NULL,
+					sku_id TEXT NOT NULL,
+					on_hand_value TEXT NOT NULL,
+					reserved_value TEXT NOT NULL,
+					available_value TEXT NOT NULL,
+					unit TEXT NOT NULL,
+					version INTEGER NOT NULL,
+					has_stock_history INTEGER NOT NULL
+						CHECK (has_stock_history IN (0, 1)),
+					PRIMARY KEY (pool_id, location_id, sku_id)
+				) STRICT`,
+			)
+			.toArray();
+		storage.sql
+			.exec(
+				`CREATE TABLE inventory_locations (
+					pool_id TEXT NOT NULL,
+					location_id TEXT NOT NULL,
+					name TEXT NOT NULL,
+					name_key TEXT NOT NULL,
+					status TEXT NOT NULL CHECK (status IN ('active', 'archived')),
+					version INTEGER NOT NULL CHECK (version >= 1),
+					created_at TEXT NOT NULL,
+					updated_at TEXT NOT NULL,
+					archived_at TEXT,
+					PRIMARY KEY (pool_id, location_id),
+					UNIQUE (pool_id, name_key),
+					CHECK (
+						(status = 'active' AND archived_at IS NULL) OR
+						(status = 'archived' AND archived_at IS NOT NULL)
+					)
+				) STRICT`,
+			)
+			.toArray();
+		storage.sql
+			.exec(
+				`CREATE TABLE inventory_receipts (
+					receipt_id TEXT PRIMARY KEY,
+					command_id TEXT NOT NULL UNIQUE,
+					receipt_json TEXT NOT NULL
+				) STRICT`,
+			)
+			.toArray();
+		storage.sql
+			.exec(
+				`CREATE TABLE inventory_opening_balance_confirmations (
+					confirmation_digest TEXT PRIMARY KEY,
+					pool_id TEXT NOT NULL,
+					action_digest TEXT NOT NULL,
+					principal_digest TEXT NOT NULL,
+					issued_at TEXT NOT NULL,
+					expires_at TEXT NOT NULL,
+					command_id TEXT UNIQUE,
+					FOREIGN KEY (command_id)
+						REFERENCES inventory_command_results(command_id)
+				) STRICT`,
+			)
+			.toArray();
+		storage.sql
+			.exec(
+				`INSERT INTO inventory_schema_migrations (version, applied_at)
+				 VALUES (?, ?)`,
+				CLOUDFLARE_INVENTORY_SCHEMA_VERSION,
+				"2026-08-28T16:00:00.000Z",
+			)
+			.toArray();
 		assertExactSchema(storage);
 	});
 }

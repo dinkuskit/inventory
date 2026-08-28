@@ -3,23 +3,32 @@ import { DatabaseSync } from "node:sqlite";
 
 import type {
 	BalanceRecord,
-	OpeningBalanceReceiptV2,
-	OpeningBalanceResult,
 	SkuLocationKey,
 } from "../domain/opening-balance.ts";
 import type {
+	InventoryCommandResult,
+	InventoryReceiptV2,
+	LocationBalanceBlocker,
+	LocationRecord,
+} from "../domain/location-registry.ts";
+import type { OpeningBalanceReceiptV2 } from "../domain/opening-balance.ts";
+import type {
 	InventoryStore,
 	InventoryTransaction,
+	ListLocationsQuery,
+	ListReceiptsQuery,
+	LocationCommit,
 	OpeningBalanceCommit,
 	StoredOpeningBalanceConfirmation,
 	StoredCommandResult,
 } from "./inventory-store.ts";
 
 const STORAGE_ROLE = "local-development-test-only";
-const SCHEMA_VERSION = "opening-balance-local/v3";
+const SCHEMA_VERSION = "opening-balance-local/v4";
 const EXPECTED_TABLES = [
 	"inventory_balances",
 	"inventory_command_results",
+	"inventory_locations",
 	"inventory_opening_balance_confirmations",
 	"inventory_receipts",
 	"inventory_storage_metadata",
@@ -48,6 +57,23 @@ function balanceFrom(row: DatabaseRow | undefined): BalanceRecord | null {
 	};
 }
 
+function locationFrom(row: DatabaseRow | undefined): LocationRecord | null {
+	if (row === undefined) {
+		return null;
+	}
+	return {
+		poolId: String(row.pool_id),
+		locationId: String(row.location_id),
+		name: String(row.name),
+		nameKey: String(row.name_key),
+		status: String(row.status) as LocationRecord["status"],
+		version: String(row.version),
+		createdAt: String(row.created_at),
+		updatedAt: String(row.updated_at),
+		archivedAt: row.archived_at === null ? null : String(row.archived_at),
+	};
+}
+
 class SqliteInventoryTransaction implements InventoryTransaction {
 	readonly #database: DatabaseSync;
 	readonly #poolId: string;
@@ -63,7 +89,9 @@ class SqliteInventoryTransaction implements InventoryTransaction {
 		}
 	}
 
-	getCommand(commandId: string): StoredCommandResult | null {
+	getCommand<TResult extends InventoryCommandResult = InventoryCommandResult>(
+		commandId: string,
+	): StoredCommandResult<TResult> | null {
 		const row = this.#database
 			.prepare(
 				`SELECT command_id, command_digest, terminal_result_json
@@ -77,7 +105,7 @@ class SqliteInventoryTransaction implements InventoryTransaction {
 		return {
 			commandId: String(row.command_id),
 			commandDigest: String(row.command_digest),
-			result: json<OpeningBalanceResult>(row.terminal_result_json),
+			result: json<TResult>(row.terminal_result_json),
 		};
 	}
 
@@ -95,6 +123,51 @@ class SqliteInventoryTransaction implements InventoryTransaction {
 			| DatabaseRow
 			| undefined;
 		return balanceFrom(row);
+	}
+
+	getLocation(locationId: string): LocationRecord | null {
+		return locationFrom(
+			this.#database
+				.prepare(
+					`SELECT pool_id, location_id, name, name_key, status, version,
+					        created_at, updated_at, archived_at
+					 FROM inventory_locations
+					 WHERE pool_id = ? AND location_id = ?`,
+				)
+				.get(this.#poolId, locationId) as DatabaseRow | undefined,
+		);
+	}
+
+	getLocationByNameKey(nameKey: string): LocationRecord | null {
+		return locationFrom(
+			this.#database
+				.prepare(
+					`SELECT pool_id, location_id, name, name_key, status, version,
+					        created_at, updated_at, archived_at
+					 FROM inventory_locations
+					 WHERE pool_id = ? AND name_key = ?`,
+				)
+				.get(this.#poolId, nameKey) as DatabaseRow | undefined,
+		);
+	}
+
+	listLocationBalanceBlockers(
+		locationId: string,
+	): readonly LocationBalanceBlocker[] {
+		const rows = this.#database
+			.prepare(
+				`SELECT sku_id, on_hand_value, reserved_value, unit
+				 FROM inventory_balances
+				 WHERE pool_id = ? AND location_id = ?
+				   AND (on_hand_value <> '0' OR reserved_value <> '0')
+				 ORDER BY sku_id`,
+			)
+			.all(this.#poolId, locationId) as DatabaseRow[];
+		return rows.map((row) => ({
+			skuId: String(row.sku_id),
+			onHand: { value: String(row.on_hand_value), unit: String(row.unit) },
+			reserved: { value: String(row.reserved_value), unit: String(row.unit) },
+		}));
 	}
 
 	getOpeningBalanceConfirmation(
@@ -221,6 +294,75 @@ class SqliteInventoryTransaction implements InventoryTransaction {
 				JSON.stringify(input.result),
 			);
 	}
+
+	commitLocation(input: LocationCommit): void {
+		if (input.location.poolId !== this.#poolId) {
+			throw new Error("A transaction cannot cross inventory pools.");
+		}
+		if (input.previous === null) {
+			this.#database
+				.prepare(
+					`INSERT INTO inventory_locations
+					   (pool_id, location_id, name, name_key, status, version,
+					    created_at, updated_at, archived_at)
+					 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+				)
+				.run(
+					input.location.poolId,
+					input.location.locationId,
+					input.location.name,
+					input.location.nameKey,
+					input.location.status,
+					Number(input.location.version),
+					input.location.createdAt,
+					input.location.updatedAt,
+					input.location.archivedAt,
+				);
+		} else {
+			const updated = this.#database
+				.prepare(
+					`UPDATE inventory_locations
+					 SET name = ?, name_key = ?, status = ?, version = ?,
+					     updated_at = ?, archived_at = ?
+					 WHERE pool_id = ? AND location_id = ?`,
+				)
+				.run(
+					input.location.name,
+					input.location.nameKey,
+					input.location.status,
+					Number(input.location.version),
+					input.location.updatedAt,
+					input.location.archivedAt,
+					input.location.poolId,
+					input.location.locationId,
+				);
+			if (Number(updated.changes) !== 1) {
+				throw new Error("Location update lost its target row.");
+			}
+		}
+		this.#database
+			.prepare(
+				`INSERT INTO inventory_receipts
+				   (receipt_id, command_id, receipt_json)
+				 VALUES (?, ?, ?)`,
+			)
+			.run(
+				input.receipt.receiptId,
+				input.commandId,
+				JSON.stringify(input.receipt),
+			);
+		this.#database
+			.prepare(
+				`INSERT INTO inventory_command_results
+				   (command_id, command_digest, terminal_result_json)
+				 VALUES (?, ?, ?)`,
+			)
+			.run(
+				input.commandId,
+				input.commandDigest,
+				JSON.stringify(input.result),
+			);
+	}
 }
 
 export class LocalSqliteTestInventoryStore implements InventoryStore {
@@ -279,6 +421,23 @@ export class LocalSqliteTestInventoryStore implements InventoryStore {
 				version INTEGER NOT NULL,
 				has_stock_history INTEGER NOT NULL CHECK (has_stock_history IN (0, 1)),
 				PRIMARY KEY (pool_id, location_id, sku_id)
+			) STRICT;
+			CREATE TABLE inventory_locations (
+				pool_id TEXT NOT NULL,
+				location_id TEXT NOT NULL,
+				name TEXT NOT NULL,
+				name_key TEXT NOT NULL,
+				status TEXT NOT NULL CHECK (status IN ('active', 'archived')),
+				version INTEGER NOT NULL CHECK (version >= 1),
+				created_at TEXT NOT NULL,
+				updated_at TEXT NOT NULL,
+				archived_at TEXT,
+				PRIMARY KEY (pool_id, location_id),
+				UNIQUE (pool_id, name_key),
+				CHECK (
+					(status = 'active' AND archived_at IS NULL) OR
+					(status = 'archived' AND archived_at IS NOT NULL)
+				)
 			) STRICT;
 			CREATE TABLE inventory_receipts (
 				receipt_id TEXT PRIMARY KEY,
@@ -383,7 +542,9 @@ export class LocalSqliteTestInventoryStore implements InventoryStore {
 		return balanceFrom(row);
 	}
 
-	async readCommand(commandId: string): Promise<StoredCommandResult | null> {
+	async readCommand<
+		TResult extends InventoryCommandResult = InventoryCommandResult,
+	>(commandId: string): Promise<StoredCommandResult<TResult> | null> {
 		const row = this.#openDatabase()
 			.prepare(
 				`SELECT command_id, command_digest, terminal_result_json
@@ -396,13 +557,15 @@ export class LocalSqliteTestInventoryStore implements InventoryStore {
 			: {
 					commandId: String(row.command_id),
 					commandDigest: String(row.command_digest),
-					result: json<OpeningBalanceResult>(row.terminal_result_json),
+					result: json<TResult>(row.terminal_result_json),
 				};
 	}
 
-	async readCommandByReceiptId(
+	async readCommandByReceiptId<
+		TResult extends InventoryCommandResult = InventoryCommandResult,
+	>(
 		receiptId: string,
-	): Promise<StoredCommandResult | null> {
+	): Promise<StoredCommandResult<TResult> | null> {
 		const row = this.#openDatabase()
 			.prepare(
 				`SELECT result.command_id, result.command_digest,
@@ -418,13 +581,13 @@ export class LocalSqliteTestInventoryStore implements InventoryStore {
 			: {
 					commandId: String(row.command_id),
 					commandDigest: String(row.command_digest),
-					result: json<OpeningBalanceResult>(row.terminal_result_json),
+					result: json<TResult>(row.terminal_result_json),
 				};
 	}
 
 	async readReceipt(
 		receiptId: string,
-	): Promise<OpeningBalanceReceiptV2 | null> {
+	): Promise<InventoryReceiptV2 | null> {
 		const row = this.#openDatabase()
 			.prepare(
 				"SELECT receipt_json FROM inventory_receipts WHERE receipt_id = ?",
@@ -432,7 +595,72 @@ export class LocalSqliteTestInventoryStore implements InventoryStore {
 			.get(receiptId) as DatabaseRow | undefined;
 		return row === undefined
 			? null
-			: json<OpeningBalanceReceiptV2>(row.receipt_json);
+			: json<InventoryReceiptV2>(row.receipt_json);
+	}
+
+	async listReceipts(
+		query: ListReceiptsQuery,
+	): Promise<readonly OpeningBalanceReceiptV2[]> {
+		const clauses = [
+			"json_extract(receipt_json, '$.context.poolId') = ?",
+			"json_extract(receipt_json, '$.type') = 'stock.opening_balance'",
+		];
+		const bindings: Array<string | number> = [query.poolId];
+		if (query.locationId !== undefined) {
+			clauses.push(
+				`EXISTS (
+					SELECT 1
+					FROM json_each(inventory_receipts.receipt_json, '$.effects') AS effect
+					WHERE json_extract(effect.value, '$.locationId') = ?
+				)`,
+			);
+			bindings.push(query.locationId);
+		}
+		if (query.before !== undefined) {
+			clauses.push(
+				`(
+					json_extract(receipt_json, '$.committedAt') < ? OR
+					(
+						json_extract(receipt_json, '$.committedAt') = ? AND
+						receipt_id < ?
+					)
+				)`,
+			);
+			bindings.push(
+				query.before.committedAt,
+				query.before.committedAt,
+				query.before.receiptId,
+			);
+		}
+		bindings.push(query.limit);
+		const rows = this.#openDatabase()
+			.prepare(
+				`SELECT receipt_json
+				 FROM inventory_receipts
+				 WHERE ${clauses.join(" AND ")}
+				 ORDER BY json_extract(receipt_json, '$.committedAt') DESC,
+				          receipt_id DESC
+				 LIMIT ?`,
+			)
+			.all(...bindings) as DatabaseRow[];
+		return rows.map((row) =>
+			json<OpeningBalanceReceiptV2>(row.receipt_json),
+		);
+	}
+
+	async listLocations(
+		query: ListLocationsQuery,
+	): Promise<readonly LocationRecord[]> {
+		const rows = this.#openDatabase()
+			.prepare(
+				`SELECT pool_id, location_id, name, name_key, status, version,
+				        created_at, updated_at, archived_at
+				 FROM inventory_locations
+				 WHERE pool_id = ? AND status = ?
+				 ORDER BY name_key, location_id`,
+			)
+			.all(query.poolId, query.status) as DatabaseRow[];
+		return rows.map((row) => locationFrom(row) as LocationRecord);
 	}
 
 	async close(): Promise<void> {

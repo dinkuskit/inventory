@@ -89,18 +89,22 @@ The object constructor runs schema initialization under
 records applied monotonic integer versions because Durable Object SQLite does
 not support `PRAGMA user_version`.
 
-Schema version 1 owns exactly:
+Schema version 2 is the first complete real-database schema and owns exactly:
 
 - `inventory_schema_migrations`;
 - `inventory_command_results`;
 - `inventory_balances`;
+- `inventory_locations`;
 - `inventory_receipts`; and
 - `inventory_opening_balance_confirmations`.
 
 The business tables preserve the verified local-test shape, but there is no
 test-role marker and no compatibility with disposable local database files.
-Schema creation and each future migration execute inside
-`DurableObjectStorage.transactionSync`.
+Fresh schema creation executes inside `DurableObjectStorage.transactionSync`
+and records only version 2. No live predecessor exists, so this release does
+not implement a version-1 upgrade. Any older, partial, or unexpected Inventory
+schema is rejected without modification. Future migrations remain a separate
+design once a real predecessor exists.
 
 `CloudflareSqliteInventoryStore.runTransaction` also uses
 `transactionSync`. The callback must remain synchronous, matching the existing
@@ -112,6 +116,11 @@ The adapter implements every current `InventoryStore` method even though this
 slice exposes only read-only RPC. That lets repository tests execute the same
 opening-balance and exact-retry application code against the production
 storage boundary without making mutation remotely callable.
+
+Runtime tests create the canonical active location before an opening balance
+may commit and separately prove that archived and unknown locations return
+stable rejections without a balance or receipt. The location lookup and stock
+result remain inside one Durable Object `transactionSync` boundary.
 
 ## Deployment contract
 
@@ -150,7 +159,7 @@ Baseline: `git:08a4fef09dfdb33091d444fe03bb53f1aeba754d`.
 
 Risk is high at the deployment/config boundary and medium in the SQL adapter.
 Mitigations are no public route, no mutation RPC, no committed tenant/account
-configuration, schema migration tracking, exact transaction conformance tests,
+configuration, exact schema tracking, exact transaction conformance tests,
 an explicit remote `not_found` expectation, and no stock value before a
 physical count.
 
@@ -160,7 +169,8 @@ Strict TDD must prove:
 
 1. Wrangler declares a SQLite Durable Object export and contains no route,
    account ID, tenant value, or public development URL.
-2. A fresh object initializes schema version 1 exactly once.
+2. A fresh object initializes the complete schema version 2 exactly once and
+   records no fictional predecessor version.
 3. An explicit SKU-location read returns `not_found` without creating a
    balance, command, receipt, or confirmation.
 4. Separate pool object names do not share database state.
@@ -171,9 +181,9 @@ Strict TDD must prove:
 7. The full existing Node suite remains green.
 8. `wrangler deploy --dry-run` validates the exact source/config before live
    deployment.
-9. After approved deployment, the same-account remote probe initializes the
-   selected live pool and returns schema version 1 plus `not_found` for the
-   current live hat SKU.
+9. Any later approved deployment proof must use a new empty pool and show
+   schema version 2 plus `not_found`; the earlier version-1 probe object is not
+   a live database or migration input.
 
 The remote proof must also show that no balance, command, or receipt was
 created and that no route or SmokyClub binding was deployed.
