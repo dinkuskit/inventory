@@ -9,6 +9,9 @@
     "type": "git",
     "url": "git+https://github.com/dinkuskit/inventory.git"
   },
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "test": "node --test tests/workflows/*.test.mjs"
   },

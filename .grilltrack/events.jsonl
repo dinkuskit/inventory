@@ -125,3 +125,6 @@
 {"action": "decision_locked", "at": "2026-08-27T23:51:09+00:00", "data": {"decision_id": "emdash-035-plugin-baseline-018"}, "event_id": "520edcf0-5374-4338-9149-3105c6f857d8"}
 {"action": "decision_implemented", "at": "2026-08-27T23:54:09+00:00", "data": {"decision_id": "emdash-035-plugin-baseline-018"}, "event_id": "39f85fbc-8b70-4953-9714-cfd2238200f2"}
 {"action": "decision_verified", "at": "2026-08-27T23:54:09+00:00", "data": {"decision_id": "emdash-035-plugin-baseline-018"}, "event_id": "086086b2-fb51-40da-ba95-f04d697a6cbf"}
+{"action": "decision_reviewed", "at": "2026-08-28T00:34:31+00:00", "data": {"classifications": ["required_fix"], "decision_id": "emdash-035-plugin-baseline-018", "ref": "https://github.com/dinkuskit/inventory/pull/6#issuecomment-5446791425", "result": "findings", "reviewed_at": "2026-08-28T00:34:31+00:00", "source_identity": "git:7d183710a7b2ce183e6545efd39b0417215e8d66"}, "event_id": "9c4c4427-ccf7-4fa4-a85b-6a28d5781486"}
+{"action": "decision_implemented", "at": "2026-08-28T00:35:01+00:00", "data": {"decision_id": "emdash-035-plugin-baseline-018"}, "event_id": "a86dfd9c-fea9-4bd4-84cd-1187006e7066"}
+{"action": "decision_verified", "at": "2026-08-28T00:36:37+00:00", "data": {"decision_id": "emdash-035-plugin-baseline-018"}, "event_id": "7bf33818-a7ed-48f6-9415-9bbab7053df6"}

@@ -1600,22 +1600,76 @@
           "review_source_identity": null,
           "to": "verified",
           "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T00:34:31+00:00",
+          "choice": "Use exact EmDash 0.35.0 as the current development baseline with a lockfile; do not claim a plugin runtime or minimum compatible version until the standard-format Block Kit fixture exists and passes.",
+          "from": "verified",
+          "implementation_ref": "file:package.json;file:package-lock.json;file:README.md",
+          "note": "adjudicated review requires a fix",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "needs_reverification",
+          "verification_ref": "command:npm ci && npm test && npm ls emdash --depth=0"
+        },
+        {
+          "at": "2026-08-28T00:35:01+00:00",
+          "choice": "Use exact EmDash 0.35.0 as the current development baseline with a lockfile; do not claim a plugin runtime or minimum compatible version until the standard-format Block Kit fixture exists and passes.",
+          "from": "needs_reverification",
+          "implementation_ref": "file:package.json;file:package-lock.json;file:README.md",
+          "note": "bounded implementation recorded",
+          "repair_required": true,
+          "review_classifications": [
+            "required_fix"
+          ],
+          "review_ref": "https://github.com/dinkuskit/inventory/pull/6#issuecomment-5446791425",
+          "review_result": "findings",
+          "review_source_identity": "git:7d183710a7b2ce183e6545efd39b0417215e8d66",
+          "to": "implemented",
+          "verification_ref": "command:npm ci && npm test && npm ls emdash --depth=0"
+        },
+        {
+          "at": "2026-08-28T00:36:37+00:00",
+          "choice": "Use exact EmDash 0.35.0 as the current development baseline with a lockfile; do not claim a plugin runtime or minimum compatible version until the standard-format Block Kit fixture exists and passes.",
+          "from": "implemented",
+          "implementation_ref": "file:package.json;file:package-lock.json;file:README.md;file:proof/emdash-0.35-baseline-20260827/PROOF.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": "command:npm ci && npm test && npm ls emdash --depth=0"
         }
       ],
       "id": "emdash-035-plugin-baseline-018",
-      "implementation_ref": "file:package.json;file:package-lock.json;file:README.md",
+      "implementation_ref": "file:package.json;file:package-lock.json;file:README.md;file:proof/emdash-0.35-baseline-20260827/PROOF.md",
       "question": "Which exact EmDash release should the first Inventory plugin implementation target?",
       "rationale": "Bobby requires current stable EmDash, while Inventory remains at public-contract stage and must not overstate unimplemented plugin compatibility.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
+      "review_history": [
+        {
+          "classifications": [
+            "required_fix"
+          ],
+          "ref": "https://github.com/dinkuskit/inventory/pull/6#issuecomment-5446791425",
+          "result": "findings",
+          "reviewed_at": "2026-08-28T00:34:31+00:00",
+          "source_identity": "git:7d183710a7b2ce183e6545efd39b0417215e8d66"
+        }
+      ],
       "review_ref": null,
       "review_result": null,
       "review_source_identity": null,
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-27T23:54:09+00:00",
-      "verification_ref": "command:npm ci && npm test && npm ls emdash --depth=0"
+      "updated_at": "2026-08-28T00:36:37+00:00",
+      "verification_ref": "proof:proof/emdash-0.35-baseline-20260827/PROOF.md"
     }
   ],
   "last_activation": {
@@ -1635,5 +1689,5 @@
   "status": "active",
   "title": "Dinkuskit Inventory v1",
   "track_id": "dinkuskit-inventory-v1",
-  "updated_at": "2026-08-27T23:54:09+00:00"
+  "updated_at": "2026-08-28T00:36:37+00:00"
 }

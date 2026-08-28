@@ -60,6 +60,14 @@ is the implementation target for the first standard-format plugin fixture, not
 a claim that the unimplemented plugin already has a proven runtime or minimum
 compatible version.
 
+The locked development toolchain requires Node `>=22.12.0`. Its dependency tree
+declares third-party lifecycle scripts, including install scripts for `esbuild`
+and `better-sqlite3`. On the proof host, npm 11.19 reports both scripts as not
+covered by `allowScripts` and does not approve them; another npm version or
+operator policy may execute them during `npm ci`. The repository adds no
+lifecycle approval or bypass. Accepting this development-only supply-chain
+boundary remains an explicit maintainer decision at merge.
+
 ```bash
 npm ci
 npm test

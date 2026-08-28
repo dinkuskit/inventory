@@ -1,0 +1,40 @@
+$ node --version
+v26.7.0
+
+$ npm --version
+11.19.0
+
+$ npm config get ignore-scripts
+false
+
+$ npm ci
+[dependency deprecation warnings omitted; no private data]
+added 591 packages, and audited 592 packages in 13s
+found 0 vulnerabilities
+npm warn install-scripts 2 packages have install scripts not yet covered by allowScripts:
+npm warn install-scripts   better-sqlite3@12.11.1 (install: prebuild-install || node-gyp rebuild --release)
+npm warn install-scripts   esbuild@0.28.2 (postinstall: node install.js)
+npm warn install-scripts Run `npm install-scripts ls` to review, or `npm install-scripts approve <pkg>` to allow.
+
+$ npm install-scripts ls
+2 packages have install scripts not yet covered by allowScripts:
+  better-sqlite3@12.11.1 (install: node-gyp rebuild)
+  esbuild@0.28.2 (postinstall: node install.js)
+Run `npm install-scripts approve <pkg>` to allow, or `npm install-scripts deny <pkg>` to deny.
+
+$ npm test
+> @dinkuskit/inventory@0.0.0 test
+> node --test tests/workflows/*.test.mjs
+tests 8
+pass 8
+fail 0
+
+$ npm ls emdash --depth=0
+@dinkuskit/inventory@0.0.0 <local-worktree-redacted>
+└── emdash@0.35.0
+
+$ git diff --check
+[no output; exit 0]
+
+$ python3 <grilltrack-skill>/scripts/grilltrack_ledger.py --project . validate
+valid
