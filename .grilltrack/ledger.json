@@ -4,11 +4,11 @@
   "current_focus": {
     "cadence": "sequential",
     "confirmed": true,
-    "confirmed_at": "2026-08-28T12:47:52+00:00",
-    "domain": "opening-balance kernel with local durability proof",
-    "started_at": "2026-08-28T12:47:52+00:00",
+    "confirmed_at": "2026-08-28T13:33:43+00:00",
+    "domain": "authoritative balance and receipt read-back",
+    "started_at": "2026-08-28T13:25:02+00:00",
     "status": "inspected",
-    "summary": "Implement one platform-neutral Set opening balance command for one explicit pool, location, and SKU. A real local SQLite file proves restart durability and atomic storage of command digest, stable terminal result, balance/version, and immutable receipt. Exact replay returns the original result; changed contents under one commandId conflict; only the first stock history at a SKU-location may establish the opening balance; other locations remain unchanged. The local file is development/test storage only and must never become final or production truth. Defer Block Kit, SmokyClub, Commerce, EmDash adapters, Cloudflare deployment, auth/accounts, package publication, and production cutover. Verification is repo-owned and covers replay, conflict, stable rejection, persistence, concurrency, receipt/balance agreement, and location isolation. No commit, push, PR, merge, deployment, or publication is authorized."
+    "summary": "Implement a platform-neutral read-only boundary over the verified opening-balance kernel. One query reads the current balance only for an explicit pool, location, and SKU. One mutation lookup accepts exactly one receiptId for audit/viewing or commandId for timeout recovery; committed results return their immutable receipt, stable rejections return no receipt, and missing identity returns explicit not-found without guessing a latest record. Human receipts freeze the trusted signed-in user's stable EmDash user ID, public-safe display-name snapshot, and originating surface; command payloads cannot choose the actor. Confirmation binds to stable principal identity rather than mutable display text, so account renames do not break exact retry and never rewrite historical receipts. Extend the existing local test-only SQLite proof and repo-owned verifier for both lookup paths, rejection/not-found behavior, persistence, actor spoof resistance, and historical-name stability. Defer GUI/history lists, real EmDash auth/session wiring, service transport, Cloudflare deployment, package publication, and production cutover. No commit, push, PR, merge, deployment, or publication is authorized."
   },
   "decisions": [
     {
@@ -1755,6 +1755,256 @@
       "superseded_by": null,
       "updated_at": "2026-08-28T13:02:07+00:00",
       "verification_ref": "proof:.grilltrack/proof/cycle-5/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:2f100e3c94c60a8a154110d7db9da12b247ef9d9",
+      "candidate_refs": [],
+      "choice": "Preview performs no stock mutation and repeats the exact SKU, location, quantity change, reason, resulting balance, and observed version. It returns an opaque confirmation bound to that normalized action, version, and principal, expiring exactly five minutes after issue; clients receive expiresAt so the future GUI can show a visible countdown, and confirmation may happen immediately at any time before expiry. The first valid confirmation binds the token to one caller-created commandId and evaluates that command. An exact retry with the same confirmation, commandId, and normalized contents returns the original terminal result even after the preview expiry; a changed action, different principal, different commandId after use, or unconfirmed expired preview requires a fresh preview.",
+      "context_ref": "user:confirmed five-minute preview countdown and exact retry behavior",
+      "created_at": "2026-08-28T13:13:37+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "command-outcome-005",
+        "command-identity-006",
+        "opening-balance-010",
+        "command-location-011",
+        "surface-permissions-012",
+        "opening-balance-storage-019"
+      ],
+      "domain": "opening-balance preview and confirmation boundary",
+      "history": [
+        {
+          "at": "2026-08-28T13:13:37+00:00",
+          "choice": "Preview performs no stock mutation and repeats the exact SKU, location, quantity change, reason, resulting balance, and observed version. It returns an opaque confirmation bound to that normalized action, version, and principal, expiring exactly five minutes after issue; clients receive expiresAt so the future GUI can show a visible countdown, and confirmation may happen immediately at any time before expiry. The first valid confirmation binds the token to one caller-created commandId and evaluates that command. An exact retry with the same confirmation, commandId, and normalized contents returns the original terminal result even after the preview expiry; a changed action, different principal, different commandId after use, or unconfirmed expired preview requires a fresh preview.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T13:21:26+00:00",
+          "choice": "Preview performs no stock mutation and repeats the exact SKU, location, quantity change, reason, resulting balance, and observed version. It returns an opaque confirmation bound to that normalized action, version, and principal, expiring exactly five minutes after issue; clients receive expiresAt so the future GUI can show a visible countdown, and confirmation may happen immediately at any time before expiry. The first valid confirmation binds the token to one caller-created commandId and evaluates that command. An exact retry with the same confirmation, commandId, and normalized contents returns the original terminal result even after the preview expiry; a changed action, different principal, different commandId after use, or unconfirmed expired preview requires a fresh preview.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T13:21:27+00:00",
+          "choice": "Preview performs no stock mutation and repeats the exact SKU, location, quantity change, reason, resulting balance, and observed version. It returns an opaque confirmation bound to that normalized action, version, and principal, expiring exactly five minutes after issue; clients receive expiresAt so the future GUI can show a visible countdown, and confirmation may happen immediately at any time before expiry. The first valid confirmation binds the token to one caller-created commandId and evaluates that command. An exact retry with the same confirmation, commandId, and normalized contents returns the original terminal result even after the preview expiry; a changed action, different principal, different commandId after use, or unconfirmed expired preview requires a fresh preview.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/opening-balance-preview-confirmation.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "opening-balance-confirmation-020",
+      "implementation_ref": "file:docs/implementation/opening-balance-preview-confirmation.md",
+      "question": "How does a human safely confirm an opening-balance preview and recover when the confirmed response is lost?",
+      "rationale": "Humans can verify the physical stock change without an approval bureaucracy, while five-minute action binding prevents stale or changed commits and exact retry preserves the already-locked unknown-outcome recovery contract.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": "proof:.grilltrack/proof/cycle-6/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T13:22:44+00:00",
+          "source_identity": "sha256:74007db421e3580441bd90d282ba3189b3af2135103caa29aa2563987d6344b8"
+        }
+      ],
+      "review_ref": "proof:.grilltrack/proof/cycle-6/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:74007db421e3580441bd90d282ba3189b3af2135103caa29aa2563987d6344b8",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-08-28T13:22:44+00:00",
+      "verification_ref": "proof:.grilltrack/proof/cycle-6/PROOF.md"
+    },
+    {
+      "baseline_ref": "sha256:74007db421e3580441bd90d282ba3189b3af2135103caa29aa2563987d6344b8",
+      "candidate_refs": [],
+      "choice": "Expose one read-only mutation lookup that accepts either receiptId for audit/viewing or commandId for timeout recovery. A committed result returns its immutable receipt; a stable business rejection returns the rejection and has no receipt. Missing identity returns explicit not-found, never a guessed latest record. Pair it with one explicit pool/location/SKU balance query.",
+      "context_ref": "file:docs/COMMAND-RECEIPT-CONTRACT.md",
+      "created_at": "2026-08-28T13:25:02+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "command-outcome-005",
+        "command-identity-006",
+        "receipt-audit-008",
+        "command-location-011",
+        "opening-balance-storage-019",
+        "opening-balance-confirmation-020"
+      ],
+      "domain": "authoritative balance and receipt read-back",
+      "history": [
+        {
+          "at": "2026-08-28T13:26:42+00:00",
+          "choice": "Expose one read-only mutation lookup that accepts either receiptId for audit/viewing or commandId for timeout recovery. A committed result returns its immutable receipt; a stable business rejection returns the rejection and has no receipt. Missing identity returns explicit not-found, never a guessed latest record. Pair it with one explicit pool/location/SKU balance query.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T13:39:31+00:00",
+          "choice": "Expose one read-only mutation lookup that accepts either receiptId for audit/viewing or commandId for timeout recovery. A committed result returns its immutable receipt; a stable business rejection returns the rejection and has no receipt. Missing identity returns explicit not-found, never a guessed latest record. Pair it with one explicit pool/location/SKU balance query.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T13:39:31+00:00",
+          "choice": "Expose one read-only mutation lookup that accepts either receiptId for audit/viewing or commandId for timeout recovery. A committed result returns its immutable receipt; a stable business rejection returns the rejection and has no receipt. Missing identity returns explicit not-found, never a guessed latest record. Pair it with one explicit pool/location/SKU balance query.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/opening-balance-read-back.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "read-back-021",
+      "implementation_ref": "file:docs/implementation/opening-balance-read-back.md",
+      "question": "How should a client find a stock mutation and its immutable receipt?",
+      "rationale": "The success screen naturally has a receipt ID, while unknown-outcome recovery naturally has a command ID. Both identify the same authoritative stored result without forcing a client to read Inventory storage directly.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": "proof:.grilltrack/proof/cycle-7/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T13:41:11+00:00",
+          "source_identity": "sha256:9c84e82f2e9e48d08613276e4ec0185f7385977e7c863de5beadaaff97a60c3b"
+        }
+      ],
+      "review_ref": "proof:.grilltrack/proof/cycle-7/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:9c84e82f2e9e48d08613276e4ec0185f7385977e7c863de5beadaaff97a60c3b",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-08-28T13:41:11+00:00",
+      "verification_ref": "proof:.grilltrack/proof/cycle-7/PROOF.md"
+    },
+    {
+      "baseline_ref": "sha256:74007db421e3580441bd90d282ba3189b3af2135103caa29aa2563987d6344b8",
+      "candidate_refs": [],
+      "choice": "The EmDash adapter derives a trusted human principal from the authenticated session and supplies a stable EmDash user ID plus a public-safe display-name snapshot and surface=emdash. Inventory freezes those actor facts on the immutable receipt and returns them during read-back. Account renames do not rewrite history; email is not required; command payloads cannot choose or override the actor.",
+      "context_ref": "user:signed-in-emdash-user-on-receipt",
+      "created_at": "2026-08-28T13:26:42+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "receipt-audit-008",
+        "surface-permissions-012",
+        "opening-balance-confirmation-020",
+        "read-back-021"
+      ],
+      "domain": "authoritative balance and receipt read-back",
+      "history": [
+        {
+          "at": "2026-08-28T13:31:41+00:00",
+          "choice": "The EmDash adapter derives a trusted human principal from the authenticated session and supplies a stable EmDash user ID plus a public-safe display-name snapshot and surface=emdash. Inventory freezes those actor facts on the immutable receipt and returns them during read-back. Account renames do not rewrite history; email is not required; command payloads cannot choose or override the actor.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T13:39:31+00:00",
+          "choice": "The EmDash adapter derives a trusted human principal from the authenticated session and supplies a stable EmDash user ID plus a public-safe display-name snapshot and surface=emdash. Inventory freezes those actor facts on the immutable receipt and returns them during read-back. Account renames do not rewrite history; email is not required; command payloads cannot choose or override the actor.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T13:39:31+00:00",
+          "choice": "The EmDash adapter derives a trusted human principal from the authenticated session and supplies a stable EmDash user ID plus a public-safe display-name snapshot and surface=emdash. Inventory freezes those actor facts on the immutable receipt and returns them during read-back. Account renames do not rewrite history; email is not required; command payloads cannot choose or override the actor.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/opening-balance-read-back.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "receipt-actor-022",
+      "implementation_ref": "file:docs/implementation/opening-balance-read-back.md",
+      "question": "What signed-in EmDash user identity should an immutable stock receipt preserve and display?",
+      "rationale": "A stable user ID gives durable identity while a display-name snapshot makes the audit readable. Deriving both from the authenticated EmDash session prevents a caller from claiming that somebody else made the change.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": "proof:.grilltrack/proof/cycle-7/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T13:41:11+00:00",
+          "source_identity": "sha256:9c84e82f2e9e48d08613276e4ec0185f7385977e7c863de5beadaaff97a60c3b"
+        }
+      ],
+      "review_ref": "proof:.grilltrack/proof/cycle-7/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:9c84e82f2e9e48d08613276e4ec0185f7385977e7c863de5beadaaff97a60c3b",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-08-28T13:41:11+00:00",
+      "verification_ref": "proof:.grilltrack/proof/cycle-7/PROOF.md"
     }
   ],
   "last_activation": {
@@ -1763,16 +2013,16 @@
   },
   "recommendation": {
     "alternatives": [
-      "Read-only balance and receipt query models for refresh and audit without a GUI",
-      "Undeployed Cloudflare Durable Object adapter conformance and export/restore spike against the platform-neutral transaction contract"
+      "Inventory-owned service request/response contract without authentication or deployment",
+      "Read-only receipt history contract with explicit pagination and filters"
     ],
-    "reason": "The durable command kernel is proven independently. The next human-safety dependency is binding a reviewed preview to the exact action before any Block Kit surface is added; the active EmDash scheduler work remains irrelevant.",
-    "recommended": "Opening-balance preview and confirmation boundary: server-validated preview, short-lived action-bound confirmation, and safe stale or changed-action rejection over the proven kernel",
-    "recorded_at": "2026-08-28T13:02:24+00:00"
+    "reason": "The command, confirmation, balance read, and immutable receipt read-back paths are now verified. Proving the planned remote durable adapter next directly protects the lock that Bobby's machine is test-only, while accounts, deployment, transport, UI, and production cutover remain separately gated.",
+    "recommended": "Undeployed Cloudflare SQLite Durable Object adapter conformance against the platform-neutral transaction and read ports",
+    "recorded_at": "2026-08-28T13:41:12+00:00"
   },
   "schema_version": "grilltrack/v0.1",
   "status": "active",
   "title": "Dinkuskit Inventory v1",
   "track_id": "dinkuskit-inventory-v1",
-  "updated_at": "2026-08-28T13:02:24+00:00"
+  "updated_at": "2026-08-28T13:41:12+00:00"
 }
