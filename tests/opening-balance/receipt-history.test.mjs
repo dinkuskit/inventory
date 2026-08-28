@@ -6,6 +6,7 @@ import test from "node:test";
 
 import * as inventory from "../../src/index.ts";
 import { createLocalSqliteTestStore } from "../../src/storage/local-sqlite-test-store.ts";
+import { createFixtureLocation } from "../helpers/location-fixture.mjs";
 
 const principal = Object.freeze({
 	kind: "human",
@@ -60,6 +61,12 @@ async function commit(
 test("reads one location or all locations from the same durable receipt ledger", async (t) => {
 	const filePath = await databasePath(t);
 	let store = createLocalSqliteTestStore({ filePath });
+	await createFixtureLocation(store, { locationId: "location_north" });
+	await createFixtureLocation(store, { locationId: "location_south" });
+	await createFixtureLocation(store, {
+		poolId: "pool_other",
+		locationId: "location_north",
+	});
 	await commit(store, {
 		commandId: "cmd_north_old",
 		receiptId: "rcpt_north_old",

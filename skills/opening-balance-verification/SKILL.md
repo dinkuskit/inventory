@@ -1,6 +1,6 @@
 ---
 name: opening-balance-verification
-description: Verify the Inventory-owned opening-balance command, required editable reason, preview/confirmation flow, location-scoped receipt history, authoritative read-back, actor receipts, and local test-only SQLite durability boundary.
+description: Verify the Inventory-owned opening-balance command, active-location admission, required editable reason, preview/confirmation flow, location-scoped receipt history, authoritative read-back, actor receipts, and local test-only SQLite durability boundary.
 ---
 
 # Opening-balance verification
@@ -32,6 +32,13 @@ and editable final reason text, reason-confirmation binding, one-location and
 all-location history, bounded paging, and durable history after reopen. It
 never opens a repository database, Cloudflare resource, production service, or
 user-selected file.
+
+After the test suite, the verifier runs one deterministic public-safe behavior
+scenario against a fresh temporary SQLite file. Its JSON transcript proves an
+active location commits, archived and unknown locations create neither balance
+nor receipt, and both durable rejections replay exactly after restore or later
+location creation. The temporary file is closed and removed before the
+transcript is printed.
 
 ## Expected result
 

@@ -158,6 +158,16 @@ guess a migration for fictional legacy data. Any older, partial, or unexpected
 Inventory schema fails closed without modification; future migrations require
 a real predecessor and a separately grilled preservation contract.
 
+## opening-balance-location-admission-035 — active locations only (locked)
+
+Every new opening-balance command must name an existing active location in its
+explicit pool. Unknown locations durably reject as `location_not_found` and
+archived locations durably reject as `location_not_active`; neither creates
+stock or a receipt. The check and terminal result share the same serialized
+transaction as a successful balance and receipt commit. Exact retries return
+the original result even if the location is later created, archived, or
+restored.
+
 Deactivation archives rather than deletes. Archived locations disappear from
 normal selectors and inventory views, remain accessible in an explicit Archive
 view with their full history, and can be restored with the same ID. Archive is

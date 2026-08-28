@@ -125,6 +125,13 @@ boundary. The public low-level `createSetOpeningBalance` entry point remains for
 non-human engine use; future human-facing adapters must use the confirmation
 boundary.
 
+The later active-location admission slice reuses this exact boundary. A
+confirmation may be issued before a location changes state, but confirmation
+execution re-reads the canonical location inside the serialized transaction.
+Unknown or archived locations bind the confirmation to a durable rejection and
+create no balance or receipt; exact retry returns that original rejection even
+after the location is created or restored.
+
 This slice introduced `opening-balance-local/v2` and
 `inventory_opening_balance_confirmations`. The later read-back/actor slice
 advances the current disposable marker to `opening-balance-local/v3` because

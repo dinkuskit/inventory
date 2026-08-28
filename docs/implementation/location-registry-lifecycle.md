@@ -18,9 +18,9 @@ The slice owns:
 - active and archived list reads; and
 - the SQLite test adapter and Cloudflare Durable Object SQLite schema boundary.
 
-It does not yet make the opening-balance command reject an unknown or archived
-location, and it does not implement the all-locations stock aggregation. Those
-are separate integration/read slices after the registry exists.
+The follow-up active-location admission slice now makes opening-balance
+execution reject unknown or archived locations inside the stock transaction.
+All-locations stock aggregation remains a separate read slice.
 
 ## Domain contracts
 

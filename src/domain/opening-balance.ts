@@ -160,6 +160,8 @@ export type OpeningBalanceReceiptV2 = Readonly<{
 }>;
 
 export type OpeningBalanceRejectionCode =
+	| "location_not_found"
+	| "location_not_active"
 	| "opening_balance_already_set"
 	| "command_id_conflict";
 

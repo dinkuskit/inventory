@@ -117,6 +117,11 @@ slice exposes only read-only RPC. That lets repository tests execute the same
 opening-balance and exact-retry application code against the production
 storage boundary without making mutation remotely callable.
 
+Runtime tests create the canonical active location before an opening balance
+may commit and separately prove that archived and unknown locations return
+stable rejections without a balance or receipt. The location lookup and stock
+result remain inside one Durable Object `transactionSync` boundary.
+
 ## Deployment contract
 
 The committed Wrangler configuration is generic and contains no account ID,

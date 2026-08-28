@@ -17,6 +17,11 @@ import {
 	initializeCloudflareInventorySchema,
 	readCloudflareInventorySchemaStatus,
 } from "../../src/cloudflare/schema.ts";
+import {
+	archiveFixtureLocation,
+	createFixtureLocation,
+	restoreFixtureLocation,
+} from "../helpers/location-fixture.mjs";
 
 const principal = Object.freeze({
 	kind: "human",
@@ -222,6 +227,97 @@ describe("Inventory Cloudflare storage boundary", () => {
 		});
 	});
 
+	it("admits Cloudflare opening balances only for active locations", async ({
+		expect,
+	}) => {
+		const stub = env.INVENTORY_POOLS.getByName("pool_location_admission");
+		await runInDurableObject(stub, async (_instance, state) => {
+			const store = createCloudflareSqliteInventoryStore({
+				storage: state.storage,
+				poolId: "pool_location_admission",
+			});
+			await createFixtureLocation(store, {
+				poolId: "pool_location_admission",
+				locationId: "location_active",
+			});
+			await createFixtureLocation(store, {
+				poolId: "pool_location_admission",
+				locationId: "location_archived",
+			});
+			await archiveFixtureLocation(store, {
+				poolId: "pool_location_admission",
+				locationId: "location_archived",
+			});
+			const execute = (receiptId) =>
+				createSetOpeningBalance({
+					store,
+					now: () => new Date("2026-08-28T12:00:00.000Z"),
+					createReceiptId: () => receiptId,
+				});
+
+			const active = await execute("rcpt_active")(
+				command({
+					commandId: "cmd_active",
+					poolId: "pool_location_admission",
+					locationId: "location_active",
+				}),
+				{ principal },
+			);
+			const archivedCommand = command({
+				commandId: "cmd_archived",
+				poolId: "pool_location_admission",
+				locationId: "location_archived",
+			});
+			const archived = await execute("rcpt_archived_should_not_exist")(
+				archivedCommand,
+				{ principal },
+			);
+			const unknown = await execute("rcpt_unknown_should_not_exist")(
+				command({
+					commandId: "cmd_unknown",
+					poolId: "pool_location_admission",
+					locationId: "location_unknown",
+				}),
+				{ principal },
+			);
+
+			expect(active.outcome).toBe("committed");
+			expect(archived).toMatchObject({
+				outcome: "rejected",
+				code: "location_not_active",
+			});
+			expect(unknown).toMatchObject({
+				outcome: "rejected",
+				code: "location_not_found",
+			});
+			expect(
+				await store.readBalance(
+					key("pool_location_admission", "location_archived"),
+				),
+			).toBeNull();
+			expect(
+				await store.readBalance(
+					key("pool_location_admission", "location_unknown"),
+				),
+			).toBeNull();
+			expect(await store.readReceipt("rcpt_archived_should_not_exist")).toBeNull();
+			expect(await store.readReceipt("rcpt_unknown_should_not_exist")).toBeNull();
+
+			await restoreFixtureLocation(store, {
+				poolId: "pool_location_admission",
+				locationId: "location_archived",
+			});
+			const replay = await createSetOpeningBalance({
+				store,
+				now: () => new Date("2026-08-28T13:00:00.000Z"),
+				createReceiptId: () => {
+					throw new Error("replay must not request a receipt ID");
+				},
+			})(archivedCommand, { principal });
+			expect(JSON.stringify(replay)).toBe(JSON.stringify(archived));
+		});
+	});
+
 	it("commits and exactly replays through the production transaction adapter", async ({
 		expect,
 	}) => {
@@ -230,6 +326,10 @@ describe("Inventory Cloudflare storage boundary", () => {
 			const store = createCloudflareSqliteInventoryStore({
 				storage: state.storage,
 				poolId: "pool_commit",
+			});
+			await createFixtureLocation(store, {
+				poolId: "pool_commit",
+				locationId: "location_north",
 			});
 			let receipts = 0;
 			const setOpeningBalance = createSetOpeningBalance({
@@ -271,6 +371,10 @@ describe("Inventory Cloudflare storage boundary", () => {
 			const store = createCloudflareSqliteInventoryStore({
 				storage: state.storage,
 				poolId: "pool_confirm",
+			});
+			await createFixtureLocation(store, {
+				poolId: "pool_confirm",
+				locationId: "location_north",
 			});
 			const now = () => new Date("2026-08-28T12:00:00.000Z");
 			const preview = createPreviewOpeningBalance({
@@ -340,6 +444,14 @@ describe("Inventory Cloudflare storage boundary", () => {
 				storage: state.storage,
 				poolId: "pool_rollback",
 			});
+			await createFixtureLocation(store, {
+				poolId: "pool_rollback",
+				locationId: "location_north",
+			});
+			await createFixtureLocation(store, {
+				poolId: "pool_rollback",
+				locationId: "location_south",
+			});
 			const execute = (receiptId) =>
 				createSetOpeningBalance({
 					store,
@@ -376,6 +488,14 @@ describe("Inventory Cloudflare storage boundary", () => {
 			const store = createCloudflareSqliteInventoryStore({
 				storage: state.storage,
 				poolId: "pool_history",
+			});
+			await createFixtureLocation(store, {
+				poolId: "pool_history",
+				locationId: "location_north",
+			});
+			await createFixtureLocation(store, {
+				poolId: "pool_history",
+				locationId: "location_south",
 			});
 			const execute = (receiptId, committedAt) =>
 				createSetOpeningBalance({

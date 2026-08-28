@@ -68,7 +68,10 @@ actor-like command fields cannot override it, and account renames do not alter
 history or break exact retry. The kernel now also includes the Inventory-owned
 location registry: permanent IDs, names reserved across active and archived
 records, atomic create/rename/archive/restore receipts, active/archive reads,
-and archive rejection for positive, negative, or reserved stock.
+and archive rejection for positive, negative, or reserved stock. A new opening
+balance now resolves that registry inside its stock transaction: active
+locations may commit, while unknown or archived locations receive stable
+rejections without a balance or receipt.
 
 The real local SQLite test adapter remains explicitly development/test-only and
 refuses production mode or in-memory use. It is not the final storage layer.

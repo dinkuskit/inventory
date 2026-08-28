@@ -139,19 +139,22 @@ production migration format.
    - same digest returns the original stored result;
    - different digest returns `command_id_conflict` while preserving the
      original stored result.
-4. A new command for a SKU-location with stock history stores a stable
+4. A new command resolves its explicit location inside the same transaction.
+   An unknown location stores `location_not_found`; an archived location stores
+   `location_not_active`. Neither rejection creates a balance or receipt.
+5. A new command for an active SKU-location with stock history stores a stable
    `opening_balance_already_set` rejection with no balance or receipt effect.
-5. The command must carry the one exact expected version-0 entry for its
+6. The command must carry the one exact expected version-0 entry for its
    SKU-location. Other shapes are malformed request failures. General stale
    preview handling remains deferred with the preview/confirmation flow.
-6. A valid first opening balance stores the new version-1 balance, immutable
+7. A valid first opening balance stores the new version-1 balance, immutable
    receipt, and committed terminal result in one SQLite transaction.
-7. An opening balance affects only its explicit pool/location/SKU key. No site,
+8. An opening balance affects only its explicit pool/location/SKU key. No site,
    hostname, SKU, or remembered default may infer pool or location.
-8. Exact replay remains byte-stable after closing and reopening the database.
-9. Competing distinct command IDs serialize: exactly one can create the
+9. Exact replay remains byte-stable after closing and reopening the database.
+10. Competing distinct command IDs serialize: exactly one can create the
    opening balance; every other accepted command receives a stored rejection.
-10. Quantity is a canonical non-negative decimal string with an explicit unit.
+11. Quantity is a canonical non-negative decimal string with an explicit unit.
     This slice sets on-hand from logical zero and does not introduce general
     arithmetic or adjustment behavior.
 

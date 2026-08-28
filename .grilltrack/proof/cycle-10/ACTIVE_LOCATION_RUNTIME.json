@@ -1,0 +1,27 @@
+{
+  "schema": "dinkuskit.inventory.verification.active-location-admission/v1",
+  "storage": "temporary local SQLite file",
+  "active": {
+    "outcome": "committed",
+    "onHand": {
+      "value": "4",
+      "unit": "each"
+    },
+    "receiptCreated": true
+  },
+  "archived": {
+    "outcome": "rejected",
+    "code": "location_not_active",
+    "balanceCreated": false,
+    "receiptCreated": false,
+    "replayAfterRestoreExact": true
+  },
+  "unknown": {
+    "outcome": "rejected",
+    "code": "location_not_found",
+    "balanceCreated": false,
+    "receiptCreated": false,
+    "replayAfterCreateExact": true
+  },
+  "openingReceiptIdsRequested": 1
+}

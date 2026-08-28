@@ -27,8 +27,9 @@ stock.
 The runtime suite proves direct fresh version-2 schema initialization, exact
 idempotency, fail-closed rejection of legacy-shaped storage without mutation,
 explicit not-found reads, pool isolation, atomic balance/receipt/command
-commit, exact opening-balance and location-command retry, and rollback on
-immutable receipt conflict. The deployment contract
+commit, active-location opening-balance admission, archived/unknown rejection
+without stock or receipt, exact opening-balance and location-command retry, and
+rollback on immutable receipt conflict. The deployment contract
 rejects committed account, tenant, pool, location, SKU, route, or
 public-preview defaults.
 

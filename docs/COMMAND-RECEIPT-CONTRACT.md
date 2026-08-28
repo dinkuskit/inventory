@@ -147,7 +147,7 @@ a second writer or a fresh command ID.
 Typical stable business rejection codes include:
 
 - `invalid_context` or `unauthorized_context`;
-- `sku_not_found` or `location_not_found`;
+- `sku_not_found`, `location_not_found`, or `location_not_active`;
 - `location_name_conflict` or `location_not_empty`;
 - `opening_balance_already_set`;
 - `insufficient_available`;
@@ -197,6 +197,14 @@ quantity returns the durable `location_not_empty` rejection with the exact SKU
 blockers. The active location list supplies ordinary selectors and later
 zero-stock breakdowns. Archived locations leave those lists but remain
 available in the explicit archived list and can be restored.
+
+Every new stock mutation resolves its explicit location against this registry
+inside the serialized mutation transaction. The opening-balance command is the
+first enforced path: an unknown location durably rejects as
+`location_not_found`, and an archived location durably rejects as
+`location_not_active`. Neither rejection creates a balance or stock receipt.
+Exact command replay precedes the current-state check, so the original terminal
+result does not change after later creation, archive, or restore.
 
 ## Preview and confirmation
 
@@ -412,6 +420,8 @@ The first executable slice is not complete until tests prove:
 - timeout recovery reuses the original command ID;
 - opening balance is allowed once per SKU-location history and affects no other
   location;
+- opening balance admits only an existing active location, and archived or
+  unknown locations create neither balance nor receipt;
 - concurrent commands preserve one-writer balance invariants;
 - receipts, effects, and resulting versions match committed balances;
 - auth scopes reject unapproved operations and locations;
