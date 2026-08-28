@@ -73,6 +73,7 @@ lockstep, while the opening-balance boundary becomes intentionally stricter.
 All repository-owned consumers were found and pass regression tests.
 
 No local `required_fix`, `reject_false_positive`, `defer`, or `human_gate`
-finding remains for this manifest identity. Official external review rails
-must bind any later verdict to the eventual pushed commit SHA; this local clean
-review grants no delivery authority.
+finding remains for this manifest identity. Bobby separately granted delivery
+authority after this review. Official external review rails must bind any later
+verdict to the final pushed PR head; this local clean review does not substitute
+for that rail.

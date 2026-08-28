@@ -7,8 +7,12 @@
 - decision: `managed-sku-registration-036`
 - reviewed source identity:
   `sha256:65e909821319e3e6e069d9dcee58a3b33d134e81546e3612b87641c450e9475b`
-- commit, push, pull request, merge, deployment, publication, production
-  database access, or stock mutation: none
+- implementation commit: `91ef98d8a46268f220def3c1282e6adbe6c495a9`
+- delivery: pushed branch `codex/managed-sku-registration-20260828` and opened
+  `https://github.com/dinkuskit/inventory/pull/12` after Bobby's explicit
+  approval
+- merge, deployment, publication, production database access, or stock
+  mutation: none
 
 ## Confirmed scope
 
@@ -116,9 +120,9 @@ layer.
 
 No live Cloudflare account, remote database, real SKU, customer data,
 credential, external package, storefront, or production pool was accessed.
-Registration is not remotely exposed in this slice. Commit, push, PR creation,
-external review rails, merge, deployment, publication, and production cutover
-remain separate gates.
+Registration is not remotely exposed in this slice. Bobby separately approved
+the commit, push, and PR after exact-source verification. External review rails,
+merge, deployment, publication, and production cutover remain separate gates.
 
 ## Recommended next focused grill
 
