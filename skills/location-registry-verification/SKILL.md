@@ -35,10 +35,10 @@ Success exits `0` with every location-registry test passing. Any failed
 invariant, unexpected exception, or unavailable required Node capability exits
 nonzero with the Node test runner's diagnostics.
 
-Run Cloudflare storage parity and the complete repository regression suite
-separately:
+Use the focused Cloudflare verifier to narrow adapter failures. Before review
+or delivery, run the canonical repository gate:
 
 ```bash
 bin/verify-cloudflare-storage
-npm test
+bin/verify-inventory full
 ```

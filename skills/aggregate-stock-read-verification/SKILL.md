@@ -44,10 +44,10 @@ Success exits `0` after the Node tests, Cloudflare tests, and Cloudflare
 typecheck all pass. Any invariant failure, unavailable required runtime, or
 compile error exits nonzero with diagnostics.
 
-Run the complete repository regression suite separately:
+Before review or delivery, run the canonical repository gate:
 
 ```bash
-npm test
+bin/verify-inventory full
 ```
 
 When review requires real local-runtime evidence rather than test-harness

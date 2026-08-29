@@ -2,7 +2,8 @@ import {
 	COMMAND_RESULT_SCHEMA,
 	normalizeCommandPrincipal,
 	type CommandPrincipal,
-} from "../domain/opening-balance.ts";
+} from "../../domain/opening-balance.ts";
+import type { InventoryStore } from "../../storage/inventory-store.ts";
 import {
 	MANAGED_SKU_UNIT,
 	digestRegisterManagedSkuCommand,
@@ -11,8 +12,7 @@ import {
 	type ManagedSkuRecord,
 	type RegisterManagedSkuCommandV1,
 	type RegisterManagedSkuResult,
-} from "../domain/managed-sku.ts";
-import type { InventoryStore } from "../storage/inventory-store.ts";
+} from "./domain.ts";
 
 export type RegisterManagedSkuExecution = Readonly<{
 	principal: CommandPrincipal;

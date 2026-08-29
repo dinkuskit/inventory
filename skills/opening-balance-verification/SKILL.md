@@ -46,8 +46,8 @@ Success exits `0` with every opening-balance test marked as passing. Any failed
 invariant, unexpected exception, or unavailable required Node capability exits
 nonzero with the Node test runner's diagnostic output.
 
-Run the complete repository regression suite separately:
+Before review or delivery, run the canonical repository gate:
 
 ```bash
-npm test
+bin/verify-inventory full
 ```

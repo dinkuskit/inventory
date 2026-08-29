@@ -13,7 +13,7 @@ import type {
 	LocationRecord,
 } from "../domain/location-registry.ts";
 import type { OpeningBalanceReceiptV2 } from "../domain/opening-balance.ts";
-import type { ManagedSkuRecord } from "../domain/managed-sku.ts";
+import type { ManagedSkuRecord } from "../features/managed-sku/index.ts";
 import type {
 	ActiveLocationBalanceSnapshot,
 	InventoryStore,

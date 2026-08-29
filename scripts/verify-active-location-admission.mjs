@@ -5,6 +5,7 @@ import { join } from "node:path";
 
 import {
 	createExecuteLocationCommand,
+	createRegisterManagedSku,
 	createSetOpeningBalance,
 } from "../src/index.ts";
 import { createLocalSqliteTestStore } from "../src/storage/local-sqlite-test-store.ts";
@@ -95,6 +96,26 @@ try {
 		"location_archived",
 		"Archived Runtime Location",
 	);
+	const registration = await createRegisterManagedSku({
+		store,
+		now: () => new Date("2026-08-28T11:00:00.000Z"),
+		createInventorySkuId: () => "sku_runtime_hat",
+	})(
+		{
+			schema: "dinkuskit.inventory.command/v1",
+			commandId: "cmd_runtime_register_hat",
+			type: "sku.register",
+			context: { siteId: "site_runtime_proof", poolId },
+			payload: {
+				sku: "RUNTIME-HAT",
+				displayNameIfNew: "Runtime Hat",
+				unit: "each",
+			},
+			references: [],
+		},
+		{ principal },
+	);
+	assert.equal(registration.outcome, "registered");
 
 	let openingReceiptIdsRequested = 0;
 	const setOpeningBalance = createSetOpeningBalance({

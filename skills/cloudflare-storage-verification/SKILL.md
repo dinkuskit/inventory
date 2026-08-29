@@ -39,8 +39,8 @@ Success exits `0` after TypeScript, Node, Vitest, and Wrangler all succeed. Any
 failed invariant, compilation error, runtime failure, or invalid deployment
 configuration exits nonzero with the owning tool's diagnostic output.
 
-Run the complete repository regression suite separately:
+Before review or delivery, run the canonical repository gate:
 
 ```bash
-npm test
+bin/verify-inventory full
 ```
