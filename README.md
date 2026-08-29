@@ -73,8 +73,9 @@ balance now resolves that registry inside its stock transaction: active
 locations may commit, while unknown or archived locations receive stable
 rejections without a balance or receipt. A read-only aggregate now accepts one
 caller-supplied SKU and either one active location or all active locations. The
-all-locations result returns exact on-hand, reserved, and derived-available
-totals plus a per-location breakdown, including explicit zero rows; it does not
+all-locations result returns exact on-hand, reserved, outgoing-transfer,
+derived-available, expected, and in-transit totals plus a per-location
+breakdown, including explicit zero rows; it does not
 discover or synchronize Commerce catalog data. Inventory now also owns one
 awaited `sku.register` command: a new visible Commerce SKU mints a permanent
 opaque Inventory ID and one-time operational display name, while an existing
@@ -86,12 +87,25 @@ The kernel now also executes ordinary post-opening stock adjustments. Each
 command names one explicit active location and permanent Inventory SKU, carries
 one non-zero signed exact delta and a mandatory note-only reason, and is bound
 to the previewed balance version. Five-minute preview shows before/after
-on-hand, reserved, and available quantities plus an exact oversell warning;
+on-hand, reserved, outgoing-transfer, available, expected, and in-transit
+quantities plus an exact oversell warning;
 negative stock remains allowed. Commit changes only on-hand, preserves
 reserved, advances the version, and atomically creates one immutable receipt
 with the trusted signed-in actor. Exact retries recover the original durable
 result, changed contents conflict, stale previews reject, and corrections are
 new linked receipts rather than edits.
+
+The first stock-transfer checkpoint implements durable Created drafts. A draft
+has one permanent opaque transfer ID, an editable pool-unique `ST-...`
+reference, explicit active origin and destination, one or more managed SKU
+lines, an optional note, and expected dispatch and arrival dates. Zero
+quantities are valid while Created. Positive quantities atomically commit
+outgoing stock at the origin, reduce available stock, and add expected stock at
+the destination without changing physical on-hand. Full Created edits rebalance
+those effects; cancel records a durable Done/Canceled transfer and releases
+them. Every command is versioned, idempotent, actor-bearing, and committed with
+its immutable receipt. Dispatch, receipt, partial receipt, GUI, and runtime
+service exposure remain later slices.
 
 The real local SQLite test adapter remains explicitly development/test-only and
 refuses production mode or in-memory use. It is not the final storage layer.
@@ -100,14 +114,15 @@ Cloudflare Worker with a SQLite-backed Durable Object namespace and one object
 database per explicit pool. Workers.dev and preview URLs are disabled, no route
 is deployed, and its remote surface remains private and read-only: same-account
 SKU-location inspection and aggregate SKU stock reads.
-The source schema defines version 3 as the complete current real-database
-schema, including the location and managed-SKU registries. Fresh empty storage
-initializes directly at version 3. Exact committed version-2 storage upgrades
-atomically, preserves all prior durable records, and backfills legacy balanced
-SKU keys as stable managed identities; incompatible shapes fail closed without
-a partial upgrade. Workerd runtime tests prove that transition, but this is not
-a deployment or live-database claim. Opening-balance and stock-adjustment
-mutation are not remotely exposed, no
+The source schema defines version 4 as the complete current real-database
+schema, including the location, managed-SKU, and stock-transfer records plus
+the six stock dimensions. Fresh empty storage initializes directly at version
+4. Exact committed version-3 storage upgrades atomically; exact version-2
+storage moves through v3 and then v4. Both paths preserve prior durable records,
+and the v2 path backfills legacy balanced SKU keys as stable managed identities.
+Incompatible shapes fail closed without a partial upgrade. Workerd runtime
+tests prove those transitions, but this is not a deployment or live-database
+claim. Inventory mutations are not remotely exposed, no
 storefront traffic is bound, and no physical stock cutover has happened. There
 is still no installable plugin, executable CLI, or published npm package. The
 package manifest remains private at `0.0.0` to prevent accidental publication.
@@ -144,6 +159,7 @@ bin/verify-location-registry
 bin/verify-aggregate-stock-read
 bin/verify-managed-sku
 bin/verify-stock-adjustment
+bin/verify-stock-transfer
 bin/verify-cloudflare-storage
 ```
 

@@ -1,0 +1,216 @@
+import { env } from "cloudflare:workers";
+import { runInDurableObject } from "cloudflare:test";
+import { describe, it } from "vitest";
+
+import {
+	createConfirmOpeningBalance,
+	createPreviewOpeningBalance,
+} from "../../src/application/preview-confirm-opening-balance.ts";
+import { createSetOpeningBalance } from "../../src/application/set-opening-balance.ts";
+import {
+	createExecuteStockTransferCommand,
+	createReadStockTransfer,
+} from "../../src/features/stock-transfer/index.ts";
+import { createCloudflareSqliteInventoryStore } from "../../src/storage/cloudflare-sqlite-inventory-store.ts";
+import { createFixtureLocation } from "../helpers/location-fixture.mjs";
+import { createFixtureManagedSku } from "../helpers/managed-sku-fixture.mjs";
+
+const principal = Object.freeze({
+	kind: "human",
+	id: "emdash_user_transfer_cloudflare",
+	displayName: "Cloudflare Transfer Operator",
+	surface: "emdash",
+});
+
+describe("stock transfer Cloudflare parity", () => {
+	it("persists Created commitments, expected stock, receipt, and replay in one transaction", async ({ expect }) => {
+		const poolId = "pool_stock_transfer_parity";
+		const stub = env.INVENTORY_POOLS.getByName(poolId);
+		await runInDurableObject(stub, async (_instance, state) => {
+			const store = createCloudflareSqliteInventoryStore({
+				storage: state.storage,
+				poolId,
+			});
+			await createFixtureLocation(store, {
+				poolId,
+				locationId: "location_origin",
+				name: "Origin",
+			});
+			await createFixtureLocation(store, {
+				poolId,
+				locationId: "location_destination",
+				name: "Destination",
+			});
+			await createFixtureManagedSku(store, { poolId, skuId: "sku_hat" });
+			await createSetOpeningBalance({
+				store,
+				now: () => new Date("2026-08-29T10:00:00.000Z"),
+				createReceiptId: () => "rcpt_cf_transfer_opening",
+			})(
+				{
+					schema: "dinkuskit.inventory.command/v1",
+					commandId: "cmd_cf_transfer_opening",
+					type: "stock.opening_balance",
+					context: { siteId: "site_test", poolId, locationId: "location_origin" },
+					payload: { skuId: "sku_hat", quantity: { value: "10", unit: "each" } },
+					reason: { code: "opening_balance", note: "Set Initial Stock" },
+					references: [],
+					expectedVersions: [
+						{ skuId: "sku_hat", locationId: "location_origin", version: "0" },
+					],
+				},
+				{ principal },
+			);
+
+			let ids = 0;
+			let receipts = 0;
+			const execute = createExecuteStockTransferCommand({
+				store,
+				now: () => new Date("2026-08-29T12:00:00.000Z"),
+				createTransferId: () => {
+					ids += 1;
+					return "transfer_cf_hat";
+				},
+				createTransferReference: () => "ST-147",
+				createReceiptId: () => {
+					receipts += 1;
+					return `rcpt_cf_transfer_${receipts}`;
+				},
+			});
+			const command = {
+				schema: "dinkuskit.inventory.command/v1",
+				commandId: "cmd_cf_transfer",
+				type: "transfer.create",
+				context: { siteId: "site_test", poolId },
+				payload: {
+					reference: null,
+					originLocationId: "location_origin",
+					destinationLocationId: "location_destination",
+					lines: [{ skuId: "sku_hat", quantity: { value: "4", unit: "each" } }],
+					note: "Restock",
+					expectedDispatchDate: "2026-09-01",
+					expectedArrivalDate: "2026-09-03",
+				},
+				references: [],
+				expectedVersions: [],
+			};
+			const first = await execute(command, { principal });
+			const replay = await execute(command, { principal });
+
+			expect(first.outcome).toBe("committed");
+			expect(replay).toEqual(first);
+			expect({ ids, receipts }).toEqual({ ids: 1, receipts: 1 });
+			expect(await store.readBalance({ poolId, locationId: "location_origin", skuId: "sku_hat" })).toMatchObject({
+				onHand: { value: "10", unit: "each" },
+				outgoingTransferCommitted: { value: "4", unit: "each" },
+				available: { value: "6", unit: "each" },
+			});
+			expect(await store.readBalance({ poolId, locationId: "location_destination", skuId: "sku_hat" })).toMatchObject({
+				expected: { value: "4", unit: "each" },
+				inTransit: { value: "0", unit: "each" },
+			});
+			const preview = await createPreviewOpeningBalance({
+				store,
+				now: () => new Date("2026-08-29T12:01:00.000Z"),
+				createConfirmation: () => "confirm_cf_destination_opening",
+			})({
+				schema: "dinkuskit.inventory.opening-balance-preview-input/v1",
+				type: "stock.opening_balance",
+				context: {
+					siteId: "site_test",
+					poolId,
+					locationId: "location_destination",
+				},
+				payload: { skuId: "sku_hat", quantity: { value: "3", unit: "each" } },
+				reason: { code: "opening_balance", note: "Set Initial Stock" },
+				references: [],
+			}, { principal });
+			expect(preview.effect.balanceBefore).toMatchObject({
+				expected: { value: "4", unit: "each" },
+				version: "1",
+			});
+			const destinationOpening = await createConfirmOpeningBalance({
+				store,
+				now: () => new Date("2026-08-29T12:02:00.000Z"),
+				createReceiptId: () => "rcpt_cf_destination_opening",
+			})(preview.confirmation.value, {
+				schema: "dinkuskit.inventory.command/v1",
+				commandId: "cmd_cf_destination_opening",
+				type: "stock.opening_balance",
+				context: {
+					siteId: "site_test",
+					poolId,
+					locationId: "location_destination",
+				},
+				payload: { skuId: "sku_hat", quantity: { value: "3", unit: "each" } },
+				reason: { code: "opening_balance", note: "Set Initial Stock" },
+				references: [],
+				expectedVersions: [{
+					skuId: "sku_hat",
+					locationId: "location_destination",
+					version: preview.effect.balanceBefore.version,
+				}],
+			}, { principal });
+			expect(destinationOpening.outcome).toBe("committed");
+			expect(await store.readBalance({ poolId, locationId: "location_destination", skuId: "sku_hat" })).toMatchObject({
+				onHand: { value: "3", unit: "each" },
+				expected: { value: "4", unit: "each" },
+				version: "2",
+				hasStockHistory: true,
+			});
+
+			const updated = await execute({
+				...command,
+				commandId: "cmd_cf_transfer_update",
+				type: "transfer.update",
+				payload: {
+					...command.payload,
+					transferId: first.transfer.transferId,
+					reference: first.transfer.reference,
+					lines: [{ skuId: "sku_hat", quantity: { value: "5", unit: "each" } }],
+					note: "Restock updated",
+				},
+				expectedVersions: [{
+					transferId: first.transfer.transferId,
+					version: first.transfer.version,
+				}],
+			}, { principal });
+			expect(updated.outcome).toBe("committed");
+			expect(await store.readBalance({ poolId, locationId: "location_destination", skuId: "sku_hat" })).toMatchObject({
+				onHand: { value: "3", unit: "each" },
+				expected: { value: "5", unit: "each" },
+			});
+			const canceled = await execute({
+				schema: command.schema,
+				commandId: "cmd_cf_transfer_cancel",
+				type: "transfer.cancel",
+				context: command.context,
+				payload: { transferId: updated.transfer.transferId },
+				references: [],
+				expectedVersions: [{
+					transferId: updated.transfer.transferId,
+					version: updated.transfer.version,
+				}],
+			}, { principal });
+			expect(canceled.outcome).toBe("committed");
+			expect(await store.readBalance({ poolId, locationId: "location_destination", skuId: "sku_hat" })).toMatchObject({
+				onHand: { value: "3", unit: "each" },
+				expected: { value: "0", unit: "each" },
+			});
+			expect(await createReadStockTransfer({ store })({
+				poolId,
+				transferId: "transfer_cf_hat",
+			})).toMatchObject({
+				outcome: "found",
+				transfer: { reference: "ST-147", status: "canceled" },
+			});
+			expect(await store.readReceipt("rcpt_cf_transfer_1")).toEqual(first.receipt);
+			expect(
+				state.storage.sql
+					.exec("SELECT version FROM inventory_schema_migrations ORDER BY version")
+					.toArray()
+					.map((row) => Number(row.version)),
+			).toEqual([4]);
+		});
+	});
+});

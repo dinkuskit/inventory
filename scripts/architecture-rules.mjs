@@ -8,6 +8,7 @@ const FEATURE_IDS = [
 	"dinkus.stock-read",
 	"dinkus.managed-sku",
 	"dinkus.stock-adjustment",
+	"dinkus.stock-transfer",
 ];
 
 const FEATURE_STRUCTURE = new Map([
@@ -16,6 +17,7 @@ const FEATURE_STRUCTURE = new Map([
 	["dinkus.stock-read", "mapped current location"],
 	["dinkus.managed-sku", "migrated pilot"],
 	["dinkus.stock-adjustment", "migrated feature"],
+	["dinkus.stock-transfer", "migrated feature"],
 ]);
 
 const FEATURE_SHARED_DEPENDENCIES = new Map([
@@ -29,6 +31,15 @@ const FEATURE_SHARED_DEPENDENCIES = new Map([
 	[
 		"stock-adjustment",
 		new Set([
+			"src/domain/exact-decimal.ts",
+			"src/domain/opening-balance.ts",
+			"src/storage/inventory-store.ts",
+		]),
+	],
+	[
+		"stock-transfer",
+		new Set([
+			"src/domain/exact-decimal.ts",
 			"src/domain/opening-balance.ts",
 			"src/storage/inventory-store.ts",
 		]),
@@ -41,6 +52,7 @@ const REQUIRED_FILES = [
 	"skills/inventory-verification/SKILL.md",
 	"scripts/check-architecture.mjs",
 	"scripts/architecture-rules.mjs",
+	"src/domain/exact-decimal.ts",
 	"src/features/managed-sku/domain.ts",
 	"src/features/managed-sku/index.ts",
 	"src/features/managed-sku/register.ts",
@@ -48,13 +60,23 @@ const REQUIRED_FILES = [
 	"src/features/stock-adjustment/domain.ts",
 	"src/features/stock-adjustment/index.ts",
 	"src/features/stock-adjustment/preview-confirm.ts",
+	"src/features/stock-transfer/domain.ts",
+	"src/features/stock-transfer/execute.ts",
+	"src/features/stock-transfer/index.ts",
+	"src/features/stock-transfer/read.ts",
 	"tests/managed-sku/public-entry.test.mjs",
 	"tests/stock-adjustment/domain.test.mjs",
 	"tests/stock-adjustment/preview-confirm-stock-adjustment.test.mjs",
 	"tests/stock-adjustment/public-entry.test.mjs",
 	"tests/cloudflare/stock-adjustment.test.mjs",
+	"tests/stock-transfer/created-stock-transfer.test.mjs",
+	"tests/stock-transfer/domain.test.mjs",
+	"tests/stock-transfer/public-entry.test.mjs",
+	"tests/cloudflare/stock-transfer.test.mjs",
 	"bin/verify-stock-adjustment",
 	"skills/stock-adjustment-verification/SKILL.md",
+	"bin/verify-stock-transfer",
+	"skills/stock-transfer-verification/SKILL.md",
 	"tests/workflows/repository-architecture.test.mjs",
 	".github/workflows/repo-contract.yml",
 ];
@@ -264,6 +286,9 @@ export async function auditInventoryArchitecture(rootInput) {
 	}
 	if (!rootEntry.includes('from "./features/stock-adjustment/index.ts"')) {
 		findings.push("src/index.ts must compose the stock-adjustment public entry");
+	}
+	if (!rootEntry.includes('from "./features/stock-transfer/index.ts"')) {
+		findings.push("src/index.ts must compose the stock-transfer public entry");
 	}
 	return findings;
 }

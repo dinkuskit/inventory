@@ -1,0 +1,6 @@
+baseline_head=d735b180b3f4ed911667586f5131ff1727e46546
+origin_main=d31fbfda982ad669f638a222f0cb1caa7592c095
+branch=codex/location-transfer-20260829
+source_diff_sha256=9b9a8f705b9361d6ee919217aed8fb28ce1896f99ced6755868a52fb8839d58f
+source_diff_scope=git diff --binary HEAD^ HEAD excluding .grilltrack
+reviewed_at=2026-08-29T17:44:33Z

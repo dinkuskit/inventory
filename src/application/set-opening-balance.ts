@@ -12,6 +12,7 @@ import {
 	type OpeningBalanceResult,
 	type SetOpeningBalanceCommandV1,
 } from "../domain/opening-balance.ts";
+import { subtractExactDecimal } from "../domain/exact-decimal.ts";
 import type {
 	InventoryStore,
 	InventoryTransaction,
@@ -75,6 +76,20 @@ function skuUnitMismatch(commandId: string): OpeningBalanceResult {
 		code: "sku_unit_mismatch",
 		message: "The stock quantity unit does not match this SKU.",
 	};
+}
+
+function staleVersion(commandId: string): OpeningBalanceResult {
+	return {
+		schema: COMMAND_RESULT_SCHEMA,
+		outcome: "rejected",
+		commandId,
+		code: "stale_version",
+		message: "Stock changed after preview. Preview the opening balance again.",
+	};
+}
+
+function incrementVersion(version: string): string {
+	return (BigInt(version) + 1n).toString();
 }
 
 function locationRejection(
@@ -187,14 +202,56 @@ export function executeSetOpeningBalanceInTransaction(
 		});
 		return result;
 	}
+	const observedVersion = existingBalance?.version ?? "0";
+	if (observedVersion !== command.expectedVersions[0].version) {
+		const result = staleVersion(command.commandId);
+		transaction.storeRejection({
+			commandId: command.commandId,
+			commandDigest,
+			result,
+		});
+		return result;
+	}
 
 	const zero = { value: "0", unit: command.payload.quantity.unit };
+	const reserved = existingBalance?.reserved ?? zero;
+	const outgoingTransferCommitted =
+		existingBalance?.outgoingTransferCommitted ?? zero;
+	const expected = existingBalance?.expected ?? zero;
+	const inTransit = existingBalance?.inTransit ?? zero;
+	if (
+		existingBalance !== null &&
+		[
+			existingBalance.onHand,
+			reserved,
+			outgoingTransferCommitted,
+			existingBalance.available,
+			expected,
+			inTransit,
+		].some((quantity) => quantity.unit !== command.payload.quantity.unit)
+	) {
+		const result = skuUnitMismatch(command.commandId);
+		transaction.storeRejection({
+			commandId: command.commandId,
+			commandDigest,
+			result,
+		});
+		return result;
+	}
+	const available = subtractExactDecimal(
+		subtractExactDecimal(command.payload.quantity.value, reserved.value),
+		outgoingTransferCommitted.value,
+	);
+	const version = incrementVersion(observedVersion);
 	const balance: BalanceRecord = {
 		...key,
 		onHand: command.payload.quantity,
-		reserved: zero,
-		available: command.payload.quantity,
-		version: "1",
+		reserved,
+		outgoingTransferCommitted,
+		available: { value: available, unit: command.payload.quantity.unit },
+		expected,
+		inTransit,
+		version,
 		hasStockHistory: true,
 	};
 	const receipt: OpeningBalanceReceiptV2 = {
@@ -219,9 +276,12 @@ export function executeSetOpeningBalanceInTransaction(
 				reservedDelta: zero,
 				balanceAfter: {
 					onHand: command.payload.quantity,
-					reserved: zero,
-					available: command.payload.quantity,
-					version: "1",
+					reserved,
+					outgoingTransferCommitted,
+					available: balance.available,
+					expected,
+					inTransit,
+					version,
 				},
 			},
 		],
@@ -237,6 +297,7 @@ export function executeSetOpeningBalanceInTransaction(
 	transaction.commitOpeningBalance({
 		commandId: command.commandId,
 		commandDigest,
+		previous: existingBalance,
 		balance,
 		receipt,
 		result,

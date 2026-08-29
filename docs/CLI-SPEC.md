@@ -74,6 +74,8 @@ dinkus-inventory stock receive
 dinkus-inventory transfers list
 dinkus-inventory transfers show <transfer-id>
 dinkus-inventory transfers create
+dinkus-inventory transfers update <transfer-id>
+dinkus-inventory transfers cancel <transfer-id>
 dinkus-inventory transfers start <transfer-id>
 dinkus-inventory transfers receive <transfer-id>
 
@@ -114,11 +116,20 @@ dinkus-inventory commands resolve <command-id>
 - `stock receive` records one or more item quantities at the location where
   they physically arrived. It may carry an external reference; it does not
   create a purchase order.
-- `transfers create` stages an explicit origin, destination, and item vector.
+- `transfers create` saves a Created/Open draft with explicit origin,
+  destination, expected dates, editable unique reference, optional note, and
+  item vector. Zero quantities are valid in this state.
+- `transfers update` fully replaces the editable fields of a Created transfer
+  against its exact version and atomically rebalances its outgoing and expected
+  quantities.
+- `transfers cancel` records the Created transfer as Canceled/Done and releases
+  its planning quantities. It never erases the transfer or receipts.
 - `transfers start` moves a `Created` transfer to `In transit` and applies the
-  locked origin/in-transit effects.
+  locked origin/in-transit effects. This command remains a later implementation
+  slice.
 - `transfers receive` moves an `In transit` transfer to `Received` and applies
-  the locked destination effects.
+  the locked destination effects. This command remains a later implementation
+  slice.
 - `commands resolve` looks up an unknown-outcome command and, only when needed,
   replays the exact locally retained envelope under the same command ID. It
   cannot edit the envelope or retry the action as new.
@@ -157,6 +168,9 @@ last-used location. Every preview and result repeats the resolved context.
 | --- | --- |
 | `--reason <code>` | Stable machine reason for opening balances and future command types whose domain contract defines one. Ordinary stock adjustment does not accept this flag. |
 | `--note <text>` | Required public-safe human-readable reason for opening balances and ordinary adjustments; not a place for customer or payment data. Only the interactive opening-balance surface starts it as `Set Initial Stock`; adjustment has no prefill. |
+| `--transfer-reference <text>` | Complete editable human transfer reference. Create may omit it to accept Inventory's proposed `ST-...` value. |
+| `--expected-dispatch <YYYY-MM-DD>` | Required expected dispatch date for a Created transfer. |
+| `--expected-arrival <YYYY-MM-DD>` | Required expected arrival date for a Created transfer; cannot precede expected dispatch. |
 | `--reference <type:id>` | Repeatable typed external reference. |
 | `--dry-run` | Request server validation and preview, print the exact proposed effect and confirmation value, then stop without a command, receipt, or stock mutation. |
 | `--confirm <value>` | Submit only when the opaque value matches a fresh preview of the exact normalized action and current versions. |

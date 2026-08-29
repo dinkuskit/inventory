@@ -12,6 +12,10 @@ import type {
 import type { InventoryStockReceiptV2 } from "../domain/inventory-read.ts";
 import type { ManagedSkuRecord } from "../features/managed-sku/index.ts";
 import type {
+	ReadStockTransferInput,
+	StockTransferRecord,
+} from "../features/stock-transfer/index.ts";
+import type {
 	ActiveLocationBalanceSnapshot,
 	InventoryStore,
 	InventoryTransaction,
@@ -26,6 +30,7 @@ import type {
 	StoredOpeningBalanceConfirmation,
 	StoredStockAdjustmentConfirmation,
 	StockAdjustmentCommit,
+	StockTransferCommit,
 } from "./inventory-store.ts";
 
 type SqlRow = Record<string, SqlStorageValue>;
@@ -53,10 +58,22 @@ function balanceFrom(row: SqlRow | undefined): BalanceRecord | null {
 		skuId: String(row.sku_id),
 		onHand: { value: String(row.on_hand_value), unit },
 		reserved: { value: String(row.reserved_value), unit },
+		outgoingTransferCommitted: {
+			value: String(row.outgoing_transfer_committed_value),
+			unit,
+		},
 		available: { value: String(row.available_value), unit },
+		expected: { value: String(row.expected_value), unit },
+		inTransit: { value: String(row.in_transit_value), unit },
 		version: String(row.version),
 		hasStockHistory: Number(row.has_stock_history) === 1,
 	};
+}
+
+function stockTransferFrom(row: SqlRow | undefined): StockTransferRecord | null {
+	return row === undefined
+		? null
+		: json<StockTransferRecord>(row.transfer_json);
 }
 
 function locationFrom(row: SqlRow | undefined): LocationRecord | null {
@@ -114,8 +131,20 @@ function activeLocationBalanceSnapshotFrom(
 						value: String(row.balance_reserved_value),
 						unit: String(row.balance_unit),
 					},
+					outgoingTransferCommitted: {
+						value: String(row.balance_outgoing_transfer_committed_value),
+						unit: String(row.balance_unit),
+					},
 					available: {
 						value: String(row.balance_available_value),
+						unit: String(row.balance_unit),
+					},
+					expected: {
+						value: String(row.balance_expected_value),
+						unit: String(row.balance_unit),
+					},
+					inTransit: {
+						value: String(row.balance_in_transit_value),
 						unit: String(row.balance_unit),
 					},
 					version: String(row.balance_version),
@@ -171,7 +200,9 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 			first(
 				this.#storage,
 				`SELECT pool_id, location_id, sku_id, on_hand_value,
-				        reserved_value, available_value, unit, version,
+				        reserved_value, outgoing_transfer_committed_value,
+				        available_value, expected_value, in_transit_value,
+				        unit, version,
 				        has_stock_history
 				 FROM inventory_balances
 				 WHERE pool_id = ? AND location_id = ? AND sku_id = ?`,
@@ -210,6 +241,34 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 		);
 	}
 
+	getStockTransfer(transferId: string): StockTransferRecord | null {
+		return stockTransferFrom(
+			first(
+				this.#storage,
+				`SELECT transfer_json
+				 FROM inventory_transfers
+				 WHERE pool_id = ? AND transfer_id = ?`,
+				this.#poolId,
+				transferId,
+			),
+		);
+	}
+
+	getStockTransferByReferenceKey(
+		referenceKey: string,
+	): StockTransferRecord | null {
+		return stockTransferFrom(
+			first(
+				this.#storage,
+				`SELECT transfer_json
+				 FROM inventory_transfers
+				 WHERE pool_id = ? AND reference_key = ?`,
+				this.#poolId,
+				referenceKey,
+			),
+		);
+	}
+
 	getLocation(locationId: string): LocationRecord | null {
 		return locationFrom(
 			first(
@@ -243,10 +302,16 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 	): readonly LocationBalanceBlocker[] {
 		return this.#storage.sql
 			.exec<SqlRow>(
-				`SELECT sku_id, on_hand_value, reserved_value, unit
+				`SELECT sku_id, on_hand_value, reserved_value,
+				        outgoing_transfer_committed_value, expected_value,
+				        in_transit_value, unit
 				 FROM inventory_balances
 				 WHERE pool_id = ? AND location_id = ?
-				   AND (on_hand_value <> '0' OR reserved_value <> '0')
+				   AND (
+				     on_hand_value <> '0' OR reserved_value <> '0' OR
+				     outgoing_transfer_committed_value <> '0' OR
+				     expected_value <> '0' OR in_transit_value <> '0'
+				   )
 				 ORDER BY sku_id`,
 				this.#poolId,
 				locationId,
@@ -257,6 +322,18 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 				onHand: { value: String(row.on_hand_value), unit: String(row.unit) },
 				reserved: {
 					value: String(row.reserved_value),
+					unit: String(row.unit),
+				},
+				outgoingTransferCommitted: {
+					value: String(row.outgoing_transfer_committed_value),
+					unit: String(row.unit),
+				},
+				expected: {
+					value: String(row.expected_value),
+					unit: String(row.unit),
+				},
+				inTransit: {
+					value: String(row.in_transit_value),
 					unit: String(row.unit),
 				},
 			}));
@@ -379,24 +456,55 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 
 	commitOpeningBalance(input: OpeningBalanceCommit): void {
 		this.#assertPool(input.balance);
-		this.#storage.sql
-			.exec(
+		if (input.previous === null) {
+			this.#storage.sql.exec(
 				`INSERT INTO inventory_balances
 				   (pool_id, location_id, sku_id, on_hand_value,
-				    reserved_value, available_value, unit, version,
-				    has_stock_history)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+				    reserved_value, outgoing_transfer_committed_value,
+				    available_value, expected_value, in_transit_value,
+				    unit, version, has_stock_history)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 				input.balance.poolId,
 				input.balance.locationId,
 				input.balance.skuId,
 				input.balance.onHand.value,
 				input.balance.reserved.value,
+				input.balance.outgoingTransferCommitted.value,
 				input.balance.available.value,
+				input.balance.expected.value,
+				input.balance.inTransit.value,
 				input.balance.onHand.unit,
 				Number(input.balance.version),
 				input.balance.hasStockHistory ? 1 : 0,
-			)
-			.toArray();
+			).toArray();
+		} else {
+			const updated = this.#storage.sql.exec<SqlRow>(
+				`UPDATE inventory_balances
+				 SET on_hand_value = ?, reserved_value = ?,
+				     outgoing_transfer_committed_value = ?, available_value = ?,
+				     expected_value = ?, in_transit_value = ?, unit = ?,
+				     version = ?, has_stock_history = ?
+				 WHERE pool_id = ? AND location_id = ? AND sku_id = ?
+				   AND version = ? AND has_stock_history = 0
+				 RETURNING sku_id`,
+				input.balance.onHand.value,
+				input.balance.reserved.value,
+				input.balance.outgoingTransferCommitted.value,
+				input.balance.available.value,
+				input.balance.expected.value,
+				input.balance.inTransit.value,
+				input.balance.onHand.unit,
+				Number(input.balance.version),
+				input.balance.hasStockHistory ? 1 : 0,
+				input.balance.poolId,
+				input.balance.locationId,
+				input.balance.skuId,
+				Number(input.previous.version),
+			).toArray();
+			if (updated.length !== 1) {
+				throw new Error("Opening-balance update lost its planning row.");
+			}
+		}
 		this.#storage.sql
 			.exec(
 				`INSERT INTO inventory_receipts
@@ -424,14 +532,19 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 		const updated = this.#storage.sql
 			.exec<SqlRow>(
 				`UPDATE inventory_balances
-				 SET on_hand_value = ?, reserved_value = ?, available_value = ?,
-				     unit = ?, version = ?, has_stock_history = ?
+				 SET on_hand_value = ?, reserved_value = ?,
+				     outgoing_transfer_committed_value = ?, available_value = ?,
+				     expected_value = ?, in_transit_value = ?, unit = ?,
+				     version = ?, has_stock_history = ?
 				 WHERE pool_id = ? AND location_id = ? AND sku_id = ?
 				   AND version = ? AND has_stock_history = 1
 				 RETURNING sku_id`,
 				input.balance.onHand.value,
 				input.balance.reserved.value,
+				input.balance.outgoingTransferCommitted.value,
 				input.balance.available.value,
+				input.balance.expected.value,
+				input.balance.inTransit.value,
 				input.balance.onHand.unit,
 				Number(input.balance.version),
 				input.balance.hasStockHistory ? 1 : 0,
@@ -545,6 +658,102 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 			.toArray();
 		this.storeCommandResult(input);
 	}
+
+	commitStockTransfer(input: StockTransferCommit): void {
+		if (input.transfer.poolId !== this.#poolId) {
+			throw new Error("A transaction cannot cross inventory pools.");
+		}
+		for (const change of input.balances) {
+			this.#assertPool(change.balance);
+			if (change.previous === null) {
+				this.#storage.sql.exec(
+					`INSERT INTO inventory_balances (
+						pool_id, location_id, sku_id, on_hand_value, reserved_value,
+						outgoing_transfer_committed_value, available_value,
+						expected_value, in_transit_value, unit, version,
+						has_stock_history
+					) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+					change.balance.poolId,
+					change.balance.locationId,
+					change.balance.skuId,
+					change.balance.onHand.value,
+					change.balance.reserved.value,
+					change.balance.outgoingTransferCommitted.value,
+					change.balance.available.value,
+					change.balance.expected.value,
+					change.balance.inTransit.value,
+					change.balance.onHand.unit,
+					Number(change.balance.version),
+					change.balance.hasStockHistory ? 1 : 0,
+				).toArray();
+			} else {
+				const updated = this.#storage.sql.exec<SqlRow>(
+					`UPDATE inventory_balances
+					 SET on_hand_value = ?, reserved_value = ?,
+					     outgoing_transfer_committed_value = ?, available_value = ?,
+					     expected_value = ?, in_transit_value = ?, unit = ?,
+					     version = ?, has_stock_history = ?
+					 WHERE pool_id = ? AND location_id = ? AND sku_id = ?
+					   AND version = ?
+					 RETURNING sku_id`,
+					change.balance.onHand.value,
+					change.balance.reserved.value,
+					change.balance.outgoingTransferCommitted.value,
+					change.balance.available.value,
+					change.balance.expected.value,
+					change.balance.inTransit.value,
+					change.balance.onHand.unit,
+					Number(change.balance.version),
+					change.balance.hasStockHistory ? 1 : 0,
+					change.balance.poolId,
+					change.balance.locationId,
+					change.balance.skuId,
+					Number(change.previous.version),
+				).toArray();
+				if (updated.length !== 1) {
+					throw new Error("Stock-transfer balance update lost its target row.");
+				}
+			}
+		}
+		if (input.previous === null) {
+			this.#storage.sql.exec(
+				`INSERT INTO inventory_transfers
+				   (pool_id, transfer_id, reference_key, status, version, transfer_json)
+				 VALUES (?, ?, ?, ?, ?, ?)`,
+				input.transfer.poolId,
+				input.transfer.transferId,
+				input.referenceKey,
+				input.transfer.status,
+				Number(input.transfer.version),
+				JSON.stringify(input.transfer),
+			).toArray();
+		} else {
+			const updated = this.#storage.sql.exec<SqlRow>(
+				`UPDATE inventory_transfers
+				 SET reference_key = ?, status = ?, version = ?, transfer_json = ?
+				 WHERE pool_id = ? AND transfer_id = ? AND version = ?
+				 RETURNING transfer_id`,
+				input.referenceKey,
+				input.transfer.status,
+				Number(input.transfer.version),
+				JSON.stringify(input.transfer),
+				input.transfer.poolId,
+				input.transfer.transferId,
+				Number(input.previous.version),
+			).toArray();
+			if (updated.length !== 1) {
+				throw new Error("Stock-transfer update lost its target row.");
+			}
+		}
+		this.#storage.sql.exec(
+			`INSERT INTO inventory_receipts (receipt_id, command_id, receipt_json)
+			 VALUES (?, ?, ?)`,
+			input.receipt.receiptId,
+			input.commandId,
+			JSON.stringify(input.receipt),
+		).toArray();
+		this.storeCommandResult(input);
+	}
 }
 
 export class CloudflareSqliteInventoryStore implements InventoryStore {
@@ -595,7 +804,9 @@ export class CloudflareSqliteInventoryStore implements InventoryStore {
 			first(
 				this.#storage,
 				`SELECT pool_id, location_id, sku_id, on_hand_value,
-				        reserved_value, available_value, unit, version,
+				        reserved_value, outgoing_transfer_committed_value,
+				        available_value, expected_value, in_transit_value,
+				        unit, version,
 				        has_stock_history
 				 FROM inventory_balances
 				 WHERE pool_id = ? AND location_id = ? AND sku_id = ?`,
@@ -625,6 +836,24 @@ export class CloudflareSqliteInventoryStore implements InventoryStore {
 		);
 	}
 
+	async readStockTransfer(
+		query: ReadStockTransferInput,
+	): Promise<StockTransferRecord | null> {
+		if (query.poolId !== this.#poolId) {
+			throw new Error("A store cannot read across inventory pools.");
+		}
+		return stockTransferFrom(
+			first(
+				this.#storage,
+				`SELECT transfer_json
+				 FROM inventory_transfers
+				 WHERE pool_id = ? AND transfer_id = ?`,
+				query.poolId,
+				query.transferId,
+			),
+		);
+	}
+
 	async readSkuActiveLocationSnapshot(
 		query: ReadSkuActiveLocationSnapshotQuery,
 	): Promise<readonly ActiveLocationBalanceSnapshot[]> {
@@ -640,7 +869,10 @@ export class CloudflareSqliteInventoryStore implements InventoryStore {
 				        balance.sku_id AS balance_sku_id,
 				        balance.on_hand_value AS balance_on_hand_value,
 				        balance.reserved_value AS balance_reserved_value,
+				        balance.outgoing_transfer_committed_value AS balance_outgoing_transfer_committed_value,
 				        balance.available_value AS balance_available_value,
+				        balance.expected_value AS balance_expected_value,
+				        balance.in_transit_value AS balance_in_transit_value,
 				        balance.unit AS balance_unit,
 				        balance.version AS balance_version,
 				        balance.has_stock_history AS balance_has_stock_history
@@ -712,7 +944,7 @@ export class CloudflareSqliteInventoryStore implements InventoryStore {
 		}
 		const clauses = [
 			"json_extract(receipt_json, '$.context.poolId') = ?",
-			"json_extract(receipt_json, '$.type') IN ('stock.opening_balance', 'stock.adjust')",
+			"json_extract(receipt_json, '$.type') IN ('stock.opening_balance', 'stock.adjust', 'transfer.create', 'transfer.update', 'transfer.cancel')",
 		];
 		const bindings: Array<string | number> = [query.poolId];
 		if (query.locationId !== undefined) {

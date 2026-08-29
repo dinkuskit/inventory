@@ -103,9 +103,10 @@ Stable business rejection codes are:
 - `location_not_empty`.
 
 `location_not_empty` includes one blocker per affected SKU with its exact
-on-hand and reserved quantities. Archive is admitted only when every balance
-row for the location has canonical on-hand value `0` and reserved value `0`.
-Positive on-hand, negative on-hand, or any reserved quantity blocks it.
+on-hand, reserved, outgoing-transfer, expected, and in-transit quantities.
+Archive is admitted only when every stock dimension is canonical zero.
+Positive or negative on-hand, an order reservation, an outgoing transfer
+commitment, expected inbound, or in-transit inbound stock blocks it.
 
 ## Application and storage interfaces
 
@@ -157,14 +158,14 @@ pool-scoped and deterministically ordered by name key and permanent ID.
 
 ## Durable schema
 
-Cloudflare schema version 3 is the complete current real-database schema and
-includes `inventory_locations` and `inventory_skus` beside the stock tables. A
-fresh empty Durable Object creates the complete schema directly and records only
-version 3. Exact v2 storage preserves the location registry and all other
-durable records while atomically adding and backfilling the SKU registry;
-incompatible shapes fail closed without a partial migration.
+Cloudflare schema version 4 is the complete current real-database schema and
+includes `inventory_locations`, `inventory_skus`, and `inventory_transfers`
+beside the stock tables. A fresh empty Durable Object creates the complete
+schema directly and records only version 4. Exact v3 storage advances to v4;
+exact v2 storage first adds and backfills the SKU registry and then advances to
+v4. Incompatible shapes fail closed without a partial migration.
 
-The local development/test schema is now `opening-balance-local/v6` and includes
+The local development/test schema is now `opening-balance-local/v7` and includes
 the same registries. It remains explicit-path, non-production, and rejects unrelated
 or incompatible SQLite files instead of claiming them.
 

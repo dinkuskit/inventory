@@ -55,7 +55,7 @@ type SetOpeningBalanceCommandV1 = Readonly<{
   expectedVersions: readonly Readonly<{
     skuId: string;
     locationId: string;
-    version: "0";
+    version: string;
   }>[];
 }>;
 
@@ -119,6 +119,12 @@ type SetOpeningBalance = (
   execution: Readonly<{ principal: CommandPrincipal }>,
 ) => Promise<OpeningBalanceResult>;
 ```
+
+Amendment: the initial slice accepted only logical version `0`. Created transfer
+planning can now materialize a no-history destination row, so the current
+command accepts that row's exact non-negative version, preserves its outgoing,
+expected, and in-transit quantities, and advances the row atomically. Opening
+preview confirmation is bound to that observed version.
 
 The service/authentication adapter will eventually derive `CommandPrincipal`
 from an authenticated principal. This local slice receives that trusted context

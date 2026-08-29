@@ -185,7 +185,10 @@ function stockUnit(balance: BalanceRecord): string {
 	const units = [
 		balance.onHand.unit,
 		balance.reserved.unit,
+		balance.outgoingTransferCommitted.unit,
 		balance.available.unit,
+		balance.expected.unit,
+		balance.inTransit.unit,
 	];
 	if (units.some((unit) => unit !== units[0])) {
 		throw new InconsistentSkuStockUnitError();
@@ -200,12 +203,24 @@ function quantity(value: string, unit: string): ExactQuantity {
 function stockFromValues(
 	onHand: string,
 	reserved: string,
+	outgoingTransferCommitted: string,
+	expected: string,
+	inTransit: string,
 	unit: string,
 ): StockQuantities {
 	return {
 		onHand: quantity(sumExactDecimals([onHand]), unit),
 		reserved: quantity(sumExactDecimals([reserved]), unit),
-		available: quantity(sumExactDecimals([onHand, `-${reserved}`]), unit),
+		outgoingTransferCommitted: quantity(
+			sumExactDecimals([outgoingTransferCommitted]),
+			unit,
+		),
+		available: quantity(
+			sumExactDecimals([onHand, `-${reserved}`, `-${outgoingTransferCommitted}`]),
+			unit,
+		),
+		expected: quantity(sumExactDecimals([expected]), unit),
+		inTransit: quantity(sumExactDecimals([inTransit]), unit),
 	};
 }
 
@@ -219,7 +234,18 @@ function totalStock(
 	const reserved = sumExactDecimals(
 		locations.map((location) => location.stock.reserved.value),
 	);
-	return stockFromValues(onHand, reserved, unit);
+	const outgoing = sumExactDecimals(
+		locations.map(
+			(location) => location.stock.outgoingTransferCommitted.value,
+		),
+	);
+	const expected = sumExactDecimals(
+		locations.map((location) => location.stock.expected.value),
+	);
+	const inTransit = sumExactDecimals(
+		locations.map((location) => location.stock.inTransit.value),
+	);
+	return stockFromValues(onHand, reserved, outgoing, expected, inTransit, unit);
 }
 
 export function createReadSkuStock(
@@ -279,10 +305,13 @@ export function createReadSkuStock(
 			name: location.name,
 			stock:
 				balance === null
-					? stockFromValues("0", "0", unit)
+					? stockFromValues("0", "0", "0", "0", "0", unit)
 					: stockFromValues(
 							balance.onHand.value,
 							balance.reserved.value,
+							balance.outgoingTransferCommitted.value,
+							balance.expected.value,
+							balance.inTransit.value,
 							unit,
 						),
 		}));

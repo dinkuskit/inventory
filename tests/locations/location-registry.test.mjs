@@ -282,7 +282,7 @@ test("renames, archives, and restores one permanent location with immutable rece
 	);
 });
 
-test("blocks archive for positive, negative, or reserved balances and durably replays the blockers", async (t) => {
+test("blocks archive for every physical, order, and transfer quantity and durably replays the blockers", async (t) => {
 	const filePath = await databasePath(t, "archive-blockers");
 	let store = createLocalSqliteTestStore({ filePath });
 	let setup = executor(store, {
@@ -305,6 +305,18 @@ test("blocks archive for positive, negative, or reserved balances and durably re
 	insert.run("pool_test", "location_blocked", "sku_negative", "-2", "0", "-2");
 	insert.run("pool_test", "location_blocked", "sku_positive", "5", "0", "5");
 	insert.run("pool_test", "location_blocked", "sku_reserved", "0", "3", "-3");
+	insert.run("pool_test", "location_blocked", "sku_outgoing", "0", "0", "0");
+	insert.run("pool_test", "location_blocked", "sku_expected", "0", "0", "0");
+	insert.run("pool_test", "location_blocked", "sku_in_transit", "0", "0", "0");
+	database.exec(
+		`UPDATE inventory_balances
+		 SET outgoing_transfer_committed_value = '2', available_value = '-2'
+		 WHERE sku_id = 'sku_outgoing';
+		 UPDATE inventory_balances SET expected_value = '4'
+		 WHERE sku_id = 'sku_expected';
+		 UPDATE inventory_balances SET in_transit_value = '6'
+		 WHERE sku_id = 'sku_in_transit'`,
+	);
 	database.close();
 
 	store = createLocalSqliteTestStore({ filePath });
@@ -319,22 +331,55 @@ test("blocks archive for positive, negative, or reserved balances and durably re
 		outcome: "rejected",
 		commandId: "cmd_blocked_archive",
 		code: "location_not_empty",
-		message: "The location must have zero on-hand and zero reserved stock before archiving.",
+		message: "The location must have zero physical, reserved, committed, expected, and in-transit stock before archiving.",
 		blockers: [
+			{
+				skuId: "sku_expected",
+				onHand: { value: "0", unit: "each" },
+				reserved: { value: "0", unit: "each" },
+				outgoingTransferCommitted: { value: "0", unit: "each" },
+				expected: { value: "4", unit: "each" },
+				inTransit: { value: "0", unit: "each" },
+			},
+			{
+				skuId: "sku_in_transit",
+				onHand: { value: "0", unit: "each" },
+				reserved: { value: "0", unit: "each" },
+				outgoingTransferCommitted: { value: "0", unit: "each" },
+				expected: { value: "0", unit: "each" },
+				inTransit: { value: "6", unit: "each" },
+			},
 			{
 				skuId: "sku_negative",
 				onHand: { value: "-2", unit: "each" },
 				reserved: { value: "0", unit: "each" },
+				outgoingTransferCommitted: { value: "0", unit: "each" },
+				expected: { value: "0", unit: "each" },
+				inTransit: { value: "0", unit: "each" },
+			},
+			{
+				skuId: "sku_outgoing",
+				onHand: { value: "0", unit: "each" },
+				reserved: { value: "0", unit: "each" },
+				outgoingTransferCommitted: { value: "2", unit: "each" },
+				expected: { value: "0", unit: "each" },
+				inTransit: { value: "0", unit: "each" },
 			},
 			{
 				skuId: "sku_positive",
 				onHand: { value: "5", unit: "each" },
 				reserved: { value: "0", unit: "each" },
+				outgoingTransferCommitted: { value: "0", unit: "each" },
+				expected: { value: "0", unit: "each" },
+				inTransit: { value: "0", unit: "each" },
 			},
 			{
 				skuId: "sku_reserved",
 				onHand: { value: "0", unit: "each" },
 				reserved: { value: "3", unit: "each" },
+				outgoingTransferCommitted: { value: "0", unit: "each" },
+				expected: { value: "0", unit: "each" },
+				inTransit: { value: "0", unit: "each" },
 			},
 		],
 	});
@@ -342,7 +387,10 @@ test("blocks archive for positive, negative, or reserved balances and durably re
 
 	database = new DatabaseSync(filePath);
 	database.exec(
-		"UPDATE inventory_balances SET on_hand_value = '0', reserved_value = '0', available_value = '0'",
+		`UPDATE inventory_balances
+		 SET on_hand_value = '0', reserved_value = '0',
+		     outgoing_transfer_committed_value = '0', available_value = '0',
+		     expected_value = '0', in_transit_value = '0'`,
 	);
 	database.close();
 

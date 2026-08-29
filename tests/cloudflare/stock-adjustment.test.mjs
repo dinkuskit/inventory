@@ -121,7 +121,7 @@ describe("stock adjustment Cloudflare parity", () => {
 					.exec("SELECT version FROM inventory_schema_migrations ORDER BY version")
 					.toArray()
 					.map((row) => Number(row.version)),
-			).toEqual([3]);
+			).toEqual([4]);
 		});
 	});
 });

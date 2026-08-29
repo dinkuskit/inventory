@@ -14,6 +14,10 @@ import type {
 	StockAdjustmentReceiptV2,
 	StockAdjustmentResult,
 } from "../features/stock-adjustment/index.ts";
+import type {
+	StockTransferReceiptV2,
+	StockTransferResult,
+} from "../features/stock-transfer/index.ts";
 
 export const CREATE_LOCATION_TYPE = "location.create" as const;
 export const RENAME_LOCATION_TYPE = "location.rename" as const;
@@ -92,6 +96,9 @@ export type LocationBalanceBlocker = Readonly<{
 	skuId: string;
 	onHand: ExactQuantity;
 	reserved: ExactQuantity;
+	outgoingTransferCommitted: ExactQuantity;
+	expected: ExactQuantity;
+	inTransit: ExactQuantity;
 }>;
 
 export type LocationReceiptV2 = Readonly<{
@@ -146,11 +153,13 @@ export type InventoryCommandResult =
 	| OpeningBalanceResult
 	| LocationCommandResult
 	| RegisterManagedSkuResult
-	| StockAdjustmentResult;
+	| StockAdjustmentResult
+	| StockTransferResult;
 export type InventoryReceiptV2 =
 	| OpeningBalanceReceiptV2
 	| LocationReceiptV2
-	| StockAdjustmentReceiptV2;
+	| StockAdjustmentReceiptV2
+	| StockTransferReceiptV2;
 
 export type ListLocationsInput = Readonly<{
 	poolId: string;

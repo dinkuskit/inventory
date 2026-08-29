@@ -22,6 +22,12 @@ import type {
 	StockAdjustmentReceiptV2,
 	StockAdjustmentResult,
 } from "../features/stock-adjustment/index.ts";
+import type {
+	ReadStockTransferInput,
+	StockTransferReceiptV2,
+	StockTransferRecord,
+	StockTransferResult,
+} from "../features/stock-transfer/index.ts";
 
 export type StoredCommandResult<
 	TResult extends InventoryCommandResult = InventoryCommandResult,
@@ -34,6 +40,7 @@ export type StoredCommandResult<
 export type OpeningBalanceCommit = Readonly<{
 	commandId: string;
 	commandDigest: string;
+	previous: BalanceRecord | null;
 	balance: BalanceRecord;
 	receipt: OpeningBalanceReceiptV2;
 	result: OpeningBalanceResult;
@@ -62,6 +69,20 @@ export type StockAdjustmentCommit = Readonly<{
 	balance: BalanceRecord;
 	receipt: StockAdjustmentReceiptV2;
 	result: StockAdjustmentResult;
+}>;
+
+export type StockTransferCommit = Readonly<{
+	commandId: string;
+	commandDigest: string;
+	previous: StockTransferRecord | null;
+	transfer: StockTransferRecord;
+	referenceKey: string;
+	balances: readonly Readonly<{
+		previous: BalanceRecord | null;
+		balance: BalanceRecord;
+	}>[];
+	receipt: StockTransferReceiptV2;
+	result: StockTransferResult;
 }>;
 
 export type StoredOpeningBalanceConfirmation = Readonly<{
@@ -116,6 +137,8 @@ export interface InventoryTransaction {
 	getBalance(key: SkuLocationKey): BalanceRecord | null;
 	getManagedSku(inventorySkuId: string): ManagedSkuRecord | null;
 	getManagedSkuBySku(sku: string): ManagedSkuRecord | null;
+	getStockTransfer(transferId: string): StockTransferRecord | null;
+	getStockTransferByReferenceKey(referenceKey: string): StockTransferRecord | null;
 	getLocation(locationId: string): LocationRecord | null;
 	getLocationByNameKey(nameKey: string): LocationRecord | null;
 	listLocationBalanceBlockers(
@@ -147,6 +170,7 @@ export interface InventoryTransaction {
 	commitStockAdjustment(input: StockAdjustmentCommit): void;
 	commitLocation(input: LocationCommit): void;
 	commitManagedSku(input: ManagedSkuCommit): void;
+	commitStockTransfer(input: StockTransferCommit): void;
 }
 
 export interface InventoryStore {
@@ -156,6 +180,7 @@ export interface InventoryStore {
 	): Promise<T>;
 	readBalance(key: SkuLocationKey): Promise<BalanceRecord | null>;
 	readManagedSku(query: ReadManagedSkuQuery): Promise<ManagedSkuRecord | null>;
+	readStockTransfer(query: ReadStockTransferInput): Promise<StockTransferRecord | null>;
 	readSkuActiveLocationSnapshot(
 		query: ReadSkuActiveLocationSnapshotQuery,
 	): Promise<readonly ActiveLocationBalanceSnapshot[]>;

@@ -75,7 +75,7 @@ describe("Inventory Cloudflare storage boundary", () => {
 
 		expect(await alpha.schemaStatus()).toEqual({
 			schema: "dinkuskit.inventory.cloudflare-schema-status/v1",
-			version: 3,
+			version: 4,
 			tables: [
 				"inventory_balances",
 				"inventory_command_results",
@@ -84,6 +84,7 @@ describe("Inventory Cloudflare storage boundary", () => {
 				"inventory_receipts",
 				"inventory_schema_migrations",
 				"inventory_skus",
+				"inventory_transfers",
 			],
 		});
 		expect(await alpha.schemaStatus()).toEqual(await alpha.schemaStatus());
@@ -97,7 +98,7 @@ describe("Inventory Cloudflare storage boundary", () => {
 		expect(await exports.default.inspectSkuLocation(key("pool_probe"))).toEqual({
 			schema: {
 				schema: "dinkuskit.inventory.cloudflare-schema-status/v1",
-				version: 3,
+				version: 4,
 				tables: [
 					"inventory_balances",
 					"inventory_command_results",
@@ -106,6 +107,7 @@ describe("Inventory Cloudflare storage boundary", () => {
 					"inventory_receipts",
 					"inventory_schema_migrations",
 					"inventory_skus",
+					"inventory_transfers",
 				],
 			},
 			balance: {
@@ -119,6 +121,7 @@ describe("Inventory Cloudflare storage boundary", () => {
 				confirmations: 0,
 				receipts: 0,
 				skus: 0,
+				transfers: 0,
 			},
 		});
 	});
@@ -132,9 +135,74 @@ describe("Inventory Cloudflare storage boundary", () => {
 				.exec("SELECT version FROM inventory_schema_migrations ORDER BY version")
 				.toArray()
 				.map((row) => Number(row.version));
-			expect(versions).toEqual([3]);
+			expect(versions).toEqual([4]);
 			expect(() => initializeCloudflareInventorySchema(state.storage)).not.toThrow();
-			expect(readCloudflareInventorySchemaStatus(state.storage).version).toBe(3);
+			expect(readCloudflareInventorySchemaStatus(state.storage).version).toBe(4);
+		});
+	});
+
+	it("atomically upgrades an exact v3 pool with zero transfer planning quantities", async ({
+		expect,
+	}) => {
+		const stub = env.INVENTORY_POOLS.getByName("pool_v3_upgrade");
+		await runInDurableObject(stub, async (_instance, state) => {
+			state.storage.transactionSync(() => {
+				state.storage.sql.exec("DROP TABLE inventory_transfers").toArray();
+				state.storage.sql
+					.exec("ALTER TABLE inventory_balances DROP COLUMN outgoing_transfer_committed_value")
+					.toArray();
+				state.storage.sql
+					.exec("ALTER TABLE inventory_balances DROP COLUMN expected_value")
+					.toArray();
+				state.storage.sql
+					.exec("ALTER TABLE inventory_balances DROP COLUMN in_transit_value")
+					.toArray();
+				state.storage.sql.exec("DELETE FROM inventory_schema_migrations").toArray();
+				state.storage.sql
+					.exec("INSERT INTO inventory_schema_migrations (version, applied_at) VALUES (3, 'v3')")
+					.toArray();
+				state.storage.sql
+					.exec(
+						`INSERT INTO inventory_balances (
+							pool_id, location_id, sku_id, on_hand_value, reserved_value,
+							available_value, unit, version, has_stock_history
+						) VALUES ('pool_v3_upgrade', 'location_legacy', 'sku_legacy',
+						          '7', '2', '5', 'each', 4, 1)`,
+					)
+					.toArray();
+			});
+
+			initializeCloudflareInventorySchema(state.storage);
+
+			expect(
+				state.storage.sql
+					.exec("SELECT version FROM inventory_schema_migrations ORDER BY version")
+					.toArray()
+					.map((row) => Number(row.version)),
+			).toEqual([3, 4]);
+			const store = createCloudflareSqliteInventoryStore({
+				storage: state.storage,
+				poolId: "pool_v3_upgrade",
+			});
+			expect(
+				await store.readBalance({
+					poolId: "pool_v3_upgrade",
+					locationId: "location_legacy",
+					skuId: "sku_legacy",
+				}),
+			).toMatchObject({
+				onHand: { value: "7", unit: "each" },
+				reserved: { value: "2", unit: "each" },
+				outgoingTransferCommitted: { value: "0", unit: "each" },
+				available: { value: "5", unit: "each" },
+				expected: { value: "0", unit: "each" },
+				inTransit: { value: "0", unit: "each" },
+			});
+			expect(
+				state.storage.sql
+					.exec("SELECT count(*) AS count FROM inventory_transfers")
+					.one().count,
+			).toBe(0);
 		});
 	});
 
@@ -144,7 +212,17 @@ describe("Inventory Cloudflare storage boundary", () => {
 		const stub = env.INVENTORY_POOLS.getByName("pool_v2_upgrade");
 		await runInDurableObject(stub, async (_instance, state) => {
 			state.storage.transactionSync(() => {
+				state.storage.sql.exec("DROP TABLE inventory_transfers").toArray();
 				state.storage.sql.exec("DROP TABLE inventory_skus").toArray();
+				state.storage.sql
+					.exec("ALTER TABLE inventory_balances DROP COLUMN outgoing_transfer_committed_value")
+					.toArray();
+				state.storage.sql
+					.exec("ALTER TABLE inventory_balances DROP COLUMN expected_value")
+					.toArray();
+				state.storage.sql
+					.exec("ALTER TABLE inventory_balances DROP COLUMN in_transit_value")
+					.toArray();
 				state.storage.sql
 					.exec("DELETE FROM inventory_schema_migrations")
 					.toArray();
@@ -213,7 +291,7 @@ describe("Inventory Cloudflare storage boundary", () => {
 					.exec("SELECT version FROM inventory_schema_migrations ORDER BY version")
 					.toArray()
 					.map((row) => Number(row.version)),
-			).toEqual([2, 3]);
+			).toEqual([2, 3, 4]);
 			const store = createCloudflareSqliteInventoryStore({
 				storage: state.storage,
 				poolId: "pool_v2_upgrade",
@@ -246,7 +324,10 @@ describe("Inventory Cloudflare storage boundary", () => {
 			).toMatchObject({
 				onHand: { value: "7", unit: "each" },
 				reserved: { value: "2", unit: "each" },
+				outgoingTransferCommitted: { value: "0", unit: "each" },
 				available: { value: "5", unit: "each" },
+				expected: { value: "0", unit: "each" },
+				inTransit: { value: "0", unit: "each" },
 				version: "4",
 			});
 			expect(
@@ -269,7 +350,17 @@ describe("Inventory Cloudflare storage boundary", () => {
 		const stub = env.INVENTORY_POOLS.getByName("pool_v2_conflicting_units");
 		await runInDurableObject(stub, async (_instance, state) => {
 			state.storage.transactionSync(() => {
+				state.storage.sql.exec("DROP TABLE inventory_transfers").toArray();
 				state.storage.sql.exec("DROP TABLE inventory_skus").toArray();
+				state.storage.sql
+					.exec("ALTER TABLE inventory_balances DROP COLUMN outgoing_transfer_committed_value")
+					.toArray();
+				state.storage.sql
+					.exec("ALTER TABLE inventory_balances DROP COLUMN expected_value")
+					.toArray();
+				state.storage.sql
+					.exec("ALTER TABLE inventory_balances DROP COLUMN in_transit_value")
+					.toArray();
 				state.storage.sql
 					.exec("DELETE FROM inventory_schema_migrations")
 					.toArray();
@@ -685,7 +776,10 @@ describe("Inventory Cloudflare storage boundary", () => {
 			stock: {
 				onHand: { value: "5", unit: "each" },
 				reserved: { value: "0", unit: "each" },
+				outgoingTransferCommitted: { value: "0", unit: "each" },
 				available: { value: "5", unit: "each" },
+				expected: { value: "0", unit: "each" },
+				inTransit: { value: "0", unit: "each" },
 			},
 			locations: [
 				{
@@ -694,7 +788,10 @@ describe("Inventory Cloudflare storage boundary", () => {
 					stock: {
 						onHand: { value: "5", unit: "each" },
 						reserved: { value: "0", unit: "each" },
+						outgoingTransferCommitted: { value: "0", unit: "each" },
 						available: { value: "5", unit: "each" },
+						expected: { value: "0", unit: "each" },
+						inTransit: { value: "0", unit: "each" },
 					},
 				},
 				{
@@ -703,7 +800,10 @@ describe("Inventory Cloudflare storage boundary", () => {
 					stock: {
 						onHand: { value: "0", unit: "each" },
 						reserved: { value: "0", unit: "each" },
+						outgoingTransferCommitted: { value: "0", unit: "each" },
 						available: { value: "0", unit: "each" },
+						expected: { value: "0", unit: "each" },
+						inTransit: { value: "0", unit: "each" },
 					},
 				},
 			],

@@ -33,7 +33,10 @@ type ReadSkuStockInput = Readonly<{
 type StockQuantities = Readonly<{
 	onHand: ExactQuantity;
 	reserved: ExactQuantity;
+	outgoingTransferCommitted: ExactQuantity;
 	available: ExactQuantity;
+	expected: ExactQuantity;
+	inTransit: ExactQuantity;
 }>;
 
 type SkuStockLocation = Readonly<{
@@ -96,8 +99,9 @@ query without adding an HTTP route.
   when the SKU exists at another active location.
 - A missing registration returns `not_found`. A registered SKU with no active
   balance rows returns `found` at logical zero.
-- On-hand and reserved are read from canonical balances. Available is always
-  derived as exact `onHand - reserved`, never trusted as a separate authority.
+- All six quantities are read from canonical balances. Available is always
+  derived as exact `onHand - reserved - outgoingTransferCommitted`, never
+  trusted as a separate authority.
 - All-locations totals use exact signed-decimal arithmetic, not JavaScript
   floating point.
 - Unit mismatch within a balance or across locations is corrupt state and fails

@@ -122,7 +122,10 @@ test("reads only one explicit SKU-location balance with explicit not-found", asy
 		skuId: "sku_keychain",
 		onHand: { value: "5", unit: "each" },
 		reserved: { value: "0", unit: "each" },
+		outgoingTransferCommitted: { value: "0", unit: "each" },
 		available: { value: "5", unit: "each" },
+		expected: { value: "0", unit: "each" },
+		inTransit: { value: "0", unit: "each" },
 		version: "1",
 		hasStockHistory: true,
 	});

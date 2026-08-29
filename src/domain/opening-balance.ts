@@ -40,7 +40,7 @@ export type SetOpeningBalanceCommandV1 = Readonly<{
 	expectedVersions: readonly Readonly<{
 		skuId: string;
 		locationId: string;
-		version: "0";
+		version: string;
 	}>[];
 }>;
 
@@ -90,7 +90,10 @@ export type BalanceRecord = Readonly<
 	SkuLocationKey & {
 		onHand: ExactQuantity;
 		reserved: ExactQuantity;
+		outgoingTransferCommitted: ExactQuantity;
 		available: ExactQuantity;
+		expected: ExactQuantity;
+		inTransit: ExactQuantity;
 		version: string;
 		hasStockHistory: boolean;
 	}
@@ -108,14 +111,20 @@ export type OpeningBalancePreviewV1 = Readonly<{
 		balanceBefore: Readonly<{
 			onHand: ExactQuantity;
 			reserved: ExactQuantity;
+			outgoingTransferCommitted: ExactQuantity;
 			available: ExactQuantity;
-			version: "0";
+			expected: ExactQuantity;
+			inTransit: ExactQuantity;
+			version: string;
 		}>;
 		balanceAfter: Readonly<{
 			onHand: ExactQuantity;
 			reserved: ExactQuantity;
+			outgoingTransferCommitted: ExactQuantity;
 			available: ExactQuantity;
-			version: "1";
+			expected: ExactQuantity;
+			inTransit: ExactQuantity;
+			version: string;
 		}>;
 	}>;
 	reason: PreviewOpeningBalanceInputV1["reason"];
@@ -152,7 +161,10 @@ export type OpeningBalanceReceiptV2 = Readonly<{
 		balanceAfter: Readonly<{
 			onHand: ExactQuantity;
 			reserved: ExactQuantity;
+			outgoingTransferCommitted: ExactQuantity;
 			available: ExactQuantity;
+			expected: ExactQuantity;
+			inTransit: ExactQuantity;
 			version: string;
 		}>;
 	}>[];
@@ -164,6 +176,7 @@ export type OpeningBalanceRejectionCode =
 	| "location_not_active"
 	| "sku_not_registered"
 	| "sku_unit_mismatch"
+	| "stale_version"
 	| "opening_balance_already_set"
 	| "command_id_conflict";
 
@@ -213,6 +226,13 @@ function nonEmptyString(value: unknown, field: string): string {
 		invalid(`${field} must not be empty.`);
 	}
 	return normalized;
+}
+
+function nonNegativeVersion(value: unknown, field: string): string {
+	if (typeof value !== "string" || !/^\d+$/u.test(value.trim())) {
+		invalid(`${field} must be a non-negative integer string.`);
+	}
+	return value.trim().replace(/^0+(?=\d)/u, "");
 }
 
 export function normalizeNonNegativeDecimal(
@@ -288,12 +308,16 @@ export function normalizeSetOpeningBalanceCommand(
 			expectedVersion.locationId,
 			"expectedVersions[0].locationId",
 		) !== locationId ||
-		expectedVersion.version !== "0"
+		typeof expectedVersion.version !== "string"
 	) {
 		invalid(
-			"expectedVersions must name the command SKU-location at version 0.",
+			"expectedVersions must name the command SKU-location.",
 		);
 	}
+	const version = nonNegativeVersion(
+		expectedVersion.version,
+		"expectedVersions[0].version",
+	);
 
 	return {
 		schema: COMMAND_SCHEMA,
@@ -303,7 +327,7 @@ export function normalizeSetOpeningBalanceCommand(
 		payload: { skuId, quantity: { value, unit } },
 		reason: { code: reasonCode, note: reasonNote },
 		references,
-		expectedVersions: [{ skuId, locationId, version: "0" }],
+		expectedVersions: [{ skuId, locationId, version }],
 	};
 }
 

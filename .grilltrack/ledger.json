@@ -4,11 +4,11 @@
   "current_focus": {
     "cadence": "sequential",
     "confirmed": true,
-    "confirmed_at": "2026-08-29T12:10:07+00:00",
-    "domain": "ordinary post-opening stock adjustment",
-    "started_at": "2026-08-29T12:10:06+00:00",
-    "status": "inspected",
-    "summary": "Build the platform-neutral post-opening signed-delta adjustment slice on exact main d31fbfd: explicit pool, active location, permanent Inventory SKU, each unit, mandatory unprefilled free-text reason, zero-delta rejection, no-mutation five-minute preview, exact reserved/oversold warning, allowed negative results, atomic on-hand plus immutable actor receipt, exact retry/conflict, and new linked correction receipts. Preserve opening, location, managed-SKU, stock-read, schema-v3, Cloudflare, and feature-boundary contracts. Defer Block Kit GUI, Commerce/SmokyClub wiring, reservations, transport, deployment, publication, and production mutation."
+    "confirmed_at": "2026-08-29T17:13:52+00:00",
+    "domain": "staged location transfer creation",
+    "started_at": "2026-08-29T12:35:36+00:00",
+    "status": "confirmed",
+    "summary": "Bobby confirmed the smallest executable Created transfer slice: explicit active origin and destination; permanent Inventory SKU identities; editable pool-unique ST reference backed by an opaque permanent transfer ID; optional note; durable zero-quantity Created drafts under Open; positive Created quantities atomically create origin outgoing commitments, reduce origin available, and add destination expected stock; Created edits and cancellation atomically update or release those planning effects; origin/destination stock context; positive quantities before In transit; planned and user-entered actual lifecycle dates with separate actor/commit audit; immutable receipts and idempotent terminal results. This implementation covers Created create/edit/cancel and expected-stock behavior. In-transit and Received execution follow in later slices; partial receipt, Received reversion, and the SA reference follow-up remain deferred."
   },
   "decisions": [
     {
@@ -3565,6 +3565,1024 @@
       "superseded_by": null,
       "updated_at": "2026-08-29T12:28:13+00:00",
       "verification_ref": "proof:.grilltrack/proof/cycle-14/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:d735b180b3f4ed911667586f5131ff1727e46546",
+      "candidate_refs": [],
+      "choice": "A stock transfer progresses Created to In transit to Received. Created transfers have no stock effect and remain editable. Marking a transfer In transit freezes the shipment facts and applies the locked origin and in-transit effects; later corrections use explicit commands instead of rewriting movement history. Open Stock Transfers contains Created and In transit records. Done Stock Transfers contains Received records.",
+      "context_ref": "user:confirmed-created-transfer-editing",
+      "created_at": "2026-08-29T13:14:14+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "operating-model-003",
+        "location-lifecycle-030",
+        "managed-sku-registration-036",
+        "ordinary-stock-adjustment-038"
+      ],
+      "domain": "staged location transfer creation",
+      "history": [
+        {
+          "at": "2026-08-29T17:12:29+00:00",
+          "choice": "A stock transfer progresses Created to In transit to Received. Created transfers have no stock effect and remain editable. Marking a transfer In transit freezes the shipment facts and applies the locked origin and in-transit effects; later corrections use explicit commands instead of rewriting movement history. Open Stock Transfers contains Created and In transit records. Done Stock Transfers contains Received records.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "Bobby identified the omitted Katana expected-stock state and approved Created transfer commitments and destination expected quantities for implementation.",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "superseded",
+          "verification_ref": null
+        }
+      ],
+      "id": "transfer-lifecycle-039",
+      "implementation_ref": null,
+      "question": "When may a staged location transfer be edited, and where does each state appear?",
+      "rationale": "This matches the operators familiar Katana workflow while keeping pre-movement mistakes easy to fix and post-movement inventory history immutable.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "superseded",
+      "superseded_by": "transfer-lifecycle-with-expected-053",
+      "updated_at": "2026-08-29T17:12:29+00:00",
+      "verification_ref": null
+    },
+    {
+      "baseline_ref": "git:d735b180b3f4ed911667586f5131ff1727e46546",
+      "candidate_refs": [],
+      "choice": "An In transit transfer may be moved back to Created. That transition atomically removes its in-transit quantities and restores the exact quantities to the origin; the destination remains unchanged. The Created transfer is then editable or deletable. Example: origin X has 10, one item enters transit so X has 9 and transit has 1, moving back to Created restores X to 10 and transit to 0, and deleting the Created transfer leaves X at 10.",
+      "context_ref": "user:confirmed-transfer-reopen",
+      "created_at": "2026-08-29T15:16:09+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "transfer-lifecycle-039",
+        "command-result-007",
+        "receipt-audit-008"
+      ],
+      "domain": "staged location transfer creation",
+      "history": [
+        {
+          "at": "2026-08-29T17:12:29+00:00",
+          "choice": "An In transit transfer may be moved back to Created. That transition atomically removes its in-transit quantities and restores the exact quantities to the origin; the destination remains unchanged. The Created transfer is then editable or deletable. Example: origin X has 10, one item enters transit so X has 9 and transit has 1, moving back to Created restores X to 10 and transit to 0, and deleting the Created transfer leaves X at 10.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "The prior reversal restored physical stock but omitted the Created transfer commitment and destination expected state now approved by Bobby.",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "superseded",
+          "verification_ref": null
+        }
+      ],
+      "id": "transfer-reopen-040",
+      "implementation_ref": null,
+      "question": "What happens when an in-transit transfer must be changed or deleted?",
+      "rationale": "This gives the operator a safe way to correct a shipment mistake without editing movement history or losing stock between origin, transit, and destination.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "superseded",
+      "superseded_by": "transfer-reopen-with-expected-054",
+      "updated_at": "2026-08-29T17:12:29+00:00",
+      "verification_ref": null
+    },
+    {
+      "baseline_ref": "git:d735b180b3f4ed911667586f5131ff1727e46546",
+      "candidate_refs": [],
+      "choice": "The GUI action may say Delete, but Inventory never hard-deletes a transfer. Deleting a Created transfer commits a durable Canceled state with the signed-in actor and time, removes it from Open Stock Transfers, and shows it under Done Stock Transfers. Because Created has no stock effect, cancellation changes no stock; if it previously returned from In transit, that reversal already restored the origin.",
+      "context_ref": "user:confirmed-transfer-cancel-audit",
+      "created_at": "2026-08-29T16:04:25+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "transfer-lifecycle-039",
+        "transfer-reopen-040",
+        "receipt-actor-022"
+      ],
+      "domain": "staged location transfer creation",
+      "history": [
+        {
+          "at": "2026-08-29T17:12:29+00:00",
+          "choice": "The GUI action may say Delete, but Inventory never hard-deletes a transfer. Deleting a Created transfer commits a durable Canceled state with the signed-in actor and time, removes it from Open Stock Transfers, and shows it under Done Stock Transfers. Because Created has no stock effect, cancellation changes no stock; if it previously returned from In transit, that reversal already restored the origin.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "The earlier cancellation rule assumed Created had no quantity effects; the approved Created commitment and destination expected quantities must now be released atomically.",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "superseded",
+          "verification_ref": null
+        }
+      ],
+      "id": "transfer-cancel-audit-041",
+      "implementation_ref": null,
+      "question": "Does deleting a Created transfer erase it or preserve an audit record?",
+      "rationale": "This keeps the ordinary GUI uncluttered while preserving Inventory command identity, exact retry behavior, and an honest audit trail.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "superseded",
+      "superseded_by": "transfer-cancel-with-expected-055",
+      "updated_at": "2026-08-29T17:12:29+00:00",
+      "verification_ref": null
+    },
+    {
+      "baseline_ref": null,
+      "candidate_refs": [],
+      "choice": "A stock transfer note is optional. Inventory always records the acting user, origin location, destination location, item quantities, and lifecycle timestamps. A user may add a plain-text note when context is useful, but transfer creation never requires filler text.",
+      "context_ref": "user:confirmed-optional-transfer-note",
+      "created_at": "2026-08-29T16:08:43+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "transfer-lifecycle-039"
+      ],
+      "domain": "staged location transfer creation",
+      "history": [
+        {
+          "at": "2026-08-29T17:13:52+00:00",
+          "choice": "A stock transfer note is optional. Inventory always records the acting user, origin location, destination location, item quantities, and lifecycle timestamps. A user may add a plain-text note when context is useful, but transfer creation never requires filler text.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-29T17:45:16+00:00",
+          "choice": "A stock transfer note is optional. Inventory always records the acting user, origin location, destination location, item quantities, and lifecycle timestamps. A user may add a plain-text note when context is useful, but transfer creation never requires filler text.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-29T17:45:36+00:00",
+          "choice": "A stock transfer note is optional. Inventory always records the acting user, origin location, destination location, item quantities, and lifecycle timestamps. A user may add a plain-text note when context is useful, but transfer creation never requires filler text.",
+          "from": "implemented",
+          "implementation_ref": ".grilltrack/proof/cycle-15/PROOF.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "transfer-note-042",
+      "implementation_ref": ".grilltrack/proof/cycle-15/PROOF.md",
+      "question": "Must a user enter a reason or note when creating a stock transfer?",
+      "rationale": "A transfer is already self-describing through its structured movement facts, unlike an ordinary stock adjustment whose business reason is required. Optional notes preserve useful context without adding routine friction.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-15/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-29T17:45:36+00:00",
+          "source_identity": "sha256:4e093a5b014a791a4c7fa6114bc93028c10da867e3fa157648a865268ee6a620"
+        },
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-15/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-29T17:46:32+00:00",
+          "source_identity": "sha256:9b9a8f705b9361d6ee919217aed8fb28ce1896f99ced6755868a52fb8839d58f"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-15/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:9b9a8f705b9361d6ee919217aed8fb28ce1896f99ced6755868a52fb8839d58f",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-08-29T17:46:32+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-15/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:d735b180b3f4ed911667586f5131ff1727e46546",
+      "candidate_refs": [],
+      "choice": "V1 receives the complete transfer atomically. Every listed SKU and its full transferred quantity moves from in-transit to the destination together; the transfer remains In transit until the whole transfer is received, and then moves to Received under Done Stock Transfers.",
+      "context_ref": "user:confirmed-whole-transfer-receiving-v1",
+      "created_at": "2026-08-29T16:15:23+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "transfer-lifecycle-039",
+        "transfer-reopen-040"
+      ],
+      "domain": "staged location transfer creation",
+      "history": [
+        {
+          "at": "2026-08-29T17:13:52+00:00",
+          "choice": "V1 receives the complete transfer atomically. Every listed SKU and its full transferred quantity moves from in-transit to the destination together; the transfer remains In transit until the whole transfer is received, and then moves to Received under Done Stock Transfers.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        }
+      ],
+      "id": "transfer-whole-receipt-043",
+      "implementation_ref": null,
+      "question": "Does v1 receive a stock transfer as one whole shipment or permit partial line and quantity receipt?",
+      "rationale": "Whole-transfer receipt keeps the first end-to-end lifecycle executable and consistent with the existing all-or-nothing multi-line command boundary.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "locked",
+      "superseded_by": null,
+      "updated_at": "2026-08-29T17:13:52+00:00",
+      "verification_ref": null
+    },
+    {
+      "baseline_ref": "git:d735b180b3f4ed911667586f5131ff1727e46546",
+      "candidate_refs": [],
+      "choice": "Partial receiving is intentionally outside the v1 transfer slice. A later grill must define split quantities, shortages, per-line status, audit effects, and correction behavior before implementation.",
+      "context_ref": "user:explicitly-deferred-partial-transfer-receiving",
+      "created_at": "2026-08-29T16:15:23+00:00",
+      "deferred_reason": "Deferred by Bobby until after the v1 whole-transfer lifecycle is proven end to end; later grill must cover partial quantities, shortages, per-line state, and correction receipts.",
+      "delivery_ref": null,
+      "dependencies": [
+        "transfer-whole-receipt-043"
+      ],
+      "domain": "staged location transfer creation",
+      "history": [
+        {
+          "at": "2026-08-29T16:15:23+00:00",
+          "choice": "Partial receiving is intentionally outside the v1 transfer slice. A later grill must define split quantities, shortages, per-line status, audit effects, and correction behavior before implementation.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "Deferred by Bobby until after the v1 whole-transfer lifecycle is proven end to end; later grill must cover partial quantities, shortages, per-line state, and correction receipts.",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "deferred",
+          "verification_ref": null
+        }
+      ],
+      "id": "partial-transfer-receiving-044",
+      "implementation_ref": null,
+      "question": "How should v1 handle receiving only part of an in-transit transfer?",
+      "rationale": "Partial receipt is valuable but materially expands the lifecycle and exception model; preserving it as an explicit deferred decision prevents accidental incompatible behavior.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "deferred",
+      "superseded_by": null,
+      "updated_at": "2026-08-29T16:15:23+00:00",
+      "verification_ref": null
+    },
+    {
+      "baseline_ref": "git:d735b180b3f4ed911667586f5131ff1727e46546",
+      "candidate_refs": [],
+      "choice": "After the operator selects an explicit origin, an explicit destination, and the first item, Inventory supplies a human-facing stock transfer reference such as ST-147. The operator may append to it, prepend to it, or replace it completely. Inventory separately retains a permanent opaque transfer ID as the authoritative identity, so editing the display reference never rewrites command, receipt, or retry history.",
+      "context_ref": "user:katana-editable-stock-transfer-number",
+      "created_at": "2026-08-29T16:21:53+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "transfer-lifecycle-039",
+        "transfer-note-042"
+      ],
+      "domain": "staged location transfer creation",
+      "history": [
+        {
+          "at": "2026-08-29T17:13:52+00:00",
+          "choice": "After the operator selects an explicit origin, an explicit destination, and the first item, Inventory supplies a human-facing stock transfer reference such as ST-147. The operator may append to it, prepend to it, or replace it completely. Inventory separately retains a permanent opaque transfer ID as the authoritative identity, so editing the display reference never rewrites command, receipt, or retry history.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-29T17:45:16+00:00",
+          "choice": "After the operator selects an explicit origin, an explicit destination, and the first item, Inventory supplies a human-facing stock transfer reference such as ST-147. The operator may append to it, prepend to it, or replace it completely. Inventory separately retains a permanent opaque transfer ID as the authoritative identity, so editing the display reference never rewrites command, receipt, or retry history.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-29T17:45:36+00:00",
+          "choice": "After the operator selects an explicit origin, an explicit destination, and the first item, Inventory supplies a human-facing stock transfer reference such as ST-147. The operator may append to it, prepend to it, or replace it completely. Inventory separately retains a permanent opaque transfer ID as the authoritative identity, so editing the display reference never rewrites command, receipt, or retry history.",
+          "from": "implemented",
+          "implementation_ref": ".grilltrack/proof/cycle-15/PROOF.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "transfer-user-reference-045",
+      "implementation_ref": ".grilltrack/proof/cycle-15/PROOF.md",
+      "question": "How is a stock transfer identified for the operator?",
+      "rationale": "This matches the operators familiar Katana workflow while separating an editable searchable label from immutable internal identity.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-15/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-29T17:45:36+00:00",
+          "source_identity": "sha256:4e093a5b014a791a4c7fa6114bc93028c10da867e3fa157648a865268ee6a620"
+        },
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-15/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-29T17:46:32+00:00",
+          "source_identity": "sha256:9b9a8f705b9361d6ee919217aed8fb28ce1896f99ced6755868a52fb8839d58f"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-15/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:9b9a8f705b9361d6ee919217aed8fb28ce1896f99ced6755868a52fb8839d58f",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-08-29T17:46:32+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-15/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:d735b180b3f4ed911667586f5131ff1727e46546",
+      "candidate_refs": [],
+      "choice": "When an item is selected, the transfer entry surface shows its current on-hand quantity at the selected origin and its current on-hand quantity at the selected destination. The requested transfer quantity starts at zero and must be changed to a valid positive quantity before the transfer may be marked In transit.",
+      "context_ref": "user:katana-transfer-item-stock-and-zero-quantity",
+      "created_at": "2026-08-29T16:21:53+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "transfer-user-reference-045",
+        "transfer-whole-receipt-043"
+      ],
+      "domain": "staged location transfer creation",
+      "history": [
+        {
+          "at": "2026-08-29T17:13:52+00:00",
+          "choice": "When an item is selected, the transfer entry surface shows its current on-hand quantity at the selected origin and its current on-hand quantity at the selected destination. The requested transfer quantity starts at zero and must be changed to a valid positive quantity before the transfer may be marked In transit.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-29T17:45:17+00:00",
+          "choice": "When an item is selected, the transfer entry surface shows its current on-hand quantity at the selected origin and its current on-hand quantity at the selected destination. The requested transfer quantity starts at zero and must be changed to a valid positive quantity before the transfer may be marked In transit.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-29T17:45:36+00:00",
+          "choice": "When an item is selected, the transfer entry surface shows its current on-hand quantity at the selected origin and its current on-hand quantity at the selected destination. The requested transfer quantity starts at zero and must be changed to a valid positive quantity before the transfer may be marked In transit.",
+          "from": "implemented",
+          "implementation_ref": ".grilltrack/proof/cycle-15/PROOF.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "transfer-line-stock-context-046",
+      "implementation_ref": ".grilltrack/proof/cycle-15/PROOF.md",
+      "question": "What stock context and quantity state does transfer item entry expose?",
+      "rationale": "The operator can compare both physical location balances before choosing the movement quantity, and a zero placeholder cannot accidentally move stock.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-15/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-29T17:45:36+00:00",
+          "source_identity": "sha256:4e093a5b014a791a4c7fa6114bc93028c10da867e3fa157648a865268ee6a620"
+        },
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-15/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-29T17:46:32+00:00",
+          "source_identity": "sha256:9b9a8f705b9361d6ee919217aed8fb28ce1896f99ced6755868a52fb8839d58f"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-15/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:9b9a8f705b9361d6ee919217aed8fb28ce1896f99ced6755868a52fb8839d58f",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-08-29T17:46:32+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-15/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:d735b180b3f4ed911667586f5131ff1727e46546",
+      "candidate_refs": [],
+      "choice": "A future ordinary-adjustment enhancement should supply a human-facing reference such as SA-387558943 when the first item is added and allow the operator to append, prepend, or replace it, while retaining immutable internal adjustment, command, and receipt identities. The already-locked mandatory adjustment reason remains unchanged.",
+      "context_ref": "user:katana-editable-stock-adjustment-number",
+      "created_at": "2026-08-29T16:21:53+00:00",
+      "deferred_reason": "Preserved for a focused ordinary-adjustment follow-up so the active transfer slice does not modify or expand PR #14.",
+      "delivery_ref": null,
+      "dependencies": [
+        "ordinary-stock-adjustment-038"
+      ],
+      "domain": "staged location transfer creation",
+      "history": [
+        {
+          "at": "2026-08-29T16:21:53+00:00",
+          "choice": "A future ordinary-adjustment enhancement should supply a human-facing reference such as SA-387558943 when the first item is added and allow the operator to append, prepend, or replace it, while retaining immutable internal adjustment, command, and receipt identities. The already-locked mandatory adjustment reason remains unchanged.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "Preserved for a focused ordinary-adjustment follow-up so the active transfer slice does not modify or expand PR #14.",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "deferred",
+          "verification_ref": null
+        }
+      ],
+      "id": "adjustment-user-reference-followup-047",
+      "implementation_ref": null,
+      "question": "Should ordinary stock adjustments receive a Katana-style editable SA reference?",
+      "rationale": "The operator explicitly wants Katana-style editable references for both adjustments and transfers, but adjustment reference work is separate from the current transfer creation slice.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "deferred",
+      "superseded_by": null,
+      "updated_at": "2026-08-29T16:21:53+00:00",
+      "verification_ref": null
+    },
+    {
+      "baseline_ref": "git:d735b180b3f4ed911667586f5131ff1727e46546",
+      "candidate_refs": [],
+      "choice": "Once an explicit origin, destination, and first item have been selected and Inventory assigns the editable stock transfer reference, Inventory persists the transfer as a Created draft. It appears under Open Stock Transfers even while its quantity remains zero. Created drafts have no stock effect and remain editable or cancelable, but they cannot move to In transit until every transfer line has a valid positive quantity.",
+      "context_ref": "user:confirmed-created-zero-quantity-draft",
+      "created_at": "2026-08-29T16:24:12+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "transfer-lifecycle-039",
+        "transfer-user-reference-045",
+        "transfer-line-stock-context-046"
+      ],
+      "domain": "staged location transfer creation",
+      "history": [
+        {
+          "at": "2026-08-29T17:13:52+00:00",
+          "choice": "Once an explicit origin, destination, and first item have been selected and Inventory assigns the editable stock transfer reference, Inventory persists the transfer as a Created draft. It appears under Open Stock Transfers even while its quantity remains zero. Created drafts have no stock effect and remain editable or cancelable, but they cannot move to In transit until every transfer line has a valid positive quantity.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-29T17:45:17+00:00",
+          "choice": "Once an explicit origin, destination, and first item have been selected and Inventory assigns the editable stock transfer reference, Inventory persists the transfer as a Created draft. It appears under Open Stock Transfers even while its quantity remains zero. Created drafts have no stock effect and remain editable or cancelable, but they cannot move to In transit until every transfer line has a valid positive quantity.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-29T17:45:36+00:00",
+          "choice": "Once an explicit origin, destination, and first item have been selected and Inventory assigns the editable stock transfer reference, Inventory persists the transfer as a Created draft. It appears under Open Stock Transfers even while its quantity remains zero. Created drafts have no stock effect and remain editable or cancelable, but they cannot move to In transit until every transfer line has a valid positive quantity.",
+          "from": "implemented",
+          "implementation_ref": ".grilltrack/proof/cycle-15/PROOF.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "transfer-created-draft-048",
+      "implementation_ref": ".grilltrack/proof/cycle-15/PROOF.md",
+      "question": "What happens when a transfer reference exists but its item quantity is still zero?",
+      "rationale": "This matches Katana's draft-like Created behavior, preserves unfinished operator work, and remains safe because no stock moves before In transit.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-15/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-29T17:45:36+00:00",
+          "source_identity": "sha256:4e093a5b014a791a4c7fa6114bc93028c10da867e3fa157648a865268ee6a620"
+        },
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-15/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-29T17:46:32+00:00",
+          "source_identity": "sha256:9b9a8f705b9361d6ee919217aed8fb28ce1896f99ced6755868a52fb8839d58f"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-15/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:9b9a8f705b9361d6ee919217aed8fb28ce1896f99ced6755868a52fb8839d58f",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-08-29T17:46:32+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-15/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:d735b180b3f4ed911667586f5131ff1727e46546",
+      "candidate_refs": [],
+      "choice": "No. The normalized human-facing transfer reference must be unique within its inventory pool across Created, In transit, Received, and Canceled transfers. Editing a reference to a value already retained by another transfer is rejected without changing either transfer. Optional notes remain non-unique and carry repeatable descriptions.",
+      "context_ref": "user:confirmed-unique-transfer-reference",
+      "created_at": "2026-08-29T16:25:45+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "transfer-user-reference-045",
+        "transfer-cancel-audit-041"
+      ],
+      "domain": "staged location transfer creation",
+      "history": [
+        {
+          "at": "2026-08-29T17:13:52+00:00",
+          "choice": "No. The normalized human-facing transfer reference must be unique within its inventory pool across Created, In transit, Received, and Canceled transfers. Editing a reference to a value already retained by another transfer is rejected without changing either transfer. Optional notes remain non-unique and carry repeatable descriptions.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-29T17:45:17+00:00",
+          "choice": "No. The normalized human-facing transfer reference must be unique within its inventory pool across Created, In transit, Received, and Canceled transfers. Editing a reference to a value already retained by another transfer is rejected without changing either transfer. Optional notes remain non-unique and carry repeatable descriptions.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-29T17:45:36+00:00",
+          "choice": "No. The normalized human-facing transfer reference must be unique within its inventory pool across Created, In transit, Received, and Canceled transfers. Editing a reference to a value already retained by another transfer is rejected without changing either transfer. Optional notes remain non-unique and carry repeatable descriptions.",
+          "from": "implemented",
+          "implementation_ref": ".grilltrack/proof/cycle-15/PROOF.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "transfer-reference-uniqueness-049",
+      "implementation_ref": ".grilltrack/proof/cycle-15/PROOF.md",
+      "question": "May two transfers in one inventory pool use the same human-facing transfer reference?",
+      "rationale": "A reference must resolve one transfer reliably in search, audit, support, and retry workflows; historical references cannot become ambiguous after a transfer leaves Open.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-15/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-29T17:45:36+00:00",
+          "source_identity": "sha256:4e093a5b014a791a4c7fa6114bc93028c10da867e3fa157648a865268ee6a620"
+        },
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-15/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-29T17:46:32+00:00",
+          "source_identity": "sha256:9b9a8f705b9361d6ee919217aed8fb28ce1896f99ced6755868a52fb8839d58f"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-15/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:9b9a8f705b9361d6ee919217aed8fb28ce1896f99ced6755868a52fb8839d58f",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-08-29T17:46:32+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-15/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:d735b180b3f4ed911667586f5131ff1727e46546",
+      "candidate_refs": [
+        "https://support.katanamrp.com/en/articles/10244326-how-to-revert-a-stock-transfer"
+      ],
+      "choice": "A later transfer-correction capability should allow an authorized user to revert a Received transfer to Created, not to In transit. The command must atomically reverse the transfer's destination and origin effects, move the transfer from Done to Open, retain its permanent identity and history, create an immutable signed-in-actor reversal receipt, and make its shipment facts editable again. It must never hard-delete the original movement.",
+      "context_ref": "official-katana:how-to-revert-a-stock-transfer",
+      "created_at": "2026-08-29T16:28:40+00:00",
+      "deferred_reason": "Deferred until after the v1 Created-to-In-transit-to-Received flow is proven end to end; later grill must define downstream reservation/sale/adjustment conflicts, inventory-period locks, negative-stock warnings, authorization, preview, and confirmation.",
+      "delivery_ref": null,
+      "dependencies": [
+        "transfer-reopen-040",
+        "transfer-whole-receipt-043"
+      ],
+      "domain": "staged location transfer creation",
+      "history": [
+        {
+          "at": "2026-08-29T16:28:40+00:00",
+          "choice": "A later transfer-correction capability should allow an authorized user to revert a Received transfer to Created, not to In transit. The command must atomically reverse the transfer's destination and origin effects, move the transfer from Done to Open, retain its permanent identity and history, create an immutable signed-in-actor reversal receipt, and make its shipment facts editable again. It must never hard-delete the original movement.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "Deferred until after the v1 Created-to-In-transit-to-Received flow is proven end to end; later grill must define downstream reservation/sale/adjustment conflicts, inventory-period locks, negative-stock warnings, authorization, preview, and confirmation.",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "deferred",
+          "verification_ref": null
+        }
+      ],
+      "id": "received-transfer-revert-050",
+      "implementation_ref": null,
+      "question": "May a Received transfer be reverted, and to which state?",
+      "rationale": "Katana's documented workflow reverts both In-transit and Received transfers to Created. Inventory should preserve that useful correction path, but Received reversion needs explicit rules for later reservations, sales, adjustments, closed periods, negative outcomes, preview, and confirmation before it is safe to implement.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "deferred",
+      "superseded_by": null,
+      "updated_at": "2026-08-29T16:28:40+00:00",
+      "verification_ref": null
+    },
+    {
+      "baseline_ref": "git:d735b180b3f4ed911667586f5131ff1727e46546",
+      "candidate_refs": [],
+      "choice": "Every transfer retains its Created date, expected dispatch date, expected arrival date, actual dispatched date when it enters In transit, and actual received date when it enters Received. Created and In-transit records under Open surface the Created, expected-dispatch, and expected-arrival dates. Final Received records under Done surface the actual dispatched and received dates. The complete retained audit record keeps all applicable planned and actual dates even when a compact list view shows only the dates most relevant to its status.",
+      "context_ref": "user:confirmed-transfer-planned-and-actual-dates",
+      "created_at": "2026-08-29T16:31:58+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "transfer-lifecycle-039",
+        "transfer-whole-receipt-043"
+      ],
+      "domain": "staged location transfer creation",
+      "history": [
+        {
+          "at": "2026-08-29T17:13:52+00:00",
+          "choice": "Every transfer retains its Created date, expected dispatch date, expected arrival date, actual dispatched date when it enters In transit, and actual received date when it enters Received. Created and In-transit records under Open surface the Created, expected-dispatch, and expected-arrival dates. Final Received records under Done surface the actual dispatched and received dates. The complete retained audit record keeps all applicable planned and actual dates even when a compact list view shows only the dates most relevant to its status.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        }
+      ],
+      "id": "transfer-lifecycle-dates-051",
+      "implementation_ref": null,
+      "question": "Which dates must a transfer retain and show throughout its lifecycle?",
+      "rationale": "Separating planned dates from actual lifecycle timestamps supports daily operations without confusing an expectation with proof that stock moved.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "locked",
+      "superseded_by": null,
+      "updated_at": "2026-08-29T17:13:52+00:00",
+      "verification_ref": null
+    },
+    {
+      "baseline_ref": "git:d735b180b3f4ed911667586f5131ff1727e46546",
+      "candidate_refs": [],
+      "choice": "The authorized user supplies the dispatched date when marking a transfer In transit and supplies the received date when marking it Received; Inventory records exactly the business date the user enters because it cannot independently know when the physical event occurred. Separately, Inventory automatically records the signed-in actor and exact system commit timestamp for each status command, preserving when and by whom that entered date became authoritative.",
+      "context_ref": "user:clarified-user-entered-transfer-event-dates",
+      "created_at": "2026-08-29T16:35:10+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "transfer-lifecycle-dates-051",
+        "receipt-actor-022"
+      ],
+      "domain": "staged location transfer creation",
+      "history": [
+        {
+          "at": "2026-08-29T17:13:52+00:00",
+          "choice": "The authorized user supplies the dispatched date when marking a transfer In transit and supplies the received date when marking it Received; Inventory records exactly the business date the user enters because it cannot independently know when the physical event occurred. Separately, Inventory automatically records the signed-in actor and exact system commit timestamp for each status command, preserving when and by whom that entered date became authoritative.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        }
+      ],
+      "id": "transfer-user-entered-actual-dates-052",
+      "implementation_ref": null,
+      "question": "How does Inventory know the actual dispatched and received dates?",
+      "rationale": "The user-entered date represents the physical business event, while the immutable system timestamp and actor provide an honest audit trail without pretending Inventory observed the shipment itself.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "locked",
+      "superseded_by": null,
+      "updated_at": "2026-08-29T17:13:52+00:00",
+      "verification_ref": null
+    },
+    {
+      "baseline_ref": "git:d735b180b3f4ed911667586f5131ff1727e46546",
+      "candidate_refs": [
+        "https://support.katanamrp.com/en/articles/5966913-how-to-create-a-stock-transfer"
+      ],
+      "choice": "A zero-quantity Created draft has no quantity effect. Once a Created transfer has positive quantities, it keeps origin on-hand unchanged, adds an explicit outgoing transfer commitment at the origin, reduces origin available by that commitment, and adds the same quantities to destination expected stock. Editing its Created lines atomically updates those commitments and expected quantities. Marking it In transit removes the origin transfer commitment, decrements origin on-hand, moves destination expected into destination in-transit, and freezes shipment facts. Receiving the whole transfer removes destination in-transit and increments destination on-hand. Open contains Created and In transit; Done contains Received and Canceled.",
+      "context_ref": "user:confirmed-katana-created-commitment-and-expected",
+      "created_at": "2026-08-29T17:12:29+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "operating-model-003",
+        "location-lifecycle-030",
+        "managed-sku-registration-036",
+        "ordinary-stock-adjustment-038"
+      ],
+      "domain": "staged location transfer creation",
+      "history": [
+        {
+          "at": "2026-08-29T17:13:52+00:00",
+          "choice": "A zero-quantity Created draft has no quantity effect. Once a Created transfer has positive quantities, it keeps origin on-hand unchanged, adds an explicit outgoing transfer commitment at the origin, reduces origin available by that commitment, and adds the same quantities to destination expected stock. Editing its Created lines atomically updates those commitments and expected quantities. Marking it In transit removes the origin transfer commitment, decrements origin on-hand, moves destination expected into destination in-transit, and freezes shipment facts. Receiving the whole transfer removes destination in-transit and increments destination on-hand. Open contains Created and In transit; Done contains Received and Canceled.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        }
+      ],
+      "id": "transfer-lifecycle-with-expected-053",
+      "implementation_ref": null,
+      "question": "How do Created, In-transit, and Received transfers affect origin availability and destination inbound stock?",
+      "rationale": "This restores the Katana planning behavior Bobby intended: stock is not double-promised while a transfer is drafted, and the destination can see expected inbound stock before physical dispatch.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "locked",
+      "superseded_by": null,
+      "updated_at": "2026-08-29T17:13:52+00:00",
+      "verification_ref": null
+    },
+    {
+      "baseline_ref": "git:d735b180b3f4ed911667586f5131ff1727e46546",
+      "candidate_refs": [
+        "https://support.katanamrp.com/en/articles/10244326-how-to-revert-a-stock-transfer"
+      ],
+      "choice": "Moving an In-transit transfer back to Created atomically removes destination in-transit, restores the exact origin on-hand quantities, reinstates the origin outgoing transfer commitments, and reinstates destination expected quantities. Destination on-hand remains unchanged. The Created transfer then becomes editable or cancelable, and its available and expected effects update atomically with later edits.",
+      "context_ref": "user:confirmed-katana-created-commitment-and-expected",
+      "created_at": "2026-08-29T17:12:29+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "transfer-lifecycle-with-expected-053",
+        "command-result-007",
+        "receipt-audit-008"
+      ],
+      "domain": "staged location transfer creation",
+      "history": [
+        {
+          "at": "2026-08-29T17:13:52+00:00",
+          "choice": "Moving an In-transit transfer back to Created atomically removes destination in-transit, restores the exact origin on-hand quantities, reinstates the origin outgoing transfer commitments, and reinstates destination expected quantities. Destination on-hand remains unchanged. The Created transfer then becomes editable or cancelable, and its available and expected effects update atomically with later edits.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        }
+      ],
+      "id": "transfer-reopen-with-expected-054",
+      "implementation_ref": null,
+      "question": "How does In transit to Created reversal restore the Created planning effects?",
+      "rationale": "A lifecycle reversal must restore the complete Created state, including the newly confirmed planning quantities, rather than restoring only physical on-hand.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "locked",
+      "superseded_by": null,
+      "updated_at": "2026-08-29T17:13:52+00:00",
+      "verification_ref": null
+    },
+    {
+      "baseline_ref": "git:d735b180b3f4ed911667586f5131ff1727e46546",
+      "candidate_refs": [],
+      "choice": "The GUI action may say Delete, but Inventory durably moves the Created transfer to Canceled under Done with actor and time audit. Cancellation atomically releases every origin outgoing transfer commitment and destination expected quantity belonging to that transfer while leaving origin and destination on-hand unchanged. A zero-quantity draft has no quantitative effect. The transfer and its command history are never hard-deleted.",
+      "context_ref": "user:confirmed-katana-created-commitment-and-expected",
+      "created_at": "2026-08-29T17:12:29+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "transfer-lifecycle-with-expected-053",
+        "transfer-reopen-with-expected-054",
+        "receipt-actor-022"
+      ],
+      "domain": "staged location transfer creation",
+      "history": [
+        {
+          "at": "2026-08-29T17:13:53+00:00",
+          "choice": "The GUI action may say Delete, but Inventory durably moves the Created transfer to Canceled under Done with actor and time audit. Cancellation atomically releases every origin outgoing transfer commitment and destination expected quantity belonging to that transfer while leaving origin and destination on-hand unchanged. A zero-quantity draft has no quantitative effect. The transfer and its command history are never hard-deleted.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-29T17:45:17+00:00",
+          "choice": "The GUI action may say Delete, but Inventory durably moves the Created transfer to Canceled under Done with actor and time audit. Cancellation atomically releases every origin outgoing transfer commitment and destination expected quantity belonging to that transfer while leaving origin and destination on-hand unchanged. A zero-quantity draft has no quantitative effect. The transfer and its command history are never hard-deleted.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-29T17:45:36+00:00",
+          "choice": "The GUI action may say Delete, but Inventory durably moves the Created transfer to Canceled under Done with actor and time audit. Cancellation atomically releases every origin outgoing transfer commitment and destination expected quantity belonging to that transfer while leaving origin and destination on-hand unchanged. A zero-quantity draft has no quantitative effect. The transfer and its command history are never hard-deleted.",
+          "from": "implemented",
+          "implementation_ref": ".grilltrack/proof/cycle-15/PROOF.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "transfer-cancel-with-expected-055",
+      "implementation_ref": ".grilltrack/proof/cycle-15/PROOF.md",
+      "question": "What planning effects are released when a Created transfer is canceled?",
+      "rationale": "Cancellation must clear the new Created planning effects without erasing the audit record or inventing physical movement.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-15/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-29T17:45:36+00:00",
+          "source_identity": "sha256:4e093a5b014a791a4c7fa6114bc93028c10da867e3fa157648a865268ee6a620"
+        },
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-15/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-29T17:46:32+00:00",
+          "source_identity": "sha256:9b9a8f705b9361d6ee919217aed8fb28ce1896f99ced6755868a52fb8839d58f"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-15/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:9b9a8f705b9361d6ee919217aed8fb28ce1896f99ced6755868a52fb8839d58f",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-08-29T17:46:32+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-15/PROOF.md"
     }
   ],
   "last_activation": {
@@ -3583,5 +4601,5 @@
   "status": "active",
   "title": "Dinkuskit Inventory v1",
   "track_id": "dinkuskit-inventory-v1",
-  "updated_at": "2026-08-29T12:28:34+00:00"
+  "updated_at": "2026-08-29T17:46:32+00:00"
 }

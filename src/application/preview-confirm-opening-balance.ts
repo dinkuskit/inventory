@@ -3,9 +3,9 @@ import {
 	OPENING_BALANCE_PREVIEW_SCHEMA,
 	OPENING_BALANCE_TYPE,
 	digestCommand,
+	digestCanonicalValue,
 	digestCommandPrincipal,
 	digestOpaqueConfirmation,
-	digestOpeningBalanceAction,
 	normalizeCommandPrincipal,
 	normalizePreviewOpeningBalanceInput,
 	normalizeSetOpeningBalanceCommand,
@@ -16,6 +16,7 @@ import {
 	type PreviewOpeningBalanceInputV1,
 	type SetOpeningBalanceCommandV1,
 } from "../domain/opening-balance.ts";
+import { subtractExactDecimal } from "../domain/exact-decimal.ts";
 import type { InventoryStore } from "../storage/inventory-store.ts";
 import { executeSetOpeningBalanceInTransaction } from "./set-opening-balance.ts";
 
@@ -40,7 +41,8 @@ export class OpeningBalanceConfirmationError extends Error {
 export type OpeningBalancePreviewErrorCode =
 	| "opening_balance_already_set"
 	| "sku_not_registered"
-	| "sku_unit_mismatch";
+	| "sku_unit_mismatch"
+	| "stale_version";
 
 export class OpeningBalancePreviewError extends Error {
 	readonly code: OpeningBalancePreviewErrorCode;
@@ -51,6 +53,8 @@ export class OpeningBalancePreviewError extends Error {
 				? "This SKU is not set up for inventory."
 				: code === "sku_unit_mismatch"
 					? "The stock quantity unit does not match this SKU."
+					: code === "stale_version"
+						? "Stock changed while the opening balance was being previewed. Preview again."
 					: "This SKU-location already has committed stock history.",
 		);
 		this.name = "OpeningBalancePreviewError";
@@ -144,6 +148,17 @@ function principalMatches(
 	return storedDigest === providedDigest;
 }
 
+function versionedActionDigest(
+	action: PreviewOpeningBalanceInputV1,
+	expectedVersion: string,
+): Promise<string> {
+	return digestCanonicalValue({ action, expectedVersion });
+}
+
+function incrementVersion(version: string): string {
+	return (BigInt(version) + 1n).toString();
+}
+
 function commandIdConflict(commandId: string): OpeningBalanceResult {
 	return {
 		schema: COMMAND_RESULT_SCHEMA,
@@ -169,10 +184,17 @@ export function createPreviewOpeningBalance(
 		const action = normalizePreviewOpeningBalanceInput(input);
 		const principal = normalizeCommandPrincipal(execution?.principal);
 		const confirmation = confirmationFrom(dependencies.createConfirmation);
+		const key = {
+			poolId: action.context.poolId,
+			locationId: action.context.locationId,
+			skuId: action.payload.skuId,
+		};
+		const observedBalance = await dependencies.store.readBalance(key);
+		const observedVersion = observedBalance?.version ?? "0";
 		const [confirmationDigest, actionDigest, principalDigest] =
 			await Promise.all([
 				digestOpaqueConfirmation(confirmation),
-				digestOpeningBalanceAction(action),
+				versionedActionDigest(action, observedVersion),
 				digestCommandPrincipal(principal),
 			]);
 		const zero = { value: "0", unit: action.payload.quantity.unit };
@@ -184,11 +206,6 @@ export function createPreviewOpeningBalance(
 				const expires = new Date(
 					issued.getTime() + OPENING_BALANCE_CONFIRMATION_TTL_MS,
 				);
-				const key = {
-					poolId: action.context.poolId,
-					locationId: action.context.locationId,
-					skuId: action.payload.skuId,
-				};
 				const managedSku = transaction.getManagedSku(action.payload.skuId);
 				if (managedSku === null) {
 					throw new OpeningBalancePreviewError("sku_not_registered");
@@ -197,12 +214,41 @@ export function createPreviewOpeningBalance(
 					throw new OpeningBalancePreviewError("sku_unit_mismatch");
 				}
 				const balance = transaction.getBalance(key);
-				if (
-					balance !== null &&
-					(balance.hasStockHistory || balance.version !== "0")
-				) {
+				if (balance?.hasStockHistory === true) {
 					throw new OpeningBalancePreviewError();
 				}
+				if ((balance?.version ?? "0") !== observedVersion) {
+					throw new OpeningBalancePreviewError("stale_version");
+				}
+				const quantities = balance === null
+					? {
+							onHand: zero,
+							reserved: zero,
+							outgoingTransferCommitted: zero,
+							available: zero,
+							expected: zero,
+							inTransit: zero,
+						}
+					: balance;
+				if (
+					[
+						quantities.onHand,
+						quantities.reserved,
+						quantities.outgoingTransferCommitted,
+						quantities.available,
+						quantities.expected,
+						quantities.inTransit,
+					].some((quantity) => quantity.unit !== action.payload.quantity.unit)
+				) {
+					throw new OpeningBalancePreviewError("sku_unit_mismatch");
+				}
+				const availableAfter = subtractExactDecimal(
+					subtractExactDecimal(
+						action.payload.quantity.value,
+						quantities.reserved.value,
+					),
+					quantities.outgoingTransferCommitted.value,
+				);
 
 				transaction.storeOpeningBalanceConfirmation({
 					confirmationDigest,
@@ -224,16 +270,27 @@ export function createPreviewOpeningBalance(
 						onHandDelta: action.payload.quantity,
 						reservedDelta: zero,
 						balanceBefore: {
-							onHand: zero,
-							reserved: zero,
-							available: zero,
-							version: "0",
+							onHand: quantities.onHand,
+							reserved: quantities.reserved,
+							outgoingTransferCommitted:
+								quantities.outgoingTransferCommitted,
+							available: quantities.available,
+							expected: quantities.expected,
+							inTransit: quantities.inTransit,
+							version: observedVersion,
 						},
 						balanceAfter: {
 							onHand: action.payload.quantity,
-							reserved: zero,
-							available: action.payload.quantity,
-							version: "1",
+							reserved: quantities.reserved,
+							outgoingTransferCommitted:
+								quantities.outgoingTransferCommitted,
+							available: {
+								value: availableAfter,
+								unit: action.payload.quantity.unit,
+							},
+							expected: quantities.expected,
+							inTransit: quantities.inTransit,
+							version: incrementVersion(observedVersion),
 						},
 					},
 					reason: action.reason,
@@ -270,7 +327,10 @@ export function createConfirmOpeningBalance(
 		const [confirmationDigest, actionDigest, principalDigest, commandDigest] =
 			await Promise.all([
 				digestOpaqueConfirmation(confirmation),
-				digestOpeningBalanceAction(action),
+				versionedActionDigest(
+					action,
+					command.expectedVersions[0].version,
+				),
 				digestCommandPrincipal(principal),
 				digestCommand(command),
 			]);

@@ -153,6 +153,11 @@ CREATE TABLE inventory_skus (
 
 ## Cloudflare v2-to-v3 migration
 
+This section records the managed-SKU slice's v3 step. The current schema is v4:
+initialization still performs this exact v2-to-v3 backfill before applying the
+separate v3-to-v4 stock-transfer migration. Fresh storage initializes directly
+at v4.
+
 Initialization recognizes exactly three states:
 
 1. Empty storage: create the complete v3 schema and record migration history
