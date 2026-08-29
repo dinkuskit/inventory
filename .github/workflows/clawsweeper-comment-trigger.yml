@@ -50,14 +50,14 @@ jobs:
     permissions:
       actions: read
       contents: read
-    uses: dinkuskit/clawsweeper/.github/workflows/dinkuskit-native-canary.yml@f647f227c333164088dac49e5700a37beb28a41a
+    uses: dinkuskit/clawsweeper/.github/workflows/dinkuskit-native-canary.yml@80cdeb241ab529008b1082749584be28a318e9ca
     with:
       target_repository: inventory
       target_repository_id: "1307843786"
       pr_number: ${{ needs.admit.outputs.pr_number }}
       expected_base_sha: ${{ needs.admit.outputs.base_sha }}
       expected_head_sha: ${{ needs.admit.outputs.head_sha }}
-      engine_sha: f647f227c333164088dac49e5700a37beb28a41a
+      engine_sha: 80cdeb241ab529008b1082749584be28a318e9ca
       publish: true
     secrets:
       CLAWSWEEPER_APP_PRIVATE_KEY: ${{ secrets.CLAWSWEEPER_APP_PRIVATE_KEY }}
