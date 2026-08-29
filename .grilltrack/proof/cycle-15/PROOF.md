@@ -28,6 +28,16 @@ Implemented the confirmed Inventory-owned Created transfer slice:
 - identity artifact: `SOURCE_IDENTITY.txt`; and
 - review: `REVIEW.md`.
 
+## Delivery
+
+- pull request: https://github.com/dinkuskit/inventory/pull/15
+- implementation commit: `06a090afb58d176c51b866b701b5f29e0c4280bf`
+- stacked base: Inventory PR #14,
+  `d735b180b3f4ed911667586f5131ff1727e46546`
+
+The follow-up commit containing this delivery binding changes only GrillTrack
+proof state. The reviewed non-GrillTrack source diff remains the SHA-256 above.
+
 ## Verification
 
 ```text
