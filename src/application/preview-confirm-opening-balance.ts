@@ -37,12 +37,24 @@ export class OpeningBalanceConfirmationError extends Error {
 	}
 }
 
-export class OpeningBalancePreviewError extends Error {
-	readonly code = "opening_balance_already_set" as const;
+export type OpeningBalancePreviewErrorCode =
+	| "opening_balance_already_set"
+	| "sku_not_registered"
+	| "sku_unit_mismatch";
 
-	constructor() {
-		super("This SKU-location already has committed stock history.");
+export class OpeningBalancePreviewError extends Error {
+	readonly code: OpeningBalancePreviewErrorCode;
+
+	constructor(code: OpeningBalancePreviewErrorCode = "opening_balance_already_set") {
+		super(
+			code === "sku_not_registered"
+				? "This SKU is not set up for inventory."
+				: code === "sku_unit_mismatch"
+					? "The stock quantity unit does not match this SKU."
+					: "This SKU-location already has committed stock history.",
+		);
 		this.name = "OpeningBalancePreviewError";
+		this.code = code;
 	}
 }
 
@@ -177,6 +189,13 @@ export function createPreviewOpeningBalance(
 					locationId: action.context.locationId,
 					skuId: action.payload.skuId,
 				};
+				const managedSku = transaction.getManagedSku(action.payload.skuId);
+				if (managedSku === null) {
+					throw new OpeningBalancePreviewError("sku_not_registered");
+				}
+				if (managedSku.unit !== action.payload.quantity.unit) {
+					throw new OpeningBalancePreviewError("sku_unit_mismatch");
+				}
 				const balance = transaction.getBalance(key);
 				if (
 					balance !== null &&

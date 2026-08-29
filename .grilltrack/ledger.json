@@ -4,11 +4,11 @@
   "current_focus": {
     "cadence": "sequential",
     "confirmed": true,
-    "confirmed_at": "2026-08-28T19:54:47+00:00",
-    "domain": "one-location and all-locations stock view",
-    "started_at": "2026-08-28T19:54:47+00:00",
-    "status": "inspected",
-    "summary": "Implement an Inventory-owned read for one caller-supplied SKU in an explicit pool. Location scope returns that active location's on-hand, reserved, and available quantities. All-locations scope returns same-unit totals plus every active location, including explicit zeros. The slice is read-only and does not discover, register, or synchronize Commerce products; it adds no GUI, reservation-order detail, deployment, or production mutation. Verify domain normalization, application aggregation, local SQLite, Cloudflare Durable Object storage, public exports, and a repo-owned executable verifier."
+    "confirmed_at": "2026-08-28T22:46:53+00:00",
+    "domain": "fresh Cloudflare schema initialization",
+    "started_at": "2026-08-28T22:46:52+00:00",
+    "status": "confirmed",
+    "summary": "Repair the reopened Cloudflare schema policy and managed-SKU registration together: preserve fresh v3 initialization, add one atomic exact-v2 migration with complete record preservation and legacy identity backfill, leave incompatible storage unchanged, align registration to the Commerce hidden-ID/register-or-return/display-name contract, retain immutable setup actor audit without a stock receipt, and re-verify opening admission against the upgraded storage. No live database, deployment, or production mutation is authorized."
   },
   "decisions": [
     {
@@ -2955,7 +2955,7 @@
     {
       "baseline_ref": "git:89c8145adc9d277262570349a2d44a04d78e2646",
       "candidate_refs": [],
-      "choice": "Inventory scaffolds a brand-new empty Durable Object directly at the complete current schema. It provides no v1-to-v2 data migration because no live legacy database exists. Any non-empty, partial, older, or unexpected schema fails closed instead of being guessed, backfilled, or silently upgraded.",
+      "choice": "A brand-new empty Durable Object initializes directly at complete schema v3 with history [3]. An exact schema-v2 pool with history [2] upgrades atomically to v3, preserves every prior durable record, backfills each legacy balanced SKU key as a stable managed identity, and records history [2,3]. Exact v3 storage is idempotent. Version 1, partial, conflicting-unit, extra-table, or otherwise incompatible storage fails closed and the transaction leaves it unchanged.",
       "context_ref": "user:no-live-databases-first-scaffold",
       "created_at": "2026-08-28T18:30:20+00:00",
       "deferred_reason": null,
@@ -3007,12 +3007,68 @@
           "review_source_identity": null,
           "to": "verified",
           "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T22:46:52+00:00",
+          "choice": "Inventory scaffolds a brand-new empty Durable Object directly at the complete current schema. It provides no v1-to-v2 data migration because no live legacy database exists. Any non-empty, partial, older, or unexpected schema fails closed instead of being guessed, backfilled, or silently upgraded.",
+          "from": "verified",
+          "implementation_ref": "file:docs/implementation/fresh-cloudflare-schema-initialization.md",
+          "note": "The accepted PR #12 review and approved Commerce alignment now require exact v2-to-v3 preservation proof; the earlier fresh-only policy is no longer sufficient.",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": ".grilltrack/proof/cycle-10/REVIEW.md",
+          "review_result": "clean",
+          "review_source_identity": "sha256:69f6528d61961d36a92b92863e65e1f0ccccfb338dff189aeafb50c7b483dd3d",
+          "to": "reopened",
+          "verification_ref": "proof:.grilltrack/proof/cycle-10/PROOF.md"
+        },
+        {
+          "at": "2026-08-28T22:46:52+00:00",
+          "choice": "Inventory scaffolds a brand-new empty Durable Object directly at the complete current schema. It provides no v1-to-v2 data migration because no live legacy database exists. Any non-empty, partial, older, or unexpected schema fails closed instead of being guessed, backfilled, or silently upgraded.",
+          "from": "reopened",
+          "implementation_ref": "file:docs/implementation/fresh-cloudflare-schema-initialization.md",
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": ".grilltrack/proof/cycle-10/REVIEW.md",
+          "review_result": "clean",
+          "review_source_identity": "sha256:69f6528d61961d36a92b92863e65e1f0ccccfb338dff189aeafb50c7b483dd3d",
+          "to": "locked",
+          "verification_ref": "proof:.grilltrack/proof/cycle-10/PROOF.md"
+        },
+        {
+          "at": "2026-08-28T22:54:54+00:00",
+          "choice": "A brand-new empty Durable Object initializes directly at complete schema v3 with history [3]. An exact schema-v2 pool with history [2] upgrades atomically to v3, preserves every prior durable record, backfills each legacy balanced SKU key as a stable managed identity, and records history [2,3]. Exact v3 storage is idempotent. Version 1, partial, conflicting-unit, extra-table, or otherwise incompatible storage fails closed and the transaction leaves it unchanged.",
+          "from": "locked",
+          "implementation_ref": "file:docs/implementation/fresh-cloudflare-schema-initialization.md",
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": ".grilltrack/proof/cycle-10/REVIEW.md",
+          "review_result": "clean",
+          "review_source_identity": "sha256:69f6528d61961d36a92b92863e65e1f0ccccfb338dff189aeafb50c7b483dd3d",
+          "to": "implemented",
+          "verification_ref": "proof:.grilltrack/proof/cycle-10/PROOF.md"
+        },
+        {
+          "at": "2026-08-28T22:54:55+00:00",
+          "choice": "A brand-new empty Durable Object initializes directly at complete schema v3 with history [3]. An exact schema-v2 pool with history [2] upgrades atomically to v3, preserves every prior durable record, backfills each legacy balanced SKU key as a stable managed identity, and records history [2,3]. Exact v3 storage is idempotent. Version 1, partial, conflicting-unit, extra-table, or otherwise incompatible storage fails closed and the transaction leaves it unchanged.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/fresh-cloudflare-schema-initialization.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": "proof:.grilltrack/proof/cycle-10/PROOF.md"
         }
       ],
       "id": "fresh-schema-initialization-034",
       "implementation_ref": "file:docs/implementation/fresh-cloudflare-schema-initialization.md",
       "question": "How should the first Cloudflare Inventory database acquire the location registry schema?",
-      "rationale": "This is the first real database, so a fictional compatibility path creates risk and misleading claims without preserving any actual live data.",
+      "rationale": "The repository now has a real committed v2 predecessor contract even though no production pool exists; safe releases must prove compatibility with that predecessor rather than depend on deployment timing.",
       "repair_required": false,
       "review_classifications": [],
       "review_history": [
@@ -3022,15 +3078,22 @@
           "result": "clean",
           "reviewed_at": "2026-08-28T18:36:45+00:00",
           "source_identity": "sha256:69f6528d61961d36a92b92863e65e1f0ccccfb338dff189aeafb50c7b483dd3d"
+        },
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-12/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T22:54:56+00:00",
+          "source_identity": "sha256:fdc7950c5cbed32bfd552d866bf731346a0429ca40924ce137017b4019c68355"
         }
       ],
-      "review_ref": ".grilltrack/proof/cycle-10/REVIEW.md",
+      "review_ref": ".grilltrack/proof/cycle-12/REVIEW.md",
       "review_result": "clean",
-      "review_source_identity": "sha256:69f6528d61961d36a92b92863e65e1f0ccccfb338dff189aeafb50c7b483dd3d",
+      "review_source_identity": "sha256:fdc7950c5cbed32bfd552d866bf731346a0429ca40924ce137017b4019c68355",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-28T18:36:45+00:00",
-      "verification_ref": "proof:.grilltrack/proof/cycle-10/PROOF.md"
+      "updated_at": "2026-08-28T22:54:56+00:00",
+      "verification_ref": "proof:.grilltrack/proof/cycle-12/PROOF.md"
     },
     {
       "baseline_ref": "git:d3625c643ab1b1f0a5d0653d01ef85719ad4831b",
@@ -3089,6 +3152,34 @@
           "review_source_identity": null,
           "to": "verified",
           "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T22:46:52+00:00",
+          "choice": "Every new opening-balance command must resolve its explicit location ID to an active location in the same pool inside the serialized mutation transaction. Unknown locations return a durable location_not_found rejection; archived locations return a durable location_not_active rejection. Neither creates stock or a receipt. Exact retries return the original terminal result even if location state later changes.",
+          "from": "verified",
+          "implementation_ref": "file:docs/implementation/opening-balance-active-location-admission.md",
+          "note": "dependency fresh-schema-initialization-034 changed: The accepted PR #12 review and approved Commerce alignment now require exact v2-to-v3 preservation proof; the earlier fresh-only policy is no longer sufficient.",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": ".grilltrack/proof/cycle-10/REVIEW.md",
+          "review_result": "clean",
+          "review_source_identity": "sha256:d817681efbbfe7dcf117824468412e280af5d9033b20654a229ee637f903b820",
+          "to": "needs_reverification",
+          "verification_ref": "proof:.grilltrack/proof/cycle-10/PROOF.md"
+        },
+        {
+          "at": "2026-08-28T22:54:55+00:00",
+          "choice": "Every new opening-balance command must resolve its explicit location ID to an active location in the same pool inside the serialized mutation transaction. Unknown locations return a durable location_not_found rejection; archived locations return a durable location_not_active rejection. Neither creates stock or a receipt. Exact retries return the original terminal result even if location state later changes.",
+          "from": "needs_reverification",
+          "implementation_ref": "file:docs/implementation/opening-balance-active-location-admission.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": "proof:.grilltrack/proof/cycle-10/PROOF.md"
         }
       ],
       "id": "opening-balance-location-admission-035",
@@ -3104,33 +3195,227 @@
           "result": "clean",
           "reviewed_at": "2026-08-28T19:08:17+00:00",
           "source_identity": "sha256:d817681efbbfe7dcf117824468412e280af5d9033b20654a229ee637f903b820"
+        },
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-12/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T22:54:57+00:00",
+          "source_identity": "sha256:fdc7950c5cbed32bfd552d866bf731346a0429ca40924ce137017b4019c68355"
         }
       ],
-      "review_ref": ".grilltrack/proof/cycle-10/REVIEW.md",
+      "review_ref": ".grilltrack/proof/cycle-12/REVIEW.md",
       "review_result": "clean",
-      "review_source_identity": "sha256:d817681efbbfe7dcf117824468412e280af5d9033b20654a229ee637f903b820",
+      "review_source_identity": "sha256:fdc7950c5cbed32bfd552d866bf731346a0429ca40924ce137017b4019c68355",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-28T19:08:17+00:00",
-      "verification_ref": "proof:.grilltrack/proof/cycle-10/PROOF.md"
+      "updated_at": "2026-08-28T22:54:57+00:00",
+      "verification_ref": "proof:.grilltrack/proof/cycle-12/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:e32ac165cae5efd78390bee1f0306754aa7fabbb",
+      "candidate_refs": [],
+      "choice": "Turning Commerce Manage stock on submits one awaited pool-scoped sku.register command carrying the canonical visible SKU and displayNameIfNew. A new registration atomically mints a permanent opaque inventorySkuId and stores the unique visible SKU, one-time independent Inventory display name, unit each, immutable setup actor and timestamp audit, and terminal command result, without creating a stock balance or stock receipt. An existing visible SKU atomically returns its original full record without renaming it or creating a duplicate; Commerce owns explicit user confirmation. Exact command retries return the original terminal result and changed content under a command ID conflicts. Stock reads and mutations use inventorySkuId. Cloudflare schema v2 migrates atomically to v3 while preserving prior records and backfilling legacy balance identities; incompatible shapes fail closed.",
+      "context_ref": "user:confirmed-managed-sku-registration-grill",
+      "created_at": "2026-08-28T21:56:06+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "commerce-stock-provider-017",
+        "location-balance-009",
+        "aggregate-stock-view-026",
+        "opening-balance-location-admission-035"
+      ],
+      "domain": "managed SKU registration at logical zero",
+      "history": [
+        {
+          "at": "2026-08-28T21:56:06+00:00",
+          "choice": "Turning Commerce Manage stock on submits one awaited pool-scoped sku.register command for a required unique SKU. Inventory stores only the opaque SKU and the v1 individual-item unit each, immediately reads it as zero at every active location, and emits one immutable signed-in-actor receipt without a typed reason. Exact command retries return the original result; a new duplicate command durably says This SKU is already set up without another SKU or receipt. Opening preview and commit fail closed for unregistered or mismatched-unit stock. Product catalog fields remain in Commerce/Blocks; case or box units and turning Manage stock off are deferred until real-store Inventory/Commerce/Blocks end-to-end proof.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T21:58:33+00:00",
+          "choice": "Turning Commerce Manage stock on submits one awaited pool-scoped sku.register command for a required unique SKU. Inventory stores only the opaque SKU and the v1 individual-item unit each, immediately reads it as zero at every active location, and emits one immutable signed-in-actor receipt without a typed reason. Exact command retries return the original result; a new duplicate command durably says This SKU is already set up without another SKU or receipt. Opening preview and commit fail closed for unregistered or mismatched-unit stock. Product catalog fields remain in Commerce/Blocks; case or box units and turning Manage stock off are deferred until real-store Inventory/Commerce/Blocks end-to-end proof.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T21:58:33+00:00",
+          "choice": "Turning Commerce Manage stock on submits one awaited pool-scoped sku.register command for a required unique SKU. Inventory stores only the opaque SKU and the v1 individual-item unit each, immediately reads it as zero at every active location, and emits one immutable signed-in-actor receipt without a typed reason. Exact command retries return the original result; a new duplicate command durably says This SKU is already set up without another SKU or receipt. Opening preview and commit fail closed for unregistered or mismatched-unit stock. Product catalog fields remain in Commerce/Blocks; case or box units and turning Manage stock off are deferred until real-store Inventory/Commerce/Blocks end-to-end proof.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/managed-sku-registration.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-28T22:38:50+00:00",
+          "choice": "Turning Commerce Manage stock on submits one awaited pool-scoped sku.register command for a required unique SKU. Inventory stores only the opaque SKU and the v1 individual-item unit each, immediately reads it as zero at every active location, and emits one immutable signed-in-actor receipt without a typed reason. Exact command retries return the original result; a new duplicate command durably says This SKU is already set up without another SKU or receipt. Opening preview and commit fail closed for unregistered or mismatched-unit stock. Product catalog fields remain in Commerce/Blocks; case or box units and turning Manage stock off are deferred until real-store Inventory/Commerce/Blocks end-to-end proof.",
+          "from": "verified",
+          "implementation_ref": "file:docs/implementation/managed-sku-registration.md",
+          "note": "adjudicated review requires a fix",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": ".grilltrack/proof/cycle-12/REVIEW.md",
+          "review_result": "clean",
+          "review_source_identity": "sha256:65e909821319e3e6e069d9dcee58a3b33d134e81546e3612b87641c450e9475b",
+          "to": "needs_reverification",
+          "verification_ref": "proof:.grilltrack/proof/cycle-12/PROOF.md"
+        },
+        {
+          "at": "2026-08-28T22:38:50+00:00",
+          "choice": "Turning Commerce Manage stock on submits one awaited pool-scoped sku.register command for a required unique SKU. Inventory stores only the opaque SKU and the v1 individual-item unit each, immediately reads it as zero at every active location, and emits one immutable signed-in-actor receipt without a typed reason. Exact command retries return the original result; a new duplicate command durably says This SKU is already set up without another SKU or receipt. Opening preview and commit fail closed for unregistered or mismatched-unit stock. Product catalog fields remain in Commerce/Blocks; case or box units and turning Manage stock off are deferred until real-store Inventory/Commerce/Blocks end-to-end proof.",
+          "from": "needs_reverification",
+          "implementation_ref": "file:docs/implementation/managed-sku-registration.md",
+          "note": "Commerce main 7b09a257 and the accepted ClawSweeper migration finding reveal that the prior direct-SKU, duplicate-rejection, nameless record, and fresh-only v3 contract cannot support the merged provider handshake.",
+          "repair_required": true,
+          "review_classifications": [
+            "required_fix"
+          ],
+          "review_ref": "url:https://github.com/dinkuskit/inventory/pull/12#issuecomment-5458323861",
+          "review_result": "findings",
+          "review_source_identity": "git:d6f6df3c5d22c8138496c0016ca1a6047d491cf3",
+          "to": "reopened",
+          "verification_ref": "proof:.grilltrack/proof/cycle-12/PROOF.md"
+        },
+        {
+          "at": "2026-08-28T22:38:50+00:00",
+          "choice": "Turning Commerce Manage stock on submits one awaited pool-scoped sku.register command for a required unique SKU. Inventory stores only the opaque SKU and the v1 individual-item unit each, immediately reads it as zero at every active location, and emits one immutable signed-in-actor receipt without a typed reason. Exact command retries return the original result; a new duplicate command durably says This SKU is already set up without another SKU or receipt. Opening preview and commit fail closed for unregistered or mismatched-unit stock. Product catalog fields remain in Commerce/Blocks; case or box units and turning Manage stock off are deferred until real-store Inventory/Commerce/Blocks end-to-end proof.",
+          "from": "reopened",
+          "implementation_ref": "file:docs/implementation/managed-sku-registration.md",
+          "note": "user accepted the scoped decision",
+          "repair_required": true,
+          "review_classifications": [
+            "required_fix"
+          ],
+          "review_ref": "url:https://github.com/dinkuskit/inventory/pull/12#issuecomment-5458323861",
+          "review_result": "findings",
+          "review_source_identity": "git:d6f6df3c5d22c8138496c0016ca1a6047d491cf3",
+          "to": "locked",
+          "verification_ref": "proof:.grilltrack/proof/cycle-12/PROOF.md"
+        },
+        {
+          "at": "2026-08-28T22:46:52+00:00",
+          "choice": "Turning Commerce Manage stock on submits one awaited pool-scoped sku.register command carrying the canonical visible SKU and displayNameIfNew. A new registration atomically mints a permanent opaque inventorySkuId and stores the unique visible SKU, one-time independent Inventory display name, unit each, immutable setup actor and timestamp audit, and terminal command result, without creating a stock balance or stock receipt. An existing visible SKU atomically returns its original full record without renaming it or creating a duplicate; Commerce owns explicit user confirmation. Exact command retries return the original terminal result and changed content under a command ID conflicts. Stock reads and mutations use inventorySkuId. Cloudflare schema v2 migrates atomically to v3 while preserving prior records and backfilling legacy balance identities; incompatible shapes fail closed.",
+          "from": "locked",
+          "implementation_ref": "file:docs/implementation/managed-sku-registration.md",
+          "note": "dependency fresh-schema-initialization-034 changed: The accepted PR #12 review and approved Commerce alignment now require exact v2-to-v3 preservation proof; the earlier fresh-only policy is no longer sufficient.",
+          "repair_required": true,
+          "review_classifications": [
+            "required_fix"
+          ],
+          "review_ref": "url:https://github.com/dinkuskit/inventory/pull/12#issuecomment-5458323861",
+          "review_result": "findings",
+          "review_source_identity": "git:d6f6df3c5d22c8138496c0016ca1a6047d491cf3",
+          "to": "needs_reverification",
+          "verification_ref": "proof:.grilltrack/proof/cycle-12/PROOF.md"
+        },
+        {
+          "at": "2026-08-28T22:54:54+00:00",
+          "choice": "Turning Commerce Manage stock on submits one awaited pool-scoped sku.register command carrying the canonical visible SKU and displayNameIfNew. A new registration atomically mints a permanent opaque inventorySkuId and stores the unique visible SKU, one-time independent Inventory display name, unit each, immutable setup actor and timestamp audit, and terminal command result, without creating a stock balance or stock receipt. An existing visible SKU atomically returns its original full record without renaming it or creating a duplicate; Commerce owns explicit user confirmation. Exact command retries return the original terminal result and changed content under a command ID conflicts. Stock reads and mutations use inventorySkuId. Cloudflare schema v2 migrates atomically to v3 while preserving prior records and backfilling legacy balance identities; incompatible shapes fail closed.",
+          "from": "needs_reverification",
+          "implementation_ref": "file:docs/implementation/managed-sku-registration.md",
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": "proof:.grilltrack/proof/cycle-12/PROOF.md"
+        },
+        {
+          "at": "2026-08-28T22:54:55+00:00",
+          "choice": "Turning Commerce Manage stock on submits one awaited pool-scoped sku.register command carrying the canonical visible SKU and displayNameIfNew. A new registration atomically mints a permanent opaque inventorySkuId and stores the unique visible SKU, one-time independent Inventory display name, unit each, immutable setup actor and timestamp audit, and terminal command result, without creating a stock balance or stock receipt. An existing visible SKU atomically returns its original full record without renaming it or creating a duplicate; Commerce owns explicit user confirmation. Exact command retries return the original terminal result and changed content under a command ID conflicts. Stock reads and mutations use inventorySkuId. Cloudflare schema v2 migrates atomically to v3 while preserving prior records and backfilling legacy balance identities; incompatible shapes fail closed.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/managed-sku-registration.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": "proof:.grilltrack/proof/cycle-12/PROOF.md"
+        }
+      ],
+      "id": "managed-sku-registration-036",
+      "implementation_ref": "file:docs/implementation/managed-sku-registration.md",
+      "question": "What durable Inventory state and audit behavior should turning Manage stock on create?",
+      "rationale": "This aligns Inventory with the verified Commerce registration contract while retaining Bobby-approved actor audit, sole-ledger ownership, idempotency, logical-zero stock, and safe Durable Object upgrades.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-12/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T21:58:33+00:00",
+          "source_identity": "sha256:65e909821319e3e6e069d9dcee58a3b33d134e81546e3612b87641c450e9475b"
+        },
+        {
+          "classifications": [
+            "required_fix"
+          ],
+          "ref": "url:https://github.com/dinkuskit/inventory/pull/12#issuecomment-5458323861",
+          "result": "findings",
+          "reviewed_at": "2026-08-28T22:38:50+00:00",
+          "source_identity": "git:d6f6df3c5d22c8138496c0016ca1a6047d491cf3"
+        },
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-12/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-28T22:54:56+00:00",
+          "source_identity": "sha256:fdc7950c5cbed32bfd552d866bf731346a0429ca40924ce137017b4019c68355"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-12/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:fdc7950c5cbed32bfd552d866bf731346a0429ca40924ce137017b4019c68355",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-08-28T22:54:56+00:00",
+      "verification_ref": "proof:.grilltrack/proof/cycle-12/PROOF.md"
     }
   ],
   "last_activation": {
-    "at": "2026-07-24T16:41:45+00:00",
+    "at": "2026-08-28T22:46:52+00:00",
     "mechanism": "implicit"
   },
   "recommendation": {
     "alternatives": [
-      "ordinary stock-adjustment command with required editable reason",
-      "pause Inventory until the active Commerce foundation PR completes"
+      "pause Inventory until Commerce and Blocks are ready for the first real-store end-to-end flow"
     ],
-    "reason": "The aggregate read is proven, and the aligned Commerce grill requires a managed SKU to exist in Inventory at zero before Set Initial Stock; registration is the smallest Inventory-owned prerequisite that avoids catalog synchronization or a second ledger.",
-    "recommended": "Inventory-owned managed SKU registration at logical zero",
-    "recorded_at": "2026-08-28T20:02:44+00:00"
+    "reason": "Managed SKU registration, logical-zero reads, and opening admission are proven. Ordinary adjustment is now the smallest independent Inventory-owned mutation that reuses those locks without depending on another repository or the EmDash scheduler.",
+    "recommended": "ordinary stock-adjustment command with mandatory editable reason",
+    "recorded_at": "2026-08-28T21:58:33+00:00"
   },
   "schema_version": "grilltrack/v0.1",
   "status": "active",
   "title": "Dinkuskit Inventory v1",
   "track_id": "dinkuskit-inventory-v1",
-  "updated_at": "2026-08-28T21:00:13+00:00"
+  "updated_at": "2026-08-28T22:54:57+00:00"
 }

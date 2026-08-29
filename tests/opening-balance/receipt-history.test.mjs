@@ -7,6 +7,7 @@ import test from "node:test";
 import * as inventory from "../../src/index.ts";
 import { createLocalSqliteTestStore } from "../../src/storage/local-sqlite-test-store.ts";
 import { createFixtureLocation } from "../helpers/location-fixture.mjs";
+import { createFixtureManagedSku } from "../helpers/managed-sku-fixture.mjs";
 
 const principal = Object.freeze({
 	kind: "human",
@@ -66,6 +67,13 @@ test("reads one location or all locations from the same durable receipt ledger",
 	await createFixtureLocation(store, {
 		poolId: "pool_other",
 		locationId: "location_north",
+	});
+	for (const skuId of ["sku_hat_black", "sku_hat_green", "sku_hat_blue"]) {
+		await createFixtureManagedSku(store, { skuId });
+	}
+	await createFixtureManagedSku(store, {
+		poolId: "pool_other",
+		skuId: "sku_hat_other",
 	});
 	await commit(store, {
 		commandId: "cmd_north_old",

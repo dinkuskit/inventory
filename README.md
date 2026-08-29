@@ -75,7 +75,13 @@ rejections without a balance or receipt. A read-only aggregate now accepts one
 caller-supplied SKU and either one active location or all active locations. The
 all-locations result returns exact on-hand, reserved, and derived-available
 totals plus a per-location breakdown, including explicit zero rows; it does not
-discover or synchronize Commerce products.
+discover or synchronize Commerce catalog data. Inventory now also owns one
+awaited `sku.register` command: a new visible Commerce SKU mints a permanent
+opaque Inventory ID and one-time operational display name, while an existing
+visible SKU returns its original record for Commerce confirmation. Registration
+stores immutable setup actor/time audit but creates no balance or stock receipt.
+The permanent Inventory ID reads at logical zero across active locations, and
+opening previews and commands fail closed until that identity exists.
 
 The real local SQLite test adapter remains explicitly development/test-only and
 refuses production mode or in-memory use. It is not the final storage layer.
@@ -84,12 +90,13 @@ Cloudflare Worker with a SQLite-backed Durable Object namespace and one object
 database per explicit pool. Workers.dev and preview URLs are disabled, no route
 is deployed, and its remote surface remains private and read-only: same-account
 SKU-location inspection and aggregate SKU stock reads.
-The source schema defines version 2 as the first complete real-database schema,
-including the location registry. Fresh empty storage initializes directly at
-version 2; older, partial, or unexpected Inventory schemas fail closed and are
-not migrated. An earlier version-1 probe object contained zero records and is
-test evidence, not a live database or migration input. This implementation is
-not a deployment claim. Opening-balance mutation is not remotely exposed, no
+The source schema defines version 3 as the complete current real-database
+schema, including the location and managed-SKU registries. Fresh empty storage
+initializes directly at version 3. Exact committed version-2 storage upgrades
+atomically, preserves all prior durable records, and backfills legacy balanced
+SKU keys as stable managed identities; incompatible shapes fail closed without
+a partial upgrade. Workerd runtime tests prove that transition, but this is not
+a deployment or live-database claim. Opening-balance mutation is not remotely exposed, no
 storefront traffic is bound, and no physical stock cutover has happened. There
 is still no installable plugin, executable CLI, or published npm package. The
 package manifest remains private at `0.0.0` to prevent accidental publication.
@@ -115,6 +122,7 @@ npm ls emdash --depth=0
 bin/verify-opening-balance
 bin/verify-location-registry
 bin/verify-aggregate-stock-read
+bin/verify-managed-sku
 bin/verify-cloudflare-storage
 ```
 

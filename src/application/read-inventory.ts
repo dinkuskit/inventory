@@ -230,14 +230,11 @@ export function createReadSkuStock(
 		input: ReadSkuStockInput,
 	): Promise<SkuStockReadResult> {
 		const query = normalizeReadSkuStockInput(input);
-		const snapshot = await store.readSkuActiveLocationSnapshot({
+		const managedSku = await store.readManagedSku({
 			poolId: query.poolId,
 			skuId: query.skuId,
 		});
-		const balances = snapshot.flatMap(({ balance }) =>
-			balance === null ? [] : [balance],
-		);
-		if (balances.length === 0) {
+		if (managedSku === null) {
 			return {
 				schema: SKU_STOCK_READ_RESULT_SCHEMA,
 				outcome: "not_found",
@@ -246,8 +243,15 @@ export function createReadSkuStock(
 				scope: query.scope,
 			};
 		}
-		const unit = stockUnit(balances[0]);
-		for (const balance of balances.slice(1)) {
+		const snapshot = await store.readSkuActiveLocationSnapshot({
+			poolId: query.poolId,
+			skuId: query.skuId,
+		});
+		const balances = snapshot.flatMap(({ balance }) =>
+			balance === null ? [] : [balance],
+		);
+		const unit = managedSku.unit;
+		for (const balance of balances) {
 			if (stockUnit(balance) !== unit) {
 				throw new InconsistentSkuStockUnitError();
 			}

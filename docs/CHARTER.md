@@ -149,14 +149,15 @@ surface asks Inventory to create it. The display name may change without
 changing identity or rewriting history, and no two locations in one pool may
 share the same normalized name even when one or both are archived.
 
-## fresh-schema-initialization-034 — first real database starts complete (locked)
+## fresh-schema-initialization-034 — exact v2 storage upgrades safely (locked)
 
-There is no live legacy Inventory database. A new empty Cloudflare Durable
-Object initializes directly at the complete current schema, including the
-location registry, and records only that current version. This release does not
-guess a migration for fictional legacy data. Any older, partial, or unexpected
-Inventory schema fails closed without modification; future migrations require
-a real predecessor and a separately grilled preservation contract.
+A new empty Cloudflare Durable Object initializes directly at complete schema
+v3 and records history `[3]`. The committed v2 schema is now a real predecessor
+contract even though no production pool exists: exact v2 storage with history
+`[2]` upgrades atomically, preserves its records, backfills each legacy balanced
+SKU key as a stable managed identity, and records `[2, 3]`. Exact v3 storage is
+idempotent. Version 1, partial, conflicting-unit, extra-table, or otherwise
+incompatible storage fails closed without a partial migration.
 
 ## opening-balance-location-admission-035 — active locations only (locked)
 
@@ -167,6 +168,29 @@ stock or a receipt. The check and terminal result share the same serialized
 transaction as a successful balance and receipt commit. Exact retries return
 the original result even if the location is later created, archived, or
 restored.
+
+## managed-sku-registration-036 — managed products begin at logical zero (locked)
+
+Turning Commerce `Manage stock` on submits one awaited Inventory
+`sku.register` command for an explicit pool with the canonical visible SKU and
+`displayNameIfNew`. A new registration atomically mints the permanent opaque
+`inventorySkuId`, stores the pool-unique visible SKU, one-time independent
+Inventory display name, unit `each`, trusted setup actor and timestamp, and
+terminal command result. It creates no balance or stock receipt. The registered
+identity immediately reads as zero at every active location.
+
+An exact retry returns the original terminal result and minted ID. A new command
+for an existing visible SKU returns the original identity and display name for
+Commerce confirmation without renaming it, minting an ID, or creating a
+duplicate. Changed contents under one command ID still conflict. Stock reads and
+mutations use the permanent Inventory ID rather than the visible Commerce SKU.
+
+Opening-balance preview fails for an unregistered SKU. Opening-balance commit
+durably rejects an unregistered SKU as `sku_not_registered` and rejects a unit
+different from the registered SKU as `sku_unit_mismatch`; neither creates
+stock or a receipt. Case/box conversion and turning `Manage stock` off are
+deferred until Inventory, Commerce, and Blocks pass a real-store end-to-end
+proof.
 
 Deactivation archives rather than deletes. Archived locations disappear from
 normal selectors and inventory views, remain accessible in an explicit Archive

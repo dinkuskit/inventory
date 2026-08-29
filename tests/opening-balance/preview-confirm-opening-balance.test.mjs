@@ -12,9 +12,10 @@ import {
 import { createLocalSqliteTestStore } from "../../src/storage/local-sqlite-test-store.ts";
 import {
 	archiveFixtureLocation,
-	createFixtureLocation,
+	createFixtureLocation as createRawFixtureLocation,
 	restoreFixtureLocation,
 } from "../helpers/location-fixture.mjs";
+import { createFixtureManagedSku } from "../helpers/managed-sku-fixture.mjs";
 
 const principal = Object.freeze({
 	kind: "human",
@@ -22,6 +23,14 @@ const principal = Object.freeze({
 	displayName: "Test Operator",
 	surface: "test",
 });
+
+async function createFixtureLocation(store, options = {}) {
+	await createRawFixtureLocation(store, options);
+	await createFixtureManagedSku(store, {
+		poolId: options.poolId ?? "pool_test",
+		skuId: "sku_keychain",
+	});
+}
 
 function previewInput({
 	siteId = "site_test",
@@ -159,6 +168,7 @@ test("previews the exact normalized effect for five minutes without mutating sto
 	const filePath = await databasePath(t, "shape");
 	const store = createLocalSqliteTestStore({ filePath });
 	t.after(() => store.close());
+	await createFixtureManagedSku(store);
 	const { preview } = boundary(store);
 
 	const result = await preview(previewInput({ value: "005.000" }), {
@@ -315,6 +325,7 @@ test("rejects an unconfirmed preview at the exact five-minute boundary", async (
 	const filePath = await databasePath(t, "expired");
 	const store = createLocalSqliteTestStore({ filePath });
 	t.after(() => store.close());
+	await createFixtureManagedSku(store);
 	const operations = boundary(store);
 	const input = previewInput();
 	const proposed = await operations.preview(input, { principal });

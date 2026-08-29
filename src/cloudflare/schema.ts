@@ -1,6 +1,22 @@
 export const CLOUDFLARE_INVENTORY_SCHEMA =
 	"dinkuskit.inventory.cloudflare-schema-status/v1" as const;
-export const CLOUDFLARE_INVENTORY_SCHEMA_VERSION = 2 as const;
+export const CLOUDFLARE_INVENTORY_SCHEMA_VERSION = 3 as const;
+
+const CLOUDFLARE_INVENTORY_V2_TABLES = [
+	"inventory_balances",
+	"inventory_command_results",
+	"inventory_locations",
+	"inventory_opening_balance_confirmations",
+	"inventory_receipts",
+	"inventory_schema_migrations",
+] as const;
+
+const V3_MIGRATION_APPLIED_AT = "2026-08-28T22:38:50.000Z";
+const V3_MIGRATION_PRINCIPAL_JSON = JSON.stringify({
+	kind: "system",
+	id: "inventory_schema_migration_v3",
+	surface: "cloudflare_durable_object",
+});
 
 export const CLOUDFLARE_INVENTORY_TABLES = [
 	"inventory_balances",
@@ -9,6 +25,7 @@ export const CLOUDFLARE_INVENTORY_TABLES = [
 	"inventory_opening_balance_confirmations",
 	"inventory_receipts",
 	"inventory_schema_migrations",
+	"inventory_skus",
 ] as const;
 
 export type CloudflareInventorySchemaStatus = Readonly<{
@@ -22,6 +39,7 @@ export type CloudflareInventoryRecordCounts = Readonly<{
 	commandResults: number;
 	confirmations: number;
 	receipts: number;
+	skus: number;
 }>;
 
 type SqlRow = Record<string, SqlStorageValue>;
@@ -38,8 +56,8 @@ function inventoryTables(storage: DurableObjectStorage): string[] {
 		.map((row) => String(row.name));
 }
 
-function assertExactSchema(storage: DurableObjectStorage): void {
-	const migrations = storage.sql
+function migrationVersions(storage: DurableObjectStorage): number[] {
+	return storage.sql
 		.exec<SqlRow>(
 			`SELECT version
 			 FROM inventory_schema_migrations
@@ -47,18 +65,92 @@ function assertExactSchema(storage: DurableObjectStorage): void {
 		)
 		.toArray()
 		.map((row) => Number(row.version));
+}
+
+function sameStrings(actual: readonly string[], expected: readonly string[]): boolean {
+	return JSON.stringify(actual) === JSON.stringify(expected);
+}
+
+function assertExactSchema(storage: DurableObjectStorage): void {
+	const migrations = migrationVersions(storage);
 	if (
-		JSON.stringify(migrations) !==
-		JSON.stringify([CLOUDFLARE_INVENTORY_SCHEMA_VERSION])
+		!sameStrings(
+			migrations.map(String),
+			[CLOUDFLARE_INVENTORY_SCHEMA_VERSION].map(String),
+		) &&
+		!sameStrings(migrations.map(String), ["2", "3"])
 	) {
 		throw new Error("Cloudflare Inventory schema migration history is invalid.");
 	}
-	if (
-		JSON.stringify(inventoryTables(storage)) !==
-		JSON.stringify(CLOUDFLARE_INVENTORY_TABLES)
-	) {
+	if (!sameStrings(inventoryTables(storage), CLOUDFLARE_INVENTORY_TABLES)) {
 		throw new Error("Cloudflare Inventory schema tables are incompatible.");
 	}
+}
+
+function createManagedSkuTable(storage: DurableObjectStorage): void {
+	storage.sql
+		.exec(
+			`CREATE TABLE inventory_skus (
+				pool_id TEXT NOT NULL,
+				inventory_sku_id TEXT NOT NULL,
+				sku TEXT NOT NULL,
+				display_name TEXT NOT NULL,
+				unit TEXT NOT NULL CHECK (unit = 'each'),
+				version INTEGER NOT NULL CHECK (version = 1),
+				registered_at TEXT NOT NULL,
+				registered_by_json TEXT NOT NULL,
+				PRIMARY KEY (pool_id, inventory_sku_id),
+				UNIQUE (pool_id, sku)
+			) STRICT`,
+		)
+		.toArray();
+}
+
+function migrateV2ToV3(storage: DurableObjectStorage): void {
+	if (!sameStrings(migrationVersions(storage).map(String), ["2"])) {
+		throw new Error("Cloudflare Inventory v2 migration history is invalid.");
+	}
+	const legacyUnits = storage.sql
+		.exec<SqlRow>(
+			`SELECT pool_id, sku_id, min(unit) AS unit,
+			        count(DISTINCT unit) AS unit_count
+			 FROM inventory_balances
+			 GROUP BY pool_id, sku_id`,
+		)
+		.toArray();
+	if (
+		legacyUnits.some(
+			(row) => Number(row.unit_count) !== 1 || String(row.unit) !== "each",
+		)
+	) {
+		throw new Error(
+			"Cloudflare Inventory v2 balances cannot be migrated to the each-only SKU registry.",
+		);
+	}
+
+	createManagedSkuTable(storage);
+	storage.sql
+		.exec(
+			`INSERT INTO inventory_skus (
+				pool_id, inventory_sku_id, sku, display_name, unit, version,
+				registered_at, registered_by_json
+			)
+			SELECT pool_id, sku_id, sku_id, sku_id, min(unit), 1, ?, ?
+			FROM inventory_balances
+			GROUP BY pool_id, sku_id`,
+			V3_MIGRATION_APPLIED_AT,
+			V3_MIGRATION_PRINCIPAL_JSON,
+		)
+		.toArray();
+	storage.sql
+		.exec(
+			`INSERT INTO inventory_schema_migrations (version, applied_at)
+			 VALUES (?, ?)`,
+			CLOUDFLARE_INVENTORY_SCHEMA_VERSION,
+			V3_MIGRATION_APPLIED_AT,
+		)
+		.toArray();
+	assertExactSchema(storage);
 }
 
 export function initializeCloudflareInventorySchema(
@@ -67,16 +159,17 @@ export function initializeCloudflareInventorySchema(
 	storage.transactionSync(() => {
 		const existingTables = inventoryTables(storage);
 		if (existingTables.length > 0) {
-			if (
-				JSON.stringify(existingTables) !==
-				JSON.stringify(CLOUDFLARE_INVENTORY_TABLES)
-			) {
-				throw new Error(
-					"Cloudflare Inventory storage uses an older or incompatible schema.",
-				);
+			if (sameStrings(existingTables, CLOUDFLARE_INVENTORY_TABLES)) {
+				assertExactSchema(storage);
+				return;
 			}
-			assertExactSchema(storage);
-			return;
+			if (sameStrings(existingTables, CLOUDFLARE_INVENTORY_V2_TABLES)) {
+				migrateV2ToV3(storage);
+				return;
+			}
+			throw new Error(
+				"Cloudflare Inventory storage uses an older or incompatible schema.",
+			);
 		}
 
 		storage.sql
@@ -134,6 +227,7 @@ export function initializeCloudflareInventorySchema(
 				) STRICT`,
 			)
 			.toArray();
+		createManagedSkuTable(storage);
 		storage.sql
 			.exec(
 				`CREATE TABLE inventory_receipts (
@@ -163,7 +257,7 @@ export function initializeCloudflareInventorySchema(
 				`INSERT INTO inventory_schema_migrations (version, applied_at)
 				 VALUES (?, ?)`,
 				CLOUDFLARE_INVENTORY_SCHEMA_VERSION,
-				"2026-08-28T16:00:00.000Z",
+				V3_MIGRATION_APPLIED_AT,
 			)
 			.toArray();
 		assertExactSchema(storage);
@@ -187,6 +281,7 @@ function rowCount(storage: DurableObjectStorage, table: string): number {
 		"inventory_command_results",
 		"inventory_opening_balance_confirmations",
 		"inventory_receipts",
+		"inventory_skus",
 	]);
 	if (!allowed.has(table)) {
 		throw new Error("Unsupported Inventory table count.");
@@ -205,5 +300,6 @@ export function readCloudflareInventoryRecordCounts(
 			"inventory_opening_balance_confirmations",
 		),
 		receipts: rowCount(storage, "inventory_receipts"),
+		skus: rowCount(storage, "inventory_skus"),
 	};
 }

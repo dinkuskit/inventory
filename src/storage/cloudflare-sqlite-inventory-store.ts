@@ -2,6 +2,7 @@ import type {
 	BalanceRecord,
 	SkuLocationKey,
 } from "../domain/opening-balance.ts";
+import { normalizeCommandPrincipal } from "../domain/opening-balance.ts";
 import type {
 	InventoryCommandResult,
 	InventoryReceiptV2,
@@ -9,6 +10,7 @@ import type {
 	LocationRecord,
 } from "../domain/location-registry.ts";
 import type { OpeningBalanceReceiptV2 } from "../domain/opening-balance.ts";
+import type { ManagedSkuRecord } from "../domain/managed-sku.ts";
 import type {
 	ActiveLocationBalanceSnapshot,
 	InventoryStore,
@@ -16,7 +18,9 @@ import type {
 	ListLocationsQuery,
 	ListReceiptsQuery,
 	LocationCommit,
+	ManagedSkuCommit,
 	OpeningBalanceCommit,
+	ReadManagedSkuQuery,
 	ReadSkuActiveLocationSnapshotQuery,
 	StoredCommandResult,
 	StoredOpeningBalanceConfirmation,
@@ -67,6 +71,22 @@ function locationFrom(row: SqlRow | undefined): LocationRecord | null {
 		createdAt: String(row.created_at),
 		updatedAt: String(row.updated_at),
 		archivedAt: row.archived_at === null ? null : String(row.archived_at),
+	};
+}
+
+function managedSkuFrom(row: SqlRow | undefined): ManagedSkuRecord | null {
+	if (row === undefined) {
+		return null;
+	}
+	return {
+		poolId: String(row.pool_id),
+		inventorySkuId: String(row.inventory_sku_id),
+		sku: String(row.sku),
+		displayName: String(row.display_name),
+		unit: "each",
+		version: "1",
+		registeredAt: String(row.registered_at),
+		registeredBy: normalizeCommandPrincipal(json(row.registered_by_json)),
 	};
 }
 
@@ -156,6 +176,34 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 				key.poolId,
 				key.locationId,
 				key.skuId,
+			),
+		);
+	}
+
+	getManagedSku(inventorySkuId: string): ManagedSkuRecord | null {
+		return managedSkuFrom(
+			first(
+				this.#storage,
+				`SELECT pool_id, inventory_sku_id, sku, display_name, unit,
+				        version, registered_at, registered_by_json
+				 FROM inventory_skus
+				 WHERE pool_id = ? AND inventory_sku_id = ?`,
+				this.#poolId,
+				inventorySkuId,
+			),
+		);
+	}
+
+	getManagedSkuBySku(sku: string): ManagedSkuRecord | null {
+		return managedSkuFrom(
+			first(
+				this.#storage,
+				`SELECT pool_id, inventory_sku_id, sku, display_name, unit,
+				        version, registered_at, registered_by_json
+				 FROM inventory_skus
+				 WHERE pool_id = ? AND sku = ?`,
+				this.#poolId,
+				sku,
 			),
 		);
 	}
@@ -279,7 +327,7 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 		}
 	}
 
-	storeRejection(record: StoredCommandResult): void {
+	storeCommandResult(record: StoredCommandResult): void {
 		this.#storage.sql
 			.exec(
 				`INSERT INTO inventory_command_results
@@ -290,6 +338,10 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 				JSON.stringify(record.result),
 			)
 			.toArray();
+	}
+
+	storeRejection(record: StoredCommandResult): void {
+		this.storeCommandResult(record);
 	}
 
 	commitOpeningBalance(input: OpeningBalanceCommit): void {
@@ -399,6 +451,29 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 			)
 			.toArray();
 	}
+
+	commitManagedSku(input: ManagedSkuCommit): void {
+		if (input.sku.poolId !== this.#poolId) {
+			throw new Error("A transaction cannot cross inventory pools.");
+		}
+		this.#storage.sql
+			.exec(
+				`INSERT INTO inventory_skus
+				   (pool_id, inventory_sku_id, sku, display_name, unit, version,
+				    registered_at, registered_by_json)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+				input.sku.poolId,
+				input.sku.inventorySkuId,
+				input.sku.sku,
+				input.sku.displayName,
+				input.sku.unit,
+				Number(input.sku.version),
+				input.sku.registeredAt,
+				JSON.stringify(input.sku.registeredBy),
+			)
+			.toArray();
+		this.storeCommandResult(input);
+	}
 }
 
 export class CloudflareSqliteInventoryStore implements InventoryStore {
@@ -456,6 +531,25 @@ export class CloudflareSqliteInventoryStore implements InventoryStore {
 				key.poolId,
 				key.locationId,
 				key.skuId,
+			),
+		);
+	}
+
+	async readManagedSku(
+		query: ReadManagedSkuQuery,
+	): Promise<ManagedSkuRecord | null> {
+		if (query.poolId !== this.#poolId) {
+			throw new Error("A store cannot read across inventory pools.");
+		}
+		return managedSkuFrom(
+			first(
+				this.#storage,
+				`SELECT pool_id, inventory_sku_id, sku, display_name, unit,
+				        version, registered_at, registered_by_json
+				 FROM inventory_skus
+				 WHERE pool_id = ? AND inventory_sku_id = ?`,
+				query.poolId,
+				query.skuId,
 			),
 		);
 	}

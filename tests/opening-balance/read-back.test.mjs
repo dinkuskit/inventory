@@ -13,6 +13,7 @@ import {
 } from "../../src/index.ts";
 import { createLocalSqliteTestStore } from "../../src/storage/local-sqlite-test-store.ts";
 import { createFixtureLocation } from "../helpers/location-fixture.mjs";
+import { createFixtureManagedSku } from "../helpers/managed-sku-fixture.mjs";
 
 const emdashPrincipal = Object.freeze({
 	kind: "human",
@@ -92,6 +93,7 @@ test("reads only one explicit SKU-location balance with explicit not-found", asy
 	const store = createLocalSqliteTestStore({ filePath });
 	t.after(() => store.close());
 	await createFixtureLocation(store);
+	await createFixtureManagedSku(store);
 	const readBalance = createReadSkuLocationBalance({ store });
 	const key = {
 		poolId: " pool_test ",
@@ -140,6 +142,7 @@ test("reads one committed mutation by receipt ID or command ID after reopen", as
 	const filePath = await databasePath(t, "committed");
 	let store = createLocalSqliteTestStore({ filePath });
 	await createFixtureLocation(store);
+	await createFixtureManagedSku(store);
 	const command = openingBalanceCommand();
 	command.actor = {
 		id: "spoofed_user",
@@ -180,6 +183,7 @@ test("reads a stable rejection by command ID and never invents a receipt", async
 	const store = createLocalSqliteTestStore({ filePath });
 	t.after(() => store.close());
 	await createFixtureLocation(store);
+	await createFixtureManagedSku(store);
 	const setBalance = setOpeningBalance(store, "rcpt_first");
 	await setBalance(openingBalanceCommand({ commandId: "cmd_first" }), {
 		principal: emdashPrincipal,
@@ -248,6 +252,7 @@ test("binds confirmation to stable user identity and freezes the commit-time nam
 	const filePath = await databasePath(t, "historical-name");
 	let store = createLocalSqliteTestStore({ filePath });
 	await createFixtureLocation(store);
+	await createFixtureManagedSku(store);
 	const now = () => new Date("2026-08-28T12:00:00.000Z");
 	const preview = createPreviewOpeningBalance({
 		store,
@@ -298,6 +303,7 @@ test("requires a human display name without inventing one for system receipts", 
 	const store = createLocalSqliteTestStore({ filePath });
 	t.after(() => store.close());
 	await createFixtureLocation(store);
+	await createFixtureManagedSku(store);
 	const setBalance = setOpeningBalance(store, "rcpt_system");
 
 	await assert.rejects(
