@@ -7,6 +7,7 @@ const FEATURE_IDS = [
 	"dinkus.location-registry",
 	"dinkus.stock-read",
 	"dinkus.managed-sku",
+	"dinkus.stock-adjustment",
 ];
 
 const FEATURE_STRUCTURE = new Map([
@@ -14,11 +15,19 @@ const FEATURE_STRUCTURE = new Map([
 	["dinkus.location-registry", "mapped current location"],
 	["dinkus.stock-read", "mapped current location"],
 	["dinkus.managed-sku", "migrated pilot"],
+	["dinkus.stock-adjustment", "migrated feature"],
 ]);
 
 const FEATURE_SHARED_DEPENDENCIES = new Map([
 	[
 		"managed-sku",
+		new Set([
+			"src/domain/opening-balance.ts",
+			"src/storage/inventory-store.ts",
+		]),
+	],
+	[
+		"stock-adjustment",
 		new Set([
 			"src/domain/opening-balance.ts",
 			"src/storage/inventory-store.ts",
@@ -35,7 +44,17 @@ const REQUIRED_FILES = [
 	"src/features/managed-sku/domain.ts",
 	"src/features/managed-sku/index.ts",
 	"src/features/managed-sku/register.ts",
+	"src/features/stock-adjustment/adjust.ts",
+	"src/features/stock-adjustment/domain.ts",
+	"src/features/stock-adjustment/index.ts",
+	"src/features/stock-adjustment/preview-confirm.ts",
 	"tests/managed-sku/public-entry.test.mjs",
+	"tests/stock-adjustment/domain.test.mjs",
+	"tests/stock-adjustment/preview-confirm-stock-adjustment.test.mjs",
+	"tests/stock-adjustment/public-entry.test.mjs",
+	"tests/cloudflare/stock-adjustment.test.mjs",
+	"bin/verify-stock-adjustment",
+	"skills/stock-adjustment-verification/SKILL.md",
 	"tests/workflows/repository-architecture.test.mjs",
 	".github/workflows/repo-contract.yml",
 ];
@@ -242,6 +261,9 @@ export async function auditInventoryArchitecture(rootInput) {
 	const rootEntry = await readFile(join(root, "src/index.ts"), "utf8");
 	if (!rootEntry.includes('from "./features/managed-sku/index.ts"')) {
 		findings.push("src/index.ts must compose the managed-SKU public entry");
+	}
+	if (!rootEntry.includes('from "./features/stock-adjustment/index.ts"')) {
+		findings.push("src/index.ts must compose the stock-adjustment public entry");
 	}
 	return findings;
 }

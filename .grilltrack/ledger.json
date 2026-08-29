@@ -4,11 +4,11 @@
   "current_focus": {
     "cadence": "sequential",
     "confirmed": true,
-    "confirmed_at": "2026-08-28T23:16:55+00:00",
-    "domain": "repository feature architecture and verification foundation",
-    "started_at": "2026-08-28T23:16:54+00:00",
-    "status": "confirmed",
-    "summary": "On exact Inventory PR #12 head 670c539, repair the stale opening-balance verifier fixture first, then add a no-behavior-change repository foundation: FEATURE_MAP.md maps every current domain and infrastructure boundary; bin/verify-inventory quick|full becomes the canonical verification entry while focused scripts remain available; machine checks enforce the map, package-root composition, and cross-feature index barriers; managed-SKU alone becomes the first src/features pilot with root export parity. Preserve all ledger, idempotency, receipt, schema-v3 migration, Cloudflare, location, and stock-read behavior. Defer moving the other domains, UI, transport, deployment, publication, and production mutation."
+    "confirmed_at": "2026-08-29T12:10:07+00:00",
+    "domain": "ordinary post-opening stock adjustment",
+    "started_at": "2026-08-29T12:10:06+00:00",
+    "status": "inspected",
+    "summary": "Build the platform-neutral post-opening signed-delta adjustment slice on exact main d31fbfd: explicit pool, active location, permanent Inventory SKU, each unit, mandatory unprefilled free-text reason, zero-delta rejection, no-mutation five-minute preview, exact reserved/oversold warning, allowed negative results, atomic on-hand plus immutable actor receipt, exact retry/conflict, and new linked correction receipts. Preserve opening, location, managed-SKU, stock-read, schema-v3, Cloudflare, and feature-boundary contracts. Defer Block Kit GUI, Commerce/SmokyClub wiring, reservations, transport, deployment, publication, and production mutation."
   },
   "decisions": [
     {
@@ -3479,6 +3479,92 @@
       "superseded_by": null,
       "updated_at": "2026-08-28T23:26:55+00:00",
       "verification_ref": "proof:.grilltrack/proof/cycle-13/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:d31fbfda982ad669f638a222f0cb1caa7592c095",
+      "candidate_refs": [],
+      "choice": "After one SKU-location has committed opening history, a human stock.adjust command names an explicit site, pool, active location, permanent Inventory SKU identity, and signed exact delta in each. Its final trimmed public-safe reason is mandatory, with no category and no prefill. Preview performs no mutation and shows current on-hand, reserved, available, delta, resulting quantities, version, and an exact oversold warning while allowing negative on-hand or available. A five-minute principal/action/version-bound confirmation gates commit. Zero delta is invalid. Commit atomically changes only on-hand, advances the balance version, and creates one immutable signed-in-actor receipt containing reason, effect, and resulting quantities. Exact retries return the original terminal result; changed content conflicts. Corrections create a new linked adjustment rather than editing history. Unknown or archived locations, unregistered SKUs, unit mismatches, and missing opening history reject without stock or receipt.",
+      "context_ref": "user:confirmed-ordinary-stock-adjustment",
+      "created_at": "2026-08-29T12:10:06+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "command-result-007",
+        "receipt-audit-008",
+        "opening-balance-010",
+        "opening-balance-confirmation-020",
+        "receipt-actor-022",
+        "aggregate-stock-quantities-027",
+        "managed-sku-registration-036",
+        "repository-feature-foundation-037"
+      ],
+      "domain": "ordinary post-opening stock adjustment",
+      "history": [
+        {
+          "at": "2026-08-29T12:10:07+00:00",
+          "choice": "After one SKU-location has committed opening history, a human stock.adjust command names an explicit site, pool, active location, permanent Inventory SKU identity, and signed exact delta in each. Its final trimmed public-safe reason is mandatory, with no category and no prefill. Preview performs no mutation and shows current on-hand, reserved, available, delta, resulting quantities, version, and an exact oversold warning while allowing negative on-hand or available. A five-minute principal/action/version-bound confirmation gates commit. Zero delta is invalid. Commit atomically changes only on-hand, advances the balance version, and creates one immutable signed-in-actor receipt containing reason, effect, and resulting quantities. Exact retries return the original terminal result; changed content conflicts. Corrections create a new linked adjustment rather than editing history. Unknown or archived locations, unregistered SKUs, unit mismatches, and missing opening history reject without stock or receipt.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-29T12:28:13+00:00",
+          "choice": "After one SKU-location has committed opening history, a human stock.adjust command names an explicit site, pool, active location, permanent Inventory SKU identity, and signed exact delta in each. Its final trimmed public-safe reason is mandatory, with no category and no prefill. Preview performs no mutation and shows current on-hand, reserved, available, delta, resulting quantities, version, and an exact oversold warning while allowing negative on-hand or available. A five-minute principal/action/version-bound confirmation gates commit. Zero delta is invalid. Commit atomically changes only on-hand, advances the balance version, and creates one immutable signed-in-actor receipt containing reason, effect, and resulting quantities. Exact retries return the original terminal result; changed content conflicts. Corrections create a new linked adjustment rather than editing history. Unknown or archived locations, unregistered SKUs, unit mismatches, and missing opening history reject without stock or receipt.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-29T12:28:13+00:00",
+          "choice": "After one SKU-location has committed opening history, a human stock.adjust command names an explicit site, pool, active location, permanent Inventory SKU identity, and signed exact delta in each. Its final trimmed public-safe reason is mandatory, with no category and no prefill. Preview performs no mutation and shows current on-hand, reserved, available, delta, resulting quantities, version, and an exact oversold warning while allowing negative on-hand or available. A five-minute principal/action/version-bound confirmation gates commit. Zero delta is invalid. Commit atomically changes only on-hand, advances the balance version, and creates one immutable signed-in-actor receipt containing reason, effect, and resulting quantities. Exact retries return the original terminal result; changed content conflicts. Corrections create a new linked adjustment rather than editing history. Unknown or archived locations, unregistered SKUs, unit mismatches, and missing opening history reject without stock or receipt.",
+          "from": "implemented",
+          "implementation_ref": "source-manifest:.grilltrack/proof/cycle-14/SOURCE_MANIFEST.sha256",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "ordinary-stock-adjustment-038",
+      "implementation_ref": "source-manifest:.grilltrack/proof/cycle-14/SOURCE_MANIFEST.sha256",
+      "question": "What must an ordinary post-opening stock adjustment show and commit?",
+      "rationale": "This matches Bobby's Katana delta workflow while preserving Inventory's one-writer, explicit-location, immutable-receipt, reservation-visibility, and retry locks.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": "proof:.grilltrack/proof/cycle-14/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-29T12:28:13+00:00",
+          "source_identity": "sha256:4a3897d5f827267ef308e8620cd892f69fc66bc264af62403ffec84bd6bd469e"
+        }
+      ],
+      "review_ref": "proof:.grilltrack/proof/cycle-14/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:4a3897d5f827267ef308e8620cd892f69fc66bc264af62403ffec84bd6bd469e",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-08-29T12:28:13+00:00",
+      "verification_ref": "proof:.grilltrack/proof/cycle-14/PROOF.md"
     }
   ],
   "last_activation": {
@@ -3487,15 +3573,15 @@
   },
   "recommendation": {
     "alternatives": [
-      "pause Inventory until Commerce and Blocks are ready for the first real-store end-to-end flow"
+      "pause Inventory until the Commerce-to-Inventory handshake is proven end to end"
     ],
-    "reason": "Managed SKU registration, logical-zero reads, and opening admission are proven. Ordinary adjustment is now the smallest independent Inventory-owned mutation that reuses those locks without depending on another repository or the EmDash scheduler.",
-    "recommended": "ordinary stock-adjustment command with mandatory editable reason",
-    "recorded_at": "2026-08-28T21:58:33+00:00"
+    "reason": "Ordinary adjustments are now verified. A staged transfer is the next independent Inventory-owned mutation and reuses explicit active locations, permanent SKU identity, exact quantities, immutable actor receipts, and idempotent command results without depending on Commerce, Blocks, EmDash UI, deployment, or reservation work.",
+    "recommended": "staged location-transfer command beginning with transfer creation",
+    "recorded_at": "2026-08-29T12:28:34+00:00"
   },
   "schema_version": "grilltrack/v0.1",
   "status": "active",
   "title": "Dinkuskit Inventory v1",
   "track_id": "dinkuskit-inventory-v1",
-  "updated_at": "2026-08-28T23:26:55+00:00"
+  "updated_at": "2026-08-29T12:28:34+00:00"
 }

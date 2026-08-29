@@ -9,7 +9,7 @@ import type {
 	LocationBalanceBlocker,
 	LocationRecord,
 } from "../domain/location-registry.ts";
-import type { OpeningBalanceReceiptV2 } from "../domain/opening-balance.ts";
+import type { InventoryStockReceiptV2 } from "../domain/inventory-read.ts";
 import type { ManagedSkuRecord } from "../features/managed-sku/index.ts";
 import type {
 	ActiveLocationBalanceSnapshot,
@@ -24,6 +24,8 @@ import type {
 	ReadSkuActiveLocationSnapshotQuery,
 	StoredCommandResult,
 	StoredOpeningBalanceConfirmation,
+	StoredStockAdjustmentConfirmation,
+	StockAdjustmentCommit,
 } from "./inventory-store.ts";
 
 type SqlRow = Record<string, SqlStorageValue>;
@@ -327,6 +329,37 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 		}
 	}
 
+	getStockAdjustmentConfirmation(
+		confirmationDigest: string,
+	): StoredStockAdjustmentConfirmation | null {
+		return this.getOpeningBalanceConfirmation(confirmationDigest);
+	}
+
+	storeStockAdjustmentConfirmation(
+		record: StoredStockAdjustmentConfirmation,
+	): void {
+		this.storeOpeningBalanceConfirmation(record);
+	}
+
+	bindStockAdjustmentConfirmation(
+		confirmationDigest: string,
+		commandId: string,
+	): void {
+		const rows = this.#storage.sql
+			.exec<SqlRow>(
+				`UPDATE inventory_opening_balance_confirmations
+				 SET command_id = ?
+				 WHERE confirmation_digest = ? AND command_id IS NULL
+				 RETURNING confirmation_digest`,
+				commandId,
+				confirmationDigest,
+			)
+			.toArray();
+		if (rows.length !== 1) {
+			throw new Error("Stock-adjustment confirmation binding failed.");
+		}
+	}
+
 	storeCommandResult(record: StoredCommandResult): void {
 		this.#storage.sql
 			.exec(
@@ -384,6 +417,44 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 				JSON.stringify(input.result),
 			)
 			.toArray();
+	}
+
+	commitStockAdjustment(input: StockAdjustmentCommit): void {
+		this.#assertPool(input.balance);
+		const updated = this.#storage.sql
+			.exec<SqlRow>(
+				`UPDATE inventory_balances
+				 SET on_hand_value = ?, reserved_value = ?, available_value = ?,
+				     unit = ?, version = ?, has_stock_history = ?
+				 WHERE pool_id = ? AND location_id = ? AND sku_id = ?
+				   AND version = ? AND has_stock_history = 1
+				 RETURNING sku_id`,
+				input.balance.onHand.value,
+				input.balance.reserved.value,
+				input.balance.available.value,
+				input.balance.onHand.unit,
+				Number(input.balance.version),
+				input.balance.hasStockHistory ? 1 : 0,
+				input.balance.poolId,
+				input.balance.locationId,
+				input.balance.skuId,
+				Number(input.previousVersion),
+			)
+			.toArray();
+		if (updated.length !== 1) {
+			throw new Error("Stock-adjustment balance update lost its target row.");
+		}
+		this.#storage.sql
+			.exec(
+				`INSERT INTO inventory_receipts
+				   (receipt_id, command_id, receipt_json)
+				 VALUES (?, ?, ?)`,
+				input.receipt.receiptId,
+				input.commandId,
+				JSON.stringify(input.receipt),
+			)
+			.toArray();
+		this.storeCommandResult(input);
 	}
 
 	commitLocation(input: LocationCommit): void {
@@ -635,13 +706,13 @@ export class CloudflareSqliteInventoryStore implements InventoryStore {
 
 	async listReceipts(
 		query: ListReceiptsQuery,
-	): Promise<readonly OpeningBalanceReceiptV2[]> {
+	): Promise<readonly InventoryStockReceiptV2[]> {
 		if (query.poolId !== this.#poolId) {
 			throw new Error("A store cannot read across inventory pools.");
 		}
 		const clauses = [
 			"json_extract(receipt_json, '$.context.poolId') = ?",
-			"json_extract(receipt_json, '$.type') = 'stock.opening_balance'",
+			"json_extract(receipt_json, '$.type') IN ('stock.opening_balance', 'stock.adjust')",
 		];
 		const bindings: Array<string | number> = [query.poolId];
 		if (query.locationId !== undefined) {
@@ -682,7 +753,7 @@ export class CloudflareSqliteInventoryStore implements InventoryStore {
 				...bindings,
 			)
 			.toArray()
-			.map((row) => json<OpeningBalanceReceiptV2>(row.receipt_json));
+			.map((row) => json<InventoryStockReceiptV2>(row.receipt_json));
 	}
 
 	async listLocations(

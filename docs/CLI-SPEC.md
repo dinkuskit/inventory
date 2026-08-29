@@ -108,8 +108,9 @@ dinkus-inventory commands resolve <command-id>
 
 - `stock set-initial` sets an opening balance only for a SKU-location with no
   committed stock history.
-- `stock adjust` accepts exactly one of `--delta` or `--set-on-hand`. An
-  absolute count is committed against the previewed balance version.
+- `stock adjust` accepts one required signed `--delta`. It never accepts an
+  absolute replacement count and commits only against the previewed balance
+  version.
 - `stock receive` records one or more item quantities at the location where
   they physically arrived. It may carry an external reference; it does not
   create a purchase order.
@@ -154,8 +155,8 @@ last-used location. Every preview and result repeats the resolved context.
 
 | Flag | Contract |
 | --- | --- |
-| `--reason <code>` | Required stable reason for opening balances, receiving, adjustments, and corrections. |
-| `--note <text>` | Public-safe human-readable reason text; required for opening balances and not a place for customer or payment data. A future interactive opening-balance surface starts it as `Set Initial Stock`. |
+| `--reason <code>` | Stable machine reason for opening balances and future command types whose domain contract defines one. Ordinary stock adjustment does not accept this flag. |
+| `--note <text>` | Required public-safe human-readable reason for opening balances and ordinary adjustments; not a place for customer or payment data. Only the interactive opening-balance surface starts it as `Set Initial Stock`; adjustment has no prefill. |
 | `--reference <type:id>` | Repeatable typed external reference. |
 | `--dry-run` | Request server validation and preview, print the exact proposed effect and confirmation value, then stop without a command, receipt, or stock mutation. |
 | `--confirm <value>` | Submit only when the opaque value matches a fresh preview of the exact normalized action and current versions. |
@@ -171,13 +172,14 @@ the displayed confirmation value. A refusal or end-of-input sends no command.
 Command-specific quantity flags use exact strings:
 
 - `--quantity <decimal> --unit <unit>` for opening balance and receiving;
-- exactly one of `--delta <signed-decimal>` or
-  `--set-on-hand <decimal>`, plus `--unit`, for adjustment; and
+- `--delta <non-zero-signed-decimal> --unit <unit>` for adjustment; and
 - repeatable `--item <sku-id>=<decimal>:<unit>` for a transfer or multi-item
   receipt.
 
-Negative opening balances and receipts are rejected. Whether an adjustment may
-produce negative on-hand is a server policy, never a CLI-side loophole.
+Negative opening balances and receiving quantities are rejected. An ordinary
+adjustment may produce negative on-hand or available stock; preview must show
+the exact resulting quantities and warn by how many units existing orders will
+be oversold before confirmation.
 
 ## Preview and confirmation flow
 
@@ -190,9 +192,10 @@ The safe non-interactive pattern is two calls with the same business arguments:
 
 The confirmation value is bound to the normalized action and versions. It is
 not an authentication credential and cannot approve a changed location,
-quantity, SKU, reason, or transfer line. An opening-balance confirmation may be
-used immediately and expires exactly five minutes after preview. Its
-`expiresAt` lets an interactive client display the remaining approval window.
+quantity, SKU, reason, or transfer line. Opening-balance and ordinary-adjustment
+confirmations may be used immediately and expire exactly five minutes after
+preview. Their `expiresAt` lets an interactive client display the remaining
+approval window.
 An unconfirmed expired preview or changed action is blocked at the confirmation
 gate; the caller must preview a genuinely new attempt.
 

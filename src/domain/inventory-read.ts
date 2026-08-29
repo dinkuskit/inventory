@@ -5,6 +5,11 @@ import type {
 	SkuLocationKey,
 } from "./opening-balance.ts";
 import type { InventoryCommandResult } from "./location-registry.ts";
+import type { StockAdjustmentReceiptV2 } from "../features/stock-adjustment/index.ts";
+
+export type InventoryStockReceiptV2 =
+	| OpeningBalanceReceiptV2
+	| StockAdjustmentReceiptV2;
 
 export const BALANCE_READ_RESULT_SCHEMA =
 	"dinkuskit.inventory.balance-read-result/v1" as const;
@@ -80,7 +85,7 @@ export type ReceiptHistoryReadResult = Readonly<{
 	schema: typeof RECEIPT_HISTORY_READ_RESULT_SCHEMA;
 	poolId: string;
 	scope: ReceiptHistoryScope;
-	receipts: readonly OpeningBalanceReceiptV2[];
+	receipts: readonly InventoryStockReceiptV2[];
 	next: ReceiptHistoryCursor | null;
 }>;
 
