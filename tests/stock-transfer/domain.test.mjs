@@ -99,9 +99,10 @@ test("normalizes full Created updates and version-bound cancellation", () => {
 	);
 });
 
-test("normalizes version-bound dispatch and optional-reason reopen commands", () => {
+test("normalizes version-bound dispatch, receive, and optional-reason reopen commands", () => {
 	for (const [type, reason] of [
 		["transfer.dispatch", undefined],
+		["transfer.receive", undefined],
 		["transfer.reopen", "  Carrier loaded the wrong pallet  "],
 		["transfer.reopen", "   "],
 	]) {
@@ -110,9 +111,9 @@ test("normalizes version-bound dispatch and optional-reason reopen commands", ()
 			commandId: `cmd_${type}_${reason ?? "none"}`,
 			type,
 			context: { siteId: " site_test ", poolId: " pool_test " },
-			payload: type === "transfer.dispatch"
-				? { transferId: " transfer_opaque " }
-				: { transferId: " transfer_opaque ", reason },
+			payload: type === "transfer.reopen"
+				? { transferId: " transfer_opaque ", reason }
+				: { transferId: " transfer_opaque " },
 			references: [],
 			expectedVersions: [{ transferId: " transfer_opaque ", version: "03" }],
 		});
@@ -139,6 +140,24 @@ test("normalizes version-bound dispatch and optional-reason reopen commands", ()
 		}),
 		InvalidStockTransferCommandError,
 	);
+	for (const extra of [
+		{ reason: "Looks good" },
+		{ receivedDate: "2026-08-30" },
+		{ lines: [{ skuId: "sku_hat", quantity: { value: "1", unit: "each" } }] },
+	]) {
+		assert.throws(
+			() => normalizeStockTransferCommand({
+				schema: "dinkuskit.inventory.command/v1",
+				commandId: "cmd_receive_with_extra",
+				type: "transfer.receive",
+				context: { siteId: "site_test", poolId: "pool_test" },
+				payload: { transferId: "transfer_opaque", ...extra },
+				references: [],
+				expectedVersions: [{ transferId: "transfer_opaque", version: "3" }],
+			}),
+			InvalidStockTransferCommandError,
+		);
+	}
 });
 
 test("rejects ambiguous, duplicate, negative, and invalid-date transfer contents", () => {

@@ -12,6 +12,7 @@ export const CREATE_STOCK_TRANSFER_TYPE = "transfer.create" as const;
 export const UPDATE_STOCK_TRANSFER_TYPE = "transfer.update" as const;
 export const CANCEL_STOCK_TRANSFER_TYPE = "transfer.cancel" as const;
 export const DISPATCH_STOCK_TRANSFER_TYPE = "transfer.dispatch" as const;
+export const RECEIVE_STOCK_TRANSFER_TYPE = "transfer.receive" as const;
 export const REOPEN_STOCK_TRANSFER_TYPE = "transfer.reopen" as const;
 export const STOCK_TRANSFER_RECORD_SCHEMA =
 	"dinkuskit.inventory.stock-transfer/v1" as const;
@@ -82,6 +83,19 @@ export type DispatchStockTransferCommandV1 = Readonly<{
 	}>[];
 }>;
 
+export type ReceiveStockTransferCommandV1 = Readonly<{
+	schema: typeof COMMAND_SCHEMA;
+	commandId: string;
+	type: typeof RECEIVE_STOCK_TRANSFER_TYPE;
+	context: Readonly<{ siteId: string; poolId: string }>;
+	payload: Readonly<{ transferId: string }>;
+	references: readonly ExternalReference[];
+	expectedVersions: readonly Readonly<{
+		transferId: string;
+		version: string;
+	}>[];
+}>;
+
 export type ReopenStockTransferCommandV1 = Readonly<{
 	schema: typeof COMMAND_SCHEMA;
 	commandId: string;
@@ -100,6 +114,7 @@ export type StockTransferCommandV1 =
 	| UpdateStockTransferCommandV1
 	| CancelStockTransferCommandV1
 	| DispatchStockTransferCommandV1
+	| ReceiveStockTransferCommandV1
 	| ReopenStockTransferCommandV1;
 
 export type StockTransferStatus =
@@ -494,6 +509,7 @@ export function normalizeStockTransferCommand(
 		UPDATE_STOCK_TRANSFER_TYPE,
 		CANCEL_STOCK_TRANSFER_TYPE,
 		DISPATCH_STOCK_TRANSFER_TYPE,
+		RECEIVE_STOCK_TRANSFER_TYPE,
 		REOPEN_STOCK_TRANSFER_TYPE,
 	].includes(type)) {
 		invalid("type must be a supported stock transfer command.");
@@ -552,6 +568,14 @@ export function normalizeStockTransferCommand(
 		return {
 			...base,
 			type: DISPATCH_STOCK_TRANSFER_TYPE,
+			payload: { transferId },
+			expectedVersions,
+		};
+	}
+	if (type === RECEIVE_STOCK_TRANSFER_TYPE) {
+		return {
+			...base,
+			type: RECEIVE_STOCK_TRANSFER_TYPE,
 			payload: { transferId },
 			expectedVersions,
 		};

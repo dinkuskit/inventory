@@ -400,7 +400,7 @@ the same command ID conflict.
 Whole transfer receipt remains v1. Partial receiving and Received reversion are
 deferred.
 
-## transfer-line-stock-context-046 and transfer-dispatch-command-056 through transfer-in-transit-reversal-057 — dispatch and reopen (locked)
+## transfer-line-stock-context-046 and transfer-dispatch-command-056 through transfer-in-transit-reversal-057 — dispatch and reopen (verified)
 
 Each Created transfer line exposes origin movable stock after customer-order
 reservations and other outgoing transfers, excluding the current transfer so
@@ -425,6 +425,26 @@ Created. The current dispatched timestamp clears, while immutable dispatch and
 reopen receipts retain both actors and commit times. Both commands have stable
 idempotent terminal results and fail atomically.
 
+## transfer-whole-receipt-043 and transfer-receive-command-058 through transfer-receive-discrepancy-059 — whole receipt (verified)
+
+`transfer.receive` requires an existing exact-version In-transit transfer. One
+transaction receives every listed SKU at its complete transferred quantity,
+removes destination in-transit, increments destination on-hand, establishes
+physical stock history at the destination, leaves origin balances unchanged,
+and moves the transfer to Received/Done. The frozen shipment facts and planned
+dates remain intact; Inventory automatically records the signed-in receiver and
+sets `receivedDate` to the trusted commit timestamp. Callers cannot supply an
+actual date, partial quantities, or a normal receipt reason.
+
+Receipt uses the already-dispatched frozen shipment even if an emptied origin
+was archived after dispatch; destination in-transit quantities already prevent
+archiving the receiving location. Exact replay returns the original terminal
+result, changed command contents conflict, stale or wrong-state commands reject,
+and any persistence failure rolls back every line, transfer, receipt, and
+terminal result. A shortage or damaged unit is recorded after full receipt by
+a separate destination `stock.adjust` command with its own required reason and
+immutable receipt. Partial receipt and Received reversion remain deferred.
+
 ## v1 scope fence (inherited)
 
 In: tenant/site-scoped SKU/variant identity; explicit locations;
@@ -441,10 +461,11 @@ product settings and external inventory-provider implementations.
 
 ## Next focused grill
 
-Grill the whole-transfer `In transit -> Received` transition: exact destination
-effects, automatic received timestamp, replay/conflict behavior, and immutable
-receipt. Continue deferring partial receiving, Received reversion, GUI,
-Commerce/Blocks, service authentication, deployment, and production mutation.
+Grill the platform-neutral transfer-list read model: explicit pool and either
+one location or all active locations, with Created/In-transit under Open and
+Received/Canceled under Done. Continue deferring partial receiving, Received
+reversion, GUI, Commerce/Blocks, service authentication, deployment, and
+production mutation.
 
 ## Cross-references
 

@@ -272,11 +272,11 @@ AICommerce's checkout operations do not prompt a human. Their deliberate action
 is the already-authorized saga step with a stable command identity and scoped
 provider credential; the same server invariants still apply.
 
-## Created, dispatched, and reopened stock transfers
+## Created, dispatched, reopened, and received stock transfers
 
 `transfer.create`, `transfer.update`, `transfer.cancel`, `transfer.dispatch`,
-and `transfer.reopen` own the durable Open and In-transit portion of stock
-transfer. Every command names an explicit pool. Create and update name distinct
+`transfer.reopen`, and `transfer.receive` own the durable stock-transfer
+lifecycle through Received. Every command names an explicit pool. Create and update name distinct
 active origin and destination locations, one or more unique permanent Inventory
 SKU IDs, exact non-negative quantities in `each`, an optional note, and expected
 dispatch and arrival dates. Expected arrival cannot precede expected dispatch.
@@ -306,11 +306,22 @@ Reopen atomically reverses those effects, leaves destination on-hand unchanged,
 clears the current dispatch timestamp, and accepts an optional free-text reason.
 Prior dispatch and reopen actor/timestamp facts remain in immutable receipts.
 
+Receive requires the exact current In-transit version and accepts only the
+transfer ID. It atomically receives every frozen line and full transferred
+quantity: destination in-transit decreases, destination on-hand increases,
+destination physical stock history becomes established, origin stays
+unchanged, and the transfer becomes Received/Done. Inventory automatically
+sets the trusted received timestamp and freezes the signed-in actor. Callers
+cannot provide a reason, actual date, line subset, or partial quantity.
+Expected dates remain planning facts and never block receipt. A shipment
+shortage or damaged unit is recorded afterward through a separate reasoned
+destination stock adjustment; receipt never creates that adjustment itself.
+
 One serialized pool transaction owns replay/conflict detection, reference
 uniqueness, transfer persistence, every affected balance, immutable receipt,
 and terminal result. The receipt freezes the transfer before/after facts, actor,
-commit time, optional reversal reason, and exact effects. Receipt, partial
-receipt, and Received reversion are later command slices.
+commit time, optional reversal reason, and exact effects. Partial receipt and
+Received reversion are later command slices.
 
 ## Immutable receipt
 

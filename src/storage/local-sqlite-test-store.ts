@@ -1071,7 +1071,7 @@ export class LocalSqliteTestInventoryStore implements InventoryStore {
 	): Promise<readonly InventoryStockReceiptV2[]> {
 		const clauses = [
 			"json_extract(receipt_json, '$.context.poolId') = ?",
-			"json_extract(receipt_json, '$.type') IN ('stock.opening_balance', 'stock.adjust', 'transfer.create', 'transfer.update', 'transfer.cancel', 'transfer.dispatch', 'transfer.reopen')",
+			"json_extract(receipt_json, '$.type') IN ('stock.opening_balance', 'stock.adjust', 'transfer.create', 'transfer.update', 'transfer.cancel', 'transfer.dispatch', 'transfer.receive', 'transfer.reopen')",
 		];
 		const bindings: Array<string | number> = [query.poolId];
 		if (query.locationId !== undefined) {
