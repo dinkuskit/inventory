@@ -33,10 +33,14 @@ destination in-transit stock cannot be stranded.
 
 ## Delivery
 
-No delivery action occurred. There is no commit, push, pull request, merge,
+- pull request: https://github.com/dinkuskit/inventory/pull/18
+- implementation commit: `3bcfdaa883ad44592b750ac16895e5286ff8955e`
+- branch: `codex/stock-transfer-received-20260830`
+
+The user explicitly authorized commit, push, and PR creation after local
+verification. The PR is delivery and review plumbing only. No merge,
 deployment, publication, account/security action, live-database mutation, or
-production mutation. The isolated local worktree and branch remain
-uncommitted. Delivery requires separate explicit approval.
+production mutation occurred; those remain separate gates.
 
 ## Verification
 
