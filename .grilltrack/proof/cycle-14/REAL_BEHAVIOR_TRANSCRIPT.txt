@@ -1,0 +1,165 @@
+$ npm run proof:stock-adjustment:real
+
+> @dinkuskit/inventory@0.0.0 proof:stock-adjustment:real
+> bin/prove-stock-adjustment-real
+
+$ wrangler dev --local --persist-to <temporary-cloudflare-state> -c wrangler.stock-adjustment-proof.jsonc
+$ curl --request POST --data {"action":"commit"} http://127.0.0.1:<temporary-port>/
+$ stop Wrangler, reopen the same temporary persisted state, and replay the exact command
+{
+  "proof": "real-local-wrangler-durable-object",
+  "remote": false,
+  "runtime": "wrangler dev --local",
+  "stoppedAndReopened": true,
+  "persistedStateFiles": 15,
+  "confirmation": "<redacted>",
+  "preview": {
+    "effect": {
+      "skuId": "inventory_sku_proof_hat",
+      "locationId": "location_proof_shelf",
+      "onHandDelta": {
+        "value": "-3",
+        "unit": "each"
+      },
+      "reservedDelta": {
+        "value": "0",
+        "unit": "each"
+      },
+      "balanceBefore": {
+        "onHand": {
+          "value": "10",
+          "unit": "each"
+        },
+        "reserved": {
+          "value": "0",
+          "unit": "each"
+        },
+        "available": {
+          "value": "10",
+          "unit": "each"
+        },
+        "version": "1"
+      },
+      "balanceAfter": {
+        "onHand": {
+          "value": "7",
+          "unit": "each"
+        },
+        "reserved": {
+          "value": "0",
+          "unit": "each"
+        },
+        "available": {
+          "value": "7",
+          "unit": "each"
+        },
+        "version": "2"
+      }
+    },
+    "reason": {
+      "note": "Three proof hats damaged"
+    },
+    "warnings": [],
+    "confirmation": "<redacted>",
+    "confirmationExpiresAt": "2026-08-30T19:06:00.000Z"
+  },
+  "committedResult": {
+    "schema": "dinkuskit.inventory.command-result/v1",
+    "outcome": "committed",
+    "commandId": "cmd_proof_stock_adjustment",
+    "receipt": {
+      "schema": "dinkuskit.inventory.receipt/v2",
+      "receiptId": "rcpt_proof_stock_adjustment",
+      "commandId": "cmd_proof_stock_adjustment",
+      "commandDigest": "sha256:670eef422fde9703981f4ec2717835f317e9fcd8b3da6b9ceb41114fe48a67a2",
+      "status": "committed",
+      "type": "stock.adjust",
+      "committedAt": "2026-08-30T19:01:01.000Z",
+      "principal": {
+        "kind": "human",
+        "id": "proof_operator",
+        "displayName": "Proof Operator",
+        "surface": "local-wrangler-proof"
+      },
+      "context": {
+        "siteId": "site_local_proof",
+        "poolId": "pool_stock_adjustment_proof"
+      },
+      "reason": {
+        "note": "Three proof hats damaged"
+      },
+      "effects": [
+        {
+          "skuId": "inventory_sku_proof_hat",
+          "locationId": "location_proof_shelf",
+          "onHandDelta": {
+            "value": "-3",
+            "unit": "each"
+          },
+          "reservedDelta": {
+            "value": "0",
+            "unit": "each"
+          },
+          "balanceBefore": {
+            "onHand": {
+              "value": "10",
+              "unit": "each"
+            },
+            "reserved": {
+              "value": "0",
+              "unit": "each"
+            },
+            "available": {
+              "value": "10",
+              "unit": "each"
+            },
+            "version": "1"
+          },
+          "balanceAfter": {
+            "onHand": {
+              "value": "7",
+              "unit": "each"
+            },
+            "reserved": {
+              "value": "0",
+              "unit": "each"
+            },
+            "available": {
+              "value": "7",
+              "unit": "each"
+            },
+            "version": "2"
+          }
+        }
+      ],
+      "references": []
+    }
+  },
+  "replayReturnedOriginalTerminalResult": true,
+  "durableAfterReplay": {
+    "balance": {
+      "poolId": "pool_stock_adjustment_proof",
+      "locationId": "location_proof_shelf",
+      "skuId": "inventory_sku_proof_hat",
+      "onHand": {
+        "value": "7",
+        "unit": "each"
+      },
+      "reserved": {
+        "value": "0",
+        "unit": "each"
+      },
+      "available": {
+        "value": "7",
+        "unit": "each"
+      },
+      "version": "2",
+      "hasStockHistory": true
+    },
+    "receiptTypes": [
+      "stock.adjust",
+      "stock.opening_balance"
+    ],
+    "adjustmentReceiptCount": 1
+  }
+}

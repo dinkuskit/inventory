@@ -62,7 +62,7 @@ wire encoding may be JSON, but the following information is mandatory:
 | `context.poolId` | Canonical physical pool. Required for every stock command. |
 | `context.locationId` | Required for a one-location command. A transfer instead names both `fromLocationId` and `toLocationId`. `location.create` omits it because Inventory mints the permanent ID. |
 | `payload` | Typed SKU, quantity, reservation, transfer, or fulfillment facts for this operation. |
-| `reason` | Stable reason code plus the required public-safe human-readable note for an opening balance. Other command types define their reason requirement before implementation. |
+| `reason` | Operation-typed public-safe reason. Opening balance carries a stable code plus required note. Ordinary adjustment carries exactly one required note and no category/code. |
 | `references` | Optional typed external references, such as an order or receiving reference; never an embedded customer record. |
 | `expectedVersions` | Balance or workflow versions observed during preview when compare-and-set protection is required. |
 
@@ -107,6 +107,12 @@ Illustrative opening-balance envelope:
 ```
 
 Identifiers and values above are fictional contract examples.
+
+An ordinary adjustment instead uses `type: "stock.adjust"`, a non-zero signed
+exact `payload.delta`, exactly one previewed SKU-location version, and
+`reason: { "note": "..." }`. It never carries a reason category or absolute
+replacement value. A correction is a new adjustment whose references may name
+the earlier immutable receipt as `corrects_receipt`.
 
 ## Command identity and retries
 
@@ -156,6 +162,7 @@ Typical stable business rejection codes include:
   `location_not_found`, or `location_not_active`;
 - `location_name_conflict` or `location_not_empty`;
 - `opening_balance_already_set`;
+- `opening_balance_required` for an adjustment before initial stock history;
 - `insufficient_available`;
 - `stale_version`;
 - `invalid_workflow_state`; and
@@ -222,7 +229,7 @@ blockers. The active location list supplies ordinary selectors and later
 zero-stock breakdowns. Archived locations leave those lists but remain
 available in the explicit archived list and can be restored.
 
-Every new stock mutation resolves its explicit location against this registry
+Every stock mutation resolves its explicit location against this registry
 inside the serialized mutation transaction. The opening-balance command is the
 first enforced path: an unknown location durably rejects as
 `location_not_found`, and an archived location durably rejects as
@@ -242,10 +249,10 @@ Human-initiated mutations first request a server-validated preview. A preview:
 - warns when the action is irreversible in place, while explaining that a
   correction creates another receipt.
 
-For opening balances, the confirmation expires exactly five minutes after the
-preview is issued and may be used immediately. A future GUI can derive a visible
-countdown from `expiresAt`; the five minutes are a maximum approval window, not
-a delay.
+For opening balances and ordinary stock adjustments, the confirmation expires
+exactly five minutes after the preview is issued and may be used immediately.
+A future GUI can derive a visible countdown from `expiresAt`; the five minutes
+are a maximum approval window, not a delay.
 
 Commit presents that confirmation value with the same proposed action. The
 first valid confirmation atomically binds the value to one caller-created
@@ -295,6 +302,10 @@ command result remains durable and replayable.
 An effect records deltas for the balance dimensions it changes and the complete
 post-commit balance needed for audit. `available` is derived from on-hand and
 reserved; it is not an independently writable counter.
+
+An ordinary-adjustment receipt additionally freezes the complete balance before
+and after the signed on-hand delta. Reserved delta is always zero. The trusted
+signed-in principal and mandatory note explain who changed stock and why.
 
 Illustrative receipt fragment:
 
@@ -389,6 +400,12 @@ filtered views over this one receipt ledger, not separate ledgers.
   and produces an `opening_balance` receipt. Its editable human reason starts
   as `Set Initial Stock`, must remain non-empty, and is frozen on that receipt.
   Later corrections use ordinary adjustment or reversal commands.
+- An ordinary adjustment requires existing opening history and one non-empty
+  typed note. It changes on-hand by one signed delta, preserves reserved,
+  derives available, advances the balance version, and may produce negative
+  on-hand or available. Preview warns exactly when reserved orders would be
+  oversold but does not block confirmation. Corrections create a new linked
+  adjustment receipt; prior history is never edited.
 - A transfer explicitly names origin and destination and progresses
   `Created -> In transit -> Received`. Stock cannot appear at the destination
   before the receive command commits.
@@ -455,6 +472,8 @@ The first executable slice is not complete until tests prove:
   unknown locations create neither balance nor receipt;
 - concurrent commands preserve one-writer balance invariants;
 - receipts, effects, and resulting versions match committed balances;
+- ordinary adjustments preserve reserved stock, use exact signed arithmetic,
+  warn on oversell, and atomically commit one immutable actor receipt;
 - auth scopes reject unapproved operations and locations;
 - unavailable clients fail closed; and
 - export/restore preserves command identities, results, receipts, and balances.

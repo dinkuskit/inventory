@@ -13,10 +13,15 @@ import type {
 	LocationStatus,
 } from "../domain/location-registry.ts";
 import type { OpeningBalanceReceiptV2 } from "../domain/opening-balance.ts";
+import type { InventoryStockReceiptV2 } from "../domain/inventory-read.ts";
 import type {
 	ManagedSkuRecord,
 	RegisterManagedSkuResult,
 } from "../features/managed-sku/index.ts";
+import type {
+	StockAdjustmentReceiptV2,
+	StockAdjustmentResult,
+} from "../features/stock-adjustment/index.ts";
 
 export type StoredCommandResult<
 	TResult extends InventoryCommandResult = InventoryCommandResult,
@@ -50,6 +55,15 @@ export type ManagedSkuCommit = Readonly<{
 	result: RegisterManagedSkuResult;
 }>;
 
+export type StockAdjustmentCommit = Readonly<{
+	commandId: string;
+	commandDigest: string;
+	previousVersion: string;
+	balance: BalanceRecord;
+	receipt: StockAdjustmentReceiptV2;
+	result: StockAdjustmentResult;
+}>;
+
 export type StoredOpeningBalanceConfirmation = Readonly<{
 	confirmationDigest: string;
 	poolId: string;
@@ -59,6 +73,9 @@ export type StoredOpeningBalanceConfirmation = Readonly<{
 	expiresAt: string;
 	commandId: string | null;
 }>;
+
+export type StoredStockAdjustmentConfirmation =
+	StoredOpeningBalanceConfirmation;
 
 export type ReceiptListCursor = Readonly<{
 	committedAt: string;
@@ -114,9 +131,20 @@ export interface InventoryTransaction {
 		confirmationDigest: string,
 		commandId: string,
 	): void;
+	getStockAdjustmentConfirmation(
+		confirmationDigest: string,
+	): StoredStockAdjustmentConfirmation | null;
+	storeStockAdjustmentConfirmation(
+		record: StoredStockAdjustmentConfirmation,
+	): void;
+	bindStockAdjustmentConfirmation(
+		confirmationDigest: string,
+		commandId: string,
+	): void;
 	storeCommandResult(record: StoredCommandResult): void;
 	storeRejection(record: StoredCommandResult): void;
 	commitOpeningBalance(input: OpeningBalanceCommit): void;
+	commitStockAdjustment(input: StockAdjustmentCommit): void;
 	commitLocation(input: LocationCommit): void;
 	commitManagedSku(input: ManagedSkuCommit): void;
 }
@@ -142,7 +170,7 @@ export interface InventoryStore {
 	readReceipt(receiptId: string): Promise<InventoryReceiptV2 | null>;
 	listReceipts(
 		query: ListReceiptsQuery,
-	): Promise<readonly OpeningBalanceReceiptV2[]>;
+	): Promise<readonly InventoryStockReceiptV2[]>;
 	listLocations(query: ListLocationsQuery): Promise<readonly LocationRecord[]>;
 	close(): Promise<void>;
 }

@@ -12,7 +12,7 @@ import type {
 	LocationBalanceBlocker,
 	LocationRecord,
 } from "../domain/location-registry.ts";
-import type { OpeningBalanceReceiptV2 } from "../domain/opening-balance.ts";
+import type { InventoryStockReceiptV2 } from "../domain/inventory-read.ts";
 import type { ManagedSkuRecord } from "../features/managed-sku/index.ts";
 import type {
 	ActiveLocationBalanceSnapshot,
@@ -26,7 +26,9 @@ import type {
 	ReadManagedSkuQuery,
 	ReadSkuActiveLocationSnapshotQuery,
 	StoredOpeningBalanceConfirmation,
+	StoredStockAdjustmentConfirmation,
 	StoredCommandResult,
+	StockAdjustmentCommit,
 } from "./inventory-store.ts";
 
 const STORAGE_ROLE = "local-development-test-only";
@@ -317,6 +319,34 @@ class SqliteInventoryTransaction implements InventoryTransaction {
 		}
 	}
 
+	getStockAdjustmentConfirmation(
+		confirmationDigest: string,
+	): StoredStockAdjustmentConfirmation | null {
+		return this.getOpeningBalanceConfirmation(confirmationDigest);
+	}
+
+	storeStockAdjustmentConfirmation(
+		record: StoredStockAdjustmentConfirmation,
+	): void {
+		this.storeOpeningBalanceConfirmation(record);
+	}
+
+	bindStockAdjustmentConfirmation(
+		confirmationDigest: string,
+		commandId: string,
+	): void {
+		const result = this.#database
+			.prepare(
+				`UPDATE inventory_opening_balance_confirmations
+				 SET command_id = ?
+				 WHERE confirmation_digest = ? AND command_id IS NULL`,
+			)
+			.run(commandId, confirmationDigest);
+		if (Number(result.changes) !== 1) {
+			throw new Error("Stock-adjustment confirmation binding failed.");
+		}
+	}
+
 	storeCommandResult(record: StoredCommandResult): void {
 		this.#database
 			.prepare(
@@ -378,6 +408,45 @@ class SqliteInventoryTransaction implements InventoryTransaction {
 				input.commandDigest,
 				JSON.stringify(input.result),
 			);
+	}
+
+	commitStockAdjustment(input: StockAdjustmentCommit): void {
+		this.#assertPool(input.balance);
+		const updated = this.#database
+			.prepare(
+				`UPDATE inventory_balances
+				 SET on_hand_value = ?, reserved_value = ?, available_value = ?,
+				     unit = ?, version = ?, has_stock_history = ?
+				 WHERE pool_id = ? AND location_id = ? AND sku_id = ?
+				   AND version = ? AND has_stock_history = 1`,
+			)
+			.run(
+				input.balance.onHand.value,
+				input.balance.reserved.value,
+				input.balance.available.value,
+				input.balance.onHand.unit,
+				Number(input.balance.version),
+				input.balance.hasStockHistory ? 1 : 0,
+				input.balance.poolId,
+				input.balance.locationId,
+				input.balance.skuId,
+				Number(input.previousVersion),
+			);
+		if (Number(updated.changes) !== 1) {
+			throw new Error("Stock-adjustment balance update lost its target row.");
+		}
+		this.#database
+			.prepare(
+				`INSERT INTO inventory_receipts
+				   (receipt_id, command_id, receipt_json)
+				 VALUES (?, ?, ?)`,
+			)
+			.run(
+				input.receipt.receiptId,
+				input.commandId,
+				JSON.stringify(input.receipt),
+			);
+		this.storeCommandResult(input);
 	}
 
 	commitLocation(input: LocationCommit): void {
@@ -764,10 +833,10 @@ export class LocalSqliteTestInventoryStore implements InventoryStore {
 
 	async listReceipts(
 		query: ListReceiptsQuery,
-	): Promise<readonly OpeningBalanceReceiptV2[]> {
+	): Promise<readonly InventoryStockReceiptV2[]> {
 		const clauses = [
 			"json_extract(receipt_json, '$.context.poolId') = ?",
-			"json_extract(receipt_json, '$.type') = 'stock.opening_balance'",
+			"json_extract(receipt_json, '$.type') IN ('stock.opening_balance', 'stock.adjust')",
 		];
 		const bindings: Array<string | number> = [query.poolId];
 		if (query.locationId !== undefined) {
@@ -808,7 +877,7 @@ export class LocalSqliteTestInventoryStore implements InventoryStore {
 			)
 			.all(...bindings) as DatabaseRow[];
 		return rows.map((row) =>
-			json<OpeningBalanceReceiptV2>(row.receipt_json),
+			json<InventoryStockReceiptV2>(row.receipt_json),
 		);
 	}
 

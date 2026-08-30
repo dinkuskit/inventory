@@ -5,7 +5,8 @@ feature owns its listed paths and reaches a migrated feature only through that
 feature's public entry. The package root composes feature entries; it does not
 import feature internals.
 
-Managed SKU is the first feature-local pilot. Opening balance, location
+Managed SKU established the first feature-local pilot and stock adjustment
+follows the same migrated boundary. Opening balance, location
 registry, and stock read remain mapped at their current paths until separate
 behavior-preserving migration cycles are confirmed.
 
@@ -15,6 +16,7 @@ behavior-preserving migration cycles are confirmed.
 | `dinkus.location-registry` | Permanent location identity, unique names, active/archive lifecycle, blockers, receipts, and list behavior | `src/domain/location-registry.ts`; `src/application/location-registry.ts` | `src/index.ts` | `src/domain/opening-balance.ts`; `src/storage/inventory-store.ts`; managed-SKU public result | `tests/locations/`; `tests/helpers/location-fixture.mjs` | `bin/verify-inventory quick` | `bin/verify-inventory full` | location commands, records, results, receipts, normalization, execution, and list exports | mapped current location |
 | `dinkus.stock-read` | Explicit one-location and all-active-location stock reads plus mutation and receipt-history lookup | `src/domain/inventory-read.ts`; `src/application/read-inventory.ts` | `src/index.ts` | `src/domain/opening-balance.ts`; `src/domain/location-registry.ts`; `src/storage/inventory-store.ts` | `tests/inventory/`; read-back and receipt-history tests under `tests/opening-balance/` | `bin/verify-inventory quick` | `bin/verify-inventory full` | read inputs, results, normalization, errors, and read factories | mapped current location |
 | `dinkus.managed-sku` | Pool-wide permanent Inventory SKU identity, visible-SKU register-or-return behavior, one-time display name, setup audit, and logical-zero admission | `src/features/managed-sku/` | `src/features/managed-sku/index.ts`; `src/index.ts` | `src/domain/opening-balance.ts`; `src/storage/inventory-store.ts` | `tests/managed-sku/`; `tests/helpers/managed-sku-fixture.mjs`; `tests/cloudflare/inventory-pool.test.mjs` | `bin/verify-inventory quick` | `bin/verify-inventory full` | managed-SKU identity, record, command, result, validation, digest, and registration factory exports | migrated pilot |
+| `dinkus.stock-adjustment` | Signed-delta preview, five-minute confirmation, exact arithmetic, atomic commit, replay/conflict, oversell warning, and immutable actor receipt | `src/features/stock-adjustment/` | `src/features/stock-adjustment/index.ts`; `src/index.ts` | `src/domain/opening-balance.ts`; `src/storage/inventory-store.ts` | `tests/stock-adjustment/`; `tests/cloudflare/stock-adjustment.test.mjs` | `bin/verify-inventory quick` | `bin/verify-inventory full` | adjustment command, preview, confirmation, result, receipt, errors, arithmetic, digest, and execution factory exports | migrated feature |
 
 ## Shared kernel and adapter ownership
 

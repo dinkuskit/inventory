@@ -39,6 +39,51 @@ export type {
 	RegisterManagedSkuRejectionCode,
 	RegisterManagedSkuResult,
 } from "./features/managed-sku/index.ts";
+export {
+	InvalidStockAdjustmentCommandError,
+	STOCK_ADJUSTMENT_PREVIEW_INPUT_SCHEMA,
+	STOCK_ADJUSTMENT_PREVIEW_SCHEMA,
+	STOCK_ADJUSTMENT_TYPE,
+	digestAdjustStockCommand,
+	digestStockAdjustmentAction,
+	normalizeAdjustStockCommand,
+	normalizePreviewStockAdjustmentInput,
+	normalizeSignedNonZeroDecimal,
+	stockAdjustmentActionFromCommand,
+} from "./features/stock-adjustment/index.ts";
+export {
+	STOCK_ADJUSTMENT_CONFIRMATION_TTL_MS,
+	StockAdjustmentConfirmationError,
+	StockAdjustmentPreviewError,
+	addExactDecimal,
+	createAdjustStock,
+	createConfirmStockAdjustment,
+	createPreviewStockAdjustment,
+	subtractExactDecimal,
+} from "./features/stock-adjustment/index.ts";
+export type {
+	AdjustStock,
+	AdjustStockDependencies,
+	AdjustStockExecution,
+	ConfirmStockAdjustment,
+	ConfirmStockAdjustmentDependencies,
+	ConfirmStockAdjustmentExecution,
+	PreviewStockAdjustment,
+	PreviewStockAdjustmentDependencies,
+	PreviewStockAdjustmentExecution,
+	StockAdjustmentConfirmationErrorCode,
+	StockAdjustmentPreviewErrorCode,
+} from "./features/stock-adjustment/index.ts";
+export type {
+	AdjustStockCommandV1,
+	PreviewStockAdjustmentInputV1,
+	StockAdjustmentActionV1,
+	StockAdjustmentPreviewV1,
+	StockAdjustmentReceiptV2,
+	StockAdjustmentRejectionCode,
+	StockAdjustmentResult,
+	StockAdjustmentReason,
+} from "./features/stock-adjustment/index.ts";
 export type {
 	ArchiveLocationCommandV1,
 	CreateLocationCommandV1,
@@ -86,6 +131,7 @@ export {
 	normalizeReadSkuStockInput,
 } from "./domain/inventory-read.ts";
 export type {
+	InventoryStockReceiptV2,
 	InventoryMutationLookup,
 	InventoryMutationReadResult,
 	NormalizedInventoryMutationLookup,

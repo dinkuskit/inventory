@@ -22,7 +22,7 @@ records how that works: [docs/CHARTER.md](docs/CHARTER.md).
   Cloudflare adapter uses one SQLite-backed Durable Object per physical pool;
   every site and location mapped to that pool shares the same ledger.
 - Movements are immutable receipts: adjustments, transfers, and stock-in with
-  reason codes. Exactly one writer owns a pool; there is never a second stock
+  operation-typed reasons. Exactly one writer owns a pool; there is never a second stock
   ledger.
 - Every stock mutation is an awaited, idempotent command. Success means the
   canonical writer committed the balance effects and immutable receipt
@@ -82,6 +82,16 @@ visible SKU returns its original record for Commerce confirmation. Registration
 stores immutable setup actor/time audit but creates no balance or stock receipt.
 The permanent Inventory ID reads at logical zero across active locations, and
 opening previews and commands fail closed until that identity exists.
+The kernel now also executes ordinary post-opening stock adjustments. Each
+command names one explicit active location and permanent Inventory SKU, carries
+one non-zero signed exact delta and a mandatory note-only reason, and is bound
+to the previewed balance version. Five-minute preview shows before/after
+on-hand, reserved, and available quantities plus an exact oversell warning;
+negative stock remains allowed. Commit changes only on-hand, preserves
+reserved, advances the version, and atomically creates one immutable receipt
+with the trusted signed-in actor. Exact retries recover the original durable
+result, changed contents conflict, stale previews reject, and corrections are
+new linked receipts rather than edits.
 
 The real local SQLite test adapter remains explicitly development/test-only and
 refuses production mode or in-memory use. It is not the final storage layer.
@@ -96,7 +106,8 @@ initializes directly at version 3. Exact committed version-2 storage upgrades
 atomically, preserves all prior durable records, and backfills legacy balanced
 SKU keys as stable managed identities; incompatible shapes fail closed without
 a partial upgrade. Workerd runtime tests prove that transition, but this is not
-a deployment or live-database claim. Opening-balance mutation is not remotely exposed, no
+a deployment or live-database claim. Opening-balance and stock-adjustment
+mutation are not remotely exposed, no
 storefront traffic is bound, and no physical stock cutover has happened. There
 is still no installable plugin, executable CLI, or published npm package. The
 package manifest remains private at `0.0.0` to prevent accidental publication.
@@ -132,6 +143,7 @@ bin/verify-opening-balance
 bin/verify-location-registry
 bin/verify-aggregate-stock-read
 bin/verify-managed-sku
+bin/verify-stock-adjustment
 bin/verify-cloudflare-storage
 ```
 
