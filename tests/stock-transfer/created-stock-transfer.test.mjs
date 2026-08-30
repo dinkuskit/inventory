@@ -162,6 +162,30 @@ function cancelCommand(transfer, commandId = "cmd_transfer_cancel") {
 	};
 }
 
+function dispatchCommand(transfer, commandId = "cmd_transfer_dispatch") {
+	return {
+		schema: "dinkuskit.inventory.command/v1",
+		commandId,
+		type: "transfer.dispatch",
+		context: { siteId: "site_test", poolId: transfer.poolId },
+		payload: { transferId: transfer.transferId },
+		references: [],
+		expectedVersions: [{ transferId: transfer.transferId, version: transfer.version }],
+	};
+}
+
+function reopenCommand(transfer, commandId = "cmd_transfer_reopen") {
+	return {
+		schema: "dinkuskit.inventory.command/v1",
+		commandId,
+		type: "transfer.reopen",
+		context: { siteId: "site_test", poolId: transfer.poolId },
+		payload: { transferId: transfer.transferId, reason: null },
+		references: [],
+		expectedVersions: [{ transferId: transfer.transferId, version: transfer.version }],
+	};
+}
+
 function boundary(store, overrides = {}) {
 	let transferIds = 0;
 	let references = 0;
@@ -314,6 +338,15 @@ test("persists a zero Created draft, edits planning stock, replays, and cancels 
 		schema: "dinkuskit.inventory.stock-transfer-read-result/v1",
 		outcome: "found",
 		transfer: updated.transfer,
+		lineStock: [{
+			skuId: "sku_hat",
+			originMovable: { value: "10", unit: "each" },
+			quantityToMove: { value: "5", unit: "each" },
+			destinationOnHand: { value: "0", unit: "each" },
+			projectedOriginAvailable: { value: "5", unit: "each" },
+			reservedForOrders: { value: "0", unit: "each" },
+			availability: "available",
+		}],
 	});
 
 	const cancel = await boundary(store, { receiptPrefix: "rcpt_cancel" })(
@@ -372,7 +405,7 @@ test("allows negative availability with an exact transfer warning and canonical 
 		reservedForOrders: { value: "8", unit: "each" },
 		outgoingTransferCommitted: { value: "5", unit: "each" },
 		oversoldBy: { value: "3", unit: "each" },
-		message: "8 units are reserved for orders and 5 units are committed to outgoing transfers. Origin availability is oversold by 3 units.",
+		message: "This transfer will leave you with -3 stock. 8 are reserved for orders.",
 	}]);
 	const noteOnlyEdit = await boundary(store, { receiptPrefix: "rcpt_warning_edit" })(
 		updateCommand(result.transfer, { note: "Carrier confirmed" }, "cmd_transfer_warning_edit"),
@@ -551,8 +584,37 @@ test("atomically replaces a multi-SKU destination and preserves commitments thro
 		hasStockHistory: true,
 	});
 
+	const dispatched = await execute(
+		dispatchCommand(updated.transfer, "cmd_transfer_multi_dispatch"),
+		{ principal },
+	);
+	assert.equal(dispatched.outcome, "committed");
+	for (const [skuId, originOnHand, inTransit] of [
+		["sku_hat", "4", "4"],
+		["sku_beanie", "6", "1"],
+	]) {
+		assert.equal((await store.readBalance({ poolId: "pool_test", locationId: "location_origin", skuId })).onHand.value, originOnHand);
+		assert.equal((await store.readBalance({ poolId: "pool_test", locationId: "location_origin", skuId })).outgoingTransferCommitted.value, "0");
+		assert.equal((await store.readBalance({ poolId: "pool_test", locationId: "location_destination_two", skuId })).expected.value, "0");
+		assert.equal((await store.readBalance({ poolId: "pool_test", locationId: "location_destination_two", skuId })).inTransit.value, inTransit);
+	}
+	const reopened = await execute(
+		reopenCommand(dispatched.transfer, "cmd_transfer_multi_reopen"),
+		{ principal },
+	);
+	assert.equal(reopened.outcome, "committed");
+	for (const [skuId, originOnHand, outgoing, expected] of [
+		["sku_hat", "8", "4", "4"],
+		["sku_beanie", "7", "1", "1"],
+	]) {
+		assert.equal((await store.readBalance({ poolId: "pool_test", locationId: "location_origin", skuId })).onHand.value, originOnHand);
+		assert.equal((await store.readBalance({ poolId: "pool_test", locationId: "location_origin", skuId })).outgoingTransferCommitted.value, outgoing);
+		assert.equal((await store.readBalance({ poolId: "pool_test", locationId: "location_destination_two", skuId })).expected.value, expected);
+		assert.equal((await store.readBalance({ poolId: "pool_test", locationId: "location_destination_two", skuId })).inTransit.value, "0");
+	}
+
 	const canceled = await execute(
-		cancelCommand(updated.transfer, "cmd_transfer_multi_cancel"),
+		cancelCommand(reopened.transfer, "cmd_transfer_multi_cancel"),
 		{ principal },
 	);
 	assert.equal(canceled.outcome, "committed");

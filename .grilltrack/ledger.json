@@ -4,11 +4,11 @@
   "current_focus": {
     "cadence": "sequential",
     "confirmed": true,
-    "confirmed_at": "2026-08-29T17:13:52+00:00",
-    "domain": "staged location transfer creation",
-    "started_at": "2026-08-29T12:35:36+00:00",
-    "status": "confirmed",
-    "summary": "Bobby confirmed the smallest executable Created transfer slice: explicit active origin and destination; permanent Inventory SKU identities; editable pool-unique ST reference backed by an opaque permanent transfer ID; optional note; durable zero-quantity Created drafts under Open; positive Created quantities atomically create origin outgoing commitments, reduce origin available, and add destination expected stock; Created edits and cancellation atomically update or release those planning effects; origin/destination stock context; positive quantities before In transit; planned and user-entered actual lifecycle dates with separate actor/commit audit; immutable receipts and idempotent terminal results. This implementation covers Created create/edit/cancel and expected-stock behavior. In-transit and Received execution follow in later slices; partial receipt, Received reversion, and the SA reference follow-up remain deferred."
+    "confirmed_at": "2026-08-30T19:44:36+00:00",
+    "domain": "stock-transfer dispatch and in-transit reversal",
+    "started_at": "2026-08-30T19:44:35+00:00",
+    "status": "inspected",
+    "summary": "Bobby confirmed the Inventory-owned dispatch slice: Created to In transit requires positive quantities but allows an explicit negative-stock warning after customer-order reservations; dispatch atomically removes planning commitments, decrements origin on-hand, moves destination expected to in-transit, freezes shipment facts, and automatically records actor/time. In transit to Created exactly restores those effects, clears the current dispatch timestamp while preserving immutable dispatch and reversal receipt history, and accepts an optional typed reason. Both commands are version-bound, idempotent, atomic, and receipt-backed. Received execution, partial receiving, GUI, integrations, auth/deploy, and production remain deferred."
   },
   "decisions": [
     {
@@ -3965,7 +3965,7 @@
     {
       "baseline_ref": "git:d735b180b3f4ed911667586f5131ff1727e46546",
       "candidate_refs": [],
-      "choice": "When an item is selected, the transfer entry surface shows its current on-hand quantity at the selected origin and its current on-hand quantity at the selected destination. The requested transfer quantity starts at zero and must be changed to a valid positive quantity before the transfer may be marked In transit.",
+      "choice": "Each transfer line shows the permanent Inventory item/SKU, origin movable stock, quantity to move, destination on-hand stock, and an explicit availability state. Origin movable stock is physical on-hand minus customer-order reservations and outgoing commitments from other transfers; the current transfer is excluded so it is not counted twice. Customer orders always have priority. If quantity exceeds movable stock, the line remains dispatchable but shows a bright red Not available warning with the projected negative stock and reserved-order count.",
       "context_ref": "user:katana-transfer-item-stock-and-zero-quantity",
       "created_at": "2026-08-29T16:21:53+00:00",
       "deferred_reason": null,
@@ -4017,12 +4017,68 @@
           "review_source_identity": null,
           "to": "verified",
           "verification_ref": null
+        },
+        {
+          "at": "2026-08-30T19:44:35+00:00",
+          "choice": "When an item is selected, the transfer entry surface shows its current on-hand quantity at the selected origin and its current on-hand quantity at the selected destination. The requested transfer quantity starts at zero and must be changed to a valid positive quantity before the transfer may be marked In transit.",
+          "from": "verified",
+          "implementation_ref": ".grilltrack/proof/cycle-15/PROOF.md",
+          "note": "Bobby clarified that the origin stock context must show movable stock after customer-order reservations and other transfers, with the current transfer excluded from other-transfer commitments.",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": ".grilltrack/proof/cycle-15/REVIEW.md",
+          "review_result": "clean",
+          "review_source_identity": "sha256:9b9a8f705b9361d6ee919217aed8fb28ce1896f99ced6755868a52fb8839d58f",
+          "to": "reopened",
+          "verification_ref": ".grilltrack/proof/cycle-15/PROOF.md"
+        },
+        {
+          "at": "2026-08-30T19:44:35+00:00",
+          "choice": "When an item is selected, the transfer entry surface shows its current on-hand quantity at the selected origin and its current on-hand quantity at the selected destination. The requested transfer quantity starts at zero and must be changed to a valid positive quantity before the transfer may be marked In transit.",
+          "from": "reopened",
+          "implementation_ref": ".grilltrack/proof/cycle-15/PROOF.md",
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": ".grilltrack/proof/cycle-15/REVIEW.md",
+          "review_result": "clean",
+          "review_source_identity": "sha256:9b9a8f705b9361d6ee919217aed8fb28ce1896f99ced6755868a52fb8839d58f",
+          "to": "locked",
+          "verification_ref": ".grilltrack/proof/cycle-15/PROOF.md"
+        },
+        {
+          "at": "2026-08-30T19:56:05+00:00",
+          "choice": "Each transfer line shows the permanent Inventory item/SKU, origin movable stock, quantity to move, destination on-hand stock, and an explicit availability state. Origin movable stock is physical on-hand minus customer-order reservations and outgoing commitments from other transfers; the current transfer is excluded so it is not counted twice. Customer orders always have priority. If quantity exceeds movable stock, the line remains dispatchable but shows a bright red Not available warning with the projected negative stock and reserved-order count.",
+          "from": "locked",
+          "implementation_ref": ".grilltrack/proof/cycle-15/PROOF.md",
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": ".grilltrack/proof/cycle-15/REVIEW.md",
+          "review_result": "clean",
+          "review_source_identity": "sha256:9b9a8f705b9361d6ee919217aed8fb28ce1896f99ced6755868a52fb8839d58f",
+          "to": "implemented",
+          "verification_ref": ".grilltrack/proof/cycle-15/PROOF.md"
+        },
+        {
+          "at": "2026-08-30T19:56:06+00:00",
+          "choice": "Each transfer line shows the permanent Inventory item/SKU, origin movable stock, quantity to move, destination on-hand stock, and an explicit availability state. Origin movable stock is physical on-hand minus customer-order reservations and outgoing commitments from other transfers; the current transfer is excluded so it is not counted twice. Customer orders always have priority. If quantity exceeds movable stock, the line remains dispatchable but shows a bright red Not available warning with the projected negative stock and reserved-order count.",
+          "from": "implemented",
+          "implementation_ref": ".grilltrack/proof/cycle-16/PROOF.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": ".grilltrack/proof/cycle-15/PROOF.md"
         }
       ],
       "id": "transfer-line-stock-context-046",
-      "implementation_ref": ".grilltrack/proof/cycle-15/PROOF.md",
+      "implementation_ref": ".grilltrack/proof/cycle-16/PROOF.md",
       "question": "What stock context and quantity state does transfer item entry expose?",
-      "rationale": "The operator can compare both physical location balances before choosing the movement quantity, and a zero placeholder cannot accidentally move stock.",
+      "rationale": "This matches the operator's Katana workflow while making order priority and oversell impact explicit before dispatch.",
       "repair_required": false,
       "review_classifications": [],
       "review_history": [
@@ -4039,15 +4095,22 @@
           "result": "clean",
           "reviewed_at": "2026-08-29T17:46:32+00:00",
           "source_identity": "sha256:9b9a8f705b9361d6ee919217aed8fb28ce1896f99ced6755868a52fb8839d58f"
+        },
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-16/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-30T19:56:07+00:00",
+          "source_identity": "sha256:6c84f3919a8ba74077d45cc057deb1480fe079cdca56406697360b5144f7ff6e"
         }
       ],
-      "review_ref": ".grilltrack/proof/cycle-15/REVIEW.md",
+      "review_ref": ".grilltrack/proof/cycle-16/REVIEW.md",
       "review_result": "clean",
-      "review_source_identity": "sha256:9b9a8f705b9361d6ee919217aed8fb28ce1896f99ced6755868a52fb8839d58f",
+      "review_source_identity": "sha256:6c84f3919a8ba74077d45cc057deb1480fe079cdca56406697360b5144f7ff6e",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-29T17:46:32+00:00",
-      "verification_ref": ".grilltrack/proof/cycle-15/PROOF.md"
+      "updated_at": "2026-08-30T19:56:07+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-16/PROOF.md"
     },
     {
       "baseline_ref": "git:d735b180b3f4ed911667586f5131ff1727e46546",
@@ -4148,10 +4211,52 @@
           "review_source_identity": null,
           "to": "verified",
           "verification_ref": null
+        },
+        {
+          "at": "2026-08-30T19:44:35+00:00",
+          "choice": "Once an explicit origin, destination, and first item have been selected and Inventory assigns the editable stock transfer reference, Inventory persists the transfer as a Created draft. It appears under Open Stock Transfers even while its quantity remains zero. Created drafts have no stock effect and remain editable or cancelable, but they cannot move to In transit until every transfer line has a valid positive quantity.",
+          "from": "verified",
+          "implementation_ref": ".grilltrack/proof/cycle-15/PROOF.md",
+          "note": "dependency transfer-line-stock-context-046 changed: Bobby clarified that the origin stock context must show movable stock after customer-order reservations and other transfers, with the current transfer excluded from other-transfer commitments.",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": ".grilltrack/proof/cycle-15/REVIEW.md",
+          "review_result": "clean",
+          "review_source_identity": "sha256:9b9a8f705b9361d6ee919217aed8fb28ce1896f99ced6755868a52fb8839d58f",
+          "to": "needs_reverification",
+          "verification_ref": ".grilltrack/proof/cycle-15/PROOF.md"
+        },
+        {
+          "at": "2026-08-30T19:56:05+00:00",
+          "choice": "Once an explicit origin, destination, and first item have been selected and Inventory assigns the editable stock transfer reference, Inventory persists the transfer as a Created draft. It appears under Open Stock Transfers even while its quantity remains zero. Created drafts have no stock effect and remain editable or cancelable, but they cannot move to In transit until every transfer line has a valid positive quantity.",
+          "from": "needs_reverification",
+          "implementation_ref": ".grilltrack/proof/cycle-15/PROOF.md",
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": ".grilltrack/proof/cycle-15/PROOF.md"
+        },
+        {
+          "at": "2026-08-30T19:56:06+00:00",
+          "choice": "Once an explicit origin, destination, and first item have been selected and Inventory assigns the editable stock transfer reference, Inventory persists the transfer as a Created draft. It appears under Open Stock Transfers even while its quantity remains zero. Created drafts have no stock effect and remain editable or cancelable, but they cannot move to In transit until every transfer line has a valid positive quantity.",
+          "from": "implemented",
+          "implementation_ref": ".grilltrack/proof/cycle-16/PROOF.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": ".grilltrack/proof/cycle-15/PROOF.md"
         }
       ],
       "id": "transfer-created-draft-048",
-      "implementation_ref": ".grilltrack/proof/cycle-15/PROOF.md",
+      "implementation_ref": ".grilltrack/proof/cycle-16/PROOF.md",
       "question": "What happens when a transfer reference exists but its item quantity is still zero?",
       "rationale": "This matches Katana's draft-like Created behavior, preserves unfinished operator work, and remains safe because no stock moves before In transit.",
       "repair_required": false,
@@ -4170,15 +4275,22 @@
           "result": "clean",
           "reviewed_at": "2026-08-29T17:46:32+00:00",
           "source_identity": "sha256:9b9a8f705b9361d6ee919217aed8fb28ce1896f99ced6755868a52fb8839d58f"
+        },
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-16/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-30T19:56:07+00:00",
+          "source_identity": "sha256:6c84f3919a8ba74077d45cc057deb1480fe079cdca56406697360b5144f7ff6e"
         }
       ],
-      "review_ref": ".grilltrack/proof/cycle-15/REVIEW.md",
+      "review_ref": ".grilltrack/proof/cycle-16/REVIEW.md",
       "review_result": "clean",
-      "review_source_identity": "sha256:9b9a8f705b9361d6ee919217aed8fb28ce1896f99ced6755868a52fb8839d58f",
+      "review_source_identity": "sha256:6c84f3919a8ba74077d45cc057deb1480fe079cdca56406697360b5144f7ff6e",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-29T17:46:32+00:00",
-      "verification_ref": ".grilltrack/proof/cycle-15/PROOF.md"
+      "updated_at": "2026-08-30T19:56:07+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-16/PROOF.md"
     },
     {
       "baseline_ref": "git:d735b180b3f4ed911667586f5131ff1727e46546",
@@ -4360,7 +4472,7 @@
     {
       "baseline_ref": "git:d735b180b3f4ed911667586f5131ff1727e46546",
       "candidate_refs": [],
-      "choice": "The authorized user supplies the dispatched date when marking a transfer In transit and supplies the received date when marking it Received; Inventory records exactly the business date the user enters because it cannot independently know when the physical event occurred. Separately, Inventory automatically records the signed-in actor and exact system commit timestamp for each status command, preserving when and by whom that entered date became authoritative.",
+      "choice": "Inventory automatically records the actual dispatched timestamp when Mark in transit commits and the actual received timestamp when Receive commits. Users cannot enter, backdate, or future-date either actual timestamp. Each immutable transition receipt also records the signed-in actor and exact system commit timestamp. Expected dispatch and expected arrival remain editable planning dates.",
       "context_ref": "user:clarified-user-entered-transfer-event-dates",
       "created_at": "2026-08-29T16:35:10+00:00",
       "deferred_reason": null,
@@ -4384,12 +4496,40 @@
           "review_source_identity": null,
           "to": "locked",
           "verification_ref": null
+        },
+        {
+          "at": "2026-08-30T19:44:35+00:00",
+          "choice": "The authorized user supplies the dispatched date when marking a transfer In transit and supplies the received date when marking it Received; Inventory records exactly the business date the user enters because it cannot independently know when the physical event occurred. Separately, Inventory automatically records the signed-in actor and exact system commit timestamp for each status command, preserving when and by whom that entered date became authoritative.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "Bobby replaced user-entered actual lifecycle dates with automatic timestamps at the state transition; a missed transition is an employee process error, not a backdating workflow.",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "reopened",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-30T19:44:35+00:00",
+          "choice": "The authorized user supplies the dispatched date when marking a transfer In transit and supplies the received date when marking it Received; Inventory records exactly the business date the user enters because it cannot independently know when the physical event occurred. Separately, Inventory automatically records the signed-in actor and exact system commit timestamp for each status command, preserving when and by whom that entered date became authoritative.",
+          "from": "reopened",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
         }
       ],
       "id": "transfer-user-entered-actual-dates-052",
       "implementation_ref": null,
       "question": "How does Inventory know the actual dispatched and received dates?",
-      "rationale": "The user-entered date represents the physical business event, while the immutable system timestamp and actor provide an honest audit trail without pretending Inventory observed the shipment itself.",
+      "rationale": "The lifecycle action itself is authoritative: the employee marks the transfer when the physical event occurs, yielding one unambiguous audited timestamp.",
       "repair_required": false,
       "review_classifications": [],
       "review_history": [],
@@ -4398,7 +4538,7 @@
       "review_source_identity": null,
       "status": "locked",
       "superseded_by": null,
-      "updated_at": "2026-08-29T17:13:52+00:00",
+      "updated_at": "2026-08-30T19:44:35+00:00",
       "verification_ref": null
     },
     {
@@ -4479,22 +4619,58 @@
           "review_source_identity": null,
           "to": "locked",
           "verification_ref": null
+        },
+        {
+          "at": "2026-08-30T19:56:05+00:00",
+          "choice": "Moving an In-transit transfer back to Created atomically removes destination in-transit, restores the exact origin on-hand quantities, reinstates the origin outgoing transfer commitments, and reinstates destination expected quantities. Destination on-hand remains unchanged. The Created transfer then becomes editable or cancelable, and its available and expected effects update atomically with later edits.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-30T19:56:06+00:00",
+          "choice": "Moving an In-transit transfer back to Created atomically removes destination in-transit, restores the exact origin on-hand quantities, reinstates the origin outgoing transfer commitments, and reinstates destination expected quantities. Destination on-hand remains unchanged. The Created transfer then becomes editable or cancelable, and its available and expected effects update atomically with later edits.",
+          "from": "implemented",
+          "implementation_ref": ".grilltrack/proof/cycle-16/PROOF.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
         }
       ],
       "id": "transfer-reopen-with-expected-054",
-      "implementation_ref": null,
+      "implementation_ref": ".grilltrack/proof/cycle-16/PROOF.md",
       "question": "How does In transit to Created reversal restore the Created planning effects?",
       "rationale": "A lifecycle reversal must restore the complete Created state, including the newly confirmed planning quantities, rather than restoring only physical on-hand.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
-      "status": "locked",
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-16/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-30T19:56:07+00:00",
+          "source_identity": "sha256:6c84f3919a8ba74077d45cc057deb1480fe079cdca56406697360b5144f7ff6e"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-16/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:6c84f3919a8ba74077d45cc057deb1480fe079cdca56406697360b5144f7ff6e",
+      "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-29T17:13:52+00:00",
-      "verification_ref": null
+      "updated_at": "2026-08-30T19:56:07+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-16/PROOF.md"
     },
     {
       "baseline_ref": "git:d735b180b3f4ed911667586f5131ff1727e46546",
@@ -4583,23 +4759,185 @@
       "superseded_by": null,
       "updated_at": "2026-08-29T17:46:32+00:00",
       "verification_ref": ".grilltrack/proof/cycle-15/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:86da623e0a21f174636cd833f8faf932ba219721",
+      "candidate_refs": [],
+      "choice": "An awaited, atomic, version-bound, idempotent Mark in transit command requires an existing Created transfer whose every line has a positive quantity. It removes the transfer's origin outgoing commitments, decrements origin on-hand, moves destination expected quantities to destination in-transit, freezes shipment facts, and records the signed-in actor plus automatic dispatch timestamp. Customer reservations have priority, but insufficient movable stock does not block dispatch: the result warns exactly how far stock becomes negative and how many units are reserved for orders. Replay returns the original terminal result; command-content reuse and stale versions reject without partial effects.",
+      "context_ref": "user:confirmed-stock-transfer-dispatch-grill",
+      "created_at": "2026-08-30T19:44:36+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "transfer-lifecycle-with-expected-053",
+        "transfer-line-stock-context-046",
+        "transfer-user-entered-actual-dates-052",
+        "command-result-007",
+        "receipt-audit-008"
+      ],
+      "domain": "stock-transfer dispatch and in-transit reversal",
+      "history": [
+        {
+          "at": "2026-08-30T19:44:36+00:00",
+          "choice": "An awaited, atomic, version-bound, idempotent Mark in transit command requires an existing Created transfer whose every line has a positive quantity. It removes the transfer's origin outgoing commitments, decrements origin on-hand, moves destination expected quantities to destination in-transit, freezes shipment facts, and records the signed-in actor plus automatic dispatch timestamp. Customer reservations have priority, but insufficient movable stock does not block dispatch: the result warns exactly how far stock becomes negative and how many units are reserved for orders. Replay returns the original terminal result; command-content reuse and stale versions reject without partial effects.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-30T19:56:06+00:00",
+          "choice": "An awaited, atomic, version-bound, idempotent Mark in transit command requires an existing Created transfer whose every line has a positive quantity. It removes the transfer's origin outgoing commitments, decrements origin on-hand, moves destination expected quantities to destination in-transit, freezes shipment facts, and records the signed-in actor plus automatic dispatch timestamp. Customer reservations have priority, but insufficient movable stock does not block dispatch: the result warns exactly how far stock becomes negative and how many units are reserved for orders. Replay returns the original terminal result; command-content reuse and stale versions reject without partial effects.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-30T19:56:06+00:00",
+          "choice": "An awaited, atomic, version-bound, idempotent Mark in transit command requires an existing Created transfer whose every line has a positive quantity. It removes the transfer's origin outgoing commitments, decrements origin on-hand, moves destination expected quantities to destination in-transit, freezes shipment facts, and records the signed-in actor plus automatic dispatch timestamp. Customer reservations have priority, but insufficient movable stock does not block dispatch: the result warns exactly how far stock becomes negative and how many units are reserved for orders. Replay returns the original terminal result; command-content reuse and stale versions reject without partial effects.",
+          "from": "implemented",
+          "implementation_ref": ".grilltrack/proof/cycle-16/PROOF.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "transfer-dispatch-command-056",
+      "implementation_ref": ".grilltrack/proof/cycle-16/PROOF.md",
+      "question": "What must Mark in transit validate and commit?",
+      "rationale": "This is the smallest executable physical-dispatch boundary and preserves the one-writer, immutable-receipt, fail-atomically Inventory contract.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-16/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-30T19:56:07+00:00",
+          "source_identity": "sha256:6c84f3919a8ba74077d45cc057deb1480fe079cdca56406697360b5144f7ff6e"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-16/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:6c84f3919a8ba74077d45cc057deb1480fe079cdca56406697360b5144f7ff6e",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-08-30T19:56:07+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-16/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:86da623e0a21f174636cd833f8faf932ba219721",
+      "candidate_refs": [],
+      "choice": "An awaited, atomic, version-bound, idempotent reversal command on an existing In-transit transfer removes destination in-transit, restores the exact origin on-hand quantities, reinstates origin outgoing commitments and destination expected quantities, leaves destination on-hand unchanged, and returns the transfer to editable Created. It clears the current dispatched timestamp while immutable receipts retain the original dispatch actor/time and the reversal actor/time. A typed reversal reason is optional. Replay returns the original terminal result; command-content reuse and stale versions reject without partial effects.",
+      "context_ref": "user:confirmed-stock-transfer-reversal-grill",
+      "created_at": "2026-08-30T19:44:36+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "transfer-reopen-with-expected-054",
+        "transfer-dispatch-command-056",
+        "receipt-actor-022"
+      ],
+      "domain": "stock-transfer dispatch and in-transit reversal",
+      "history": [
+        {
+          "at": "2026-08-30T19:44:36+00:00",
+          "choice": "An awaited, atomic, version-bound, idempotent reversal command on an existing In-transit transfer removes destination in-transit, restores the exact origin on-hand quantities, reinstates origin outgoing commitments and destination expected quantities, leaves destination on-hand unchanged, and returns the transfer to editable Created. It clears the current dispatched timestamp while immutable receipts retain the original dispatch actor/time and the reversal actor/time. A typed reversal reason is optional. Replay returns the original terminal result; command-content reuse and stale versions reject without partial effects.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-30T19:56:06+00:00",
+          "choice": "An awaited, atomic, version-bound, idempotent reversal command on an existing In-transit transfer removes destination in-transit, restores the exact origin on-hand quantities, reinstates origin outgoing commitments and destination expected quantities, leaves destination on-hand unchanged, and returns the transfer to editable Created. It clears the current dispatched timestamp while immutable receipts retain the original dispatch actor/time and the reversal actor/time. A typed reversal reason is optional. Replay returns the original terminal result; command-content reuse and stale versions reject without partial effects.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-30T19:56:07+00:00",
+          "choice": "An awaited, atomic, version-bound, idempotent reversal command on an existing In-transit transfer removes destination in-transit, restores the exact origin on-hand quantities, reinstates origin outgoing commitments and destination expected quantities, leaves destination on-hand unchanged, and returns the transfer to editable Created. It clears the current dispatched timestamp while immutable receipts retain the original dispatch actor/time and the reversal actor/time. A typed reversal reason is optional. Replay returns the original terminal result; command-content reuse and stale versions reject without partial effects.",
+          "from": "implemented",
+          "implementation_ref": ".grilltrack/proof/cycle-16/PROOF.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "transfer-in-transit-reversal-057",
+      "implementation_ref": ".grilltrack/proof/cycle-16/PROOF.md",
+      "question": "How does an In-transit transfer return to Created?",
+      "rationale": "This provides the useful correction path Bobby approved without erasing movement history or implementing the riskier Received reversal.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-16/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-30T19:56:07+00:00",
+          "source_identity": "sha256:6c84f3919a8ba74077d45cc057deb1480fe079cdca56406697360b5144f7ff6e"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-16/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:6c84f3919a8ba74077d45cc057deb1480fe079cdca56406697360b5144f7ff6e",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-08-30T19:56:07+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-16/PROOF.md"
     }
   ],
   "last_activation": {
-    "at": "2026-08-28T22:46:52+00:00",
+    "at": "2026-08-30T19:44:35+00:00",
     "mechanism": "implicit"
   },
   "recommendation": {
-    "alternatives": [
-      "pause Inventory until the Commerce-to-Inventory handshake is proven end to end"
-    ],
-    "reason": "Ordinary adjustments are now verified. A staged transfer is the next independent Inventory-owned mutation and reuses explicit active locations, permanent SKU identity, exact quantities, immutable actor receipts, and idempotent command results without depending on Commerce, Blocks, EmDash UI, deployment, or reservation work.",
-    "recommended": "staged location-transfer command beginning with transfer creation",
-    "recorded_at": "2026-08-29T12:28:34+00:00"
+    "alternatives": [],
+    "reason": "Dispatch and exact reopen are now verified independently. Whole-transfer receipt is the next locked Inventory-owned lifecycle boundary and does not require the deferred GUI, Commerce/Blocks integration, partial receiving, or production deployment.",
+    "recommended": "whole-transfer In transit to Received command",
+    "recorded_at": "2026-08-30T20:03:45+00:00"
   },
   "schema_version": "grilltrack/v0.1",
   "status": "active",
   "title": "Dinkuskit Inventory v1",
   "track_id": "dinkuskit-inventory-v1",
-  "updated_at": "2026-08-29T17:46:32+00:00"
+  "updated_at": "2026-08-30T20:03:45+00:00"
 }

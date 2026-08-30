@@ -99,6 +99,48 @@ test("normalizes full Created updates and version-bound cancellation", () => {
 	);
 });
 
+test("normalizes version-bound dispatch and optional-reason reopen commands", () => {
+	for (const [type, reason] of [
+		["transfer.dispatch", undefined],
+		["transfer.reopen", "  Carrier loaded the wrong pallet  "],
+		["transfer.reopen", "   "],
+	]) {
+		const command = normalizeStockTransferCommand({
+			schema: "dinkuskit.inventory.command/v1",
+			commandId: `cmd_${type}_${reason ?? "none"}`,
+			type,
+			context: { siteId: " site_test ", poolId: " pool_test " },
+			payload: type === "transfer.dispatch"
+				? { transferId: " transfer_opaque " }
+				: { transferId: " transfer_opaque ", reason },
+			references: [],
+			expectedVersions: [{ transferId: " transfer_opaque ", version: "03" }],
+		});
+		assert.equal(command.payload.transferId, "transfer_opaque");
+		assert.deepEqual(command.expectedVersions, [
+			{ transferId: "transfer_opaque", version: "3" },
+		]);
+		if (type === "transfer.reopen") {
+			assert.equal(command.payload.reason, reason?.trim() || null);
+		}
+	}
+	assert.throws(
+		() => normalizeStockTransferCommand({
+			schema: "dinkuskit.inventory.command/v1",
+			commandId: "cmd_dispatch_with_date",
+			type: "transfer.dispatch",
+			context: { siteId: "site_test", poolId: "pool_test" },
+			payload: {
+				transferId: "transfer_opaque",
+				dispatchedDate: "2026-08-30",
+			},
+			references: [],
+			expectedVersions: [{ transferId: "transfer_opaque", version: "3" }],
+		}),
+		InvalidStockTransferCommandError,
+	);
+});
+
 test("rejects ambiguous, duplicate, negative, and invalid-date transfer contents", () => {
 	const invalidPayloads = [
 		{ ...createCommand().payload, originLocationId: "location_destination" },
