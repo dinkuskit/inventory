@@ -4,11 +4,11 @@
   "current_focus": {
     "cadence": "sequential",
     "confirmed": true,
-    "confirmed_at": "2026-08-30T19:44:36+00:00",
-    "domain": "stock-transfer dispatch and in-transit reversal",
-    "started_at": "2026-08-30T19:44:35+00:00",
+    "confirmed_at": "2026-08-30T20:22:53+00:00",
+    "domain": "whole-transfer stock receipt",
+    "started_at": "2026-08-30T20:22:46+00:00",
     "status": "inspected",
-    "summary": "Bobby confirmed the Inventory-owned dispatch slice: Created to In transit requires positive quantities but allows an explicit negative-stock warning after customer-order reservations; dispatch atomically removes planning commitments, decrements origin on-hand, moves destination expected to in-transit, freezes shipment facts, and automatically records actor/time. In transit to Created exactly restores those effects, clears the current dispatch timestamp while preserving immutable dispatch and reversal receipt history, and accepts an optional typed reason. Both commands are version-bound, idempotent, atomic, and receipt-backed. Received execution, partial receiving, GUI, integrations, auth/deploy, and production remain deferred."
+    "summary": "Bobby confirmed the complete locked receipt scope: one atomic exact-version Receive command moves every line of an In-transit transfer into destination on-hand, establishes destination stock history, leaves origin unchanged, marks it Received under Done, and automatically records actor/time. The command accepts neither a reason nor a user-entered actual date. Physical shortages or damage are recorded afterward through a separately reasoned destination stock adjustment. Partial receipt and Received reversion remain deferred."
   },
   "decisions": [
     {
@@ -3815,22 +3815,58 @@
           "review_source_identity": null,
           "to": "locked",
           "verification_ref": null
+        },
+        {
+          "at": "2026-08-30T20:36:09+00:00",
+          "choice": "V1 receives the complete transfer atomically. Every listed SKU and its full transferred quantity moves from in-transit to the destination together; the transfer remains In transit until the whole transfer is received, and then moves to Received under Done Stock Transfers.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-30T20:36:10+00:00",
+          "choice": "V1 receives the complete transfer atomically. Every listed SKU and its full transferred quantity moves from in-transit to the destination together; the transfer remains In transit until the whole transfer is received, and then moves to Received under Done Stock Transfers.",
+          "from": "implemented",
+          "implementation_ref": ".grilltrack/proof/cycle-17/PROOF.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
         }
       ],
       "id": "transfer-whole-receipt-043",
-      "implementation_ref": null,
+      "implementation_ref": ".grilltrack/proof/cycle-17/PROOF.md",
       "question": "Does v1 receive a stock transfer as one whole shipment or permit partial line and quantity receipt?",
       "rationale": "Whole-transfer receipt keeps the first end-to-end lifecycle executable and consistent with the existing all-or-nothing multi-line command boundary.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
-      "status": "locked",
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-17/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-30T20:37:47+00:00",
+          "source_identity": "sha256:2ea7057c54423eecbf8b5d13930a4055a6f19c947cceab6a65ae926cc4bd9f00"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-17/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:2ea7057c54423eecbf8b5d13930a4055a6f19c947cceab6a65ae926cc4bd9f00",
+      "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-29T17:13:52+00:00",
-      "verification_ref": null
+      "updated_at": "2026-08-30T20:37:47+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-17/PROOF.md"
     },
     {
       "baseline_ref": "git:d735b180b3f4ed911667586f5131ff1727e46546",
@@ -4452,22 +4488,58 @@
           "review_source_identity": null,
           "to": "locked",
           "verification_ref": null
+        },
+        {
+          "at": "2026-08-30T20:36:10+00:00",
+          "choice": "Every transfer retains its Created date, expected dispatch date, expected arrival date, actual dispatched date when it enters In transit, and actual received date when it enters Received. Created and In-transit records under Open surface the Created, expected-dispatch, and expected-arrival dates. Final Received records under Done surface the actual dispatched and received dates. The complete retained audit record keeps all applicable planned and actual dates even when a compact list view shows only the dates most relevant to its status.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-30T20:36:10+00:00",
+          "choice": "Every transfer retains its Created date, expected dispatch date, expected arrival date, actual dispatched date when it enters In transit, and actual received date when it enters Received. Created and In-transit records under Open surface the Created, expected-dispatch, and expected-arrival dates. Final Received records under Done surface the actual dispatched and received dates. The complete retained audit record keeps all applicable planned and actual dates even when a compact list view shows only the dates most relevant to its status.",
+          "from": "implemented",
+          "implementation_ref": ".grilltrack/proof/cycle-17/PROOF.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
         }
       ],
       "id": "transfer-lifecycle-dates-051",
-      "implementation_ref": null,
+      "implementation_ref": ".grilltrack/proof/cycle-17/PROOF.md",
       "question": "Which dates must a transfer retain and show throughout its lifecycle?",
       "rationale": "Separating planned dates from actual lifecycle timestamps supports daily operations without confusing an expectation with proof that stock moved.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
-      "status": "locked",
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-17/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-30T20:37:47+00:00",
+          "source_identity": "sha256:2ea7057c54423eecbf8b5d13930a4055a6f19c947cceab6a65ae926cc4bd9f00"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-17/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:2ea7057c54423eecbf8b5d13930a4055a6f19c947cceab6a65ae926cc4bd9f00",
+      "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-29T17:13:52+00:00",
-      "verification_ref": null
+      "updated_at": "2026-08-30T20:37:47+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-17/PROOF.md"
     },
     {
       "baseline_ref": "git:d735b180b3f4ed911667586f5131ff1727e46546",
@@ -4524,22 +4596,58 @@
           "review_source_identity": null,
           "to": "locked",
           "verification_ref": null
+        },
+        {
+          "at": "2026-08-30T20:36:10+00:00",
+          "choice": "Inventory automatically records the actual dispatched timestamp when Mark in transit commits and the actual received timestamp when Receive commits. Users cannot enter, backdate, or future-date either actual timestamp. Each immutable transition receipt also records the signed-in actor and exact system commit timestamp. Expected dispatch and expected arrival remain editable planning dates.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-30T20:36:10+00:00",
+          "choice": "Inventory automatically records the actual dispatched timestamp when Mark in transit commits and the actual received timestamp when Receive commits. Users cannot enter, backdate, or future-date either actual timestamp. Each immutable transition receipt also records the signed-in actor and exact system commit timestamp. Expected dispatch and expected arrival remain editable planning dates.",
+          "from": "implemented",
+          "implementation_ref": ".grilltrack/proof/cycle-17/PROOF.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
         }
       ],
       "id": "transfer-user-entered-actual-dates-052",
-      "implementation_ref": null,
+      "implementation_ref": ".grilltrack/proof/cycle-17/PROOF.md",
       "question": "How does Inventory know the actual dispatched and received dates?",
       "rationale": "The lifecycle action itself is authoritative: the employee marks the transfer when the physical event occurs, yielding one unambiguous audited timestamp.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
-      "status": "locked",
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-17/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-30T20:37:47+00:00",
+          "source_identity": "sha256:2ea7057c54423eecbf8b5d13930a4055a6f19c947cceab6a65ae926cc4bd9f00"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-17/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:2ea7057c54423eecbf8b5d13930a4055a6f19c947cceab6a65ae926cc4bd9f00",
+      "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-30T19:44:35+00:00",
-      "verification_ref": null
+      "updated_at": "2026-08-30T20:37:47+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-17/PROOF.md"
     },
     {
       "baseline_ref": "git:d735b180b3f4ed911667586f5131ff1727e46546",
@@ -4572,22 +4680,58 @@
           "review_source_identity": null,
           "to": "locked",
           "verification_ref": null
+        },
+        {
+          "at": "2026-08-30T20:36:10+00:00",
+          "choice": "A zero-quantity Created draft has no quantity effect. Once a Created transfer has positive quantities, it keeps origin on-hand unchanged, adds an explicit outgoing transfer commitment at the origin, reduces origin available by that commitment, and adds the same quantities to destination expected stock. Editing its Created lines atomically updates those commitments and expected quantities. Marking it In transit removes the origin transfer commitment, decrements origin on-hand, moves destination expected into destination in-transit, and freezes shipment facts. Receiving the whole transfer removes destination in-transit and increments destination on-hand. Open contains Created and In transit; Done contains Received and Canceled.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-30T20:36:11+00:00",
+          "choice": "A zero-quantity Created draft has no quantity effect. Once a Created transfer has positive quantities, it keeps origin on-hand unchanged, adds an explicit outgoing transfer commitment at the origin, reduces origin available by that commitment, and adds the same quantities to destination expected stock. Editing its Created lines atomically updates those commitments and expected quantities. Marking it In transit removes the origin transfer commitment, decrements origin on-hand, moves destination expected into destination in-transit, and freezes shipment facts. Receiving the whole transfer removes destination in-transit and increments destination on-hand. Open contains Created and In transit; Done contains Received and Canceled.",
+          "from": "implemented",
+          "implementation_ref": ".grilltrack/proof/cycle-17/PROOF.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
         }
       ],
       "id": "transfer-lifecycle-with-expected-053",
-      "implementation_ref": null,
+      "implementation_ref": ".grilltrack/proof/cycle-17/PROOF.md",
       "question": "How do Created, In-transit, and Received transfers affect origin availability and destination inbound stock?",
       "rationale": "This restores the Katana planning behavior Bobby intended: stock is not double-promised while a transfer is drafted, and the destination can see expected inbound stock before physical dispatch.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
-      "status": "locked",
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-17/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-30T20:37:47+00:00",
+          "source_identity": "sha256:2ea7057c54423eecbf8b5d13930a4055a6f19c947cceab6a65ae926cc4bd9f00"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-17/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:2ea7057c54423eecbf8b5d13930a4055a6f19c947cceab6a65ae926cc4bd9f00",
+      "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-29T17:13:52+00:00",
-      "verification_ref": null
+      "updated_at": "2026-08-30T20:37:47+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-17/PROOF.md"
     },
     {
       "baseline_ref": "git:d735b180b3f4ed911667586f5131ff1727e46546",
@@ -4923,6 +5067,167 @@
       "superseded_by": null,
       "updated_at": "2026-08-30T19:56:07+00:00",
       "verification_ref": ".grilltrack/proof/cycle-16/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:b520b5ff7189a4180ad30f8e95d4db4d80a7a6e3",
+      "candidate_refs": [],
+      "choice": "An awaited, atomic, version-bound, idempotent Receive command requires an existing In-transit transfer and receives every listed SKU at its full transferred quantity together. It removes destination in-transit quantities, increments destination on-hand by the same quantities, establishes destination stock history, leaves origin stock unchanged, changes the transfer to Received under Done, retains its planned and dispatched dates, and automatically records the signed-in actor plus received commit timestamp. Replay returns the original terminal result; command-content reuse, stale versions, wrong states, and any storage failure reject without partial effects.",
+      "context_ref": "user:confirmed-whole-transfer-stock-receipt",
+      "created_at": "2026-08-30T20:22:46+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "transfer-whole-receipt-043",
+        "transfer-lifecycle-with-expected-053",
+        "transfer-user-entered-actual-dates-052"
+      ],
+      "domain": "whole-transfer stock receipt",
+      "history": [
+        {
+          "at": "2026-08-30T20:22:46+00:00",
+          "choice": "An awaited, atomic, version-bound, idempotent Receive command requires an existing In-transit transfer and receives every listed SKU at its full transferred quantity together. It removes destination in-transit quantities, increments destination on-hand by the same quantities, establishes destination stock history, leaves origin stock unchanged, changes the transfer to Received under Done, retains its planned and dispatched dates, and automatically records the signed-in actor plus received commit timestamp. Replay returns the original terminal result; command-content reuse, stale versions, wrong states, and any storage failure reject without partial effects.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-30T20:36:11+00:00",
+          "choice": "An awaited, atomic, version-bound, idempotent Receive command requires an existing In-transit transfer and receives every listed SKU at its full transferred quantity together. It removes destination in-transit quantities, increments destination on-hand by the same quantities, establishes destination stock history, leaves origin stock unchanged, changes the transfer to Received under Done, retains its planned and dispatched dates, and automatically records the signed-in actor plus received commit timestamp. Replay returns the original terminal result; command-content reuse, stale versions, wrong states, and any storage failure reject without partial effects.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-30T20:36:11+00:00",
+          "choice": "An awaited, atomic, version-bound, idempotent Receive command requires an existing In-transit transfer and receives every listed SKU at its full transferred quantity together. It removes destination in-transit quantities, increments destination on-hand by the same quantities, establishes destination stock history, leaves origin stock unchanged, changes the transfer to Received under Done, retains its planned and dispatched dates, and automatically records the signed-in actor plus received commit timestamp. Replay returns the original terminal result; command-content reuse, stale versions, wrong states, and any storage failure reject without partial effects.",
+          "from": "implemented",
+          "implementation_ref": ".grilltrack/proof/cycle-17/PROOF.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "transfer-receive-command-058",
+      "implementation_ref": ".grilltrack/proof/cycle-17/PROOF.md",
+      "question": "What must the V1 Receive command validate and commit?",
+      "rationale": "Whole-transfer receipt is the smallest safe completion of the already-proven Created-to-In-transit lifecycle and preserves Inventory's one-writer, immutable-receipt, atomic-storage contract.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-17/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-30T20:37:48+00:00",
+          "source_identity": "sha256:2ea7057c54423eecbf8b5d13930a4055a6f19c947cceab6a65ae926cc4bd9f00"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-17/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:2ea7057c54423eecbf8b5d13930a4055a6f19c947cceab6a65ae926cc4bd9f00",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-08-30T20:37:48+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-17/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:b520b5ff7189a4180ad30f8e95d4db4d80a7a6e3",
+      "candidate_refs": [],
+      "choice": "Normal Receive accepts no reason field because completing the documented internal movement is the reason. If fewer usable units physically arrive than the transfer lists, V1 still receives the whole transfer and then records the discrepancy through a separate destination stock adjustment with its required typed reason, such as one unit damaged during transfer. Partial receiving remains deferred.",
+      "context_ref": "user:confirmed-receive-reason-and-discrepancy",
+      "created_at": "2026-08-30T20:22:46+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "transfer-receive-command-058",
+        "ordinary-stock-adjustment-038"
+      ],
+      "domain": "whole-transfer stock receipt",
+      "history": [
+        {
+          "at": "2026-08-30T20:22:46+00:00",
+          "choice": "Normal Receive accepts no reason field because completing the documented internal movement is the reason. If fewer usable units physically arrive than the transfer lists, V1 still receives the whole transfer and then records the discrepancy through a separate destination stock adjustment with its required typed reason, such as one unit damaged during transfer. Partial receiving remains deferred.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-30T20:36:11+00:00",
+          "choice": "Normal Receive accepts no reason field because completing the documented internal movement is the reason. If fewer usable units physically arrive than the transfer lists, V1 still receives the whole transfer and then records the discrepancy through a separate destination stock adjustment with its required typed reason, such as one unit damaged during transfer. Partial receiving remains deferred.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-08-30T20:36:11+00:00",
+          "choice": "Normal Receive accepts no reason field because completing the documented internal movement is the reason. If fewer usable units physically arrive than the transfer lists, V1 still receives the whole transfer and then records the discrepancy through a separate destination stock adjustment with its required typed reason, such as one unit damaged during transfer. Partial receiving remains deferred.",
+          "from": "implemented",
+          "implementation_ref": ".grilltrack/proof/cycle-17/PROOF.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "transfer-receive-discrepancy-059",
+      "implementation_ref": ".grilltrack/proof/cycle-17/PROOF.md",
+      "question": "Does normal receipt require a reason, and how is a physical shortage or damaged unit recorded?",
+      "rationale": "Keeping receipt factual and corrections explicit avoids silently rewriting shipment history while preserving a clear audited explanation for the actual stock difference.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-17/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-08-30T20:37:48+00:00",
+          "source_identity": "sha256:2ea7057c54423eecbf8b5d13930a4055a6f19c947cceab6a65ae926cc4bd9f00"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-17/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:2ea7057c54423eecbf8b5d13930a4055a6f19c947cceab6a65ae926cc4bd9f00",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-08-30T20:37:48+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-17/PROOF.md"
     }
   ],
   "last_activation": {
@@ -4930,14 +5235,17 @@
     "mechanism": "implicit"
   },
   "recommendation": {
-    "alternatives": [],
-    "reason": "Dispatch and exact reopen are now verified independently. Whole-transfer receipt is the next locked Inventory-owned lifecycle boundary and does not require the deferred GUI, Commerce/Blocks integration, partial receiving, or production deployment.",
-    "recommended": "whole-transfer In transit to Received command",
-    "recorded_at": "2026-08-30T20:03:45+00:00"
+    "alternatives": [
+      "partial receiving (deferred)",
+      "Received transfer reversion (deferred)"
+    ],
+    "reason": "The Created-to-In-transit-to-Received mutation lifecycle is now verified. A platform-neutral list read model is the smallest Inventory-owned next boundary needed to surface the already-locked one-location/all-active-locations and Open/Done behavior without starting the deferred GUI, Commerce/Blocks integration, or riskier correction commands.",
+    "recommended": "pool/location-scoped Open and Done stock-transfer list read model",
+    "recorded_at": "2026-08-30T20:36:11+00:00"
   },
   "schema_version": "grilltrack/v0.1",
   "status": "active",
   "title": "Dinkuskit Inventory v1",
   "track_id": "dinkuskit-inventory-v1",
-  "updated_at": "2026-08-30T20:03:45+00:00"
+  "updated_at": "2026-08-30T20:37:48+00:00"
 }

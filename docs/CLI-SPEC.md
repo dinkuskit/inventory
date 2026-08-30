@@ -131,9 +131,12 @@ dinkus-inventory commands resolve <command-id>
 - `transfers reopen` submits `transfer.reopen`, moving an exact-version
   `In transit` transfer back to editable `Created`, with an optional free-text
   reason. It reverses the dispatch effects without editing prior receipts.
-- `transfers receive` moves an `In transit` transfer to `Received` and applies
-  the locked destination effects. This command remains a later implementation
-  slice.
+- `transfers receive` submits `transfer.receive` against the exact current
+  `In transit` version. It atomically moves every full line from destination
+  in-transit to destination on-hand, marks the transfer Received/Done, and
+  records the signed-in receiver and actual timestamp automatically. It accepts
+  no reason, actual-date, or partial-quantity flags. Any shortage or damage is a
+  separate reasoned destination `stock adjust` command after full receipt.
 - `commands resolve` looks up an unknown-outcome command and, only when needed,
   replays the exact locally retained envelope under the same command ID. It
   cannot edit the envelope or retry the action as new.

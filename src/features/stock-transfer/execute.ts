@@ -19,6 +19,7 @@ import {
 	CANCEL_STOCK_TRANSFER_TYPE,
 	CREATE_STOCK_TRANSFER_TYPE,
 	DISPATCH_STOCK_TRANSFER_TYPE,
+	RECEIVE_STOCK_TRANSFER_TYPE,
 	REOPEN_STOCK_TRANSFER_TYPE,
 	STOCK_TRANSFER_RECORD_SCHEMA,
 	UPDATE_STOCK_TRANSFER_TYPE,
@@ -287,6 +288,13 @@ function transferBalanceChanges(
 			expected: { value: expected, unit: value.unit },
 			inTransit: { value: inTransit, unit: value.unit },
 			version: incrementVersion(current.version),
+			hasStockHistory:
+				current.hasStockHistory ||
+				(
+					after.status === "received" &&
+					value.locationId === after.destinationLocationId &&
+					!isZero(onHandDelta)
+				),
 		};
 		commits.push({ previous: stored, balance: updated });
 		effects.push({
@@ -490,18 +498,22 @@ export function executeStockTransferCommandInTransaction(
 				"The transfer does not exist in this inventory pool.",
 			);
 		}
-		const requiredStatus =
-			command.type === REOPEN_STOCK_TRANSFER_TYPE ? "in_transit" : "created";
+		const requiresInTransit =
+			command.type === REOPEN_STOCK_TRANSFER_TYPE ||
+			command.type === RECEIVE_STOCK_TRANSFER_TYPE;
+		const requiredStatus = requiresInTransit ? "in_transit" : "created";
 		if (before.status !== requiredStatus) {
 			return durableRejection(
 				transaction,
 				command,
 				commandDigest,
-				command.type === REOPEN_STOCK_TRANSFER_TYPE
+				requiresInTransit
 					? "transfer_not_in_transit"
 					: "transfer_not_created",
 				command.type === REOPEN_STOCK_TRANSFER_TYPE
 					? "Only an In-transit transfer can be returned to Created."
+					: command.type === RECEIVE_STOCK_TRANSFER_TYPE
+						? "Only an In-transit transfer can be received."
 					: command.type === DISPATCH_STOCK_TRANSFER_TYPE
 						? "Only a Created transfer can be marked In transit."
 						: "Only a Created transfer can be edited or canceled.",
@@ -541,7 +553,10 @@ export function executeStockTransferCommandInTransaction(
 		);
 	}
 
-	if (command.type !== CANCEL_STOCK_TRANSFER_TYPE) {
+	if (
+		command.type !== CANCEL_STOCK_TRANSFER_TYPE &&
+		command.type !== RECEIVE_STOCK_TRANSFER_TYPE
+	) {
 		const locationFailure = validateLocations(
 			transaction,
 			command,
@@ -625,6 +640,14 @@ export function executeStockTransferCommandInTransaction(
 			updatedAt: committedAt,
 			version: incrementVersion(before!.version),
 			dispatchedDate: committedAt,
+		};
+	} else if (command.type === RECEIVE_STOCK_TRANSFER_TYPE) {
+		after = {
+			...before!,
+			status: "received",
+			updatedAt: committedAt,
+			version: incrementVersion(before!.version),
+			receivedDate: committedAt,
 		};
 	} else {
 		after = {

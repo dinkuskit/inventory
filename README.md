@@ -95,8 +95,8 @@ with the trusted signed-in actor. Exact retries recover the original durable
 result, changed contents conflict, stale previews reject, and corrections are
 new linked receipts rather than edits.
 
-The stock-transfer kernel implements durable Created drafts, dispatch, and
-In-transit reopen. A draft
+The stock-transfer kernel implements durable Created drafts, dispatch,
+In-transit reopen, and whole-transfer receipt. A draft
 has one permanent opaque transfer ID, an editable pool-unique `ST-...`
 reference, explicit active origin and destination, one or more managed SKU
 lines, an optional note, and expected dispatch and arrival dates. Zero
@@ -109,11 +109,15 @@ destination on-hand, and an explicit availability warning without counting the
 current transfer twice. Dispatch requires positive quantities and atomically
 decrements origin on-hand, removes its outgoing commitment, and moves
 destination expected into in-transit; Inventory records the actual timestamp
-automatically. Reopen
-applies the exact inverse, accepts an optional reason, and preserves immutable
-dispatch and reversal actor history. Every command is versioned, idempotent,
-actor-bearing, and committed with its immutable receipt. Receipt, partial
-receipt, GUI, and runtime service exposure remain later slices.
+automatically. Reopen applies the exact inverse, accepts an optional reason,
+and preserves immutable dispatch and reversal actor history. Receive atomically
+moves every full line from destination in-transit to destination on-hand,
+establishes physical stock history there, and records the automatic receiver
+and timestamp with no reason field. A shortage or damaged unit is a separate
+reasoned destination adjustment after full receipt. Every command is versioned,
+idempotent, actor-bearing, and committed with its immutable receipt. Partial
+receipt, Received reversion, GUI, and runtime service exposure remain later
+slices.
 
 The real local SQLite test adapter remains explicitly development/test-only and
 refuses production mode or in-memory use. It is not the final storage layer.
