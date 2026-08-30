@@ -33,3 +33,15 @@ Before review or delivery, always run the canonical repository gate:
 ```bash
 bin/verify-inventory full
 ```
+
+For contributor-supplied behavior proof outside Node Test, Vitest, and
+Miniflare test harnesses, run:
+
+```bash
+npm run proof:stock-adjustment:real
+```
+
+This starts a loopback-only Wrangler Durable Object with disposable persisted
+state, performs preview and confirmation, stops Wrangler, reopens the same
+state, and proves exact terminal-result replay. It prints a redacted transcript,
+never uses `--remote`, and deletes the temporary state on exit.
