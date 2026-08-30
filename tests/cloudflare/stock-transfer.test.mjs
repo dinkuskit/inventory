@@ -11,6 +11,7 @@ import { createSetOpeningBalance } from "../../src/application/set-opening-balan
 import {
 	createExecuteStockTransferCommand,
 	createReadStockTransfer,
+	createReadStockTransferList,
 } from "../../src/features/stock-transfer/index.ts";
 import { createCloudflareSqliteInventoryStore } from "../../src/storage/cloudflare-sqlite-inventory-store.ts";
 import { createFixtureLocation } from "../helpers/location-fixture.mjs";
@@ -22,6 +23,100 @@ const principal = Object.freeze({
 	displayName: "Cloudflare Transfer Operator",
 	surface: "emdash",
 });
+
+function transferListLocation(
+	poolId,
+	locationId,
+	name,
+	status = "active",
+) {
+	return {
+		poolId,
+		locationId,
+		name,
+		nameKey: name.toLocaleLowerCase("en-US"),
+		status,
+		version: 1,
+		createdAt: "2026-08-01T08:00:00.000Z",
+		updatedAt:
+			status === "archived"
+				? "2026-08-20T08:00:00.000Z"
+				: "2026-08-01T08:00:00.000Z",
+		archivedAt:
+			status === "archived" ? "2026-08-20T08:00:00.000Z" : null,
+	};
+}
+
+function transferListRecord(poolId, overrides = {}) {
+	const status = overrides.status ?? "created";
+	const transferId = overrides.transferId ?? "transfer_cf_list_created";
+	return {
+		schema: "dinkuskit.inventory.stock-transfer/v1",
+		poolId,
+		transferId,
+		reference: overrides.reference ?? transferId.replace("transfer_", "ST-"),
+		status,
+		originLocationId: overrides.originLocationId ?? "location_north",
+		destinationLocationId:
+			overrides.destinationLocationId ?? "location_south",
+		lines: overrides.lines ?? [
+			{ skuId: "sku_hat", quantity: { value: "2", unit: "each" } },
+			{ skuId: "sku_shirt", quantity: { value: "1", unit: "each" } },
+		],
+		note: "Cloudflare list detail-only fixture",
+		createdAt: overrides.createdAt ?? "2026-08-25T09:00:00.000Z",
+		createdBy: principal,
+		updatedAt: overrides.updatedAt ?? "2026-08-25T09:00:00.000Z",
+		version: overrides.version ?? "1",
+		expectedDispatchDate:
+			overrides.expectedDispatchDate ?? "2026-09-01",
+		expectedArrivalDate:
+			overrides.expectedArrivalDate ?? "2026-09-03",
+		dispatchedDate:
+			overrides.dispatchedDate ??
+			(status === "in_transit" || status === "received"
+				? "2026-09-01T12:00:00.000Z"
+				: null),
+		receivedDate:
+			overrides.receivedDate ??
+			(status === "received" ? "2026-09-03T12:00:00.000Z" : null),
+		canceledAt:
+			overrides.canceledAt ??
+			(status === "canceled" ? "2026-09-02T12:00:00.000Z" : null),
+	};
+}
+
+function insertTransferListLocation(storage, record) {
+	storage.sql.exec(
+		`INSERT INTO inventory_locations
+		 (pool_id, location_id, name, name_key, status, version,
+		  created_at, updated_at, archived_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		record.poolId,
+		record.locationId,
+		record.name,
+		record.nameKey,
+		record.status,
+		record.version,
+		record.createdAt,
+		record.updatedAt,
+		record.archivedAt,
+	).toArray();
+}
+
+function insertTransferListRecord(storage, record) {
+	storage.sql.exec(
+		`INSERT INTO inventory_transfers
+		 (pool_id, transfer_id, reference_key, status, version, transfer_json)
+		 VALUES (?, ?, ?, ?, ?, ?)`,
+		record.poolId,
+		record.transferId,
+		record.reference.toLocaleLowerCase("en-US"),
+		record.status,
+		Number(record.version),
+		JSON.stringify(record),
+	).toArray();
+}
 
 describe("stock transfer Cloudflare parity", () => {
 	it("persists Created commitments, expected stock, receipt, and replay in one transaction", async ({ expect }) => {
@@ -543,6 +638,285 @@ describe("stock transfer Cloudflare parity", () => {
 					.toArray()
 					.map((row) => Number(row.version)),
 			).toEqual([4]);
+		});
+	});
+
+	it("lists scoped Open and Done transfers with durable keyset pagination", async ({ expect }) => {
+		const poolId = "pool_stock_transfer_list_parity";
+		const stub = env.INVENTORY_POOLS.getByName(poolId);
+		await runInDurableObject(stub, async (_instance, state) => {
+			const store = createCloudflareSqliteInventoryStore({
+				storage: state.storage,
+				poolId,
+			});
+			for (const record of [
+				transferListLocation(poolId, "location_north", "North"),
+				transferListLocation(poolId, "location_south", "South"),
+				transferListLocation(poolId, "location_east", "East"),
+				transferListLocation(
+					poolId,
+					"location_archived_origin",
+					"Archived origin",
+					"archived",
+				),
+				transferListLocation(
+					poolId,
+					"location_archived_destination",
+					"Archived destination",
+					"archived",
+				),
+			]) {
+				insertTransferListLocation(state.storage, record);
+			}
+			for (const record of [
+				transferListRecord(poolId, {
+					transferId: "transfer_cf_list_outgoing",
+					status: "created",
+					originLocationId: "location_north",
+					destinationLocationId: "location_south",
+					expectedDispatchDate: "2026-09-02",
+					updatedAt: "2026-08-26T10:00:00.000Z",
+				}),
+				transferListRecord(poolId, {
+					transferId: "transfer_cf_list_incoming",
+					status: "in_transit",
+					originLocationId: "location_east",
+					destinationLocationId: "location_north",
+					expectedArrivalDate: "2026-09-01",
+					updatedAt: "2026-08-26T11:00:00.000Z",
+				}),
+				transferListRecord(poolId, {
+					transferId: "transfer_cf_list_unrelated",
+					status: "created",
+					originLocationId: "location_south",
+					destinationLocationId: "location_east",
+					expectedDispatchDate: "2026-08-31",
+				}),
+				transferListRecord(poolId, {
+					transferId: "transfer_cf_list_received_archived",
+					status: "received",
+					originLocationId: "location_archived_origin",
+					destinationLocationId: "location_north",
+					dispatchedDate: "2026-09-03T12:00:00.000Z",
+					receivedDate: "2026-09-05T12:00:00.000Z",
+					updatedAt: "2026-09-05T12:00:00.000Z",
+				}),
+				transferListRecord(poolId, {
+					transferId: "transfer_cf_list_received_tie_a",
+					status: "received",
+					receivedDate: "2026-09-05T12:00:00.000Z",
+					updatedAt: "2026-09-05T11:00:00.000Z",
+				}),
+				transferListRecord(poolId, {
+					transferId: "transfer_cf_list_received_tie_b",
+					status: "received",
+					receivedDate: "2026-09-05T12:00:00.000Z",
+					updatedAt: "2026-09-05T11:00:00.000Z",
+				}),
+				transferListRecord(poolId, {
+					transferId: "transfer_cf_list_canceled",
+					status: "canceled",
+					originLocationId: "location_north",
+					destinationLocationId: "location_south",
+					canceledAt: "2026-09-04T12:00:00.000Z",
+					updatedAt: "2026-09-04T12:00:00.000Z",
+				}),
+				transferListRecord(poolId, {
+					transferId: "transfer_cf_list_both_archived",
+					status: "canceled",
+					originLocationId: "location_archived_origin",
+					destinationLocationId: "location_archived_destination",
+					canceledAt: "2026-09-06T12:00:00.000Z",
+					updatedAt: "2026-09-06T12:00:00.000Z",
+				}),
+			]) {
+				insertTransferListRecord(state.storage, record);
+			}
+
+			const read = createReadStockTransferList({ store });
+			const query = {
+				poolId,
+				view: "open",
+				scope: { kind: "location", locationId: "location_north" },
+				limit: 1,
+			};
+			const firstPage = await read(query);
+			expect(firstPage).toMatchObject({
+				outcome: "listed",
+				transfers: [{
+					transferId: "transfer_cf_list_incoming",
+					status: "in_transit",
+					origin: { locationId: "location_east", status: "active" },
+					destination: { locationId: "location_north", status: "active" },
+				}],
+			});
+			expect(typeof firstPage.next).toBe("string");
+			const secondPage = await read({ ...query, cursor: firstPage.next });
+			expect(secondPage).toMatchObject({
+				outcome: "listed",
+				transfers: [{
+					transferId: "transfer_cf_list_outgoing",
+					status: "created",
+				}],
+				next: null,
+			});
+
+			const done = await read({
+				poolId,
+				view: "done",
+				scope: { kind: "all_locations" },
+			});
+			expect(done.outcome).toBe("listed");
+			expect(done.transfers.map(({ transferId }) => transferId)).toEqual([
+				"transfer_cf_list_received_archived",
+				"transfer_cf_list_received_tie_a",
+				"transfer_cf_list_received_tie_b",
+				"transfer_cf_list_canceled",
+			]);
+			expect(done.transfers[0]).toMatchObject({
+				origin: {
+					locationId: "location_archived_origin",
+					name: "Archived origin",
+					status: "archived",
+				},
+				destination: {
+					locationId: "location_north",
+					status: "active",
+				},
+				productLineCount: 2,
+			});
+
+			await expect(read({
+				poolId: "pool_other",
+				view: "open",
+				scope: { kind: "all_locations" },
+			})).rejects.toThrow("A store cannot read across inventory pools.");
+				expect(
+				state.storage.sql
+					.exec("SELECT version FROM inventory_schema_migrations ORDER BY version")
+					.toArray()
+					.map((row) => Number(row.version)),
+			).toEqual([4]);
+
+			const selectedDone = await read({
+				poolId,
+				view: "done",
+				scope: { kind: "location", locationId: "location_north" },
+			});
+			expect(selectedDone.transfers.map(({ transferId }) => transferId)).toEqual([
+				"transfer_cf_list_received_archived",
+				"transfer_cf_list_received_tie_a",
+				"transfer_cf_list_received_tie_b",
+				"transfer_cf_list_canceled",
+			]);
+			expect(selectedDone.transfers[0].origin.status).toBe("archived");
+
+			let doneCursor;
+			const pagedDoneIds = [];
+			for (let page = 0; page < 4; page += 1) {
+				const result = await read({
+					poolId,
+					view: "done",
+					scope: { kind: "all_locations" },
+					limit: 1,
+					...(doneCursor === undefined ? {} : { cursor: doneCursor }),
+				});
+				pagedDoneIds.push(result.transfers[0].transferId);
+				doneCursor = result.next ?? undefined;
+			}
+			expect(pagedDoneIds).toEqual([
+				"transfer_cf_list_received_archived",
+				"transfer_cf_list_received_tie_a",
+				"transfer_cf_list_received_tie_b",
+				"transfer_cf_list_canceled",
+			]);
+			expect(doneCursor).toBeUndefined();
+
+			const statusDrift = transferListRecord(poolId, {
+				transferId: "transfer_cf_list_status_drift",
+				status: "in_transit",
+			});
+			insertTransferListRecord(state.storage, statusDrift);
+			state.storage.sql.exec(
+				`UPDATE inventory_transfers
+				 SET status = 'created'
+				 WHERE pool_id = ? AND transfer_id = ?`,
+				poolId,
+				statusDrift.transferId,
+			).toArray();
+			await expect(read({
+				poolId,
+				view: "open",
+				scope: { kind: "all_locations" },
+			})).rejects.toThrow("Stored stock transfer status is inconsistent.");
+			state.storage.sql.exec(
+				"DELETE FROM inventory_transfers WHERE pool_id = ? AND transfer_id = ?",
+				poolId,
+				statusDrift.transferId,
+			).toArray();
+
+			const impossibleCreated = {
+				...transferListRecord(poolId, {
+					transferId: "transfer_cf_list_impossible_created",
+					status: "created",
+				}),
+				dispatchedDate: "2026-09-01T12:00:00.000Z",
+			};
+			insertTransferListRecord(state.storage, impossibleCreated);
+			await expect(read({
+				poolId,
+				view: "open",
+				scope: { kind: "all_locations" },
+			})).rejects.toThrow("Stored Created transfer has impossible lifecycle dates.");
+			state.storage.sql.exec(
+				"DELETE FROM inventory_transfers WHERE pool_id = ? AND transfer_id = ?",
+				poolId,
+				impossibleCreated.transferId,
+			).toArray();
+
+			const corruptTerminal = {
+				...transferListRecord(poolId, {
+					transferId: "transfer_cf_list_corrupt_terminal",
+					status: "received",
+				}),
+				receivedDate: null,
+			};
+			insertTransferListRecord(state.storage, corruptTerminal);
+			let terminalCursor;
+			for (let page = 0; page < 3; page += 1) {
+				const result = await read({
+					poolId,
+					view: "done",
+					scope: { kind: "all_locations" },
+					limit: 1,
+					...(terminalCursor === undefined ? {} : { cursor: terminalCursor }),
+				});
+				terminalCursor = result.next;
+			}
+			await expect(read({
+				poolId,
+				view: "done",
+				scope: { kind: "all_locations" },
+				limit: 1,
+				cursor: terminalCursor,
+			})).rejects.toThrow("Stored stock-transfer list position is invalid.");
+			state.storage.sql.exec(
+				"DELETE FROM inventory_transfers WHERE pool_id = ? AND transfer_id = ?",
+				poolId,
+				corruptTerminal.transferId,
+			).toArray();
+
+			insertTransferListRecord(state.storage, transferListRecord(poolId, {
+				transferId: "transfer_cf_list_missing_endpoint",
+				originLocationId: "location_missing",
+				destinationLocationId: "location_north",
+				expectedDispatchDate: "2026-08-30",
+			}));
+			await expect(read({
+				poolId,
+				view: "open",
+				scope: { kind: "all_locations" },
+			})).rejects.toThrow("Stored stock transfer references a missing location.");
 		});
 	});
 });

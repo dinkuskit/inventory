@@ -21,6 +21,7 @@ import type {
 	InventoryTransaction,
 	ListLocationsQuery,
 	ListReceiptsQuery,
+	ListStockTransfersQuery,
 	LocationCommit,
 	ManagedSkuCommit,
 	OpeningBalanceCommit,
@@ -29,6 +30,7 @@ import type {
 	StoredCommandResult,
 	StoredOpeningBalanceConfirmation,
 	StoredStockAdjustmentConfirmation,
+	StoredStockTransferListPage,
 	StockAdjustmentCommit,
 	StockTransferCommit,
 } from "./inventory-store.ts";
@@ -90,6 +92,61 @@ function locationFrom(row: SqlRow | undefined): LocationRecord | null {
 		createdAt: String(row.created_at),
 		updatedAt: String(row.updated_at),
 		archivedAt: row.archived_at === null ? null : String(row.archived_at),
+	};
+}
+
+function transferListLocationFrom(
+	row: SqlRow,
+	prefix: "origin" | "destination",
+): LocationRecord {
+	const locationId = row[`${prefix}_location_id`];
+	if (locationId === null || locationId === undefined) {
+		throw new Error("Stored stock transfer references a missing location.");
+	}
+	return {
+		poolId: String(row[`${prefix}_pool_id`]),
+		locationId: String(locationId),
+		name: String(row[`${prefix}_name`]),
+		nameKey: String(row[`${prefix}_name_key`]),
+		status: String(row[`${prefix}_status`]) as LocationRecord["status"],
+		version: String(row[`${prefix}_version`]),
+		createdAt: String(row[`${prefix}_created_at`]),
+		updatedAt: String(row[`${prefix}_updated_at`]),
+		archivedAt: row[`${prefix}_archived_at`] === null
+			? null
+			: String(row[`${prefix}_archived_at`]),
+	};
+}
+
+function storedStockTransferListRowFrom(row: SqlRow) {
+	const transfer = stockTransferFrom(row);
+	if (transfer === null) {
+		throw new Error("Stored stock-transfer list row is missing its transfer.");
+	}
+	if (
+		typeof row.materialized_status !== "string" ||
+		row.materialized_status !== transfer.status
+	) {
+		throw new Error("Stored stock transfer status is inconsistent.");
+	}
+	if (
+		typeof row.sort_date !== "string" ||
+		row.sort_date.length === 0 ||
+		typeof row.transfer_updated_at !== "string" ||
+		row.transfer_updated_at.length === 0 ||
+		String(row.transfer_id) !== transfer.transferId
+	) {
+		throw new Error("Stored stock-transfer list position is invalid.");
+	}
+	return {
+		transfer,
+		origin: transferListLocationFrom(row, "origin"),
+		destination: transferListLocationFrom(row, "destination"),
+		position: {
+			sortDate: row.sort_date,
+			updatedAt: row.transfer_updated_at,
+			transferId: transfer.transferId,
+		},
 	};
 }
 
@@ -852,6 +909,132 @@ export class CloudflareSqliteInventoryStore implements InventoryStore {
 				query.transferId,
 			),
 		);
+	}
+
+	async listStockTransfers(
+		query: ListStockTransfersQuery,
+	): Promise<StoredStockTransferListPage> {
+		if (query.poolId !== this.#poolId) {
+			throw new Error("A store cannot read across inventory pools.");
+		}
+		let selectedLocation: LocationRecord | null = null;
+		if (query.locationId !== undefined) {
+			selectedLocation = locationFrom(first(
+				this.#storage,
+				`SELECT pool_id, location_id, name, name_key, status, version,
+				        created_at, updated_at, archived_at
+				 FROM inventory_locations
+				 WHERE pool_id = ? AND location_id = ?`,
+				query.poolId,
+				query.locationId,
+			));
+			if (selectedLocation === null || selectedLocation.status !== "active") {
+				return { selectedLocation, rows: [] };
+			}
+		}
+
+		const statuses = query.view === "open"
+			? ["created", "in_transit"]
+			: ["received", "canceled"];
+		const clauses = query.locationId === undefined
+			? [
+					`(origin.location_id IS NULL OR destination.location_id IS NULL OR
+					   origin.status = 'active' OR destination.status = 'active')`,
+				]
+			: ["(transfer_row.origin_location_id = ? OR transfer_row.destination_location_id = ?)"];
+		const bindings: Array<string | number> = [
+			query.poolId,
+			...statuses,
+			query.poolId,
+			query.poolId,
+			...(query.locationId === undefined
+				? []
+				: [query.locationId, query.locationId]),
+		];
+		if (query.after !== undefined) {
+			const primaryOperator = query.view === "open" ? ">" : "<";
+			clauses.push(
+				`(
+					transfer_row.sort_date IS NULL OR
+					transfer_row.sort_date ${primaryOperator} ? OR
+					(
+						transfer_row.sort_date = ? AND
+						transfer_row.transfer_updated_at < ?
+					) OR
+					(
+						transfer_row.sort_date = ? AND
+						transfer_row.transfer_updated_at = ? AND
+						transfer_row.transfer_id > ?
+					)
+				)`,
+			);
+			bindings.push(
+				query.after.sortDate,
+				query.after.sortDate,
+				query.after.updatedAt,
+				query.after.sortDate,
+				query.after.updatedAt,
+				query.after.transferId,
+			);
+		}
+		bindings.push(query.limit);
+		const direction = query.view === "open" ? "ASC" : "DESC";
+		return {
+			selectedLocation,
+			rows: this.#storage.sql
+				.exec<SqlRow>(
+					`WITH transfer_row AS (
+						SELECT transfer_id, status AS materialized_status, transfer_json,
+						       json_extract(transfer_json, '$.originLocationId') AS origin_location_id,
+						       json_extract(transfer_json, '$.destinationLocationId') AS destination_location_id,
+						       json_extract(transfer_json, '$.updatedAt') AS transfer_updated_at,
+						       CASE status
+						         WHEN 'created' THEN json_extract(transfer_json, '$.expectedDispatchDate')
+						         WHEN 'in_transit' THEN json_extract(transfer_json, '$.expectedArrivalDate')
+						         WHEN 'received' THEN json_extract(transfer_json, '$.receivedDate')
+						         WHEN 'canceled' THEN json_extract(transfer_json, '$.canceledAt')
+						       END AS sort_date
+						FROM inventory_transfers
+						WHERE pool_id = ? AND status IN (?, ?)
+					)
+					SELECT transfer_row.transfer_id, transfer_row.materialized_status,
+					       transfer_row.transfer_json,
+					       transfer_row.sort_date, transfer_row.transfer_updated_at,
+					       origin.pool_id AS origin_pool_id,
+					       origin.location_id AS origin_location_id,
+					       origin.name AS origin_name,
+					       origin.name_key AS origin_name_key,
+					       origin.status AS origin_status,
+					       origin.version AS origin_version,
+					       origin.created_at AS origin_created_at,
+					       origin.updated_at AS origin_updated_at,
+					       origin.archived_at AS origin_archived_at,
+					       destination.pool_id AS destination_pool_id,
+					       destination.location_id AS destination_location_id,
+					       destination.name AS destination_name,
+					       destination.name_key AS destination_name_key,
+					       destination.status AS destination_status,
+					       destination.version AS destination_version,
+					       destination.created_at AS destination_created_at,
+					       destination.updated_at AS destination_updated_at,
+					       destination.archived_at AS destination_archived_at
+					FROM transfer_row
+					LEFT JOIN inventory_locations AS origin
+					  ON origin.pool_id = ?
+					 AND origin.location_id = transfer_row.origin_location_id
+					LEFT JOIN inventory_locations AS destination
+					  ON destination.pool_id = ?
+					 AND destination.location_id = transfer_row.destination_location_id
+					WHERE ${clauses.join(" AND ")}
+					ORDER BY transfer_row.sort_date ${direction},
+					         transfer_row.transfer_updated_at DESC,
+					         transfer_row.transfer_id ASC
+					LIMIT ?`,
+					...bindings,
+				)
+				.toArray()
+				.map(storedStockTransferListRowFrom),
+		};
 	}
 
 	async readSkuActiveLocationSnapshot(

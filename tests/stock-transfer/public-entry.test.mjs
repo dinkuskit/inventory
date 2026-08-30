@@ -15,11 +15,17 @@ test("the package root composes the stock-transfer public entry", () => {
 		"REOPEN_STOCK_TRANSFER_TYPE",
 		"STOCK_TRANSFER_RECORD_SCHEMA",
 		"STOCK_TRANSFER_READ_RESULT_SCHEMA",
+		"STOCK_TRANSFER_LIST_RESULT_SCHEMA",
+		"STOCK_TRANSFER_LIST_DEFAULT_LIMIT",
+		"STOCK_TRANSFER_LIST_MAX_LIMIT",
 		"InvalidStockTransferCommandError",
+		"InvalidStockTransferListQueryError",
 		"normalizeStockTransferCommand",
 		"normalizeStockTransferReference",
+		"normalizeReadStockTransferListInput",
 		"createExecuteStockTransferCommand",
 		"createReadStockTransfer",
+		"createReadStockTransferList",
 	]) {
 		assert.equal(root[name], feature[name]);
 	}

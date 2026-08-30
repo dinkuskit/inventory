@@ -445,6 +445,42 @@ terminal result. A shortage or damaged unit is recorded after full receipt by
 a separate destination `stock.adjust` command with its own required reason and
 immutable receipt. Partial receipt and Received reversion remain deferred.
 
+## transfer-list-view-selection-001 through transfer-list-pagination-006 — transfer list read model (locked)
+
+The platform-neutral transfer list accepts one explicit pool and exactly one
+view. `open` contains Created and In-transit transfers; `done` contains Received
+and Canceled transfers. A future GUI defaults to Open, but the kernel never
+guesses a view.
+
+Each query selects either one active location or `all_locations`. One-location
+scope includes transfers where that location is either the origin or the
+destination and excludes unrelated transfers. All Locations returns each
+eligible transfer once, including when both endpoints are active.
+
+Archived locations are not selectable in the normal location control. A
+transfer remains visible when an active endpoint is involved and the opposite
+endpoint has since been archived; that endpoint is explicitly labeled
+archived. A transfer whose origin and destination are both archived is excluded
+from the normal All Locations list and reserved for a later archive area.
+
+Each list row stays compact: editable reference, status, current origin and
+destination identities, names, and archive status, distinct product-line
+count, and relevant lifecycle dates. Open rows show Created and expected dates;
+Received rows show dispatched and received dates; Canceled rows show Created
+and canceled dates. Lines, quantities, note/reason, warnings, actors, receipts,
+and full audit history remain on detail and audit reads.
+
+Open work sorts by its next operational date ascending: expected dispatch for
+Created and expected arrival for In-transit. Done history sorts by its terminal
+date descending: received or canceled time. Both use `updatedAt` descending and
+then permanent transfer ID ascending as deterministic tie-breakers.
+
+Pagination defaults to 50 rows, accepts at most 100, and returns an opaque
+keyset cursor bound to the pool, view, scope, and last ordering position. There
+is no offset paging, exact total count, search, or caller-selected sort in this
+slice. The read is additive and performs no command, receipt, balance, or
+lifecycle mutation.
+
 ## v1 scope fence (inherited)
 
 In: tenant/site-scoped SKU/variant identity; explicit locations;
@@ -461,11 +497,10 @@ product settings and external inventory-provider implementations.
 
 ## Next focused grill
 
-Grill the platform-neutral transfer-list read model: explicit pool and either
-one location or all active locations, with Created/In-transit under Open and
-Received/Canceled under Done. Continue deferring partial receiving, Received
-reversion, GUI, Commerce/Blocks, service authentication, deployment, and
-production mutation.
+Select the next Inventory-owned slice after the transfer-list implementation
+and repository proof close. Partial receiving, Received reversion, GUI,
+Commerce/Blocks integration, service authentication, deployment, and production
+mutation remain deferred until separately grilled and approved.
 
 ## Cross-references
 
