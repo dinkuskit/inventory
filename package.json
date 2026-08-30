@@ -27,7 +27,8 @@
 		"verify:managed-sku": "bin/verify-managed-sku",
 		"verify:stock-adjustment": "bin/verify-stock-adjustment",
 		"verify:stock-transfer": "bin/verify-stock-transfer",
-    "proof:aggregate-stock-read:real": "bin/prove-aggregate-stock-read-real"
+    "proof:aggregate-stock-read:real": "bin/prove-aggregate-stock-read-real",
+		"proof:stock-adjustment:real": "bin/prove-stock-adjustment-real"
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "1.1.1",

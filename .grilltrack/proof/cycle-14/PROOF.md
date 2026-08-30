@@ -10,11 +10,11 @@ Implementation worktree:
 Branch: `codex/stock-adjustment-20260829`
 
 Immutable reviewed source identity:
-`sha256:4a3897d5f827267ef308e8620cd892f69fc66bc264af62403ffec84bd6bd469e`
+`sha256:152e312899f9d4be0285eb9808278f0fe6e71bd6a9f8472bd99e9bd1c3b3e9f3`
 
-The identity is the SHA-256 of `SOURCE_MANIFEST.sha256`. The manifest binds all
-24 changed implementation, adapter, test, verification, architecture, and
-contract-document files. `sha256sum -c` passed for every entry.
+The identity is the SHA-256 of `SOURCE_MANIFEST.sha256`. The manifest binds the
+changed implementation, adapter, test, verification, architecture, contract,
+and real-behavior proof files. `sha256sum -c` passed for every entry.
 
 ## Accepted lock
 
@@ -67,6 +67,10 @@ next increment.
   receipts remain excluded;
 - local SQLite and Cloudflare Durable Object parity with schema remaining v3;
 - package-root/feature-entry parity and enforced cross-feature export barriers.
+- a real loopback-only Wrangler Durable Object run outside Node Test, Vitest,
+  and Miniflare test harnesses: preview, confirmation, durable commit, complete
+  runtime stop/reopen, exact terminal-result replay, balance version `2`, and
+  exactly one `stock.adjust` receipt.
 
 ## Commands run
 
@@ -79,17 +83,24 @@ bin/verify-stock-adjustment
   -> 1 focused workerd test passed
   -> strict Cloudflare typecheck passed
 
+npm run proof:stock-adjustment:real
+  -> real local Wrangler Durable Object preview and confirmation passed
+  -> local persisted state contained 15 files
+  -> stopped and reopened the runtime
+  -> replay returned the original terminal result
+  -> one stock.adjust receipt and balance version 2 remained
+
 git diff --check
   -> passed
 
 bin/verify-inventory full
   -> architecture tests and audit passed
   -> strict Cloudflare typecheck passed
-  -> 81 Node tests passed
+  -> 82 Node tests passed
   -> deployment-contract tests passed
   -> 15 workerd tests passed
   -> Wrangler dry-run passed
-  -> verify-inventory full passed in 8.59s
+  -> verify-inventory full passed in 4.82s
 
 sha256sum -c .grilltrack/proof/cycle-14/SOURCE_MANIFEST.sha256
   -> all 24 entries OK
@@ -98,10 +109,13 @@ sha256sum -c .grilltrack/proof/cycle-14/SOURCE_MANIFEST.sha256
 ## Renderer and fidelity
 
 The faithful renderer for this platform-neutral API/storage slice is accepted
-request/result flow through the real local SQLite test adapter and the real
-workerd Durable Object adapter. This proof does not render a GUI and makes no
-claim about EmDash authentication transport, Commerce/SmokyClub binding,
-deployed Cloudflare state, or production data.
+request/result flow through the real local SQLite development adapter, the
+workerd test adapter, and the loopback-only Wrangler Durable Object runtime.
+The after-fix terminal transcript is
+`.grilltrack/proof/cycle-14/REAL_BEHAVIOR_TRANSCRIPT.txt`; the opaque
+confirmation is redacted. This proof does not render a GUI and makes no claim
+about EmDash authentication transport, Commerce/SmokyClub binding, deployed
+Cloudflare state, or production data.
 
 ## Deferrals and gates
 
@@ -111,3 +125,11 @@ mutation transport, package publication, deployment, and production cutover.
 
 No commit, push, pull request, merge, deployment, publication, account/security
 action, or production mutation occurred in this implementation cycle.
+
+## ClawSweeper proof repair
+
+ClawSweeper's P1 request for contributor-supplied real behavior proof is
+classified `required_fix` and repaired without changing feature logic. The
+proof uses the production Cloudflare SQLite storage adapter in a real local
+Wrangler Durable Object, not a test harness. It is disposable, local-only,
+redacted, and reproducible through the repo-owned command above.

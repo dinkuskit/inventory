@@ -3,7 +3,7 @@
 Result: clean after two required repairs.
 
 Source identity: `SOURCE_IDENTITY.txt`, source diff SHA-256
-`9b9a8f705b9361d6ee919217aed8fb28ce1896f99ced6755868a52fb8839d58f`.
+`a696c63b05df9b98ec63d7d270891e2b6ce6f9c6c93efb806aa2f1712c0e261a`.
 
 ## Required repairs adjudicated
 
@@ -32,6 +32,8 @@ Source identity: `SOURCE_IDENTITY.txt`, source diff SHA-256
   separate exact v3-to-v4 migration; v2 still advances through v3. No live
   database, route, deployment, account, or production state changed.
 - Public exports remain platform-neutral and feature import barriers are clean.
+- The updated PR #14 proof baseline is incorporated without changing transfer
+  behavior; the only overlapping source conflict retained both package scripts.
 
 No unresolved required finding remains in the reviewed source diff. Official
 PR review rails still need to bind their verdict to the eventual PR head SHA.

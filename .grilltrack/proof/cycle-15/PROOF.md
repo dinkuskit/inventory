@@ -19,12 +19,12 @@ Implemented the confirmed Inventory-owned Created transfer slice:
 
 ## Source identity
 
-- stacked baseline: `d735b180b3f4ed911667586f5131ff1727e46546`
-  (PR #14 head at branch creation);
+- stacked baseline: `d260ae3efd6d9a36256e7db5a581403bd87abc71`
+  (PR #14 proof-repair head);
 - fetched `origin/main`: `d31fbfda982ad669f638a222f0cb1caa7592c095`;
 - branch: `codex/location-transfer-20260829`;
 - exact non-GrillTrack source diff SHA-256:
-  `9b9a8f705b9361d6ee919217aed8fb28ce1896f99ced6755868a52fb8839d58f`;
+  `a696c63b05df9b98ec63d7d270891e2b6ce6f9c6c93efb806aa2f1712c0e261a`;
 - identity artifact: `SOURCE_IDENTITY.txt`; and
 - review: `REVIEW.md`.
 
@@ -33,10 +33,12 @@ Implemented the confirmed Inventory-owned Created transfer slice:
 - pull request: https://github.com/dinkuskit/inventory/pull/15
 - implementation commit: `06a090afb58d176c51b866b701b5f29e0c4280bf`
 - stacked base: Inventory PR #14,
-  `d735b180b3f4ed911667586f5131ff1727e46546`
+  `d260ae3efd6d9a36256e7db5a581403bd87abc71`
 
-The follow-up commit containing this delivery binding changes only GrillTrack
-proof state. The reviewed non-GrillTrack source diff remains the SHA-256 above.
+The stack repair merges PR #14 real-behavior proof into this branch and resolves
+the package scripts by retaining both stock-transfer verification and
+stock-adjustment real-proof commands. The reviewed transfer diff relative to
+the updated exact PR #14 head is the SHA-256 above.
 
 ## Verification
 
@@ -49,10 +51,15 @@ bin/verify-stock-transfer
 bin/verify-inventory full
   architecture clean
   Cloudflare TypeScript check passed
-  89/89 Node tests passed
+  90/90 Node tests passed
   17/17 workerd tests passed across 3 files
   Wrangler deploy --dry-run passed
   terminal: verify-inventory full passed
+
+npm run proof:stock-adjustment:real
+  local Wrangler Durable Object preview/confirm passed
+  stopped and reopened 15 persisted state files
+  exact terminal-result replay and one adjustment receipt passed
 
 git diff --check
   passed
