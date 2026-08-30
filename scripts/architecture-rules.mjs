@@ -72,6 +72,7 @@ const REQUIRED_FILES = [
 	"tests/stock-transfer/created-stock-transfer.test.mjs",
 	"tests/stock-transfer/domain.test.mjs",
 	"tests/stock-transfer/in-transit-stock-transfer.test.mjs",
+	"tests/stock-transfer/list-stock-transfers.test.mjs",
 	"tests/stock-transfer/public-entry.test.mjs",
 	"tests/stock-transfer/received-stock-transfer.test.mjs",
 	"tests/cloudflare/stock-transfer.test.mjs",

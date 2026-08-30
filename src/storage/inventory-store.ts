@@ -24,6 +24,7 @@ import type {
 } from "../features/stock-adjustment/index.ts";
 import type {
 	ReadStockTransferInput,
+	StockTransferListView,
 	StockTransferReceiptV2,
 	StockTransferRecord,
 	StockTransferResult,
@@ -115,6 +116,32 @@ export type ListLocationsQuery = Readonly<{
 	status: LocationStatus;
 }>;
 
+export type StockTransferListPosition = Readonly<{
+	sortDate: string;
+	updatedAt: string;
+	transferId: string;
+}>;
+
+export type ListStockTransfersQuery = Readonly<{
+	poolId: string;
+	view: StockTransferListView;
+	locationId?: string;
+	limit: number;
+	after?: StockTransferListPosition;
+}>;
+
+export type StoredStockTransferListRow = Readonly<{
+	transfer: StockTransferRecord;
+	origin: LocationRecord;
+	destination: LocationRecord;
+	position: StockTransferListPosition;
+}>;
+
+export type StoredStockTransferListPage = Readonly<{
+	selectedLocation: LocationRecord | null;
+	rows: readonly StoredStockTransferListRow[];
+}>;
+
 export type ReadSkuActiveLocationSnapshotQuery = Readonly<{
 	poolId: string;
 	skuId: string;
@@ -181,6 +208,9 @@ export interface InventoryStore {
 	readBalance(key: SkuLocationKey): Promise<BalanceRecord | null>;
 	readManagedSku(query: ReadManagedSkuQuery): Promise<ManagedSkuRecord | null>;
 	readStockTransfer(query: ReadStockTransferInput): Promise<StockTransferRecord | null>;
+	listStockTransfers(
+		query: ListStockTransfersQuery,
+	): Promise<StoredStockTransferListPage>;
 	readSkuActiveLocationSnapshot(
 		query: ReadSkuActiveLocationSnapshotQuery,
 	): Promise<readonly ActiveLocationBalanceSnapshot[]>;

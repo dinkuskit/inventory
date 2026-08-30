@@ -18,6 +18,13 @@ export const STOCK_TRANSFER_RECORD_SCHEMA =
 	"dinkuskit.inventory.stock-transfer/v1" as const;
 export const STOCK_TRANSFER_READ_RESULT_SCHEMA =
 	"dinkuskit.inventory.stock-transfer-read-result/v1" as const;
+export const STOCK_TRANSFER_LIST_RESULT_SCHEMA =
+	"dinkuskit.inventory.stock-transfer-list-result/v1" as const;
+export const STOCK_TRANSFER_LIST_DEFAULT_LIMIT = 50;
+export const STOCK_TRANSFER_LIST_MAX_LIMIT = 100;
+
+const STOCK_TRANSFER_LIST_CURSOR_SCHEMA =
+	"dinkuskit.inventory.stock-transfer-list-cursor/v1" as const;
 
 export type StockTransferLine = Readonly<{
 	skuId: string;
@@ -122,6 +129,82 @@ export type StockTransferStatus =
 	| "in_transit"
 	| "received"
 	| "canceled";
+
+export type StockTransferListView = "open" | "done";
+
+export type StockTransferListScope =
+	| Readonly<{ kind: "location"; locationId: string }>
+	| Readonly<{ kind: "all_locations" }>;
+
+export type ReadStockTransferListInput = Readonly<{
+	poolId: string;
+	view: StockTransferListView;
+	scope: StockTransferListScope;
+	limit?: number;
+	cursor?: string;
+}>;
+
+export type NormalizedReadStockTransferListInput = Readonly<{
+	poolId: string;
+	view: StockTransferListView;
+	scope: StockTransferListScope;
+	limit: number;
+	cursor?: string;
+}>;
+
+export type StockTransferListEndpoint = Readonly<{
+	locationId: string;
+	name: string;
+	status: "active" | "archived";
+}>;
+
+type StockTransferListRowBase = Readonly<{
+	transferId: string;
+	reference: string;
+	status: StockTransferStatus;
+	origin: StockTransferListEndpoint;
+	destination: StockTransferListEndpoint;
+	productLineCount: number;
+}>;
+
+export type StockTransferListRow =
+	| (StockTransferListRowBase &
+			Readonly<{
+				status: "created" | "in_transit";
+				createdAt: string;
+				expectedDispatchDate: string;
+				expectedArrivalDate: string;
+			}>)
+	| (StockTransferListRowBase &
+			Readonly<{
+				status: "received";
+				dispatchedDate: string;
+				receivedDate: string;
+			}>)
+	| (StockTransferListRowBase &
+			Readonly<{
+				status: "canceled";
+				createdAt: string;
+				canceledAt: string;
+			}>);
+
+export type StockTransferListResult =
+	| Readonly<{
+			schema: typeof STOCK_TRANSFER_LIST_RESULT_SCHEMA;
+			outcome: "listed";
+			poolId: string;
+			view: StockTransferListView;
+			scope: StockTransferListScope;
+			transfers: readonly StockTransferListRow[];
+			next: string | null;
+	  }>
+	| Readonly<{
+			schema: typeof STOCK_TRANSFER_LIST_RESULT_SCHEMA;
+			outcome: "location_not_found" | "location_not_active";
+			poolId: string;
+			view: StockTransferListView;
+			scope: Readonly<{ kind: "location"; locationId: string }>;
+	  }>;
 
 export type StockTransferRecord = Readonly<{
 	schema: typeof STOCK_TRANSFER_RECORD_SCHEMA;
@@ -259,6 +342,13 @@ export class InvalidStockTransferCommandError extends Error {
 	constructor(message: string) {
 		super(message);
 		this.name = "InvalidStockTransferCommandError";
+	}
+}
+
+export class InvalidStockTransferListQueryError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = "InvalidStockTransferListQueryError";
 	}
 }
 
@@ -597,6 +687,234 @@ export function normalizeReadStockTransferInput(
 		poolId: nonEmptyString(query.poolId, "poolId"),
 		transferId: nonEmptyString(query.transferId, "transferId"),
 	};
+}
+
+function invalidListQuery(message: string): never {
+	throw new InvalidStockTransferListQueryError(message);
+}
+
+function listQueryRecord(
+	value: unknown,
+	field: string,
+): Record<string, unknown> {
+	if (typeof value !== "object" || value === null || Array.isArray(value)) {
+		invalidListQuery(`${field} must be an object.`);
+	}
+	return value as Record<string, unknown>;
+}
+
+function listQueryExactKeys(
+	value: Record<string, unknown>,
+	field: string,
+	allowed: readonly string[],
+): void {
+	const actual = Object.keys(value);
+	if (
+		actual.length !== allowed.length ||
+		actual.some((key) => !allowed.includes(key))
+	) {
+		invalidListQuery(`${field} must contain exactly ${allowed.join(", ")}.`);
+	}
+}
+
+function listQueryAllowedKeys(
+	value: Record<string, unknown>,
+	field: string,
+	allowed: readonly string[],
+): void {
+	const unexpected = Object.keys(value).filter((key) => !allowed.includes(key));
+	if (unexpected.length > 0) {
+		invalidListQuery(`${field} contains unsupported fields.`);
+	}
+}
+
+function listQueryNonEmptyString(value: unknown, field: string): string {
+	if (typeof value !== "string") {
+		invalidListQuery(`${field} must be a string.`);
+	}
+	const normalized = value.trim();
+	if (normalized.length === 0) {
+		invalidListQuery(`${field} must not be empty.`);
+	}
+	return normalized;
+}
+
+function normalizeStockTransferListScope(
+	value: unknown,
+): StockTransferListScope {
+	const scope = listQueryRecord(value, "scope");
+	if (scope.kind === "location") {
+		listQueryExactKeys(scope, "scope", ["kind", "locationId"]);
+		return {
+			kind: "location",
+			locationId: listQueryNonEmptyString(
+				scope.locationId,
+				"scope.locationId",
+			),
+		};
+	}
+	if (scope.kind === "all_locations") {
+		listQueryExactKeys(scope, "scope", ["kind"]);
+		return { kind: "all_locations" };
+	}
+	invalidListQuery('scope.kind must be "location" or "all_locations".');
+}
+
+export function normalizeReadStockTransferListInput(
+	input: unknown,
+): NormalizedReadStockTransferListInput {
+	const query = listQueryRecord(input, "stock transfer list query");
+	listQueryAllowedKeys(query, "stock transfer list query", [
+		"poolId",
+		"view",
+		"scope",
+		"limit",
+		"cursor",
+	]);
+	const view = query.view;
+	if (view !== "open" && view !== "done") {
+		invalidListQuery('view must be "open" or "done".');
+	}
+	const limit = query.limit === undefined
+		? STOCK_TRANSFER_LIST_DEFAULT_LIMIT
+		: query.limit;
+	if (
+		typeof limit !== "number" ||
+		!Number.isInteger(limit) ||
+		limit < 1 ||
+		limit > STOCK_TRANSFER_LIST_MAX_LIMIT
+	) {
+		invalidListQuery(
+			`limit must be an integer from 1 through ${STOCK_TRANSFER_LIST_MAX_LIMIT}.`,
+		);
+	}
+	const normalized: NormalizedReadStockTransferListInput = {
+		poolId: listQueryNonEmptyString(query.poolId, "poolId"),
+		view,
+		scope: normalizeStockTransferListScope(query.scope),
+		limit,
+	};
+	return query.cursor === undefined
+		? normalized
+		: {
+				...normalized,
+				cursor: listQueryNonEmptyString(query.cursor, "cursor"),
+			};
+}
+
+export type StockTransferListCursorPosition = Readonly<{
+	sortDate: string;
+	updatedAt: string;
+	transferId: string;
+}>;
+
+type StockTransferListCursorPayload = StockTransferListCursorPosition &
+	Readonly<{
+		schema: typeof STOCK_TRANSFER_LIST_CURSOR_SCHEMA;
+		poolId: string;
+		view: StockTransferListView;
+		scope: StockTransferListScope;
+	}>;
+
+function encodeBase64Url(value: string): string {
+	const bytes = new TextEncoder().encode(value);
+	let binary = "";
+	for (const byte of bytes) binary += String.fromCharCode(byte);
+	return btoa(binary)
+		.replace(/\+/gu, "-")
+		.replace(/\//gu, "_")
+		.replace(/=+$/gu, "");
+}
+
+function decodeBase64Url(value: string): string {
+	if (!/^[A-Za-z0-9_-]+$/u.test(value)) {
+		invalidListQuery("cursor must be a valid opaque transfer-list cursor.");
+	}
+	const base64 = value.replace(/-/gu, "+").replace(/_/gu, "/");
+	const padded = `${base64}${"=".repeat((4 - (base64.length % 4)) % 4)}`;
+	const binary = atob(padded);
+	const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+	return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+}
+
+function validCursorDate(value: unknown, field: string): string {
+	const normalized = listQueryNonEmptyString(value, field);
+	if (Number.isNaN(Date.parse(normalized))) {
+		invalidListQuery(`${field} must be a valid date or timestamp.`);
+	}
+	return normalized;
+}
+
+function sameStockTransferListScope(
+	left: StockTransferListScope,
+	right: StockTransferListScope,
+): boolean {
+	return left.kind === right.kind &&
+		(left.kind === "all_locations" ||
+			(right.kind === "location" && left.locationId === right.locationId));
+}
+
+export function encodeStockTransferListCursor(
+	query: Pick<NormalizedReadStockTransferListInput, "poolId" | "view" | "scope">,
+	position: StockTransferListCursorPosition,
+): string {
+	return encodeBase64Url(JSON.stringify({
+		schema: STOCK_TRANSFER_LIST_CURSOR_SCHEMA,
+		poolId: query.poolId,
+		view: query.view,
+		scope: query.scope,
+		sortDate: position.sortDate,
+		updatedAt: position.updatedAt,
+		transferId: position.transferId,
+	} satisfies StockTransferListCursorPayload));
+}
+
+export function decodeStockTransferListCursor(
+	cursor: string,
+	query: Pick<NormalizedReadStockTransferListInput, "poolId" | "view" | "scope">,
+): StockTransferListCursorPosition {
+	try {
+		const payload = listQueryRecord(
+			JSON.parse(decodeBase64Url(cursor)),
+			"cursor payload",
+		);
+		listQueryExactKeys(payload, "cursor payload", [
+			"schema",
+			"poolId",
+			"view",
+			"scope",
+			"sortDate",
+			"updatedAt",
+			"transferId",
+		]);
+		if (payload.schema !== STOCK_TRANSFER_LIST_CURSOR_SCHEMA) {
+			invalidListQuery("cursor schema is not supported.");
+		}
+		const poolId = listQueryNonEmptyString(payload.poolId, "cursor.poolId");
+		const view = payload.view;
+		if (view !== "open" && view !== "done") {
+			invalidListQuery("cursor.view is invalid.");
+		}
+		const scope = normalizeStockTransferListScope(payload.scope);
+		if (
+			poolId !== query.poolId ||
+			view !== query.view ||
+			!sameStockTransferListScope(scope, query.scope)
+		) {
+			invalidListQuery("cursor does not belong to this transfer-list query.");
+		}
+		return {
+			sortDate: validCursorDate(payload.sortDate, "cursor.sortDate"),
+			updatedAt: validCursorDate(payload.updatedAt, "cursor.updatedAt"),
+			transferId: listQueryNonEmptyString(
+				payload.transferId,
+				"cursor.transferId",
+			),
+		};
+	} catch (error) {
+		if (error instanceof InvalidStockTransferListQueryError) throw error;
+		invalidListQuery("cursor must be a valid opaque transfer-list cursor.");
+	}
 }
 
 export async function digestStockTransferCommand(

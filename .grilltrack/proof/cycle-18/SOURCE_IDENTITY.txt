@@ -1,0 +1,6 @@
+baseline_head=ff6dd9de3841dd95965849c1b0221b1551929656
+origin_main=ff6dd9de3841dd95965849c1b0221b1551929656
+branch=codex/stock-transfer-list-read-20260830
+source_manifest_sha256=4eb90a36d9bc326335d5557575c3ad37d0b33d8d62b6e3e1c98abbe633fc0e8c
+source_manifest_scope=sha256 manifest of 16 changed non-GrillTrack files relative to origin/main, including untracked source
+reviewed_at=2026-08-30T22:15:38Z

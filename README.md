@@ -119,6 +119,19 @@ idempotent, actor-bearing, and committed with its immutable receipt. Partial
 receipt, Received reversion, GUI, and runtime service exposure remain later
 slices.
 
+The platform-neutral transfer read surface now also lists either Open or Done
+work for one explicit active location or for All Locations. Open contains
+Created and In-transit transfers; Done contains Received and Canceled
+transfers. A location view includes both incoming and outgoing transfers, while
+All Locations returns each transfer once when at least one endpoint is active.
+An archived opposite endpoint remains visible and labeled; transfers whose two
+endpoints are archived stay out of the normal list. Compact rows expose the
+reference, status, current endpoint identities and names, product-line count,
+and relevant lifecycle dates without leaking line quantities, notes, actors,
+warnings, or receipts. Lifecycle-aware ordering and opaque keyset pagination
+default to 50 rows and allow at most 100. This adds no schema migration,
+Worker/CLI/GUI route, authentication, or mutation.
+
 The real local SQLite test adapter remains explicitly development/test-only and
 refuses production mode or in-memory use. It is not the final storage layer.
 The first production-storage checkpoint is a private `dinkuskit-inventory`
