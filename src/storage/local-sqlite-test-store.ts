@@ -15,6 +15,10 @@ import type {
 import type { InventoryStockReceiptV2 } from "../domain/inventory-read.ts";
 import type { ManagedSkuRecord } from "../features/managed-sku/index.ts";
 import type {
+	ReadStockTransferInput,
+	StockTransferRecord,
+} from "../features/stock-transfer/index.ts";
+import type {
 	ActiveLocationBalanceSnapshot,
 	InventoryStore,
 	InventoryTransaction,
@@ -29,10 +33,11 @@ import type {
 	StoredStockAdjustmentConfirmation,
 	StoredCommandResult,
 	StockAdjustmentCommit,
+	StockTransferCommit,
 } from "./inventory-store.ts";
 
 const STORAGE_ROLE = "local-development-test-only";
-const SCHEMA_VERSION = "opening-balance-local/v6";
+const SCHEMA_VERSION = "opening-balance-local/v7";
 const EXPECTED_TABLES = [
 	"inventory_balances",
 	"inventory_command_results",
@@ -41,6 +46,7 @@ const EXPECTED_TABLES = [
 	"inventory_receipts",
 	"inventory_skus",
 	"inventory_storage_metadata",
+	"inventory_transfers",
 ] as const;
 
 type DatabaseRow = Record<string, unknown>;
@@ -60,10 +66,24 @@ function balanceFrom(row: DatabaseRow | undefined): BalanceRecord | null {
 		skuId: String(row.sku_id),
 		onHand: { value: String(row.on_hand_value), unit },
 		reserved: { value: String(row.reserved_value), unit },
+		outgoingTransferCommitted: {
+			value: String(row.outgoing_transfer_committed_value),
+			unit,
+		},
 		available: { value: String(row.available_value), unit },
+		expected: { value: String(row.expected_value), unit },
+		inTransit: { value: String(row.in_transit_value), unit },
 		version: String(row.version),
 		hasStockHistory: Number(row.has_stock_history) === 1,
 	};
+}
+
+function stockTransferFrom(
+	row: DatabaseRow | undefined,
+): StockTransferRecord | null {
+	return row === undefined
+		? null
+		: json<StockTransferRecord>(row.transfer_json);
 }
 
 function locationFrom(row: DatabaseRow | undefined): LocationRecord | null {
@@ -121,8 +141,20 @@ function activeLocationBalanceSnapshotFrom(
 						value: String(row.balance_reserved_value),
 						unit: String(row.balance_unit),
 					},
+					outgoingTransferCommitted: {
+						value: String(row.balance_outgoing_transfer_committed_value),
+						unit: String(row.balance_unit),
+					},
 					available: {
 						value: String(row.balance_available_value),
+						unit: String(row.balance_unit),
+					},
+					expected: {
+						value: String(row.balance_expected_value),
+						unit: String(row.balance_unit),
+					},
+					inTransit: {
+						value: String(row.balance_in_transit_value),
 						unit: String(row.balance_unit),
 					},
 					version: String(row.balance_version),
@@ -171,7 +203,9 @@ class SqliteInventoryTransaction implements InventoryTransaction {
 		const row = this.#database
 			.prepare(
 				`SELECT pool_id, location_id, sku_id, on_hand_value,
-				        reserved_value, available_value, unit, version,
+				        reserved_value, outgoing_transfer_committed_value,
+				        available_value, expected_value, in_transit_value,
+				        unit, version,
 				        has_stock_history
 				 FROM inventory_balances
 				 WHERE pool_id = ? AND location_id = ? AND sku_id = ?`,
@@ -208,6 +242,32 @@ class SqliteInventoryTransaction implements InventoryTransaction {
 		);
 	}
 
+	getStockTransfer(transferId: string): StockTransferRecord | null {
+		return stockTransferFrom(
+			this.#database
+				.prepare(
+					`SELECT transfer_json
+					 FROM inventory_transfers
+					 WHERE pool_id = ? AND transfer_id = ?`,
+				)
+				.get(this.#poolId, transferId) as DatabaseRow | undefined,
+		);
+	}
+
+	getStockTransferByReferenceKey(
+		referenceKey: string,
+	): StockTransferRecord | null {
+		return stockTransferFrom(
+			this.#database
+				.prepare(
+					`SELECT transfer_json
+					 FROM inventory_transfers
+					 WHERE pool_id = ? AND reference_key = ?`,
+				)
+				.get(this.#poolId, referenceKey) as DatabaseRow | undefined,
+		);
+	}
+
 	getLocation(locationId: string): LocationRecord | null {
 		return locationFrom(
 			this.#database
@@ -239,10 +299,16 @@ class SqliteInventoryTransaction implements InventoryTransaction {
 	): readonly LocationBalanceBlocker[] {
 		const rows = this.#database
 			.prepare(
-				`SELECT sku_id, on_hand_value, reserved_value, unit
+				`SELECT sku_id, on_hand_value, reserved_value,
+				        outgoing_transfer_committed_value, expected_value,
+				        in_transit_value, unit
 				 FROM inventory_balances
 				 WHERE pool_id = ? AND location_id = ?
-				   AND (on_hand_value <> '0' OR reserved_value <> '0')
+				   AND (
+				     on_hand_value <> '0' OR reserved_value <> '0' OR
+				     outgoing_transfer_committed_value <> '0' OR
+				     expected_value <> '0' OR in_transit_value <> '0'
+				   )
 				 ORDER BY sku_id`,
 			)
 			.all(this.#poolId, locationId) as DatabaseRow[];
@@ -250,6 +316,12 @@ class SqliteInventoryTransaction implements InventoryTransaction {
 			skuId: String(row.sku_id),
 			onHand: { value: String(row.on_hand_value), unit: String(row.unit) },
 			reserved: { value: String(row.reserved_value), unit: String(row.unit) },
+			outgoingTransferCommitted: {
+				value: String(row.outgoing_transfer_committed_value),
+				unit: String(row.unit),
+			},
+			expected: { value: String(row.expected_value), unit: String(row.unit) },
+			inTransit: { value: String(row.in_transit_value), unit: String(row.unit) },
 		}));
 	}
 
@@ -367,25 +439,56 @@ class SqliteInventoryTransaction implements InventoryTransaction {
 
 	commitOpeningBalance(input: OpeningBalanceCommit): void {
 		this.#assertPool(input.balance);
-		this.#database
-			.prepare(
+		if (input.previous === null) {
+			this.#database.prepare(
 				`INSERT INTO inventory_balances
 				   (pool_id, location_id, sku_id, on_hand_value,
-				    reserved_value, available_value, unit, version,
-				    has_stock_history)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			)
-			.run(
+				    reserved_value, outgoing_transfer_committed_value,
+				    available_value, expected_value, in_transit_value,
+				    unit, version, has_stock_history)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			).run(
 				input.balance.poolId,
 				input.balance.locationId,
 				input.balance.skuId,
 				input.balance.onHand.value,
 				input.balance.reserved.value,
+				input.balance.outgoingTransferCommitted.value,
 				input.balance.available.value,
+				input.balance.expected.value,
+				input.balance.inTransit.value,
 				input.balance.onHand.unit,
 				Number(input.balance.version),
 				input.balance.hasStockHistory ? 1 : 0,
 			);
+		} else {
+			const updated = this.#database.prepare(
+				`UPDATE inventory_balances
+				 SET on_hand_value = ?, reserved_value = ?,
+				     outgoing_transfer_committed_value = ?, available_value = ?,
+				     expected_value = ?, in_transit_value = ?, unit = ?,
+				     version = ?, has_stock_history = ?
+				 WHERE pool_id = ? AND location_id = ? AND sku_id = ?
+				   AND version = ? AND has_stock_history = 0`,
+			).run(
+				input.balance.onHand.value,
+				input.balance.reserved.value,
+				input.balance.outgoingTransferCommitted.value,
+				input.balance.available.value,
+				input.balance.expected.value,
+				input.balance.inTransit.value,
+				input.balance.onHand.unit,
+				Number(input.balance.version),
+				input.balance.hasStockHistory ? 1 : 0,
+				input.balance.poolId,
+				input.balance.locationId,
+				input.balance.skuId,
+				Number(input.previous.version),
+			);
+			if (Number(updated.changes) !== 1) {
+				throw new Error("Opening-balance update lost its planning row.");
+			}
+		}
 		this.#database
 			.prepare(
 				`INSERT INTO inventory_receipts
@@ -415,15 +518,20 @@ class SqliteInventoryTransaction implements InventoryTransaction {
 		const updated = this.#database
 			.prepare(
 				`UPDATE inventory_balances
-				 SET on_hand_value = ?, reserved_value = ?, available_value = ?,
-				     unit = ?, version = ?, has_stock_history = ?
+				 SET on_hand_value = ?, reserved_value = ?,
+				     outgoing_transfer_committed_value = ?, available_value = ?,
+				     expected_value = ?, in_transit_value = ?, unit = ?,
+				     version = ?, has_stock_history = ?
 				 WHERE pool_id = ? AND location_id = ? AND sku_id = ?
 				   AND version = ? AND has_stock_history = 1`,
 			)
 			.run(
 				input.balance.onHand.value,
 				input.balance.reserved.value,
+				input.balance.outgoingTransferCommitted.value,
 				input.balance.available.value,
+				input.balance.expected.value,
+				input.balance.inTransit.value,
 				input.balance.onHand.unit,
 				Number(input.balance.version),
 				input.balance.hasStockHistory ? 1 : 0,
@@ -541,6 +649,101 @@ class SqliteInventoryTransaction implements InventoryTransaction {
 			);
 		this.storeCommandResult(input);
 	}
+
+	commitStockTransfer(input: StockTransferCommit): void {
+		if (input.transfer.poolId !== this.#poolId) {
+			throw new Error("A transaction cannot cross inventory pools.");
+		}
+		for (const change of input.balances) {
+			this.#assertPool(change.balance);
+			if (change.previous === null) {
+				this.#database.prepare(
+					`INSERT INTO inventory_balances (
+						pool_id, location_id, sku_id, on_hand_value, reserved_value,
+						outgoing_transfer_committed_value, available_value,
+						expected_value, in_transit_value, unit, version,
+						has_stock_history
+					) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+				).run(
+					change.balance.poolId,
+					change.balance.locationId,
+					change.balance.skuId,
+					change.balance.onHand.value,
+					change.balance.reserved.value,
+					change.balance.outgoingTransferCommitted.value,
+					change.balance.available.value,
+					change.balance.expected.value,
+					change.balance.inTransit.value,
+					change.balance.onHand.unit,
+					Number(change.balance.version),
+					change.balance.hasStockHistory ? 1 : 0,
+				);
+			} else {
+				const updated = this.#database.prepare(
+					`UPDATE inventory_balances
+					 SET on_hand_value = ?, reserved_value = ?,
+					     outgoing_transfer_committed_value = ?, available_value = ?,
+					     expected_value = ?, in_transit_value = ?, unit = ?,
+					     version = ?, has_stock_history = ?
+					 WHERE pool_id = ? AND location_id = ? AND sku_id = ?
+					   AND version = ?`,
+				).run(
+					change.balance.onHand.value,
+					change.balance.reserved.value,
+					change.balance.outgoingTransferCommitted.value,
+					change.balance.available.value,
+					change.balance.expected.value,
+					change.balance.inTransit.value,
+					change.balance.onHand.unit,
+					Number(change.balance.version),
+					change.balance.hasStockHistory ? 1 : 0,
+					change.balance.poolId,
+					change.balance.locationId,
+					change.balance.skuId,
+					Number(change.previous.version),
+				);
+				if (Number(updated.changes) !== 1) {
+					throw new Error("Stock-transfer balance update lost its target row.");
+				}
+			}
+		}
+		if (input.previous === null) {
+			this.#database.prepare(
+				`INSERT INTO inventory_transfers
+				   (pool_id, transfer_id, reference_key, status, version, transfer_json)
+				 VALUES (?, ?, ?, ?, ?, ?)`,
+			).run(
+				input.transfer.poolId,
+				input.transfer.transferId,
+				input.referenceKey,
+				input.transfer.status,
+				Number(input.transfer.version),
+				JSON.stringify(input.transfer),
+			);
+		} else {
+			const updated = this.#database.prepare(
+				`UPDATE inventory_transfers
+				 SET reference_key = ?, status = ?, version = ?, transfer_json = ?
+				 WHERE pool_id = ? AND transfer_id = ? AND version = ?`,
+			).run(
+				input.referenceKey,
+				input.transfer.status,
+				Number(input.transfer.version),
+				JSON.stringify(input.transfer),
+				input.transfer.poolId,
+				input.transfer.transferId,
+				Number(input.previous.version),
+			);
+			if (Number(updated.changes) !== 1) {
+				throw new Error("Stock-transfer update lost its target row.");
+			}
+		}
+		this.#database.prepare(
+			`INSERT INTO inventory_receipts (receipt_id, command_id, receipt_json)
+			 VALUES (?, ?, ?)`,
+		).run(input.receipt.receiptId, input.commandId, JSON.stringify(input.receipt));
+		this.storeCommandResult(input);
+	}
 }
 
 export class LocalSqliteTestInventoryStore implements InventoryStore {
@@ -594,7 +797,10 @@ export class LocalSqliteTestInventoryStore implements InventoryStore {
 				sku_id TEXT NOT NULL,
 				on_hand_value TEXT NOT NULL,
 				reserved_value TEXT NOT NULL,
+				outgoing_transfer_committed_value TEXT NOT NULL DEFAULT '0',
 				available_value TEXT NOT NULL,
+				expected_value TEXT NOT NULL DEFAULT '0',
+				in_transit_value TEXT NOT NULL DEFAULT '0',
 				unit TEXT NOT NULL,
 				version INTEGER NOT NULL,
 				has_stock_history INTEGER NOT NULL CHECK (has_stock_history IN (0, 1)),
@@ -628,6 +834,16 @@ export class LocalSqliteTestInventoryStore implements InventoryStore {
 				registered_by_json TEXT NOT NULL,
 				PRIMARY KEY (pool_id, inventory_sku_id),
 				UNIQUE (pool_id, sku)
+			) STRICT;
+			CREATE TABLE inventory_transfers (
+				pool_id TEXT NOT NULL,
+				transfer_id TEXT NOT NULL,
+				reference_key TEXT NOT NULL,
+				status TEXT NOT NULL CHECK (status IN ('created', 'in_transit', 'received', 'canceled')),
+				version INTEGER NOT NULL CHECK (version >= 1),
+				transfer_json TEXT NOT NULL,
+				PRIMARY KEY (pool_id, transfer_id),
+				UNIQUE (pool_id, reference_key)
 			) STRICT;
 			CREATE TABLE inventory_receipts (
 				receipt_id TEXT PRIMARY KEY,
@@ -721,7 +937,9 @@ export class LocalSqliteTestInventoryStore implements InventoryStore {
 		const row = this.#openDatabase()
 			.prepare(
 				`SELECT pool_id, location_id, sku_id, on_hand_value,
-				        reserved_value, available_value, unit, version,
+				        reserved_value, outgoing_transfer_committed_value,
+				        available_value, expected_value, in_transit_value,
+				        unit, version,
 				        has_stock_history
 				 FROM inventory_balances
 				 WHERE pool_id = ? AND location_id = ? AND sku_id = ?`,
@@ -747,6 +965,20 @@ export class LocalSqliteTestInventoryStore implements InventoryStore {
 		);
 	}
 
+	async readStockTransfer(
+		query: ReadStockTransferInput,
+	): Promise<StockTransferRecord | null> {
+		return stockTransferFrom(
+			this.#openDatabase()
+				.prepare(
+					`SELECT transfer_json
+					 FROM inventory_transfers
+					 WHERE pool_id = ? AND transfer_id = ?`,
+				)
+				.get(query.poolId, query.transferId) as DatabaseRow | undefined,
+		);
+	}
+
 	async readSkuActiveLocationSnapshot(
 		query: ReadSkuActiveLocationSnapshotQuery,
 	): Promise<readonly ActiveLocationBalanceSnapshot[]> {
@@ -759,7 +991,10 @@ export class LocalSqliteTestInventoryStore implements InventoryStore {
 				        balance.sku_id AS balance_sku_id,
 				        balance.on_hand_value AS balance_on_hand_value,
 				        balance.reserved_value AS balance_reserved_value,
+				        balance.outgoing_transfer_committed_value AS balance_outgoing_transfer_committed_value,
 				        balance.available_value AS balance_available_value,
+				        balance.expected_value AS balance_expected_value,
+				        balance.in_transit_value AS balance_in_transit_value,
 				        balance.unit AS balance_unit,
 				        balance.version AS balance_version,
 				        balance.has_stock_history AS balance_has_stock_history
@@ -836,7 +1071,7 @@ export class LocalSqliteTestInventoryStore implements InventoryStore {
 	): Promise<readonly InventoryStockReceiptV2[]> {
 		const clauses = [
 			"json_extract(receipt_json, '$.context.poolId') = ?",
-			"json_extract(receipt_json, '$.type') IN ('stock.opening_balance', 'stock.adjust')",
+			"json_extract(receipt_json, '$.type') IN ('stock.opening_balance', 'stock.adjust', 'transfer.create', 'transfer.update', 'transfer.cancel')",
 		];
 		const bindings: Array<string | number> = [query.poolId];
 		if (query.locationId !== undefined) {

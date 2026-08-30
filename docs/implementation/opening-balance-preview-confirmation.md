@@ -49,14 +49,20 @@ type OpeningBalancePreviewV1 = Readonly<{
     balanceBefore: Readonly<{
       onHand: ExactQuantity;
       reserved: ExactQuantity;
+      outgoingTransferCommitted: ExactQuantity;
       available: ExactQuantity;
-      version: "0";
+      expected: ExactQuantity;
+      inTransit: ExactQuantity;
+      version: string;
     }>;
     balanceAfter: Readonly<{
       onHand: ExactQuantity;
       reserved: ExactQuantity;
+      outgoingTransferCommitted: ExactQuantity;
       available: ExactQuantity;
-      version: "1";
+      expected: ExactQuantity;
+      inTransit: ExactQuantity;
+      version: string;
     }>;
   }>;
   reason: PreviewOpeningBalanceInputV1["reason"];
@@ -78,8 +84,10 @@ type ConfirmOpeningBalance = (
 ```
 
 The proposal intentionally has no command ID, receipt, or caller-supplied
-expected version. Preview observes logical version `0` and the authoritative
-command created for confirmation carries the derived version-0 precondition.
+expected version. Preview observes logical version `0` when no balance row
+exists, or the current planning-row version when a Created transfer has already
+materialized expected stock. The authoritative command created for confirmation
+carries that derived precondition.
 The authenticated service adapter will eventually supply the trusted principal;
 this slice only validates and binds the provided principal identity.
 
@@ -92,8 +100,9 @@ The identity digest covers kind, ID, and surface—not the mutable display-name
 snapshot. Plaintext tokens are returned once and are never stored.
 
 1. Preview normalizes the proposal and principal inside the application
-   boundary, reads the explicit pool/location/SKU in a transaction, and accepts
-   only logical version `0` with no stock history.
+   boundary, reads the explicit pool/location/SKU, and accepts only a balance
+   with no physical stock history. A planning-only row is allowed. Its exact
+   version and six quantities are rechecked inside the transaction.
 2. Preview stores the confirmation record in that transaction but writes no
    balance, receipt, or command result.
 3. The token expires exactly 300,000 milliseconds after issue. Confirmation is
@@ -104,7 +113,7 @@ snapshot. Plaintext tokens are returned once and are never stored.
 5. An exact retry with the same token, command ID, normalized command, and
    principal returns the original terminal result even after token expiry or a
    database reopen.
-6. A changed action or principal fails closed. A consumed token presented with
+6. A changed action, observed version, or principal fails closed. A consumed token presented with
    another command ID fails closed. Those gate failures create no command
    result, balance, or receipt.
 7. Changed contents under an already-used command ID retain the existing
@@ -133,9 +142,9 @@ create no balance or receipt; exact retry returns that original rejection even
 after the location is created or restored.
 
 This slice introduced `opening-balance-local/v2` and
-`inventory_opening_balance_confirmations`. The later read-back/actor slice
-advances the current disposable marker to `opening-balance-local/v3` because
-stored human receipt JSON is now receipt v2. Older test databases remain
+`inventory_opening_balance_confirmations`. Subsequent slices advanced the
+current disposable marker; Created stock transfers now use
+`opening-balance-local/v7`. Older test databases remain
 deliberately incompatible; this adapter is neither a production migration
 format nor the final storage layer.
 

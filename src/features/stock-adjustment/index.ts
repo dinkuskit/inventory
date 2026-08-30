@@ -20,11 +20,8 @@ export type {
 	StockAdjustmentResult,
 	StockAdjustmentReason,
 } from "./domain.ts";
-export {
-	addExactDecimal,
-	createAdjustStock,
-	subtractExactDecimal,
-} from "./adjust.ts";
+export { addExactDecimal, subtractExactDecimal } from "../../domain/exact-decimal.ts";
+export { createAdjustStock } from "./adjust.ts";
 export type {
 	AdjustStock,
 	AdjustStockDependencies,

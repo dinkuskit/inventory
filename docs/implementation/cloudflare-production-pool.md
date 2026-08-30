@@ -75,7 +75,8 @@ class InventoryService extends WorkerEntrypoint<InventoryWorkerEnv> {
 selects the Durable Object by normalized `poolId`, then obtains schema and
 balance status and read-only business-table counts from that object. The counts
 prove that the initialization probe did not create a balance, command,
-confirmation, or receipt. It is callable through a same-account service binding.
+confirmation, receipt, managed SKU, or transfer. It is callable through a
+same-account service binding.
 The Worker has `workers_dev: false`, preview URLs disabled, and no route, so the
 method is not an unauthenticated public API.
 
@@ -89,25 +90,26 @@ The object constructor runs schema initialization under
 records applied monotonic integer versions because Durable Object SQLite does
 not support `PRAGMA user_version`.
 
-Schema version 3 is the complete current real-database schema and owns exactly:
+Schema version 4 is the complete current real-database schema and owns exactly:
 
 - `inventory_schema_migrations`;
 - `inventory_command_results`;
 - `inventory_balances`;
 - `inventory_locations`;
 - `inventory_skus`;
+- `inventory_transfers`;
 - `inventory_receipts`; and
 - `inventory_opening_balance_confirmations`.
 
 The business tables preserve the verified local-test shape, but there is no
 test-role marker and no compatibility with disposable local database files.
 Fresh schema creation executes inside `DurableObjectStorage.transactionSync`
-and records only version 3. Exact committed v2 storage with history `[2]`
-upgrades inside the same atomic boundary: it creates the managed-SKU registry,
-backfills every legacy balanced SKU key without changing its identity, preserves
-the other six tables, and records history `[2, 3]`. Version 1, partial,
-conflicting-unit, extra-table, or otherwise incompatible storage is rejected
-without a partial write.
+and records only version 4. Exact committed v3 storage adds the transfer
+planning balance columns and transfer table, recording `[3, 4]`. Exact
+committed v2 storage first creates the managed-SKU registry and backfills every
+legacy balanced SKU key without changing its identity, then applies the v4
+step, recording `[2, 3, 4]`. Version 1, partial, conflicting-unit, extra-table,
+or otherwise incompatible storage is rejected without a partial write.
 
 `CloudflareSqliteInventoryStore.runTransaction` also uses
 `transactionSync`. The callback must remain synchronous, matching the existing
@@ -172,7 +174,7 @@ Strict TDD must prove:
 
 1. Wrangler declares a SQLite Durable Object export and contains no route,
    account ID, tenant value, or public development URL.
-2. A fresh object initializes the complete schema version 3 exactly once and
+2. A fresh object initializes the complete schema version 4 exactly once and
    records no fictional predecessor version.
 3. An explicit SKU-location read returns `not_found` without creating a
    balance, command, receipt, or confirmation.
@@ -185,7 +187,7 @@ Strict TDD must prove:
 8. `wrangler deploy --dry-run` validates the exact source/config before live
    deployment.
 9. Any later approved deployment proof must use a new empty pool and show
-   schema version 3 plus `not_found`; the earlier probe objects are not
+   schema version 4 plus `not_found`; the earlier probe objects are not
    a live database or migration input.
 
 The remote proof must also show that no balance, command, or receipt was

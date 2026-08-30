@@ -223,9 +223,9 @@ display name, so casing or surrounding whitespace cannot create a duplicate.
 Archiving never releases a name for reuse.
 
 Archive succeeds only when every balance at that location has exactly zero
-on-hand and zero reserved. Positive on-hand, negative on-hand, or any reserved
-quantity returns the durable `location_not_empty` rejection with the exact SKU
-blockers. The active location list supplies ordinary selectors and later
+on-hand, reserved, outgoing-transfer-committed, expected, and in-transit stock.
+Any non-zero dimension returns the durable `location_not_empty` rejection with
+the exact SKU blockers. The active location list supplies ordinary selectors and later
 zero-stock breakdowns. Archived locations leave those lists but remain
 available in the explicit archived list and can be restored.
 
@@ -272,6 +272,36 @@ AICommerce's checkout operations do not prompt a human. Their deliberate action
 is the already-authorized saga step with a stable command identity and scoped
 provider credential; the same server invariants still apply.
 
+## Created stock transfers
+
+`transfer.create`, `transfer.update`, and `transfer.cancel` own the durable Open
+draft portion of stock transfer. Every command names an explicit pool. Create
+and update name distinct active origin and destination locations, one or more
+unique permanent Inventory SKU IDs, exact non-negative quantities in `each`,
+an optional note, and expected dispatch and arrival dates. Expected arrival
+cannot precede expected dispatch. Update and cancel require the exact current
+transfer version.
+
+Inventory mints one opaque permanent transfer ID. It also proposes an editable
+`ST-...` reference when create omits one. The normalized reference is unique
+pool-wide across Created, In-transit, Received, and Canceled history; editing or
+canceling never frees it for reuse.
+
+A zero-quantity Created line is a saved draft with no balance effect. A positive
+line preserves physical on-hand and order reservations, adds the quantity to
+origin outgoing-transfer-committed, reduces origin available, and adds the
+quantity to destination expected. Full update atomically releases all prior
+Created effects and applies the replacement. Cancel records a Canceled transfer
+and releases those planning effects; it never deletes the record or prior
+receipts. Negative origin availability is allowed and returned with an exact
+warning.
+
+One serialized pool transaction owns replay/conflict detection, reference
+uniqueness, transfer persistence, every affected balance, immutable receipt,
+and terminal result. The receipt freezes the transfer before/after facts, actor,
+commit time, and exact effects. Dispatch, receipt, partial receipt, and Received
+reversion are later command slices.
+
 ## Immutable receipt
 
 Every committed mutation creates one machine-stable, human-readable receipt.
@@ -300,8 +330,9 @@ creates no receipt because it has no quantity or lifecycle effect. Its terminal
 command result remains durable and replayable.
 
 An effect records deltas for the balance dimensions it changes and the complete
-post-commit balance needed for audit. `available` is derived from on-hand and
-reserved; it is not an independently writable counter.
+post-commit balance needed for audit. `available` is derived as
+`onHand - reserved - outgoingTransferCommitted`; it is not an independently
+writable counter.
 
 An ordinary-adjustment receipt additionally freezes the complete balance before
 and after the signed on-hand delta. Reserved delta is always zero. The trusted
@@ -395,7 +426,9 @@ filtered views over this one receipt ledger, not separate ledgers.
 - Each SKU-location balance is independent. A change at one location does not
   change any other location.
 - `Set initial stock` is available only when that SKU-location has no committed
-  stock history. Zero after prior activity is not an opening balance.
+  physical stock history. A planning-only Created-transfer row remains eligible;
+  preview binds to its exact version and confirmation preserves transfer
+  quantities. Zero after prior physical activity is not an opening balance.
 - An opening balance changes one location, requires review and confirmation,
   and produces an `opening_balance` receipt. Its editable human reason starts
   as `Set Initial Stock`, must remain non-empty, and is frozen on that receipt.
@@ -407,8 +440,9 @@ filtered views over this one receipt ledger, not separate ledgers.
   oversold but does not block confirmation. Corrections create a new linked
   adjustment receipt; prior history is never edited.
 - A transfer explicitly names origin and destination and progresses
-  `Created -> In transit -> Received`. Stock cannot appear at the destination
-  before the receive command commits.
+  `Created -> In transit -> Received`. Created stock is expected at the
+  destination but does not change destination on-hand. Physical stock cannot
+  appear there before the receive command commits.
 - Receiving records goods at the location where they physically arrived. It
   may reference an external purchase order, but Inventory does not become a
   purchase-order system.

@@ -191,13 +191,19 @@ test("previews the exact normalized effect for five minutes without mutating sto
 			balanceBefore: {
 				onHand: { value: "0", unit: "each" },
 				reserved: { value: "0", unit: "each" },
+				outgoingTransferCommitted: { value: "0", unit: "each" },
 				available: { value: "0", unit: "each" },
+				expected: { value: "0", unit: "each" },
+				inTransit: { value: "0", unit: "each" },
 				version: "0",
 			},
 			balanceAfter: {
 				onHand: { value: "5", unit: "each" },
 				reserved: { value: "0", unit: "each" },
+				outgoingTransferCommitted: { value: "0", unit: "each" },
 				available: { value: "5", unit: "each" },
+				expected: { value: "0", unit: "each" },
+				inTransit: { value: "0", unit: "each" },
 				version: "1",
 			},
 		},
@@ -393,6 +399,17 @@ test("rejects a changed action without consuming the confirmation", async (t) =>
 			operations.confirm(
 				proposed.confirmation.value,
 				commandFromPreview(previewInput({ value: "6" })),
+				{ principal },
+			),
+		{ name: "OpeningBalanceConfirmationError", code: "confirmation_mismatch" },
+	);
+	const wrongVersion = commandFromPreview(input);
+	wrongVersion.expectedVersions[0].version = "1";
+	await assert.rejects(
+		() =>
+			operations.confirm(
+				proposed.confirmation.value,
+				wrongVersion,
 				{ principal },
 			),
 		{ name: "OpeningBalanceConfirmationError", code: "confirmation_mismatch" },

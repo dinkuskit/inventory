@@ -6,10 +6,12 @@ import type {
 } from "./opening-balance.ts";
 import type { InventoryCommandResult } from "./location-registry.ts";
 import type { StockAdjustmentReceiptV2 } from "../features/stock-adjustment/index.ts";
+import type { StockTransferReceiptV2 } from "../features/stock-transfer/index.ts";
 
 export type InventoryStockReceiptV2 =
 	| OpeningBalanceReceiptV2
-	| StockAdjustmentReceiptV2;
+	| StockAdjustmentReceiptV2
+	| StockTransferReceiptV2;
 
 export const BALANCE_READ_RESULT_SCHEMA =
 	"dinkuskit.inventory.balance-read-result/v1" as const;
@@ -102,7 +104,10 @@ export type NormalizedReadSkuStockInput = ReadSkuStockInput;
 export type StockQuantities = Readonly<{
 	onHand: ExactQuantity;
 	reserved: ExactQuantity;
+	outgoingTransferCommitted: ExactQuantity;
 	available: ExactQuantity;
+	expected: ExactQuantity;
+	inTransit: ExactQuantity;
 }>;
 
 export type SkuStockLocation = Readonly<{

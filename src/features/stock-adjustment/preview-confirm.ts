@@ -7,12 +7,12 @@ import {
 	type CommandPrincipal,
 	type ExactQuantity,
 } from "../../domain/opening-balance.ts";
-import type { InventoryStore } from "../../storage/inventory-store.ts";
 import {
 	addExactDecimal,
-	executeAdjustStockInTransaction,
 	subtractExactDecimal,
-} from "./adjust.ts";
+} from "../../domain/exact-decimal.ts";
+import type { InventoryStore } from "../../storage/inventory-store.ts";
+import { executeAdjustStockInTransaction } from "./adjust.ts";
 import {
 	STOCK_ADJUSTMENT_PREVIEW_SCHEMA,
 	STOCK_ADJUSTMENT_TYPE,
@@ -239,7 +239,10 @@ export function createPreviewStockAdjustment(
 				if (
 					before.onHand.unit !== normalized.payload.delta.unit ||
 					before.reserved.unit !== normalized.payload.delta.unit ||
-					before.available.unit !== normalized.payload.delta.unit
+					before.outgoingTransferCommitted.unit !== normalized.payload.delta.unit ||
+					before.available.unit !== normalized.payload.delta.unit ||
+					before.expected.unit !== normalized.payload.delta.unit ||
+					before.inTransit.unit !== normalized.payload.delta.unit
 				) {
 					previewError("sku_unit_mismatch");
 				}
@@ -250,14 +253,17 @@ export function createPreviewStockAdjustment(
 					normalized.payload.delta.value,
 				);
 				const nextAvailable = subtractExactDecimal(
-					nextOnHand,
-					before.reserved.value,
+					subtractExactDecimal(nextOnHand, before.reserved.value),
+					before.outgoingTransferCommitted.value,
 				);
 				const after: BalanceRecord = {
 					...key,
 					onHand: { value: nextOnHand, unit },
 					reserved: before.reserved,
+					outgoingTransferCommitted: before.outgoingTransferCommitted,
 					available: { value: nextAvailable, unit },
+					expected: before.expected,
+					inTransit: before.inTransit,
 					version: incrementVersion(before.version),
 					hasStockHistory: true,
 				};

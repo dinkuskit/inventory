@@ -14,7 +14,7 @@ The successor ledger that retires the Katana subscription IS Dinkuskit
 Inventory v1. One product, one ledger:
 
 - a platform-neutral inventory kernel: SKU/variant identity, explicit
-  locations, on-hand/reserved/available/expected, immutable movement
+  locations, on-hand/reserved/outgoing/available/expected/in-transit, immutable movement
   receipts, exact decimal/unit handling;
 - an in-dashboard EmDash admin plugin as the product surface;
 - no storefront-shaped base code, ever.
@@ -64,8 +64,10 @@ considered.
 ## operating-model-003 — shared pool and exact locations (locked)
 
 - One physical inventory pool may serve multiple EmDash sites and channels.
-- Each physical location has exact on-hand, reserved, available, expected, and
-  in-transit quantities inside that pool.
+- Each physical location has exact on-hand, reserved-for-orders,
+  outgoing-transfer-committed, available, expected, and in-transit quantities
+  inside that pool. Available is on-hand minus order reservations and outgoing
+  transfer commitments.
 - Each ecommerce connection maps explicitly to one fulfillment source
   location; names, domains, or matching SKUs never imply a mapping.
 - Goods are received where they physically arrive.
@@ -128,14 +130,20 @@ then creates the immutable receipt. Once history exists, ordinary adjustment
 replaces that affordance even if the current balance is zero. Later corrections
 never rewrite the opening receipt.
 
+A Created transfer may create a planning-only destination row with expected
+stock before physical stock history begins there. That row does not remove the
+`Set initial stock` affordance. Opening preview binds to its exact version, and
+confirmation preserves the transfer quantities while starting on-hand history.
+
 ## aggregate-stock-view-026 through zero-stock-location-029 — Katana-style read scope (locked)
 
 A one-location inventory view shows only that location. An `all locations`
 view shows the combined SKU total plus a per-location breakdown. Both are
-read-only. Each row exposes on-hand, reserved, and derived available quantities,
-with on-hand as the main number. Every active location appears even when all
-three values are zero, so known emptiness cannot be confused with missing or
-unauthorized data.
+read-only. Each row exposes on-hand, reserved-for-orders,
+outgoing-transfer-committed, derived available, expected, and in-transit
+quantities, with on-hand as the main number. Every active location appears even
+when all six values are zero, so known emptiness cannot be confused with
+missing or unauthorized data.
 
 Reserved-order detail is deferred until Inventory owns the reservation records
 and order references needed to support it without guessing through Commerce.
@@ -149,15 +157,17 @@ surface asks Inventory to create it. The display name may change without
 changing identity or rewriting history, and no two locations in one pool may
 share the same normalized name even when one or both are archived.
 
-## fresh-schema-initialization-034 — exact v2 storage upgrades safely (locked)
+## fresh-schema-initialization-034 — exact predecessor storage upgrades safely (locked)
 
 A new empty Cloudflare Durable Object initializes directly at complete schema
-v3 and records history `[3]`. The committed v2 schema is now a real predecessor
-contract even though no production pool exists: exact v2 storage with history
-`[2]` upgrades atomically, preserves its records, backfills each legacy balanced
-SKU key as a stable managed identity, and records `[2, 3]`. Exact v3 storage is
-idempotent. Version 1, partial, conflicting-unit, extra-table, or otherwise
-incompatible storage fails closed without a partial migration.
+v4 and records history `[4]`. The committed v2 and v3 schemas remain real
+predecessor contracts even though no production pool exists. Exact v3 storage
+adds the transfer-planning quantities and transfer records, producing
+`[3, 4]`. Exact v2 storage first backfills each legacy balanced SKU key as a
+stable managed identity and then advances to v4, producing `[2, 3, 4]`. Both
+paths preserve predecessor records. Version 1, partial, conflicting-unit,
+extra-table, or otherwise incompatible storage fails closed without a partial
+migration.
 
 ## opening-balance-location-admission-035 — active locations only (locked)
 
@@ -195,9 +205,10 @@ proof.
 Deactivation archives rather than deletes. Archived locations disappear from
 normal selectors and inventory views, remain accessible in an explicit Archive
 view with their full history, and can be restored with the same ID. Archive is
-blocked unless every SKU at that location has exactly zero on-hand and zero
-reserved: positive stock, negative stock, or any order reservation is returned
-as a blocker. Create, rename, archive, and restore use the same awaited,
+blocked unless every SKU at that location has exactly zero on-hand,
+reserved-for-orders, outgoing-transfer-committed, expected, and in-transit
+stock. Any physical stock, order reservation, or transfer planning/transport
+quantity is returned as a blocker. Create, rename, archive, and restore use the same awaited,
 idempotent, actor-bearing command-and-receipt boundary as stock mutations.
 
 ## surface-permissions-012 — one engine, scoped clients (locked)
@@ -360,10 +371,43 @@ read-back. Account renames do not rewrite history, email is not required, and
 command contents cannot choose the actor. Confirmation and retry bind to stable
 principal identity rather than mutable display text.
 
+## created-stock-transfer-039 through transfer-cancel-with-expected-055 — Created drafts (locked)
+
+A Created stock transfer is a durable Open draft with one permanent opaque
+Inventory transfer ID and one editable human reference. Inventory proposes an
+`ST-...` reference, but the operator may replace, prepend, or append to the
+whole value. Its normalized value remains unique across all transfers and
+statuses in the pool. The draft explicitly names two distinct active locations,
+one or more permanent Inventory SKU IDs, exact non-negative `each` quantities,
+an optional note, and expected dispatch and arrival calendar dates. Zero
+quantities are valid while Created.
+
+Saving a positive Created line does not move physical on-hand. It adds an
+outgoing commitment at the origin, reduces origin available, and adds expected
+inbound at the destination. The result warns rather than blocks when origin
+availability becomes negative, stating the order-reserved quantity, outgoing
+commitment, and exact oversold amount. A full Created edit atomically releases
+the prior planning effects and applies the replacement fields. Editing or
+canceling requires the exact transfer version.
+
+Deleting through the future GUI is `transfer.cancel`, never hard deletion. It
+moves the transfer to durable Canceled/Done history and releases its outgoing
+and expected effects. Create, update, and cancel each commit the transfer,
+affected balances, immutable actor receipt, and terminal result together.
+Exact retries recover the original terminal result and changed contents under
+the same command ID conflict.
+
+The later lifecycle remains `Created -> In transit -> Received`; In-transit may
+return to Created and must restore the complete Created planning state. Whole
+transfer receipt is v1. Partial receiving and Received reversion are deferred.
+Later dispatched and received business dates are user-entered facts, distinct
+from automatic actor-bearing commit timestamps. Those later states and their
+commands are not implemented by this checkpoint.
+
 ## v1 scope fence (inherited)
 
 In: tenant/site-scoped SKU/variant identity; explicit locations;
-on-hand/reserved/available/expected; immutable movement receipts; exact
+on-hand/reserved/outgoing/available/expected/in-transit; immutable movement receipts; exact
 decimal/unit handling; explicit site-to-pool and site-to-source-location
 mappings; manual opening balances; operator-visible exceptions; one generic
 standard-format EmDash admin plugin; the first-party Commerce provider; a thin
@@ -376,13 +420,11 @@ product settings and external inventory-provider implementations.
 
 ## Next focused grill
 
-Coordinate the first visible SmokyClub sale across three product-owned tracks.
-Inventory's first checkpoint is one real `Set initial stock` service action and
-the genuine Block Kit GUI that previews, confirms, persists, refreshes, and
-shows its receipt. Commerce owns the product checkbox/provider setting and the
-awaited reserve/commit/release/pack adapter. SmokyClub owns the exact-product
-identity bridge and the final edit -> stock -> storefront -> buy -> pack ->
-audit proof. Keep each implementation and proof in its owning repository.
+Grill and implement the In-transit transition for an existing Created transfer:
+admission rules, user-entered dispatched date, atomic origin/on-the-way effects,
+idempotent receipt, and the allowed In-transit-to-Created reversal. Keep whole
+receipt in v1 and continue deferring partial receiving, GUI, Commerce/Blocks,
+service authentication, deployment, and production mutation.
 
 ## Cross-references
 

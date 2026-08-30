@@ -246,7 +246,7 @@ export function executeLocationCommandInTransaction(
 					commandId: command.commandId,
 					code: "location_not_empty",
 					message:
-						"The location must have zero on-hand and zero reserved stock before archiving.",
+						"The location must have zero physical, reserved, committed, expected, and in-transit stock before archiving.",
 					blockers,
 				});
 			}

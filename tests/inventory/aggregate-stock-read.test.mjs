@@ -84,7 +84,10 @@ function balance(locationId, onHand, reserved, unit = "each") {
 		skuId: "sku_hat",
 		onHand: { value: onHand, unit },
 		reserved: { value: reserved, unit },
+		outgoingTransferCommitted: { value: "0", unit },
 		available: { value: "999", unit },
+		expected: { value: "0", unit },
+		inTransit: { value: "0", unit },
 		version: "3",
 		hasStockHistory: true,
 	};
@@ -152,7 +155,10 @@ test("reads one location or all active locations from durable SQLite", async (t)
 		stock: {
 			onHand: { value: "12.75", unit: "each" },
 			reserved: { value: "0", unit: "each" },
+			outgoingTransferCommitted: { value: "0", unit: "each" },
 			available: { value: "12.75", unit: "each" },
+			expected: { value: "0", unit: "each" },
+			inTransit: { value: "0", unit: "each" },
 		},
 		locations: [
 			{
@@ -161,7 +167,10 @@ test("reads one location or all active locations from durable SQLite", async (t)
 				stock: {
 					onHand: { value: "5.25", unit: "each" },
 					reserved: { value: "0", unit: "each" },
+					outgoingTransferCommitted: { value: "0", unit: "each" },
 					available: { value: "5.25", unit: "each" },
+					expected: { value: "0", unit: "each" },
+					inTransit: { value: "0", unit: "each" },
 				},
 			},
 			{
@@ -170,7 +179,10 @@ test("reads one location or all active locations from durable SQLite", async (t)
 				stock: {
 					onHand: { value: "0", unit: "each" },
 					reserved: { value: "0", unit: "each" },
+					outgoingTransferCommitted: { value: "0", unit: "each" },
 					available: { value: "0", unit: "each" },
+					expected: { value: "0", unit: "each" },
+					inTransit: { value: "0", unit: "each" },
 				},
 			},
 			{
@@ -179,7 +191,10 @@ test("reads one location or all active locations from durable SQLite", async (t)
 				stock: {
 					onHand: { value: "7.5", unit: "each" },
 					reserved: { value: "0", unit: "each" },
+					outgoingTransferCommitted: { value: "0", unit: "each" },
 					available: { value: "7.5", unit: "each" },
+					expected: { value: "0", unit: "each" },
+					inTransit: { value: "0", unit: "each" },
 				},
 			},
 		],
@@ -200,7 +215,10 @@ test("reads one location or all active locations from durable SQLite", async (t)
 			stock: {
 				onHand: { value: "0", unit: "each" },
 				reserved: { value: "0", unit: "each" },
+				outgoingTransferCommitted: { value: "0", unit: "each" },
 				available: { value: "0", unit: "each" },
+				expected: { value: "0", unit: "each" },
+				inTransit: { value: "0", unit: "each" },
 			},
 			locations: [all.locations[1]],
 		},
@@ -274,7 +292,10 @@ test("sums signed exact decimals, derives available, and fails closed on mixed u
 	assert.deepEqual(result.stock, {
 		onHand: { value: "3.25", unit: "each" },
 		reserved: { value: "1.75", unit: "each" },
+		outgoingTransferCommitted: { value: "0", unit: "each" },
 		available: { value: "1.5", unit: "each" },
+		expected: { value: "0", unit: "each" },
+		inTransit: { value: "0", unit: "each" },
 	});
 	assert.deepEqual(
 		result.locations.map(({ stock }) => stock.available.value),

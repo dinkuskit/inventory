@@ -163,7 +163,10 @@ test("stock APIs resolve only the permanent Inventory identity", async (t) => {
 			stock: {
 				onHand: { value: "0", unit: "each" },
 				reserved: { value: "0", unit: "each" },
+				outgoingTransferCommitted: { value: "0", unit: "each" },
 				available: { value: "0", unit: "each" },
+				expected: { value: "0", unit: "each" },
+				inTransit: { value: "0", unit: "each" },
 			},
 			locations: [
 				{
@@ -172,7 +175,10 @@ test("stock APIs resolve only the permanent Inventory identity", async (t) => {
 					stock: {
 						onHand: { value: "0", unit: "each" },
 						reserved: { value: "0", unit: "each" },
+						outgoingTransferCommitted: { value: "0", unit: "each" },
 						available: { value: "0", unit: "each" },
+						expected: { value: "0", unit: "each" },
+						inTransit: { value: "0", unit: "each" },
 					},
 				},
 			],
