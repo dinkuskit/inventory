@@ -111,13 +111,20 @@ Cloudflare schema v4 remains exact.
 - `transfer-list-pagination-006`: default 50, maximum 100, opaque stable keyset,
   and no offset/count/search/custom sort.
 
-## Delivery and remaining gates
+## Delivery
 
-This proof is local and uncommitted. No commit, push, pull request, merge,
+- pull request: https://github.com/dinkuskit/inventory/pull/19
+- implementation commit: `ee0daa7e8c96b5bbaec67ec44238f942ed6babef`
+- branch: `codex/stock-transfer-list-read-20260830`
+
+The user explicitly authorized commit, push, and PR creation after local
+verification. The PR is delivery and review plumbing only. No merge,
 deployment, publication, account/security action, live-database mutation, or
-production mutation occurred. Commit/push/PR delivery requires the user's next
-explicit approval. Any eventual PR review verdict must bind to that committed
-PR head rather than this local content hash.
+production mutation occurred; those remain separate gates. Any official PR
+review verdict must bind to the current committed PR head rather than the local
+content hash alone.
+
+## Remaining gates and deferrals
 
 Still deferred:
 
