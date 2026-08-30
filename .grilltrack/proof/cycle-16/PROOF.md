@@ -27,6 +27,15 @@ Implemented the confirmed Inventory-owned dispatch slice:
 - identity artifact: `SOURCE_IDENTITY.txt`; and
 - exact-source review: `REVIEW.md`.
 
+## Delivery
+
+- pull request: https://github.com/dinkuskit/inventory/pull/17
+- implementation commit: `ff8956f38cda4da9a9380b586b753a6a488bb3bb`
+- branch: `codex/stock-transfer-in-transit-20260830`
+
+The PR is delivery and review plumbing only. Merge and deployment remain
+separate human gates.
+
 ## Verification
 
 ```text
