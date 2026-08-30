@@ -95,7 +95,8 @@ with the trusted signed-in actor. Exact retries recover the original durable
 result, changed contents conflict, stale previews reject, and corrections are
 new linked receipts rather than edits.
 
-The first stock-transfer checkpoint implements durable Created drafts. A draft
+The stock-transfer kernel implements durable Created drafts, dispatch, and
+In-transit reopen. A draft
 has one permanent opaque transfer ID, an editable pool-unique `ST-...`
 reference, explicit active origin and destination, one or more managed SKU
 lines, an optional note, and expected dispatch and arrival dates. Zero
@@ -103,9 +104,16 @@ quantities are valid while Created. Positive quantities atomically commit
 outgoing stock at the origin, reduce available stock, and add expected stock at
 the destination without changing physical on-hand. Full Created edits rebalance
 those effects; cancel records a durable Done/Canceled transfer and releases
-them. Every command is versioned, idempotent, actor-bearing, and committed with
-its immutable receipt. Dispatch, receipt, partial receipt, GUI, and runtime
-service exposure remain later slices.
+them. Per-line read context shows customer-order-priority movable stock,
+destination on-hand, and an explicit availability warning without counting the
+current transfer twice. Dispatch requires positive quantities and atomically
+decrements origin on-hand, removes its outgoing commitment, and moves
+destination expected into in-transit; Inventory records the actual timestamp
+automatically. Reopen
+applies the exact inverse, accepts an optional reason, and preserves immutable
+dispatch and reversal actor history. Every command is versioned, idempotent,
+actor-bearing, and committed with its immutable receipt. Receipt, partial
+receipt, GUI, and runtime service exposure remain later slices.
 
 The real local SQLite test adapter remains explicitly development/test-only and
 refuses production mode or in-memory use. It is not the final storage layer.

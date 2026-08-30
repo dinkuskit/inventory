@@ -18,6 +18,8 @@ import type {
 import {
 	CANCEL_STOCK_TRANSFER_TYPE,
 	CREATE_STOCK_TRANSFER_TYPE,
+	DISPATCH_STOCK_TRANSFER_TYPE,
+	REOPEN_STOCK_TRANSFER_TYPE,
 	STOCK_TRANSFER_RECORD_SCHEMA,
 	UPDATE_STOCK_TRANSFER_TYPE,
 	digestStockTransferCommand,
@@ -51,13 +53,15 @@ export type ExecuteStockTransferCommandDependencies = Readonly<{
 	createReceiptId: () => string;
 }>;
 
-type PlanningQuantity = Readonly<{
+type TransferStateQuantity = Readonly<{
 	poolId: string;
 	locationId: string;
 	skuId: string;
 	unit: string;
+	onHand: string;
 	outgoing: string;
 	expected: string;
+	inTransit: string;
 }>;
 
 function rejection(
@@ -122,30 +126,40 @@ function planningKey(locationId: string, skuId: string): string {
 	return `${locationId}\u0000${skuId}`;
 }
 
-function planningFor(
+function stateQuantitiesFor(
 	poolId: string,
-	fields: Pick<
-		CreatedStockTransferFields,
-		"originLocationId" | "destinationLocationId" | "lines"
-	>,
-): Map<string, PlanningQuantity> {
-	const values = new Map<string, PlanningQuantity>();
-	for (const line of fields.lines) {
-		values.set(planningKey(fields.originLocationId, line.skuId), {
+	transfer: StockTransferRecord | null,
+): Map<string, TransferStateQuantity> {
+	const values = new Map<string, TransferStateQuantity>();
+	if (
+		transfer === null ||
+		!["created", "in_transit", "received"].includes(transfer.status)
+	) {
+		return values;
+	}
+	for (const line of transfer.lines) {
+		values.set(planningKey(transfer.originLocationId, line.skuId), {
 			poolId,
-			locationId: fields.originLocationId,
+			locationId: transfer.originLocationId,
 			skuId: line.skuId,
 			unit: line.quantity.unit,
-			outgoing: line.quantity.value,
+			onHand:
+				transfer.status === "in_transit" || transfer.status === "received"
+					? negate(line.quantity.value)
+					: "0",
+			outgoing: transfer.status === "created" ? line.quantity.value : "0",
 			expected: "0",
+			inTransit: "0",
 		});
-		values.set(planningKey(fields.destinationLocationId, line.skuId), {
+		values.set(planningKey(transfer.destinationLocationId, line.skuId), {
 			poolId,
-			locationId: fields.destinationLocationId,
+			locationId: transfer.destinationLocationId,
 			skuId: line.skuId,
 			unit: line.quantity.unit,
+			onHand: transfer.status === "received" ? line.quantity.value : "0",
 			outgoing: "0",
-			expected: line.quantity.value,
+			expected: transfer.status === "created" ? line.quantity.value : "0",
+			inTransit: transfer.status === "in_transit" ? line.quantity.value : "0",
 		});
 	}
 	return values;
@@ -167,7 +181,7 @@ function snapshot(balance: BalanceRecord): StockTransferBalanceSnapshot {
 	};
 }
 
-function baseBalance(value: PlanningQuantity): BalanceRecord {
+function baseBalance(value: TransferStateQuantity): BalanceRecord {
 	const zero = zeroQuantity(value.unit);
 	return {
 		poolId: value.poolId,
@@ -195,7 +209,7 @@ function assertStoredUnits(balance: BalanceRecord, unit: string): boolean {
 	].every((quantity) => quantity.unit === unit);
 }
 
-function planningChanges(
+function transferBalanceChanges(
 	transaction: InventoryTransaction,
 	poolId: string,
 	before: StockTransferRecord | null,
@@ -205,14 +219,8 @@ function planningChanges(
 	effects: readonly StockTransferBalanceEffect[];
 	warnings: readonly StockTransferWarning[];
 }> {
-	const prior =
-		before?.status === "created"
-			? planningFor(poolId, before)
-			: new Map<string, PlanningQuantity>();
-	const next =
-		after.status === "created"
-			? planningFor(poolId, after)
-			: new Map<string, PlanningQuantity>();
+	const prior = stateQuantitiesFor(poolId, before);
+	const next = stateQuantitiesFor(poolId, after);
 	const keys = new Set([...prior.keys(), ...next.keys()]);
 	const commits: Array<StockTransferCommit["balances"][number]> = [];
 	const effects: StockTransferBalanceEffect[] = [];
@@ -221,7 +229,11 @@ function planningChanges(
 		const oldValue = prior.get(key);
 		const newValue = next.get(key);
 		const value = newValue ?? oldValue;
-		if (value === undefined) throw new Error("A transfer planning key lost its value.");
+		if (value === undefined) throw new Error("A transfer balance key lost its value.");
+		const onHandDelta = addExactDecimal(
+			newValue?.onHand ?? "0",
+			negate(oldValue?.onHand ?? "0"),
+		);
 		const outgoingDelta = addExactDecimal(
 			newValue?.outgoing ?? "0",
 			negate(oldValue?.outgoing ?? "0"),
@@ -230,44 +242,64 @@ function planningChanges(
 			newValue?.expected ?? "0",
 			negate(oldValue?.expected ?? "0"),
 		);
-		if (isZero(outgoingDelta) && isZero(expectedDelta)) continue;
+		const inTransitDelta = addExactDecimal(
+			newValue?.inTransit ?? "0",
+			negate(oldValue?.inTransit ?? "0"),
+		);
+		if (
+			isZero(onHandDelta) &&
+			isZero(outgoingDelta) &&
+			isZero(expectedDelta) &&
+			isZero(inTransitDelta)
+		) continue;
 
 		const stored = transaction.getBalance(value);
 		const current = stored ?? baseBalance(value);
 		if (!assertStoredUnits(current, value.unit)) {
 			throw new Error("Stored transfer balance units are inconsistent.");
 		}
+		const onHand = addExactDecimal(current.onHand.value, onHandDelta);
 		const outgoing = addExactDecimal(
 			current.outgoingTransferCommitted.value,
 			outgoingDelta,
 		);
 		const expected = addExactDecimal(current.expected.value, expectedDelta);
-		if (outgoing.startsWith("-") || expected.startsWith("-")) {
-			throw new Error("Transfer planning quantities cannot become negative.");
+		const inTransit = addExactDecimal(
+			current.inTransit.value,
+			inTransitDelta,
+		);
+		if (
+			outgoing.startsWith("-") ||
+			expected.startsWith("-") ||
+			inTransit.startsWith("-")
+		) {
+			throw new Error("Transfer state quantities cannot become negative.");
 		}
 		const available = subtractExactDecimal(
-			subtractExactDecimal(current.onHand.value, current.reserved.value),
+			subtractExactDecimal(onHand, current.reserved.value),
 			outgoing,
 		);
 		const updated: BalanceRecord = {
 			...current,
+			onHand: { value: onHand, unit: value.unit },
 			outgoingTransferCommitted: { value: outgoing, unit: value.unit },
 			available: { value: available, unit: value.unit },
 			expected: { value: expected, unit: value.unit },
+			inTransit: { value: inTransit, unit: value.unit },
 			version: incrementVersion(current.version),
 		};
 		commits.push({ previous: stored, balance: updated });
 		effects.push({
 			skuId: value.skuId,
 			locationId: value.locationId,
-			onHandDelta: zeroQuantity(value.unit),
+			onHandDelta: { value: onHandDelta, unit: value.unit },
 			reservedDelta: zeroQuantity(value.unit),
 			outgoingTransferCommittedDelta: {
 				value: outgoingDelta,
 				unit: value.unit,
 			},
 			expectedDelta: { value: expectedDelta, unit: value.unit },
-			inTransitDelta: zeroQuantity(value.unit),
+			inTransitDelta: { value: inTransitDelta, unit: value.unit },
 			balanceBefore: stored === null ? null : snapshot(stored),
 			balanceAfter: snapshot(updated),
 		});
@@ -280,7 +312,7 @@ function planningChanges(
 		]),
 	);
 	const warnings =
-		after.status === "created"
+		["created", "in_transit"].includes(after.status)
 			? after.lines.flatMap((line): readonly StockTransferWarning[] => {
 					const balance =
 						committedBalances.get(
@@ -297,7 +329,14 @@ function planningChanges(
 					const oversoldBy = balance.available.value.slice(1);
 					const unit = balance.available.unit;
 					const reserved = balance.reserved;
-					const outgoing = balance.outgoingTransferCommitted;
+					const outgoing =
+						after.status === "in_transit" && before?.status === "created"
+							? transaction.getBalance({
+									poolId,
+									locationId: after.originLocationId,
+									skuId: line.skuId,
+								})?.outgoingTransferCommitted ?? balance.outgoingTransferCommitted
+							: balance.outgoingTransferCommitted;
 					return [
 						{
 							code: "negative_available",
@@ -306,7 +345,7 @@ function planningChanges(
 							reservedForOrders: reserved,
 							outgoingTransferCommitted: outgoing,
 							oversoldBy: { value: oversoldBy, unit },
-							message: `${reserved.value} units are reserved for orders and ${outgoing.value} units are committed to outgoing transfers. Origin availability is oversold by ${oversoldBy} units.`,
+							message: `This transfer will leave you with -${oversoldBy} stock. ${reserved.value} are reserved for orders.`,
 						},
 					];
 				})
@@ -451,13 +490,21 @@ export function executeStockTransferCommandInTransaction(
 				"The transfer does not exist in this inventory pool.",
 			);
 		}
-		if (before.status !== "created") {
+		const requiredStatus =
+			command.type === REOPEN_STOCK_TRANSFER_TYPE ? "in_transit" : "created";
+		if (before.status !== requiredStatus) {
 			return durableRejection(
 				transaction,
 				command,
 				commandDigest,
-				"transfer_not_created",
-				"Only a Created transfer can be edited or canceled.",
+				command.type === REOPEN_STOCK_TRANSFER_TYPE
+					? "transfer_not_in_transit"
+					: "transfer_not_created",
+				command.type === REOPEN_STOCK_TRANSFER_TYPE
+					? "Only an In-transit transfer can be returned to Created."
+					: command.type === DISPATCH_STOCK_TRANSFER_TYPE
+						? "Only a Created transfer can be marked In transit."
+						: "Only a Created transfer can be edited or canceled.",
 			);
 		}
 		if (before.version !== command.expectedVersions[0].version) {
@@ -510,6 +557,18 @@ export function executeStockTransferCommandInTransaction(
 		);
 		if (lineFailure !== null) return lineFailure;
 	}
+	if (
+		command.type === DISPATCH_STOCK_TRANSFER_TYPE &&
+		fields.lines.some((line) => isZero(line.quantity.value))
+	) {
+		return durableRejection(
+			transaction,
+			command,
+			commandDigest,
+			"positive_transfer_quantity_required",
+			"Every transfer line must have a positive quantity before it can be marked In transit.",
+		);
+	}
 
 	const committedAt = committedAtFrom(dependencies.now);
 	let after: StockTransferRecord;
@@ -551,7 +610,7 @@ export function executeStockTransferCommandInTransaction(
 			updatedAt: committedAt,
 			version: incrementVersion(before!.version),
 		};
-	} else {
+	} else if (command.type === CANCEL_STOCK_TRANSFER_TYPE) {
 		after = {
 			...before!,
 			status: "canceled",
@@ -559,9 +618,25 @@ export function executeStockTransferCommandInTransaction(
 			version: incrementVersion(before!.version),
 			canceledAt: committedAt,
 		};
+	} else if (command.type === DISPATCH_STOCK_TRANSFER_TYPE) {
+		after = {
+			...before!,
+			status: "in_transit",
+			updatedAt: committedAt,
+			version: incrementVersion(before!.version),
+			dispatchedDate: committedAt,
+		};
+	} else {
+		after = {
+			...before!,
+			status: "created",
+			updatedAt: committedAt,
+			version: incrementVersion(before!.version),
+			dispatchedDate: null,
+		};
 	}
 
-	const planning = planningChanges(
+	const planning = transferBalanceChanges(
 		transaction,
 		command.context.poolId,
 		before,
@@ -579,6 +654,9 @@ export function executeStockTransferCommandInTransaction(
 		context: command.context,
 		transfer: { before, after },
 		effects: planning.effects,
+		...(command.type === REOPEN_STOCK_TRANSFER_TYPE
+			? { reason: command.payload.reason }
+			: {}),
 		references: command.references,
 	};
 	const result: StockTransferResult = {

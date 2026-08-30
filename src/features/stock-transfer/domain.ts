@@ -11,6 +11,8 @@ import {
 export const CREATE_STOCK_TRANSFER_TYPE = "transfer.create" as const;
 export const UPDATE_STOCK_TRANSFER_TYPE = "transfer.update" as const;
 export const CANCEL_STOCK_TRANSFER_TYPE = "transfer.cancel" as const;
+export const DISPATCH_STOCK_TRANSFER_TYPE = "transfer.dispatch" as const;
+export const REOPEN_STOCK_TRANSFER_TYPE = "transfer.reopen" as const;
 export const STOCK_TRANSFER_RECORD_SCHEMA =
 	"dinkuskit.inventory.stock-transfer/v1" as const;
 export const STOCK_TRANSFER_READ_RESULT_SCHEMA =
@@ -67,10 +69,38 @@ export type CancelStockTransferCommandV1 = Readonly<{
 	}>[];
 }>;
 
+export type DispatchStockTransferCommandV1 = Readonly<{
+	schema: typeof COMMAND_SCHEMA;
+	commandId: string;
+	type: typeof DISPATCH_STOCK_TRANSFER_TYPE;
+	context: Readonly<{ siteId: string; poolId: string }>;
+	payload: Readonly<{ transferId: string }>;
+	references: readonly ExternalReference[];
+	expectedVersions: readonly Readonly<{
+		transferId: string;
+		version: string;
+	}>[];
+}>;
+
+export type ReopenStockTransferCommandV1 = Readonly<{
+	schema: typeof COMMAND_SCHEMA;
+	commandId: string;
+	type: typeof REOPEN_STOCK_TRANSFER_TYPE;
+	context: Readonly<{ siteId: string; poolId: string }>;
+	payload: Readonly<{ transferId: string; reason: string | null }>;
+	references: readonly ExternalReference[];
+	expectedVersions: readonly Readonly<{
+		transferId: string;
+		version: string;
+	}>[];
+}>;
+
 export type StockTransferCommandV1 =
 	| CreateStockTransferCommandV1
 	| UpdateStockTransferCommandV1
-	| CancelStockTransferCommandV1;
+	| CancelStockTransferCommandV1
+	| DispatchStockTransferCommandV1
+	| ReopenStockTransferCommandV1;
 
 export type StockTransferStatus =
 	| "created"
@@ -136,6 +166,7 @@ export type StockTransferReceiptV2 = Readonly<{
 		after: StockTransferRecord;
 	}>;
 	effects: readonly StockTransferBalanceEffect[];
+	reason?: string | null;
 	references: readonly ExternalReference[];
 }>;
 
@@ -149,10 +180,22 @@ export type StockTransferWarning = Readonly<{
 	message: string;
 }>;
 
+export type StockTransferLineStock = Readonly<{
+	skuId: string;
+	originMovable: ExactQuantity;
+	quantityToMove: ExactQuantity;
+	destinationOnHand: ExactQuantity;
+	projectedOriginAvailable: ExactQuantity;
+	reservedForOrders: ExactQuantity;
+	availability: "available" | "not_available";
+}>;
+
 export type StockTransferRejectionCode =
 	| "command_id_conflict"
 	| "transfer_not_found"
 	| "transfer_not_created"
+	| "transfer_not_in_transit"
+	| "positive_transfer_quantity_required"
 	| "transfer_reference_conflict"
 	| "stale_version"
 	| "location_not_found"
@@ -188,6 +231,7 @@ export type StockTransferReadResult =
 			schema: typeof STOCK_TRANSFER_READ_RESULT_SCHEMA;
 			outcome: "found";
 			transfer: StockTransferRecord;
+			lineStock: readonly StockTransferLineStock[];
 	  }>
 	| Readonly<{
 			schema: typeof STOCK_TRANSFER_READ_RESULT_SCHEMA;
@@ -238,6 +282,15 @@ function nonEmptyString(value: unknown, field: string): string {
 function optionalNote(value: unknown): string | null {
 	if (value === null) return null;
 	if (typeof value !== "string") invalid("payload.note must be a string or null.");
+	const normalized = value.trim();
+	return normalized.length === 0 ? null : normalized;
+}
+
+function optionalReason(value: unknown): string | null {
+	if (value === null || value === undefined) return null;
+	if (typeof value !== "string") {
+		invalid("payload.reason must be a string or null.");
+	}
 	const normalized = value.trim();
 	return normalized.length === 0 ? null : normalized;
 }
@@ -435,7 +488,14 @@ export function normalizeStockTransferCommand(
 		"expectedVersions",
 	]);
 	if (command.schema !== COMMAND_SCHEMA) invalid(`schema must be ${COMMAND_SCHEMA}.`);
-	if (![CREATE_STOCK_TRANSFER_TYPE, UPDATE_STOCK_TRANSFER_TYPE, CANCEL_STOCK_TRANSFER_TYPE].includes(command.type as never)) {
+	const type = command.type as StockTransferCommandV1["type"];
+	if (![
+		CREATE_STOCK_TRANSFER_TYPE,
+		UPDATE_STOCK_TRANSFER_TYPE,
+		CANCEL_STOCK_TRANSFER_TYPE,
+		DISPATCH_STOCK_TRANSFER_TYPE,
+		REOPEN_STOCK_TRANSFER_TYPE,
+	].includes(type)) {
 		invalid("type must be a supported stock transfer command.");
 	}
 	const base = {
@@ -444,7 +504,7 @@ export function normalizeStockTransferCommand(
 		context: normalizeContext(command.context),
 		references: normalizeReferences(command.references),
 	};
-	if (command.type === CREATE_STOCK_TRANSFER_TYPE) {
+	if (type === CREATE_STOCK_TRANSFER_TYPE) {
 		if (!Array.isArray(command.expectedVersions) || command.expectedVersions.length !== 0) {
 			invalid("transfer.create expectedVersions must be empty.");
 		}
@@ -455,7 +515,7 @@ export function normalizeStockTransferCommand(
 			expectedVersions: [],
 		};
 	}
-	if (command.type === UPDATE_STOCK_TRANSFER_TYPE) {
+	if (type === UPDATE_STOCK_TRANSFER_TYPE) {
 		const payload = normalizeCreatedFields(command.payload, { includeTransferId: true }) as UpdateStockTransferCommandV1["payload"];
 		return {
 			...base,
@@ -468,16 +528,39 @@ export function normalizeStockTransferCommand(
 		};
 	}
 	const payload = record(command.payload, "payload");
-	exactKeys(payload, "payload", ["transferId"]);
+	exactKeys(
+		payload,
+		"payload",
+		type === REOPEN_STOCK_TRANSFER_TYPE
+			? ["transferId", "reason"]
+			: ["transferId"],
+	);
 	const transferId = nonEmptyString(payload.transferId, "payload.transferId");
+	const expectedVersions = normalizeExpectedTransferVersion(
+		command.expectedVersions,
+		transferId,
+	);
+	if (type === REOPEN_STOCK_TRANSFER_TYPE) {
+		return {
+			...base,
+			type: REOPEN_STOCK_TRANSFER_TYPE,
+			payload: { transferId, reason: optionalReason(payload.reason) },
+			expectedVersions,
+		};
+	}
+	if (type === DISPATCH_STOCK_TRANSFER_TYPE) {
+		return {
+			...base,
+			type: DISPATCH_STOCK_TRANSFER_TYPE,
+			payload: { transferId },
+			expectedVersions,
+		};
+	}
 	return {
 		...base,
 		type: CANCEL_STOCK_TRANSFER_TYPE,
 		payload: { transferId },
-		expectedVersions: normalizeExpectedTransferVersion(
-			command.expectedVersions,
-			transferId,
-		),
+		expectedVersions,
 	};
 }
 

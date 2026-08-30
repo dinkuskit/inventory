@@ -272,15 +272,15 @@ AICommerce's checkout operations do not prompt a human. Their deliberate action
 is the already-authorized saga step with a stable command identity and scoped
 provider credential; the same server invariants still apply.
 
-## Created stock transfers
+## Created, dispatched, and reopened stock transfers
 
-`transfer.create`, `transfer.update`, and `transfer.cancel` own the durable Open
-draft portion of stock transfer. Every command names an explicit pool. Create
-and update name distinct active origin and destination locations, one or more
-unique permanent Inventory SKU IDs, exact non-negative quantities in `each`,
-an optional note, and expected dispatch and arrival dates. Expected arrival
-cannot precede expected dispatch. Update and cancel require the exact current
-transfer version.
+`transfer.create`, `transfer.update`, `transfer.cancel`, `transfer.dispatch`,
+and `transfer.reopen` own the durable Open and In-transit portion of stock
+transfer. Every command names an explicit pool. Create and update name distinct
+active origin and destination locations, one or more unique permanent Inventory
+SKU IDs, exact non-negative quantities in `each`, an optional note, and expected
+dispatch and arrival dates. Expected arrival cannot precede expected dispatch.
+Every non-create command requires the exact current transfer version.
 
 Inventory mints one opaque permanent transfer ID. It also proposes an editable
 `ST-...` reference when create omits one. The normalized reference is unique
@@ -294,13 +294,23 @@ quantity to destination expected. Full update atomically releases all prior
 Created effects and applies the replacement. Cancel records a Canceled transfer
 and releases those planning effects; it never deletes the record or prior
 receipts. Negative origin availability is allowed and returned with an exact
-warning.
+warning. Contextual transfer read adds the current Created quantity back when
+calculating origin movable stock, so customer reservations and other transfers
+have priority without counting the current transfer twice.
+
+Dispatch requires a positive quantity on every line. It atomically removes the
+origin outgoing commitment, decrements origin on-hand, moves destination
+expected into destination in-transit, and records the trusted automatic
+dispatch timestamp. Insufficient movable stock warns but does not block.
+Reopen atomically reverses those effects, leaves destination on-hand unchanged,
+clears the current dispatch timestamp, and accepts an optional free-text reason.
+Prior dispatch and reopen actor/timestamp facts remain in immutable receipts.
 
 One serialized pool transaction owns replay/conflict detection, reference
 uniqueness, transfer persistence, every affected balance, immutable receipt,
 and terminal result. The receipt freezes the transfer before/after facts, actor,
-commit time, and exact effects. Dispatch, receipt, partial receipt, and Received
-reversion are later command slices.
+commit time, optional reversal reason, and exact effects. Receipt, partial
+receipt, and Received reversion are later command slices.
 
 ## Immutable receipt
 
@@ -508,6 +518,9 @@ The first executable slice is not complete until tests prove:
 - receipts, effects, and resulting versions match committed balances;
 - ordinary adjustments preserve reserved stock, use exact signed arithmetic,
   warn on oversell, and atomically commit one immutable actor receipt;
+- transfer dispatch and reopen preserve customer-order priority, exact planning
+  and physical effects, automatic timestamps, immutable actor history, and
+  version-bound replay/conflict behavior;
 - auth scopes reject unapproved operations and locations;
 - unavailable clients fail closed; and
 - export/restore preserves command identities, results, receipts, and balances.

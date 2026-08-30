@@ -397,12 +397,33 @@ affected balances, immutable actor receipt, and terminal result together.
 Exact retries recover the original terminal result and changed contents under
 the same command ID conflict.
 
-The later lifecycle remains `Created -> In transit -> Received`; In-transit may
-return to Created and must restore the complete Created planning state. Whole
-transfer receipt is v1. Partial receiving and Received reversion are deferred.
-Later dispatched and received business dates are user-entered facts, distinct
-from automatic actor-bearing commit timestamps. Those later states and their
-commands are not implemented by this checkpoint.
+Whole transfer receipt remains v1. Partial receiving and Received reversion are
+deferred.
+
+## transfer-line-stock-context-046 and transfer-dispatch-command-056 through transfer-in-transit-reversal-057 — dispatch and reopen (locked)
+
+Each Created transfer line exposes origin movable stock after customer-order
+reservations and other outgoing transfers, excluding the current transfer so
+it is not counted twice. It also exposes quantity to move, destination on-hand,
+projected origin available, and an explicit Available/Not available state.
+Customer orders have priority. Negative projected stock warns without blocking
+dispatch; for 10 physical, 8 reserved, and 5 to move the message is `This
+transfer will leave you with -3 stock. 8 are reserved for orders.`
+
+`transfer.dispatch` requires an existing exact-version Created transfer with a
+positive quantity on every line. One transaction removes origin outgoing
+commitments, decrements origin on-hand, moves destination expected into
+in-transit, freezes shipment facts, and records the signed-in actor and
+automatic dispatch timestamp. Users do not enter, backdate, or future-date the
+actual timestamp.
+
+`transfer.reopen` requires an existing exact-version In-transit transfer and an
+optional free-text reason. One transaction restores origin on-hand and outgoing
+commitments, removes destination in-transit, restores destination expected,
+leaves destination on-hand unchanged, and returns the transfer to editable
+Created. The current dispatched timestamp clears, while immutable dispatch and
+reopen receipts retain both actors and commit times. Both commands have stable
+idempotent terminal results and fail atomically.
 
 ## v1 scope fence (inherited)
 
@@ -420,11 +441,10 @@ product settings and external inventory-provider implementations.
 
 ## Next focused grill
 
-Grill and implement the In-transit transition for an existing Created transfer:
-admission rules, user-entered dispatched date, atomic origin/on-the-way effects,
-idempotent receipt, and the allowed In-transit-to-Created reversal. Keep whole
-receipt in v1 and continue deferring partial receiving, GUI, Commerce/Blocks,
-service authentication, deployment, and production mutation.
+Grill the whole-transfer `In transit -> Received` transition: exact destination
+effects, automatic received timestamp, replay/conflict behavior, and immutable
+receipt. Continue deferring partial receiving, Received reversion, GUI,
+Commerce/Blocks, service authentication, deployment, and production mutation.
 
 ## Cross-references
 

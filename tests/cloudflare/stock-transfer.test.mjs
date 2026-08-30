@@ -6,6 +6,7 @@ import {
 	createConfirmOpeningBalance,
 	createPreviewOpeningBalance,
 } from "../../src/application/preview-confirm-opening-balance.ts";
+import { createReadReceiptHistory } from "../../src/application/read-inventory.ts";
 import { createSetOpeningBalance } from "../../src/application/set-opening-balance.ts";
 import {
 	createExecuteStockTransferCommand,
@@ -180,16 +181,86 @@ describe("stock transfer Cloudflare parity", () => {
 				onHand: { value: "3", unit: "each" },
 				expected: { value: "5", unit: "each" },
 			});
-			const canceled = await execute({
+			const dispatched = await execute({
 				schema: command.schema,
-				commandId: "cmd_cf_transfer_cancel",
-				type: "transfer.cancel",
+				commandId: "cmd_cf_transfer_dispatch",
+				type: "transfer.dispatch",
 				context: command.context,
 				payload: { transferId: updated.transfer.transferId },
 				references: [],
 				expectedVersions: [{
 					transferId: updated.transfer.transferId,
 					version: updated.transfer.version,
+				}],
+			}, { principal });
+			expect(dispatched).toMatchObject({
+				outcome: "committed",
+				transfer: {
+					status: "in_transit",
+					dispatchedDate: "2026-08-29T12:00:00.000Z",
+				},
+				receipt: {
+					type: "transfer.dispatch",
+					committedAt: "2026-08-29T12:00:00.000Z",
+					principal,
+				},
+			});
+			expect(await store.readBalance({ poolId, locationId: "location_origin", skuId: "sku_hat" })).toMatchObject({
+				onHand: { value: "5", unit: "each" },
+				outgoingTransferCommitted: { value: "0", unit: "each" },
+			});
+			expect(await store.readBalance({ poolId, locationId: "location_destination", skuId: "sku_hat" })).toMatchObject({
+				onHand: { value: "3", unit: "each" },
+				expected: { value: "0", unit: "each" },
+				inTransit: { value: "5", unit: "each" },
+			});
+			const reopened = await execute({
+				schema: command.schema,
+				commandId: "cmd_cf_transfer_reopen",
+				type: "transfer.reopen",
+				context: command.context,
+				payload: {
+					transferId: dispatched.transfer.transferId,
+					reason: null,
+				},
+				references: [],
+				expectedVersions: [{
+					transferId: dispatched.transfer.transferId,
+					version: dispatched.transfer.version,
+				}],
+			}, { principal });
+			expect(reopened).toMatchObject({
+				outcome: "committed",
+				transfer: { status: "created", dispatchedDate: null },
+				receipt: { type: "transfer.reopen", reason: null, principal },
+			});
+			expect(await store.readBalance({ poolId, locationId: "location_origin", skuId: "sku_hat" })).toMatchObject({
+				onHand: { value: "10", unit: "each" },
+				outgoingTransferCommitted: { value: "5", unit: "each" },
+			});
+			expect(await store.readBalance({ poolId, locationId: "location_destination", skuId: "sku_hat" })).toMatchObject({
+				onHand: { value: "3", unit: "each" },
+				expected: { value: "5", unit: "each" },
+				inTransit: { value: "0", unit: "each" },
+			});
+			const history = await createReadReceiptHistory({ store })({
+				poolId,
+				scope: { kind: "location", locationId: "location_origin" },
+			});
+			expect(history.receipts.slice(0, 2).map((receipt) => receipt.type)).toEqual([
+				"transfer.reopen",
+				"transfer.dispatch",
+			]);
+			const canceled = await execute({
+				schema: command.schema,
+				commandId: "cmd_cf_transfer_cancel",
+				type: "transfer.cancel",
+				context: command.context,
+				payload: { transferId: reopened.transfer.transferId },
+				references: [],
+				expectedVersions: [{
+					transferId: reopened.transfer.transferId,
+					version: reopened.transfer.version,
 				}],
 			}, { principal });
 			expect(canceled.outcome).toBe("committed");

@@ -1,0 +1,6 @@
+baseline_head=86da623e0a21f174636cd833f8faf932ba219721
+origin_main=86da623e0a21f174636cd833f8faf932ba219721
+branch=codex/stock-transfer-in-transit-20260830
+source_manifest_sha256=6c84f3919a8ba74077d45cc057deb1480fe079cdca56406697360b5144f7ff6e
+source_manifest_scope=sha256 manifest of 19 changed non-GrillTrack files relative to origin/main, including untracked source
+reviewed_at=2026-08-30T19:55:10Z

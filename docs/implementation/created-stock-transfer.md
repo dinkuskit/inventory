@@ -1,24 +1,26 @@
-# Created stock transfer slice
+# Stock transfer creation, dispatch, and reversal
 
-This slice adds the platform-neutral and durable `Created` portion of the
-Inventory-owned stock-transfer workflow. It deliberately stops before dispatch
-and receipt. EmDash, Commerce, Block Kit, authentication deployment, package
-publication, and production rollout remain outside this change.
+This contract covers the platform-neutral durable `Created -> In transit`
+portion of the Inventory-owned stock-transfer workflow and the exact
+`In transit -> Created` correction. It deliberately stops before receipt.
+EmDash, Commerce, Block Kit, authentication deployment, package publication,
+and production rollout remain outside this change.
 
 ## Ownership boundary
 
 `dinkus.stock-transfer` owns:
 
-- `transfer.create`, `transfer.update`, and `transfer.cancel` commands;
+- `transfer.create`, `transfer.update`, `transfer.cancel`,
+  `transfer.dispatch`, and `transfer.reopen` commands;
 - the permanent opaque transfer identity and editable pool-unique reference;
-- Created and Canceled transfer records and read-back;
+- Created, In-transit, and Canceled transfer records and contextual read-back;
 - atomic outgoing-transfer commitments at the origin;
 - atomic expected inbound quantities at the destination; and
 - immutable actor receipts and exact idempotent command results.
 
 It does not own orders, order reservations, checkout, shipping, carriers,
-manufacturing, purchase orders, or a second stock ledger. `transfer.start`,
-`transfer.receive`, partial receipt, and Received reversion are later slices.
+manufacturing, purchase orders, or a second stock ledger. `transfer.receive`,
+partial receipt, and Received reversion are later slices.
 
 ## Public command contract
 
@@ -76,6 +78,32 @@ type CancelStockTransferCommandV1 = Readonly<{
     version: string;
   }>[];
 }>;
+
+type DispatchStockTransferCommandV1 = Readonly<{
+  schema: "dinkuskit.inventory.command/v1";
+  commandId: string;
+  type: "transfer.dispatch";
+  context: Readonly<{ siteId: string; poolId: string }>;
+  payload: Readonly<{ transferId: string }>;
+  references: readonly ExternalReference[];
+  expectedVersions: readonly Readonly<{
+    transferId: string;
+    version: string;
+  }>[];
+}>;
+
+type ReopenStockTransferCommandV1 = Readonly<{
+  schema: "dinkuskit.inventory.command/v1";
+  commandId: string;
+  type: "transfer.reopen";
+  context: Readonly<{ siteId: string; poolId: string }>;
+  payload: Readonly<{ transferId: string; reason: string | null }>;
+  references: readonly ExternalReference[];
+  expectedVersions: readonly Readonly<{
+    transferId: string;
+    version: string;
+  }>[];
+}>;
 ```
 
 Creation requires one or more unique permanent Inventory SKU identities. A
@@ -90,22 +118,29 @@ unique across every status in one pool, while `transferId` remains the
 permanent authority. The optional note normalizes blank text to null.
 
 Update is a full replacement of editable Created fields and requires the exact
-current transfer version. Cancel also requires that version. A stale version,
-unknown or non-Created transfer, unknown or archived location, duplicate
-reference, unknown SKU, mismatched unit, missing origin opening history for a
-positive line, or command-ID conflict rejects durably without partial effects.
+current transfer version. Cancel and dispatch also require that version.
+Dispatch additionally requires every saved line quantity to be positive.
+Reopen requires the exact current In-transit version and accepts an optional
+trimmed free-text reason. A stale version, wrong status, unknown transfer,
+unknown or archived location, duplicate reference, unknown SKU, mismatched
+unit, missing origin opening history for a positive line, or command-ID
+conflict rejects durably without partial effects.
 
 ## Record and receipt shapes
 
 The durable transfer record retains its opaque ID, editable reference, status,
 locations, lines, optional note, Created timestamp and actor, expected dates,
 version, update timestamp, and nullable dispatched, received, and canceled
-facts. This slice produces only `created` and `canceled` states.
+facts. Dispatch automatically sets `dispatchedDate` to the trusted commit
+timestamp. Reopen clears that current field so the Created shipment facts are
+editable again; the earlier immutable dispatch receipt retains the original
+actor and timestamp.
 
-Every committed create, update, or cancel command creates one immutable
+Every committed transfer command creates one immutable
 receipt. The receipt freezes the actor, command identity and digest, commit
-time, site and pool, transfer before/after facts, exact balance effects, and
-external references. Editing a transfer never edits a prior receipt.
+time, site and pool, transfer before/after facts, exact balance effects,
+optional reopen reason, and external references. Editing or reopening a
+transfer never edits a prior receipt.
 
 ## Quantity invariants
 
@@ -132,7 +167,21 @@ effects. Cancel atomically releases every remaining outgoing commitment and
 expected inbound quantity while leaving on-hand unchanged. Quantities may make
 origin available negative; the committed result carries an exact
 `negative_available` warning with the order-reserved, transfer-committed, and
-oversold quantities.
+oversold quantities. Per-line read context adds the current Created quantity
+back to stored available so `originMovable` subtracts reservations and other
+transfers without counting the current transfer twice. It also exposes
+destination on-hand, projected origin available, and explicit availability.
+
+Dispatch removes the current outgoing commitment, decrements origin on-hand,
+removes destination expected, and increments destination in-transit. Customer
+orders retain priority. Insufficient movable stock is a visible warning, not a
+block; for 10 physical, 8 reserved, and 5 to move it reports:
+`This transfer will leave you with -3 stock. 8 are reserved for orders.`
+
+Reopen applies the exact inverse: it restores origin on-hand and outgoing
+commitment, removes destination in-transit, and restores destination expected.
+Destination on-hand does not change. Available is re-derived after every
+transition as `onHand - reserved - outgoingTransferCommitted`.
 
 Opening balance initializes the new planning quantities to zero. Ordinary
 adjustment preserves them and derives available using the full formula. Stock
@@ -154,12 +203,10 @@ transfer-reference uniqueness, transfer persistence, every affected balance
 insert/update, immutable receipt insertion, and terminal-result insertion.
 There is no interval where the transfer and its balance effects disagree.
 
-The local test adapter advances to its next disposable exact schema. The
-Cloudflare adapter advances from v3 to v4 in a dedicated migration that adds
-zero-default planning columns and the transfer table without rewriting current
-stock, receipts, commands, confirmations, locations, or managed SKU identity.
-Fresh Durable Objects initialize directly at v4; exact v2 storage still moves
-through v3 and then v4.
+The current v4 schema already stores every required balance dimension, permits
+the `in_transit` status, and stores the transfer and receipt bodies as immutable
+JSON. This transition adds no schema or migration. Fresh Durable Objects still
+initialize directly at v4; exact v2 storage still moves through v3 and then v4.
 
 ## Verification and blast radius
 
@@ -168,9 +215,12 @@ SQLite schemas, both adapters, location blockers, stock reads, receipts, and
 Cloudflare migration proof. Required tests cover:
 
 - command normalization, reference/date/line invariants, and public entry;
-- zero drafts, positive commitments/expected quantities, negative warnings,
-  exact replay, changed-command conflict, reference uniqueness, and stale edit;
+- zero drafts, positive commitments/expected quantities, current-transfer-aware
+  movable stock, exact order-priority warnings, replay, changed-command
+  conflict, reference uniqueness, and stale transitions;
 - atomic edit and cancel effects across multiple lines and locations;
+- exact dispatch and reopen physical/planning effects, automatic timestamps,
+  optional reversal reason, immutable actor history, and wrong-state rejection;
 - archived/unknown locations, unknown SKUs, opening-history and unit failures;
 - rollback when balance, receipt, transfer, or result persistence fails;
 - local close/reopen read-back;

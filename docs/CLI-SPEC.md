@@ -124,9 +124,13 @@ dinkus-inventory commands resolve <command-id>
   quantities.
 - `transfers cancel` records the Created transfer as Canceled/Done and releases
   its planning quantities. It never erases the transfer or receipts.
-- `transfers start` moves a `Created` transfer to `In transit` and applies the
-  locked origin/in-transit effects. This command remains a later implementation
-  slice.
+- `transfers start` submits `transfer.dispatch`, moving an exact-version
+  positive-quantity `Created` transfer to `In transit`. Inventory records the
+  actual dispatch timestamp automatically. A negative movable-stock warning is
+  visible but does not block the command.
+- `transfers reopen` submits `transfer.reopen`, moving an exact-version
+  `In transit` transfer back to editable `Created`, with an optional free-text
+  reason. It reverses the dispatch effects without editing prior receipts.
 - `transfers receive` moves an `In transit` transfer to `Received` and applies
   the locked destination effects. This command remains a later implementation
   slice.
