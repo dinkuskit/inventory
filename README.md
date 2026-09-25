@@ -139,8 +139,10 @@ when available stock is short. Available is on-hand minus existing holds minus
 outgoing transfer commitments. One active hold exists per order line: matching
 contents return the original hold, different contents conflict. `stock.release`
 cancels the hold into durable history and returns reserved stock to available.
-The same order line may reserve again under a new ID. Packing, expiry,
-backorder, GUI, CLI, and live Commerce transport remain later slices.
+`stock.pack` consumes one active hold in full at Packed: on-hand and reserved
+both drop; available stays the same. Packed is one-way. Pack Some, Pack All,
+Unpack, expiry, backorder, GUI, CLI, and live Commerce transport remain later
+slices.
 
 The real local SQLite test adapter remains explicitly development/test-only and
 refuses production mode or in-memory use. It is not the final storage layer.
@@ -149,12 +151,13 @@ Cloudflare Worker with a SQLite-backed Durable Object namespace and one object
 database per explicit pool. Workers.dev and preview URLs are disabled, no route
 is deployed, and its remote surface remains private and read-only: same-account
 SKU-location inspection and aggregate SKU stock reads.
-The source schema defines version 5 as the complete current real-database
-schema, including the location, managed-SKU, stock-transfer, and reservation
-records plus the six stock dimensions. Fresh empty storage initializes directly
-at version 5. Exact committed version-4 storage adds reservation records;
-exact version-3 storage upgrades through v4 and then v5; exact version-2
-storage moves through v3, v4, and v5. Those paths preserve prior durable records,
+The source schema defines version 6 as the complete current real-database
+schema, including packed reservation status on top of location, managed-SKU,
+stock-transfer, and reservation records plus the six stock dimensions. Fresh
+empty storage initializes directly at version 6. Exact committed version-5
+storage allows packed status; exact version-4 storage adds reservation records
+then packed status; exact version-3 storage upgrades through v4, v5, and v6;
+exact version-2 storage moves through v3, v4, v5, and v6. Those paths preserve prior durable records,
 and the v2 path backfills legacy balanced SKU keys as stable managed identities.
 Incompatible shapes fail closed without a partial upgrade. Workerd runtime
 tests prove those transitions, but this is not a deployment or live-database

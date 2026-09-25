@@ -49,7 +49,7 @@ test("real stock-reservation proof stays local and reopens durable state", async
 	assert.match(sqliteProof, /await store\.close\(\)/u);
 	assert.match(assertion, /deepEqual\(replay\.result, commit\.reserve\)/u);
 	assert.match(assertion, /order_line_conflict/u);
-	assert.match(assertion, /\[4, 5\]/u);
+	assert.match(assertion, /\[4, 5, 6\]/u);
 	assert.match(runner, /wrangler dev/u);
 	assert.match(runner, /--local/u);
 	assert.match(runner, /--persist-to "\$proof_temp\/cloudflare-state"/u);

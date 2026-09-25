@@ -17,8 +17,8 @@ const [commit, replay] = await Promise.all([
 assert.equal(commit.phase, "commit");
 assert.equal(replay.phase, "replay_after_restart");
 assert.equal(commit.remote, false);
-assert.deepEqual(commit.upgrade.after, [4, 5]);
-assert.equal(commit.upgrade.currentVersion, 5);
+assert.deepEqual(commit.upgrade.after, [4, 5, 6]);
+assert.equal(commit.upgrade.currentVersion, 6);
 assert.equal(commit.reserve.outcome, "reserved");
 assert.equal(commit.reserve.reservation.reservationId, "rsv_proof_hat");
 assert.equal(commit.conflict.outcome, "rejected");

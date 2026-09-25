@@ -41,7 +41,7 @@ import type {
 } from "./inventory-store.ts";
 
 const STORAGE_ROLE = "local-development-test-only";
-const SCHEMA_VERSION = "opening-balance-local/v8";
+const SCHEMA_VERSION = "opening-balance-local/v9";
 const EXPECTED_TABLES = [
 	"inventory_balances",
 	"inventory_command_results",
@@ -846,9 +846,10 @@ class SqliteInventoryTransaction implements InventoryTransaction {
 		this.#assertPool(input.balance);
 		const updatedBalance = this.#database.prepare(
 			`UPDATE inventory_balances
-			 SET reserved_value = ?, available_value = ?, version = ?
+			 SET on_hand_value = ?, reserved_value = ?, available_value = ?, version = ?
 			 WHERE pool_id = ? AND location_id = ? AND sku_id = ? AND version = ?`,
 		).run(
+			input.balance.onHand.value,
 			input.balance.reserved.value,
 			input.balance.available.value,
 			Number(input.balance.version),
@@ -1001,7 +1002,7 @@ export class LocalSqliteTestInventoryStore implements InventoryStore {
 				pool_id TEXT NOT NULL,
 				reservation_id TEXT NOT NULL,
 				order_line_key TEXT NOT NULL,
-				status TEXT NOT NULL CHECK (status IN ('active', 'canceled')),
+				status TEXT NOT NULL CHECK (status IN ('active', 'canceled', 'packed')),
 				version INTEGER NOT NULL CHECK (version >= 1),
 				reservation_json TEXT NOT NULL,
 				PRIMARY KEY (pool_id, reservation_id)
