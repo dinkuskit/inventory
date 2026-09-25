@@ -132,6 +132,16 @@ warnings, or receipts. Lifecycle-aware ordering and opaque keyset pagination
 default to 50 rows and allow at most 100. This adds no schema migration,
 Worker/CLI/GUI route, authentication, or mutation.
 
+The kernel now also executes named order-line holds. `stock.reserve` mints a
+permanent reservation ID for one active location, one managed SKU, one exact
+positive quantity, and one public-safe order/line reference. It fails closed
+when available stock is short. Available is on-hand minus existing holds minus
+outgoing transfer commitments. One active hold exists per order line: matching
+contents return the original hold, different contents conflict. `stock.release`
+cancels the hold into durable history and returns reserved stock to available.
+The same order line may reserve again under a new ID. Packing, expiry,
+backorder, GUI, CLI, and live Commerce transport remain later slices.
+
 The real local SQLite test adapter remains explicitly development/test-only and
 refuses production mode or in-memory use. It is not the final storage layer.
 The first production-storage checkpoint is a private `dinkuskit-inventory`
@@ -139,11 +149,12 @@ Cloudflare Worker with a SQLite-backed Durable Object namespace and one object
 database per explicit pool. Workers.dev and preview URLs are disabled, no route
 is deployed, and its remote surface remains private and read-only: same-account
 SKU-location inspection and aggregate SKU stock reads.
-The source schema defines version 4 as the complete current real-database
-schema, including the location, managed-SKU, and stock-transfer records plus
-the six stock dimensions. Fresh empty storage initializes directly at version
-4. Exact committed version-3 storage upgrades atomically; exact version-2
-storage moves through v3 and then v4. Both paths preserve prior durable records,
+The source schema defines version 5 as the complete current real-database
+schema, including the location, managed-SKU, stock-transfer, and reservation
+records plus the six stock dimensions. Fresh empty storage initializes directly
+at version 5. Exact committed version-4 storage adds reservation records;
+exact version-3 storage upgrades through v4 and then v5; exact version-2
+storage moves through v3, v4, and v5. Those paths preserve prior durable records,
 and the v2 path backfills legacy balanced SKU keys as stable managed identities.
 Incompatible shapes fail closed without a partial upgrade. Workerd runtime
 tests prove those transitions, but this is not a deployment or live-database
@@ -185,6 +196,7 @@ bin/verify-aggregate-stock-read
 bin/verify-managed-sku
 bin/verify-stock-adjustment
 bin/verify-stock-transfer
+bin/verify-stock-reservation
 bin/verify-cloudflare-storage
 ```
 

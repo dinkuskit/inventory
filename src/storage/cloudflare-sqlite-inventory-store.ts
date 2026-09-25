@@ -15,6 +15,7 @@ import type {
 	ReadStockTransferInput,
 	StockTransferRecord,
 } from "../features/stock-transfer/index.ts";
+import type { ReservationRecord } from "../features/stock-reservation/index.ts";
 import type {
 	ActiveLocationBalanceSnapshot,
 	InventoryStore,
@@ -33,6 +34,7 @@ import type {
 	StoredStockTransferListPage,
 	StockAdjustmentCommit,
 	StockTransferCommit,
+	StockReservationCommit,
 } from "./inventory-store.ts";
 
 type SqlRow = Record<string, SqlStorageValue>;
@@ -76,6 +78,12 @@ function stockTransferFrom(row: SqlRow | undefined): StockTransferRecord | null 
 	return row === undefined
 		? null
 		: json<StockTransferRecord>(row.transfer_json);
+}
+
+function reservationFrom(row: SqlRow | undefined): ReservationRecord | null {
+	return row === undefined
+		? null
+		: json<ReservationRecord>(row.reservation_json);
 }
 
 function locationFrom(row: SqlRow | undefined): LocationRecord | null {
@@ -322,6 +330,34 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 				 WHERE pool_id = ? AND reference_key = ?`,
 				this.#poolId,
 				referenceKey,
+			),
+		);
+	}
+
+	getReservation(reservationId: string): ReservationRecord | null {
+		return reservationFrom(
+			first(
+				this.#storage,
+				`SELECT reservation_json
+				 FROM inventory_reservations
+				 WHERE pool_id = ? AND reservation_id = ?`,
+				this.#poolId,
+				reservationId,
+			),
+		);
+	}
+
+	getActiveReservationByOrderLineKey(
+		orderLineKey: string,
+	): ReservationRecord | null {
+		return reservationFrom(
+			first(
+				this.#storage,
+				`SELECT reservation_json
+				 FROM inventory_reservations
+				 WHERE pool_id = ? AND order_line_key = ? AND status = 'active'`,
+				this.#poolId,
+				orderLineKey,
 			),
 		);
 	}
@@ -800,6 +836,66 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 			).toArray();
 			if (updated.length !== 1) {
 				throw new Error("Stock-transfer update lost its target row.");
+			}
+		}
+		this.#storage.sql.exec(
+			`INSERT INTO inventory_receipts (receipt_id, command_id, receipt_json)
+			 VALUES (?, ?, ?)`,
+			input.receipt.receiptId,
+			input.commandId,
+			JSON.stringify(input.receipt),
+		).toArray();
+		this.storeCommandResult(input);
+	}
+
+	commitStockReservation(input: StockReservationCommit): void {
+		if (input.reservation.poolId !== this.#poolId) {
+			throw new Error("A transaction cannot cross inventory pools.");
+		}
+		this.#assertPool(input.balance);
+		const updatedBalance = this.#storage.sql.exec<SqlRow>(
+			`UPDATE inventory_balances
+			 SET reserved_value = ?, available_value = ?, version = ?
+			 WHERE pool_id = ? AND location_id = ? AND sku_id = ? AND version = ?
+			 RETURNING sku_id`,
+			input.balance.reserved.value,
+			input.balance.available.value,
+			Number(input.balance.version),
+			input.balance.poolId,
+			input.balance.locationId,
+			input.balance.skuId,
+			Number(input.previousBalance.version),
+		).toArray();
+		if (updatedBalance.length !== 1) {
+			throw new Error("Reservation balance update lost its target row.");
+		}
+		if (input.previous === null) {
+			this.#storage.sql.exec(
+				`INSERT INTO inventory_reservations
+				   (pool_id, reservation_id, order_line_key, status, version, reservation_json)
+				 VALUES (?, ?, ?, ?, ?, ?)`,
+				input.reservation.poolId,
+				input.reservation.reservationId,
+				input.orderLineKey,
+				input.reservation.status,
+				Number(input.reservation.version),
+				JSON.stringify(input.reservation),
+			).toArray();
+		} else {
+			const updated = this.#storage.sql.exec<SqlRow>(
+				`UPDATE inventory_reservations
+				 SET status = ?, version = ?, reservation_json = ?
+				 WHERE pool_id = ? AND reservation_id = ? AND version = ?
+				 RETURNING reservation_id`,
+				input.reservation.status,
+				Number(input.reservation.version),
+				JSON.stringify(input.reservation),
+				input.reservation.poolId,
+				input.reservation.reservationId,
+				Number(input.previous.version),
+			).toArray();
+			if (updated.length !== 1) {
+				throw new Error("Reservation update lost its target row.");
 			}
 		}
 		this.#storage.sql.exec(

@@ -160,14 +160,15 @@ share the same normalized name even when one or both are archived.
 ## fresh-schema-initialization-034 — exact predecessor storage upgrades safely (locked)
 
 A new empty Cloudflare Durable Object initializes directly at complete schema
-v4 and records history `[4]`. The committed v2 and v3 schemas remain real
-predecessor contracts even though no production pool exists. Exact v3 storage
-adds the transfer-planning quantities and transfer records, producing
-`[3, 4]`. Exact v2 storage first backfills each legacy balanced SKU key as a
-stable managed identity and then advances to v4, producing `[2, 3, 4]`. Both
-paths preserve predecessor records. Version 1, partial, conflicting-unit,
-extra-table, or otherwise incompatible storage fails closed without a partial
-migration.
+v5 and records history `[5]`. The committed v2, v3, and v4 schemas remain real
+predecessor contracts even though no production pool exists. Exact v4 storage
+adds reservation records, producing `[4, 5]`. Exact v3 storage first adds the
+transfer-planning quantities and transfer records, then reservation records,
+producing `[3, 4, 5]`. Exact v2 storage first backfills each legacy balanced
+SKU key as a stable managed identity, then advances through v4 to v5,
+producing `[2, 3, 4, 5]`. All paths preserve predecessor records. Version 1,
+partial, conflicting-unit, extra-table, or otherwise incompatible storage
+fails closed without a partial migration.
 
 ## opening-balance-location-admission-035 — active locations only (locked)
 
@@ -495,12 +496,26 @@ production scheduling, costing, forecasting, general MRP; WooCommerce/Katana
 adapters, imports, shadow synchronization, and tail synchronization; Commerce
 product settings and external inventory-provider implementations.
 
+## reservation-domain-001 through reservation-cancel-005 — named order holds (locked)
+
+Inventory owns named reservation records. Each active hold has one Inventory-minted
+opaque ID, one explicit pool, one active location, one managed SKU, one exact
+positive quantity, and one public-safe order/line reference. No customer,
+address, or payment data is stored. `stock.reserve` fails closed when available
+stock is less than the requested quantity. Available is on-hand minus existing
+order reservations minus outgoing transfer commitments. One active hold exists
+per pool and order/line: matching contents return the original hold, different
+contents conflict. `stock.release` cancels the hold into durable history and
+returns reserved stock to available; the same order/line may reserve again under
+a new reservation ID. Packing, expiry, backorder, GUI, CLI, and live Commerce
+transport remain deferred.
+
 ## Next focused grill
 
-Select the next Inventory-owned slice after the transfer-list implementation
-and repository proof close. Partial receiving, Received reversion, GUI,
-Commerce/Blocks integration, service authentication, deployment, and production
-mutation remain deferred until separately grilled and approved.
+Select the next Inventory-owned slice after the reservation kernel. Packing/
+commit, expiry, backorder, GUI, CLI, Commerce/Blocks integration, service
+authentication, deployment, and production mutation remain deferred until
+separately grilled and approved.
 
 ## Cross-references
 
