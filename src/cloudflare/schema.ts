@@ -284,7 +284,31 @@ function migrateV4ToV5(storage: DurableObjectStorage): void {
 		.toArray();
 }
 
+function reservationJsonWithPackedLifecycle(raw: string): string {
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(raw);
+	} catch {
+		throw new Error("Cloudflare Inventory reservation JSON is invalid.");
+	}
+	if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+		throw new Error("Cloudflare Inventory reservation JSON is invalid.");
+	}
+	const record = parsed as Record<string, unknown>;
+	return JSON.stringify({
+		...record,
+		packedAt: record.packedAt ?? null,
+		packedBy: record.packedBy ?? null,
+	});
+}
+
 function migrateV5ToV6(storage: DurableObjectStorage): void {
+	const legacyRows = storage.sql
+		.exec(
+			`SELECT pool_id, reservation_id, order_line_key, status, version, reservation_json
+			 FROM inventory_reservations`,
+		)
+		.toArray();
 	storage.sql
 		.exec(
 			`CREATE TABLE inventory_reservations_v6 (
@@ -298,13 +322,21 @@ function migrateV5ToV6(storage: DurableObjectStorage): void {
 			) STRICT`,
 		)
 		.toArray();
-	storage.sql
-		.exec(
-			`INSERT INTO inventory_reservations_v6
-			 SELECT pool_id, reservation_id, order_line_key, status, version, reservation_json
-			 FROM inventory_reservations`,
-		)
-		.toArray();
+	for (const row of legacyRows) {
+		storage.sql
+			.exec(
+				`INSERT INTO inventory_reservations_v6
+				   (pool_id, reservation_id, order_line_key, status, version, reservation_json)
+				 VALUES (?, ?, ?, ?, ?, ?)`,
+				String(row.pool_id),
+				String(row.reservation_id),
+				String(row.order_line_key),
+				String(row.status),
+				Number(row.version),
+				reservationJsonWithPackedLifecycle(String(row.reservation_json)),
+			)
+			.toArray();
+	}
 	storage.sql.exec("DROP TABLE inventory_reservations").toArray();
 	storage.sql
 		.exec("ALTER TABLE inventory_reservations_v6 RENAME TO inventory_reservations")

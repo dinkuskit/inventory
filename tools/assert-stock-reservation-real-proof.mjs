@@ -17,18 +17,19 @@ const [commit, replay] = await Promise.all([
 assert.equal(commit.phase, "commit");
 assert.equal(replay.phase, "replay_after_restart");
 assert.equal(commit.remote, false);
-assert.deepEqual(commit.upgrade.after, [4, 5, 6]);
+assert.deepEqual(commit.upgrade.after, [5, 6]);
 assert.equal(commit.upgrade.currentVersion, 6);
-assert.equal(commit.reserve.outcome, "reserved");
-assert.equal(commit.reserve.reservation.reservationId, "rsv_proof_hat");
-assert.equal(commit.conflict.outcome, "rejected");
-assert.equal(commit.conflict.code, "order_line_conflict");
-assert.equal(commit.release.outcome, "released");
-assert.equal(commit.release.reservation.status, "canceled");
+assert.equal(commit.upgrade.upgradedHold.packedAt, null);
+assert.equal(commit.upgrade.upgradedHold.packedBy, null);
+assert.equal(commit.upgrade.upgradedHold.status, "active");
+assert.equal(commit.pack.outcome, "packed");
+assert.equal(commit.pack.reservation.reservationId, "rsv_proof_hat");
+assert.equal(commit.pack.reservation.status, "packed");
+assert.equal(commit.durable.balance.onHand.value, "7");
 assert.equal(commit.durable.balance.reserved.value, "0");
-assert.equal(commit.durable.balance.available.value, "10");
-assert.deepEqual(replay.result, commit.reserve);
-assert.equal(replay.durable.balance.reserved.value, "0");
+assert.equal(commit.durable.balance.available.value, "7");
+assert.deepEqual(replay.result, commit.pack);
+assert.equal(replay.durable.balance.onHand.value, "7");
 
 console.log(
 	JSON.stringify(
@@ -39,11 +40,9 @@ console.log(
 			stoppedAndReopened: true,
 			persistedStateFiles,
 			schemaUpgrade: commit.upgrade,
-			reserveOutcome: commit.reserve.outcome,
-			conflictCode: commit.conflict.code,
-			releaseOutcome: commit.release.outcome,
-			replayReturnedOriginalReserve: true,
-			durableAfterRelease: commit.durable.balance,
+			packOutcome: commit.pack.outcome,
+			replayReturnedOriginalPack: true,
+			durableAfterPack: commit.durable.balance,
 		},
 		null,
 		2,
