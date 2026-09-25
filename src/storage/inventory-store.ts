@@ -29,6 +29,11 @@ import type {
 	StockTransferRecord,
 	StockTransferResult,
 } from "../features/stock-transfer/index.ts";
+import type {
+	ReservationRecord,
+	StockReservationReceiptV2,
+	StockReservationResult,
+} from "../features/stock-reservation/index.ts";
 
 export type StoredCommandResult<
 	TResult extends InventoryCommandResult = InventoryCommandResult,
@@ -84,6 +89,18 @@ export type StockTransferCommit = Readonly<{
 	}>[];
 	receipt: StockTransferReceiptV2;
 	result: StockTransferResult;
+}>;
+
+export type StockReservationCommit = Readonly<{
+	commandId: string;
+	commandDigest: string;
+	previous: ReservationRecord | null;
+	reservation: ReservationRecord;
+	orderLineKey: string;
+	previousBalance: BalanceRecord;
+	balance: BalanceRecord;
+	receipt: StockReservationReceiptV2;
+	result: StockReservationResult;
 }>;
 
 export type StoredOpeningBalanceConfirmation = Readonly<{
@@ -166,6 +183,10 @@ export interface InventoryTransaction {
 	getManagedSkuBySku(sku: string): ManagedSkuRecord | null;
 	getStockTransfer(transferId: string): StockTransferRecord | null;
 	getStockTransferByReferenceKey(referenceKey: string): StockTransferRecord | null;
+	getReservation(reservationId: string): ReservationRecord | null;
+	getActiveReservationByOrderLineKey(
+		orderLineKey: string,
+	): ReservationRecord | null;
 	getLocation(locationId: string): LocationRecord | null;
 	getLocationByNameKey(nameKey: string): LocationRecord | null;
 	listLocationBalanceBlockers(
@@ -198,6 +219,7 @@ export interface InventoryTransaction {
 	commitLocation(input: LocationCommit): void;
 	commitManagedSku(input: ManagedSkuCommit): void;
 	commitStockTransfer(input: StockTransferCommit): void;
+	commitStockReservation(input: StockReservationCommit): void;
 }
 
 export interface InventoryStore {

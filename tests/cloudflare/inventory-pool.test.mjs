@@ -75,13 +75,14 @@ describe("Inventory Cloudflare storage boundary", () => {
 
 		expect(await alpha.schemaStatus()).toEqual({
 			schema: "dinkuskit.inventory.cloudflare-schema-status/v1",
-			version: 4,
+			version: 5,
 			tables: [
 				"inventory_balances",
 				"inventory_command_results",
 				"inventory_locations",
 				"inventory_opening_balance_confirmations",
 				"inventory_receipts",
+				"inventory_reservations",
 				"inventory_schema_migrations",
 				"inventory_skus",
 				"inventory_transfers",
@@ -98,13 +99,14 @@ describe("Inventory Cloudflare storage boundary", () => {
 		expect(await exports.default.inspectSkuLocation(key("pool_probe"))).toEqual({
 			schema: {
 				schema: "dinkuskit.inventory.cloudflare-schema-status/v1",
-				version: 4,
+				version: 5,
 				tables: [
 					"inventory_balances",
 					"inventory_command_results",
 					"inventory_locations",
 					"inventory_opening_balance_confirmations",
 					"inventory_receipts",
+					"inventory_reservations",
 					"inventory_schema_migrations",
 					"inventory_skus",
 					"inventory_transfers",
@@ -120,6 +122,7 @@ describe("Inventory Cloudflare storage boundary", () => {
 				commandResults: 0,
 				confirmations: 0,
 				receipts: 0,
+				reservations: 0,
 				skus: 0,
 				transfers: 0,
 			},
@@ -135,9 +138,9 @@ describe("Inventory Cloudflare storage boundary", () => {
 				.exec("SELECT version FROM inventory_schema_migrations ORDER BY version")
 				.toArray()
 				.map((row) => Number(row.version));
-			expect(versions).toEqual([4]);
+			expect(versions).toEqual([5]);
 			expect(() => initializeCloudflareInventorySchema(state.storage)).not.toThrow();
-			expect(readCloudflareInventorySchemaStatus(state.storage).version).toBe(4);
+			expect(readCloudflareInventorySchemaStatus(state.storage).version).toBe(5);
 		});
 	});
 
@@ -147,6 +150,7 @@ describe("Inventory Cloudflare storage boundary", () => {
 		const stub = env.INVENTORY_POOLS.getByName("pool_v3_upgrade");
 		await runInDurableObject(stub, async (_instance, state) => {
 			state.storage.transactionSync(() => {
+				state.storage.sql.exec("DROP TABLE inventory_reservations").toArray();
 				state.storage.sql.exec("DROP TABLE inventory_transfers").toArray();
 				state.storage.sql
 					.exec("ALTER TABLE inventory_balances DROP COLUMN outgoing_transfer_committed_value")
@@ -179,7 +183,7 @@ describe("Inventory Cloudflare storage boundary", () => {
 					.exec("SELECT version FROM inventory_schema_migrations ORDER BY version")
 					.toArray()
 					.map((row) => Number(row.version)),
-			).toEqual([3, 4]);
+			).toEqual([3, 4, 5]);
 			const store = createCloudflareSqliteInventoryStore({
 				storage: state.storage,
 				poolId: "pool_v3_upgrade",
@@ -212,6 +216,7 @@ describe("Inventory Cloudflare storage boundary", () => {
 		const stub = env.INVENTORY_POOLS.getByName("pool_v2_upgrade");
 		await runInDurableObject(stub, async (_instance, state) => {
 			state.storage.transactionSync(() => {
+				state.storage.sql.exec("DROP TABLE inventory_reservations").toArray();
 				state.storage.sql.exec("DROP TABLE inventory_transfers").toArray();
 				state.storage.sql.exec("DROP TABLE inventory_skus").toArray();
 				state.storage.sql
@@ -291,7 +296,7 @@ describe("Inventory Cloudflare storage boundary", () => {
 					.exec("SELECT version FROM inventory_schema_migrations ORDER BY version")
 					.toArray()
 					.map((row) => Number(row.version)),
-			).toEqual([2, 3, 4]);
+			).toEqual([2, 3, 4, 5]);
 			const store = createCloudflareSqliteInventoryStore({
 				storage: state.storage,
 				poolId: "pool_v2_upgrade",
@@ -350,6 +355,7 @@ describe("Inventory Cloudflare storage boundary", () => {
 		const stub = env.INVENTORY_POOLS.getByName("pool_v2_conflicting_units");
 		await runInDurableObject(stub, async (_instance, state) => {
 			state.storage.transactionSync(() => {
+				state.storage.sql.exec("DROP TABLE inventory_reservations").toArray();
 				state.storage.sql.exec("DROP TABLE inventory_transfers").toArray();
 				state.storage.sql.exec("DROP TABLE inventory_skus").toArray();
 				state.storage.sql

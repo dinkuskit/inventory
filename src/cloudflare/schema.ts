@@ -1,6 +1,6 @@
 export const CLOUDFLARE_INVENTORY_SCHEMA =
 	"dinkuskit.inventory.cloudflare-schema-status/v1" as const;
-export const CLOUDFLARE_INVENTORY_SCHEMA_VERSION = 4 as const;
+export const CLOUDFLARE_INVENTORY_SCHEMA_VERSION = 5 as const;
 
 const CLOUDFLARE_INVENTORY_V2_TABLES = [
 	"inventory_balances",
@@ -23,8 +23,9 @@ const V3_MIGRATION_PRINCIPAL_JSON = JSON.stringify({
 	surface: "cloudflare_durable_object",
 });
 const V4_MIGRATION_APPLIED_AT = "2026-08-29T16:30:00.000Z";
+const V5_MIGRATION_APPLIED_AT = "2026-09-25T19:48:00.000Z";
 
-export const CLOUDFLARE_INVENTORY_TABLES = [
+export const CLOUDFLARE_INVENTORY_V4_TABLES = [
 	"inventory_balances",
 	"inventory_command_results",
 	"inventory_locations",
@@ -34,6 +35,11 @@ export const CLOUDFLARE_INVENTORY_TABLES = [
 	"inventory_skus",
 	"inventory_transfers",
 ] as const;
+
+export const CLOUDFLARE_INVENTORY_TABLES = [
+	...CLOUDFLARE_INVENTORY_V4_TABLES,
+	"inventory_reservations",
+].sort();
 
 export type CloudflareInventorySchemaStatus = Readonly<{
 	schema: typeof CLOUDFLARE_INVENTORY_SCHEMA;
@@ -46,6 +52,7 @@ export type CloudflareInventoryRecordCounts = Readonly<{
 	commandResults: number;
 	confirmations: number;
 	receipts: number;
+	reservations: number;
 	skus: number;
 	transfers: number;
 }>;
@@ -83,15 +90,30 @@ function assertExactSchema(storage: DurableObjectStorage): void {
 	const migrations = migrationVersions(storage);
 	if (
 		![
-			["4"],
-			["3", "4"],
-			["2", "3", "4"],
+			["5"],
+			["4", "5"],
+			["3", "4", "5"],
+			["2", "3", "4", "5"],
 		].some((expected) => sameStrings(migrations.map(String), expected))
 	) {
 		throw new Error("Cloudflare Inventory schema migration history is invalid.");
 	}
-	if (!sameStrings(inventoryTables(storage), CLOUDFLARE_INVENTORY_TABLES)) {
+	if (!sameStrings(inventoryTables(storage), [...CLOUDFLARE_INVENTORY_TABLES])) {
 		throw new Error("Cloudflare Inventory schema tables are incompatible.");
+	}
+}
+
+function assertV4Schema(storage: DurableObjectStorage): void {
+	const versions = migrationVersions(storage).map(String);
+	if (
+		!sameStrings(versions, ["4"]) &&
+		!sameStrings(versions, ["3", "4"]) &&
+		!sameStrings(versions, ["2", "3", "4"])
+	) {
+		throw new Error("Cloudflare Inventory v4 migration history is invalid.");
+	}
+	if (!sameStrings(inventoryTables(storage), [...CLOUDFLARE_INVENTORY_V4_TABLES])) {
+		throw new Error("Cloudflare Inventory v4 schema tables are incompatible.");
 	}
 }
 
@@ -128,6 +150,29 @@ function createStockTransferTable(storage: DurableObjectStorage): void {
 				PRIMARY KEY (pool_id, transfer_id),
 				UNIQUE (pool_id, reference_key)
 			) STRICT`,
+		)
+		.toArray();
+}
+
+function createReservationTable(storage: DurableObjectStorage): void {
+	storage.sql
+		.exec(
+			`CREATE TABLE inventory_reservations (
+				pool_id TEXT NOT NULL,
+				reservation_id TEXT NOT NULL,
+				order_line_key TEXT NOT NULL,
+				status TEXT NOT NULL CHECK (status IN ('active', 'canceled')),
+				version INTEGER NOT NULL CHECK (version >= 1),
+				reservation_json TEXT NOT NULL,
+				PRIMARY KEY (pool_id, reservation_id)
+			) STRICT`,
+		)
+		.toArray();
+	storage.sql
+		.exec(
+			`CREATE UNIQUE INDEX inventory_reservations_active_order_line
+			 ON inventory_reservations (pool_id, order_line_key)
+			 WHERE status = 'active'`,
 		)
 		.toArray();
 }
@@ -217,8 +262,22 @@ function migrateV3ToV4(storage: DurableObjectStorage): void {
 		.exec(
 			`INSERT INTO inventory_schema_migrations (version, applied_at)
 			 VALUES (?, ?)`,
-			CLOUDFLARE_INVENTORY_SCHEMA_VERSION,
+			4,
 			V4_MIGRATION_APPLIED_AT,
+		)
+		.toArray();
+	assertV4Schema(storage);
+}
+
+function migrateV4ToV5(storage: DurableObjectStorage): void {
+	assertV4Schema(storage);
+	createReservationTable(storage);
+	storage.sql
+		.exec(
+			`INSERT INTO inventory_schema_migrations (version, applied_at)
+			 VALUES (?, ?)`,
+			CLOUDFLARE_INVENTORY_SCHEMA_VERSION,
+			V5_MIGRATION_APPLIED_AT,
 		)
 		.toArray();
 	assertExactSchema(storage);
@@ -230,17 +289,23 @@ export function initializeCloudflareInventorySchema(
 	storage.transactionSync(() => {
 		const existingTables = inventoryTables(storage);
 		if (existingTables.length > 0) {
-			if (sameStrings(existingTables, CLOUDFLARE_INVENTORY_TABLES)) {
+			if (sameStrings(existingTables, [...CLOUDFLARE_INVENTORY_TABLES])) {
 				assertExactSchema(storage);
+				return;
+			}
+			if (sameStrings(existingTables, [...CLOUDFLARE_INVENTORY_V4_TABLES])) {
+				migrateV4ToV5(storage);
 				return;
 			}
 			if (sameStrings(existingTables, CLOUDFLARE_INVENTORY_V3_TABLES)) {
 				migrateV3ToV4(storage);
+				migrateV4ToV5(storage);
 				return;
 			}
 			if (sameStrings(existingTables, CLOUDFLARE_INVENTORY_V2_TABLES)) {
 				migrateV2ToV3(storage);
 				migrateV3ToV4(storage);
+				migrateV4ToV5(storage);
 				return;
 			}
 			throw new Error(
@@ -308,6 +373,7 @@ export function initializeCloudflareInventorySchema(
 			.toArray();
 		createManagedSkuTable(storage);
 		createStockTransferTable(storage);
+		createReservationTable(storage);
 		storage.sql
 			.exec(
 				`CREATE TABLE inventory_receipts (
@@ -337,7 +403,7 @@ export function initializeCloudflareInventorySchema(
 				`INSERT INTO inventory_schema_migrations (version, applied_at)
 				 VALUES (?, ?)`,
 				CLOUDFLARE_INVENTORY_SCHEMA_VERSION,
-				V4_MIGRATION_APPLIED_AT,
+				V5_MIGRATION_APPLIED_AT,
 			)
 			.toArray();
 		assertExactSchema(storage);
@@ -361,6 +427,7 @@ function rowCount(storage: DurableObjectStorage, table: string): number {
 		"inventory_command_results",
 		"inventory_opening_balance_confirmations",
 		"inventory_receipts",
+		"inventory_reservations",
 		"inventory_skus",
 		"inventory_transfers",
 	]);
@@ -381,6 +448,7 @@ export function readCloudflareInventoryRecordCounts(
 			"inventory_opening_balance_confirmations",
 		),
 		receipts: rowCount(storage, "inventory_receipts"),
+		reservations: rowCount(storage, "inventory_reservations"),
 		skus: rowCount(storage, "inventory_skus"),
 		transfers: rowCount(storage, "inventory_transfers"),
 	};

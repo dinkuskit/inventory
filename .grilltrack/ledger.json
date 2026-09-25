@@ -1,30 +1,30 @@
 {
   "closeout": null,
-  "created_at": "2026-08-30T21:31:59+00:00",
+  "created_at": "2026-09-25T19:06:16+00:00",
   "current_focus": {
     "cadence": "sequential",
     "confirmed": true,
-    "confirmed_at": "2026-08-30T21:49:26+00:00",
-    "domain": "stock-transfer list read model",
-    "started_at": "2026-08-30T21:31:59+00:00",
+    "confirmed_at": "2026-09-25T19:48:42+00:00",
+    "domain": "order reservations",
+    "started_at": "2026-09-25T19:06:16+00:00",
     "status": "confirmed",
-    "summary": "Bobby confirmed the bounded platform-neutral transfer-list read model. Each query explicitly selects Open or Done for one explicit pool and either one active location or All Locations. One-location scope includes incoming and outgoing transfers; All Locations returns each matching transfer once. Archived endpoints remain out of normal selectors but stay visibly identified when relevant to an active location, while transfers whose endpoints are both archived remain archive-only. Open is urgency-ordered by expected dispatch or arrival; Done is newest terminal event first. Each row is a compact transfer summary with full line, note, actor, receipt, warning, and audit detail left to existing detail reads. Default pagination is 50, maximum 100, with a stable opaque cursor. Search, alternate sorting, GUI, CLI, HTTP/auth, integrations, schema migration, deployment, partial receiving, and Received reversion remain excluded."
+    "summary": "Build the platform-neutral order-reservation kernel: named holds with Inventory-minted IDs, fail-closed available checks, one active hold per order/line, and cancel-to-history release. Verify with local SQLite and Cloudflare tests plus bin/verify-inventory full. No GUI, CLI, Commerce transport, packing, expiry, backorder, deploy, or Woo/Katana."
   },
   "decisions": [
     {
-      "baseline_ref": "git:ff6dd9de3841dd95965849c1b0221b1551929656",
+      "baseline_ref": "git:61bc604d03d9b482b05daaa3647c84c77ce4fdb3",
       "candidate_refs": [],
-      "choice": "Each query explicitly requests exactly one view: Open or Done. The human UI initially selects Open, then requests Done when the user changes tabs. Open returns Created and In-transit transfers; Done returns Received and Canceled transfers. Inventory never infers a remembered tab.",
-      "context_ref": ".grilltrack/archive/dinkuskit-inventory-v1/ledger.json",
-      "created_at": "2026-08-30T21:32:22+00:00",
+      "choice": "Order reservations: durable reservation records plus commands that write reserved stock and derived available. Stock-in and site-to-pool mapping wait.",
+      "context_ref": "docs/CHARTER.md",
+      "created_at": "2026-09-25T19:06:16+00:00",
       "deferred_reason": null,
       "delivery_ref": null,
       "dependencies": [],
-      "domain": "stock-transfer list read model",
+      "domain": "order reservations",
       "history": [
         {
-          "at": "2026-08-30T21:34:58+00:00",
-          "choice": "Each query explicitly requests exactly one view: Open or Done. The human UI initially selects Open, then requests Done when the user changes tabs. Open returns Created and In-transit transfers; Done returns Received and Canceled transfers. Inventory never infers a remembered tab.",
+          "at": "2026-09-25T19:06:16+00:00",
+          "choice": "Order reservations: durable reservation records plus commands that write reserved stock and derived available. Stock-in and site-to-pool mapping wait.",
           "from": "proposed",
           "implementation_ref": null,
           "note": "user accepted the scoped decision",
@@ -37,8 +37,8 @@
           "verification_ref": null
         },
         {
-          "at": "2026-08-30T22:17:10+00:00",
-          "choice": "Each query explicitly requests exactly one view: Open or Done. The human UI initially selects Open, then requests Done when the user changes tabs. Open returns Created and In-transit transfers; Done returns Received and Canceled transfers. Inventory never infers a remembered tab.",
+          "at": "2026-09-25T20:05:17+00:00",
+          "choice": "Order reservations: durable reservation records plus commands that write reserved stock and derived available. Stock-in and site-to-pool mapping wait.",
           "from": "locked",
           "implementation_ref": null,
           "note": "bounded implementation recorded",
@@ -51,10 +51,10 @@
           "verification_ref": null
         },
         {
-          "at": "2026-08-30T22:17:10+00:00",
-          "choice": "Each query explicitly requests exactly one view: Open or Done. The human UI initially selects Open, then requests Done when the user changes tabs. Open returns Created and In-transit transfers; Done returns Received and Canceled transfers. Inventory never infers a remembered tab.",
+          "at": "2026-09-25T20:05:17+00:00",
+          "choice": "Order reservations: durable reservation records plus commands that write reserved stock and derived available. Stock-in and site-to-pool mapping wait.",
           "from": "implemented",
-          "implementation_ref": ".grilltrack/proof/cycle-18/PROOF.md",
+          "implementation_ref": ".grilltrack/proof/cycle-19/PROOF.md",
           "note": "verification recorded in cumulative context",
           "repair_required": false,
           "review_classifications": [],
@@ -65,45 +65,45 @@
           "verification_ref": null
         }
       ],
-      "id": "transfer-list-view-selection-001",
-      "implementation_ref": ".grilltrack/proof/cycle-18/PROOF.md",
-      "question": "Does one transfer-list query return both Open and Done, or does the caller explicitly request one view?",
-      "rationale": "Separate views keep their ordering and pagination independent, avoid loading potentially large completed history when an operator needs active work, and still preserve Katana's two-tab behavior at the client.",
+      "id": "reservation-domain-001",
+      "implementation_ref": ".grilltrack/proof/cycle-19/PROOF.md",
+      "question": "What is the next Inventory-owned kernel slice after the transfer-list read model?",
+      "rationale": "The reserved balance field already exists and is preserved by opening, adjust, and transfer, but nothing writes a reservation record. Commerce cannot sell without reserve/release. CHARTER already names reservation records and order references as Inventory-owned. Stock-in and site mapping do not unblock selling.",
       "repair_required": false,
       "review_classifications": [],
       "review_history": [
         {
           "classifications": [],
-          "ref": ".grilltrack/proof/cycle-18/REVIEW.md",
+          "ref": ".grilltrack/proof/cycle-19/REVIEW.md",
           "result": "clean",
-          "reviewed_at": "2026-08-30T22:17:11+00:00",
-          "source_identity": "sha256:4eb90a36d9bc326335d5557575c3ad37d0b33d8d62b6e3e1c98abbe633fc0e8c"
+          "reviewed_at": "2026-09-25T20:05:17+00:00",
+          "source_identity": "sha256:ffa25e3975d6c401474f69499a82df004d6fd65d5fd6deb682522136fa3e278b"
         }
       ],
-      "review_ref": ".grilltrack/proof/cycle-18/REVIEW.md",
+      "review_ref": ".grilltrack/proof/cycle-19/REVIEW.md",
       "review_result": "clean",
-      "review_source_identity": "sha256:4eb90a36d9bc326335d5557575c3ad37d0b33d8d62b6e3e1c98abbe633fc0e8c",
+      "review_source_identity": "sha256:ffa25e3975d6c401474f69499a82df004d6fd65d5fd6deb682522136fa3e278b",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-30T22:17:11+00:00",
-      "verification_ref": ".grilltrack/proof/cycle-18/PROOF.md"
+      "updated_at": "2026-09-25T20:05:17+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-19/PROOF.md"
     },
     {
-      "baseline_ref": "git:ff6dd9de3841dd95965849c1b0221b1551929656",
+      "baseline_ref": "git:61bc604d03d9b482b05daaa3647c84c77ce4fdb3",
       "candidate_refs": [],
-      "choice": "A one-location list includes a transfer when the selected location is either its origin or its destination. The row retains both endpoints so the client can show it as outgoing or incoming relative to the selection. An unrelated transfer between two other locations is excluded. All Locations returns every matching transfer in the pool once, never once per endpoint.",
-      "context_ref": ".grilltrack/archive/dinkuskit-inventory-v1/ledger.json",
-      "created_at": "2026-08-30T21:34:58+00:00",
+      "choice": "A named hold. Inventory mints a permanent opaque reservation ID. The record names one explicit pool, one active location, one managed SKU, one exact positive quantity, and one public-safe order/line reference. No customer, address, or payment data. This cycle creates the hold and cancels it. Packing, expiry, and whole-cart documents wait.",
+      "context_ref": "docs/CHARTER.md",
+      "created_at": "2026-09-25T19:16:05+00:00",
       "deferred_reason": null,
       "delivery_ref": null,
       "dependencies": [
-        "transfer-list-view-selection-001"
+        "reservation-domain-001"
       ],
-      "domain": "stock-transfer list read model",
+      "domain": "order reservations",
       "history": [
         {
-          "at": "2026-08-30T21:36:42+00:00",
-          "choice": "A one-location list includes a transfer when the selected location is either its origin or its destination. The row retains both endpoints so the client can show it as outgoing or incoming relative to the selection. An unrelated transfer between two other locations is excluded. All Locations returns every matching transfer in the pool once, never once per endpoint.",
+          "at": "2026-09-25T19:16:05+00:00",
+          "choice": "A named hold. Inventory mints a permanent opaque reservation ID. The record names one explicit pool, one active location, one managed SKU, one exact positive quantity, and one public-safe order/line reference. No customer, address, or payment data. This cycle creates the hold and cancels it. Packing, expiry, and whole-cart documents wait.",
           "from": "proposed",
           "implementation_ref": null,
           "note": "user accepted the scoped decision",
@@ -116,8 +116,8 @@
           "verification_ref": null
         },
         {
-          "at": "2026-08-30T22:17:11+00:00",
-          "choice": "A one-location list includes a transfer when the selected location is either its origin or its destination. The row retains both endpoints so the client can show it as outgoing or incoming relative to the selection. An unrelated transfer between two other locations is excluded. All Locations returns every matching transfer in the pool once, never once per endpoint.",
+          "at": "2026-09-25T20:05:17+00:00",
+          "choice": "A named hold. Inventory mints a permanent opaque reservation ID. The record names one explicit pool, one active location, one managed SKU, one exact positive quantity, and one public-safe order/line reference. No customer, address, or payment data. This cycle creates the hold and cancels it. Packing, expiry, and whole-cart documents wait.",
           "from": "locked",
           "implementation_ref": null,
           "note": "bounded implementation recorded",
@@ -130,10 +130,10 @@
           "verification_ref": null
         },
         {
-          "at": "2026-08-30T22:17:11+00:00",
-          "choice": "A one-location list includes a transfer when the selected location is either its origin or its destination. The row retains both endpoints so the client can show it as outgoing or incoming relative to the selection. An unrelated transfer between two other locations is excluded. All Locations returns every matching transfer in the pool once, never once per endpoint.",
+          "at": "2026-09-25T20:05:17+00:00",
+          "choice": "A named hold. Inventory mints a permanent opaque reservation ID. The record names one explicit pool, one active location, one managed SKU, one exact positive quantity, and one public-safe order/line reference. No customer, address, or payment data. This cycle creates the hold and cancels it. Packing, expiry, and whole-cart documents wait.",
           "from": "implemented",
-          "implementation_ref": ".grilltrack/proof/cycle-18/PROOF.md",
+          "implementation_ref": ".grilltrack/proof/cycle-19/PROOF.md",
           "note": "verification recorded in cumulative context",
           "repair_required": false,
           "review_classifications": [],
@@ -144,45 +144,45 @@
           "verification_ref": null
         }
       ],
-      "id": "transfer-list-location-scope-002",
-      "implementation_ref": ".grilltrack/proof/cycle-18/PROOF.md",
-      "question": "When one location is selected, which stock transfers belong in that location's Open or Done list?",
-      "rationale": "Operators responsible for one location need to see both stock leaving it and stock expected to arrive there. Returning each transfer once avoids duplicate rows while retaining the full route.",
+      "id": "reservation-record-002",
+      "implementation_ref": ".grilltrack/proof/cycle-19/PROOF.md",
+      "question": "What is one reservation?",
+      "rationale": "CHARTER already requires Inventory-owned reservation records and order references so a later admin view can show order number, quantity, and location. A naked reserved counter cannot do that. One SKU-location line keeps the first commands inspectable; a cart is several holds, not one blob. Packing is a different command that consumes a hold.",
       "repair_required": false,
       "review_classifications": [],
       "review_history": [
         {
           "classifications": [],
-          "ref": ".grilltrack/proof/cycle-18/REVIEW.md",
+          "ref": ".grilltrack/proof/cycle-19/REVIEW.md",
           "result": "clean",
-          "reviewed_at": "2026-08-30T22:17:11+00:00",
-          "source_identity": "sha256:4eb90a36d9bc326335d5557575c3ad37d0b33d8d62b6e3e1c98abbe633fc0e8c"
+          "reviewed_at": "2026-09-25T20:05:17+00:00",
+          "source_identity": "sha256:ffa25e3975d6c401474f69499a82df004d6fd65d5fd6deb682522136fa3e278b"
         }
       ],
-      "review_ref": ".grilltrack/proof/cycle-18/REVIEW.md",
+      "review_ref": ".grilltrack/proof/cycle-19/REVIEW.md",
       "review_result": "clean",
-      "review_source_identity": "sha256:4eb90a36d9bc326335d5557575c3ad37d0b33d8d62b6e3e1c98abbe633fc0e8c",
+      "review_source_identity": "sha256:ffa25e3975d6c401474f69499a82df004d6fd65d5fd6deb682522136fa3e278b",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-30T22:17:11+00:00",
-      "verification_ref": ".grilltrack/proof/cycle-18/PROOF.md"
+      "updated_at": "2026-09-25T20:05:17+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-19/PROOF.md"
     },
     {
-      "baseline_ref": "git:ff6dd9de3841dd95965849c1b0221b1551929656",
+      "baseline_ref": "git:61bc604d03d9b482b05daaa3647c84c77ce4fdb3",
       "candidate_refs": [],
-      "choice": "Archived locations stay absent from the normal location selector. A transfer remains visible when the selected active location is one of its endpoints, even if the other endpoint was later archived; that endpoint is visibly marked Archived. All Locations includes a transfer once when at least one endpoint is active. A transfer whose origin and destination are both archived leaves the normal lists and remains accessible through explicit archived-location history.",
-      "context_ref": ".grilltrack/archive/dinkuskit-inventory-v1/ledger.json",
-      "created_at": "2026-08-30T21:36:42+00:00",
+      "choice": "No. Reserve fails closed when available is less than the requested quantity. No reservation record, no reserved bump, durable business rejection. Available is on-hand minus existing order reservations minus outgoing transfer commitments. Transfers may warn and go negative; sales may not. No backorder flag in this slice.",
+      "context_ref": "docs/CHARTER.md",
+      "created_at": "2026-09-25T19:30:38+00:00",
       "deferred_reason": null,
       "delivery_ref": null,
       "dependencies": [
-        "transfer-list-location-scope-002"
+        "reservation-record-002"
       ],
-      "domain": "stock-transfer list read model",
+      "domain": "order reservations",
       "history": [
         {
-          "at": "2026-08-30T21:40:19+00:00",
-          "choice": "Archived locations stay absent from the normal location selector. A transfer remains visible when the selected active location is one of its endpoints, even if the other endpoint was later archived; that endpoint is visibly marked Archived. All Locations includes a transfer once when at least one endpoint is active. A transfer whose origin and destination are both archived leaves the normal lists and remains accessible through explicit archived-location history.",
+          "at": "2026-09-25T19:30:39+00:00",
+          "choice": "No. Reserve fails closed when available is less than the requested quantity. No reservation record, no reserved bump, durable business rejection. Available is on-hand minus existing order reservations minus outgoing transfer commitments. Transfers may warn and go negative; sales may not. No backorder flag in this slice.",
           "from": "proposed",
           "implementation_ref": null,
           "note": "user accepted the scoped decision",
@@ -195,8 +195,8 @@
           "verification_ref": null
         },
         {
-          "at": "2026-08-30T22:17:11+00:00",
-          "choice": "Archived locations stay absent from the normal location selector. A transfer remains visible when the selected active location is one of its endpoints, even if the other endpoint was later archived; that endpoint is visibly marked Archived. All Locations includes a transfer once when at least one endpoint is active. A transfer whose origin and destination are both archived leaves the normal lists and remains accessible through explicit archived-location history.",
+          "at": "2026-09-25T20:05:17+00:00",
+          "choice": "No. Reserve fails closed when available is less than the requested quantity. No reservation record, no reserved bump, durable business rejection. Available is on-hand minus existing order reservations minus outgoing transfer commitments. Transfers may warn and go negative; sales may not. No backorder flag in this slice.",
           "from": "locked",
           "implementation_ref": null,
           "note": "bounded implementation recorded",
@@ -209,10 +209,10 @@
           "verification_ref": null
         },
         {
-          "at": "2026-08-30T22:17:11+00:00",
-          "choice": "Archived locations stay absent from the normal location selector. A transfer remains visible when the selected active location is one of its endpoints, even if the other endpoint was later archived; that endpoint is visibly marked Archived. All Locations includes a transfer once when at least one endpoint is active. A transfer whose origin and destination are both archived leaves the normal lists and remains accessible through explicit archived-location history.",
+          "at": "2026-09-25T20:05:18+00:00",
+          "choice": "No. Reserve fails closed when available is less than the requested quantity. No reservation record, no reserved bump, durable business rejection. Available is on-hand minus existing order reservations minus outgoing transfer commitments. Transfers may warn and go negative; sales may not. No backorder flag in this slice.",
           "from": "implemented",
-          "implementation_ref": ".grilltrack/proof/cycle-18/PROOF.md",
+          "implementation_ref": ".grilltrack/proof/cycle-19/PROOF.md",
           "note": "verification recorded in cumulative context",
           "repair_required": false,
           "review_classifications": [],
@@ -223,45 +223,45 @@
           "verification_ref": null
         }
       ],
-      "id": "transfer-list-archived-endpoint-003",
-      "implementation_ref": ".grilltrack/proof/cycle-18/PROOF.md",
-      "question": "How should normal transfer lists handle history involving a location that was later archived?",
-      "rationale": "This preserves complete incoming and outgoing audit history for active locations while honoring the prior out-of-sight archive rule and avoiding dead archived locations in normal selectors.",
+      "id": "reservation-availability-003",
+      "implementation_ref": ".grilltrack/proof/cycle-19/PROOF.md",
+      "question": "If available stock is not enough, does reserve still create a hold?",
+      "rationale": "Reservations are the customer-order quantity that already has priority over transfers. Allowing a sale hold to go negative would reintroduce oversell. Backorder is a later explicit command flag, not a silent default and not a read of Commerce settings.",
       "repair_required": false,
       "review_classifications": [],
       "review_history": [
         {
           "classifications": [],
-          "ref": ".grilltrack/proof/cycle-18/REVIEW.md",
+          "ref": ".grilltrack/proof/cycle-19/REVIEW.md",
           "result": "clean",
-          "reviewed_at": "2026-08-30T22:17:11+00:00",
-          "source_identity": "sha256:4eb90a36d9bc326335d5557575c3ad37d0b33d8d62b6e3e1c98abbe633fc0e8c"
+          "reviewed_at": "2026-09-25T20:05:18+00:00",
+          "source_identity": "sha256:ffa25e3975d6c401474f69499a82df004d6fd65d5fd6deb682522136fa3e278b"
         }
       ],
-      "review_ref": ".grilltrack/proof/cycle-18/REVIEW.md",
+      "review_ref": ".grilltrack/proof/cycle-19/REVIEW.md",
       "review_result": "clean",
-      "review_source_identity": "sha256:4eb90a36d9bc326335d5557575c3ad37d0b33d8d62b6e3e1c98abbe633fc0e8c",
+      "review_source_identity": "sha256:ffa25e3975d6c401474f69499a82df004d6fd65d5fd6deb682522136fa3e278b",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-30T22:17:11+00:00",
-      "verification_ref": ".grilltrack/proof/cycle-18/PROOF.md"
+      "updated_at": "2026-09-25T20:05:18+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-19/PROOF.md"
     },
     {
-      "baseline_ref": "git:ff6dd9de3841dd95965849c1b0221b1551929656",
+      "baseline_ref": "git:61bc604d03d9b482b05daaa3647c84c77ce4fdb3",
       "candidate_refs": [],
-      "choice": "Open is ordered by the next operational date from earliest to latest, with overdue work first: a Created transfer uses expectedDispatchDate and an In-transit transfer uses expectedArrivalDate. Equal dates use most recently updated first, then permanent transfer ID as the stable tie-breaker. Done is ordered by terminal date from newest to oldest: receivedDate for Received and canceledAt for Canceled, with the same deterministic tie-breakers. V1 defines this one useful default order rather than adding sort controls.",
-      "context_ref": ".grilltrack/archive/dinkuskit-inventory-v1/ledger.json",
-      "created_at": "2026-08-30T21:40:19+00:00",
+      "choice": "One active hold per pool and order/line reference. A new reserve whose location, SKU, and quantity match returns the original hold. Different contents under that same order/line conflict. Exact command-ID retry still returns the original terminal result. This does not replace quantity; replacement is a later edit or release-then-reserve.",
+      "context_ref": "docs/CHARTER.md",
+      "created_at": "2026-09-25T19:44:36+00:00",
       "deferred_reason": null,
       "delivery_ref": null,
       "dependencies": [
-        "transfer-list-view-selection-001"
+        "reservation-availability-003"
       ],
-      "domain": "stock-transfer list read model",
+      "domain": "order reservations",
       "history": [
         {
-          "at": "2026-08-30T21:43:38+00:00",
-          "choice": "Open is ordered by the next operational date from earliest to latest, with overdue work first: a Created transfer uses expectedDispatchDate and an In-transit transfer uses expectedArrivalDate. Equal dates use most recently updated first, then permanent transfer ID as the stable tie-breaker. Done is ordered by terminal date from newest to oldest: receivedDate for Received and canceledAt for Canceled, with the same deterministic tie-breakers. V1 defines this one useful default order rather than adding sort controls.",
+          "at": "2026-09-25T19:44:36+00:00",
+          "choice": "One active hold per pool and order/line reference. A new reserve whose location, SKU, and quantity match returns the original hold. Different contents under that same order/line conflict. Exact command-ID retry still returns the original terminal result. This does not replace quantity; replacement is a later edit or release-then-reserve.",
           "from": "proposed",
           "implementation_ref": null,
           "note": "user accepted the scoped decision",
@@ -274,8 +274,8 @@
           "verification_ref": null
         },
         {
-          "at": "2026-08-30T22:17:11+00:00",
-          "choice": "Open is ordered by the next operational date from earliest to latest, with overdue work first: a Created transfer uses expectedDispatchDate and an In-transit transfer uses expectedArrivalDate. Equal dates use most recently updated first, then permanent transfer ID as the stable tie-breaker. Done is ordered by terminal date from newest to oldest: receivedDate for Received and canceledAt for Canceled, with the same deterministic tie-breakers. V1 defines this one useful default order rather than adding sort controls.",
+          "at": "2026-09-25T20:05:18+00:00",
+          "choice": "One active hold per pool and order/line reference. A new reserve whose location, SKU, and quantity match returns the original hold. Different contents under that same order/line conflict. Exact command-ID retry still returns the original terminal result. This does not replace quantity; replacement is a later edit or release-then-reserve.",
           "from": "locked",
           "implementation_ref": null,
           "note": "bounded implementation recorded",
@@ -288,10 +288,10 @@
           "verification_ref": null
         },
         {
-          "at": "2026-08-30T22:17:11+00:00",
-          "choice": "Open is ordered by the next operational date from earliest to latest, with overdue work first: a Created transfer uses expectedDispatchDate and an In-transit transfer uses expectedArrivalDate. Equal dates use most recently updated first, then permanent transfer ID as the stable tie-breaker. Done is ordered by terminal date from newest to oldest: receivedDate for Received and canceledAt for Canceled, with the same deterministic tie-breakers. V1 defines this one useful default order rather than adding sort controls.",
+          "at": "2026-09-25T20:05:18+00:00",
+          "choice": "One active hold per pool and order/line reference. A new reserve whose location, SKU, and quantity match returns the original hold. Different contents under that same order/line conflict. Exact command-ID retry still returns the original terminal result. This does not replace quantity; replacement is a later edit or release-then-reserve.",
           "from": "implemented",
-          "implementation_ref": ".grilltrack/proof/cycle-18/PROOF.md",
+          "implementation_ref": ".grilltrack/proof/cycle-19/PROOF.md",
           "note": "verification recorded in cumulative context",
           "repair_required": false,
           "review_classifications": [],
@@ -302,46 +302,45 @@
           "verification_ref": null
         }
       ],
-      "id": "transfer-list-ordering-004",
-      "implementation_ref": ".grilltrack/proof/cycle-18/PROOF.md",
-      "question": "What deterministic default order should Open and Done transfer lists use?",
-      "rationale": "Operational urgency should not be buried by a recently edited future transfer, while completed history is normally inspected newest first. Stable tie-breakers prevent duplicates or omissions when paging.",
+      "id": "reservation-uniqueness-004",
+      "implementation_ref": ".grilltrack/proof/cycle-19/PROOF.md",
+      "question": "If checkout asks twice for the same order line, what happens?",
+      "rationale": "A second hold for the same order line would double-count reserved stock and oversell. This matches sku.register: same identity returns the original, changed contents conflict. Command-ID replay remains the CHARTER timeout rule and is not a second business key.",
       "repair_required": false,
       "review_classifications": [],
       "review_history": [
         {
           "classifications": [],
-          "ref": ".grilltrack/proof/cycle-18/REVIEW.md",
+          "ref": ".grilltrack/proof/cycle-19/REVIEW.md",
           "result": "clean",
-          "reviewed_at": "2026-08-30T22:17:11+00:00",
-          "source_identity": "sha256:4eb90a36d9bc326335d5557575c3ad37d0b33d8d62b6e3e1c98abbe633fc0e8c"
+          "reviewed_at": "2026-09-25T20:05:18+00:00",
+          "source_identity": "sha256:ffa25e3975d6c401474f69499a82df004d6fd65d5fd6deb682522136fa3e278b"
         }
       ],
-      "review_ref": ".grilltrack/proof/cycle-18/REVIEW.md",
+      "review_ref": ".grilltrack/proof/cycle-19/REVIEW.md",
       "review_result": "clean",
-      "review_source_identity": "sha256:4eb90a36d9bc326335d5557575c3ad37d0b33d8d62b6e3e1c98abbe633fc0e8c",
+      "review_source_identity": "sha256:ffa25e3975d6c401474f69499a82df004d6fd65d5fd6deb682522136fa3e278b",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-30T22:17:11+00:00",
-      "verification_ref": ".grilltrack/proof/cycle-18/PROOF.md"
+      "updated_at": "2026-09-25T20:05:18+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-19/PROOF.md"
     },
     {
-      "baseline_ref": "git:ff6dd9de3841dd95965849c1b0221b1551929656",
+      "baseline_ref": "git:61bc604d03d9b482b05daaa3647c84c77ce4fdb3",
       "candidate_refs": [],
-      "choice": "Each list result contains one compact row per transfer: editable human reference, lifecycle status, origin and destination location identities with archived status when applicable, distinct product-line count, and the dates relevant to that view. Open rows include created, expected-dispatch, and expected-arrival dates. Received rows include actual dispatched and received dates; Canceled rows include created and canceled dates. Full SKU quantities, note, warnings, actors, receipts, and complete retained dates remain in the existing transfer/detail and audit reads rather than expanding every line in the list.",
-      "context_ref": ".grilltrack/archive/dinkuskit-inventory-v1/ledger.json",
-      "created_at": "2026-08-30T21:43:38+00:00",
+      "choice": "Cancel is an awaited command, not a hard delete. The hold stays as durable canceled history, reserved stock returns to available, and one immutable receipt records the actor and effects. The same order/line may reserve again after cancel, which mints a new reservation ID. Exact command-ID retry returns the original cancel result. Already-canceled or missing holds reject. Packing still waits.",
+      "context_ref": "docs/CHARTER.md",
+      "created_at": "2026-09-25T19:45:34+00:00",
       "deferred_reason": null,
       "delivery_ref": null,
       "dependencies": [
-        "transfer-list-view-selection-001",
-        "transfer-list-location-scope-002"
+        "reservation-uniqueness-004"
       ],
-      "domain": "stock-transfer list read model",
+      "domain": "order reservations",
       "history": [
         {
-          "at": "2026-08-30T21:44:56+00:00",
-          "choice": "Each list result contains one compact row per transfer: editable human reference, lifecycle status, origin and destination location identities with archived status when applicable, distinct product-line count, and the dates relevant to that view. Open rows include created, expected-dispatch, and expected-arrival dates. Received rows include actual dispatched and received dates; Canceled rows include created and canceled dates. Full SKU quantities, note, warnings, actors, receipts, and complete retained dates remain in the existing transfer/detail and audit reads rather than expanding every line in the list.",
+          "at": "2026-09-25T19:45:34+00:00",
+          "choice": "Cancel is an awaited command, not a hard delete. The hold stays as durable canceled history, reserved stock returns to available, and one immutable receipt records the actor and effects. The same order/line may reserve again after cancel, which mints a new reservation ID. Exact command-ID retry returns the original cancel result. Already-canceled or missing holds reject. Packing still waits.",
           "from": "proposed",
           "implementation_ref": null,
           "note": "user accepted the scoped decision",
@@ -354,8 +353,8 @@
           "verification_ref": null
         },
         {
-          "at": "2026-08-30T22:17:11+00:00",
-          "choice": "Each list result contains one compact row per transfer: editable human reference, lifecycle status, origin and destination location identities with archived status when applicable, distinct product-line count, and the dates relevant to that view. Open rows include created, expected-dispatch, and expected-arrival dates. Received rows include actual dispatched and received dates; Canceled rows include created and canceled dates. Full SKU quantities, note, warnings, actors, receipts, and complete retained dates remain in the existing transfer/detail and audit reads rather than expanding every line in the list.",
+          "at": "2026-09-25T20:05:18+00:00",
+          "choice": "Cancel is an awaited command, not a hard delete. The hold stays as durable canceled history, reserved stock returns to available, and one immutable receipt records the actor and effects. The same order/line may reserve again after cancel, which mints a new reservation ID. Exact command-ID retry returns the original cancel result. Already-canceled or missing holds reject. Packing still waits.",
           "from": "locked",
           "implementation_ref": null,
           "note": "bounded implementation recorded",
@@ -368,10 +367,10 @@
           "verification_ref": null
         },
         {
-          "at": "2026-08-30T22:17:11+00:00",
-          "choice": "Each list result contains one compact row per transfer: editable human reference, lifecycle status, origin and destination location identities with archived status when applicable, distinct product-line count, and the dates relevant to that view. Open rows include created, expected-dispatch, and expected-arrival dates. Received rows include actual dispatched and received dates; Canceled rows include created and canceled dates. Full SKU quantities, note, warnings, actors, receipts, and complete retained dates remain in the existing transfer/detail and audit reads rather than expanding every line in the list.",
+          "at": "2026-09-25T20:05:18+00:00",
+          "choice": "Cancel is an awaited command, not a hard delete. The hold stays as durable canceled history, reserved stock returns to available, and one immutable receipt records the actor and effects. The same order/line may reserve again after cancel, which mints a new reservation ID. Exact command-ID retry returns the original cancel result. Already-canceled or missing holds reject. Packing still waits.",
           "from": "implemented",
-          "implementation_ref": ".grilltrack/proof/cycle-18/PROOF.md",
+          "implementation_ref": ".grilltrack/proof/cycle-19/PROOF.md",
           "note": "verification recorded in cumulative context",
           "repair_required": false,
           "review_classifications": [],
@@ -382,121 +381,41 @@
           "verification_ref": null
         }
       ],
-      "id": "transfer-list-row-summary-005",
-      "implementation_ref": ".grilltrack/proof/cycle-18/PROOF.md",
-      "question": "How much transfer and item detail belongs in each Open or Done list row?",
-      "rationale": "One transfer can contain many products. A compact operational index remains scannable and paginates by transfer, while the authoritative detail read already owns exact lines and stock context.",
+      "id": "reservation-cancel-005",
+      "implementation_ref": ".grilltrack/proof/cycle-19/PROOF.md",
+      "question": "When a hold is canceled, what remains?",
+      "rationale": "CHARTER forbids rewriting history. Canceled transfers already keep Done/Canceled records and release planning stock. A deleted hold would leave only a receipt and could not answer which order released which quantity. Uniqueness applies to active holds, so a later checkout for the same order line is a new hold, not a resurrection of the canceled ID.",
       "repair_required": false,
       "review_classifications": [],
       "review_history": [
         {
           "classifications": [],
-          "ref": ".grilltrack/proof/cycle-18/REVIEW.md",
+          "ref": ".grilltrack/proof/cycle-19/REVIEW.md",
           "result": "clean",
-          "reviewed_at": "2026-08-30T22:17:11+00:00",
-          "source_identity": "sha256:4eb90a36d9bc326335d5557575c3ad37d0b33d8d62b6e3e1c98abbe633fc0e8c"
+          "reviewed_at": "2026-09-25T20:05:18+00:00",
+          "source_identity": "sha256:ffa25e3975d6c401474f69499a82df004d6fd65d5fd6deb682522136fa3e278b"
         }
       ],
-      "review_ref": ".grilltrack/proof/cycle-18/REVIEW.md",
+      "review_ref": ".grilltrack/proof/cycle-19/REVIEW.md",
       "review_result": "clean",
-      "review_source_identity": "sha256:4eb90a36d9bc326335d5557575c3ad37d0b33d8d62b6e3e1c98abbe633fc0e8c",
+      "review_source_identity": "sha256:ffa25e3975d6c401474f69499a82df004d6fd65d5fd6deb682522136fa3e278b",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-08-30T22:17:11+00:00",
-      "verification_ref": ".grilltrack/proof/cycle-18/PROOF.md"
-    },
-    {
-      "baseline_ref": "git:ff6dd9de3841dd95965849c1b0221b1551929656",
-      "candidate_refs": [],
-      "choice": "The read model returns at most 50 transfers by default and permits a caller-requested limit up to 100. It returns an opaque next cursor when more matching transfers exist, or null at the end. The client can request the next batch without changing pool, location scope, or Open/Done view. Pagination follows the locked deterministic order and never uses fragile numbered offsets. V1 does not add alternate sorting, free-text search, or an exact total-count query to this slice.",
-      "context_ref": ".grilltrack/archive/dinkuskit-inventory-v1/ledger.json",
-      "created_at": "2026-08-30T21:44:56+00:00",
-      "deferred_reason": null,
-      "delivery_ref": null,
-      "dependencies": [
-        "transfer-list-ordering-004",
-        "transfer-list-row-summary-005"
-      ],
-      "domain": "stock-transfer list read model",
-      "history": [
-        {
-          "at": "2026-08-30T21:46:08+00:00",
-          "choice": "The read model returns at most 50 transfers by default and permits a caller-requested limit up to 100. It returns an opaque next cursor when more matching transfers exist, or null at the end. The client can request the next batch without changing pool, location scope, or Open/Done view. Pagination follows the locked deterministic order and never uses fragile numbered offsets. V1 does not add alternate sorting, free-text search, or an exact total-count query to this slice.",
-          "from": "proposed",
-          "implementation_ref": null,
-          "note": "user accepted the scoped decision",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "locked",
-          "verification_ref": null
-        },
-        {
-          "at": "2026-08-30T22:17:11+00:00",
-          "choice": "The read model returns at most 50 transfers by default and permits a caller-requested limit up to 100. It returns an opaque next cursor when more matching transfers exist, or null at the end. The client can request the next batch without changing pool, location scope, or Open/Done view. Pagination follows the locked deterministic order and never uses fragile numbered offsets. V1 does not add alternate sorting, free-text search, or an exact total-count query to this slice.",
-          "from": "locked",
-          "implementation_ref": null,
-          "note": "bounded implementation recorded",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "implemented",
-          "verification_ref": null
-        },
-        {
-          "at": "2026-08-30T22:17:11+00:00",
-          "choice": "The read model returns at most 50 transfers by default and permits a caller-requested limit up to 100. It returns an opaque next cursor when more matching transfers exist, or null at the end. The client can request the next batch without changing pool, location scope, or Open/Done view. Pagination follows the locked deterministic order and never uses fragile numbered offsets. V1 does not add alternate sorting, free-text search, or an exact total-count query to this slice.",
-          "from": "implemented",
-          "implementation_ref": ".grilltrack/proof/cycle-18/PROOF.md",
-          "note": "verification recorded in cumulative context",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "verified",
-          "verification_ref": null
-        }
-      ],
-      "id": "transfer-list-pagination-006",
-      "implementation_ref": ".grilltrack/proof/cycle-18/PROOF.md",
-      "question": "How should a transfer list load when a pool contains more transfers than should be returned at once?",
-      "rationale": "Most active lists arrive in one response, while years of Done history stay bounded. Cursor pagination avoids duplicate or skipped rows caused by inserting newer transfers ahead of a numbered page.",
-      "repair_required": false,
-      "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": ".grilltrack/proof/cycle-18/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-08-30T22:17:11+00:00",
-          "source_identity": "sha256:4eb90a36d9bc326335d5557575c3ad37d0b33d8d62b6e3e1c98abbe633fc0e8c"
-        }
-      ],
-      "review_ref": ".grilltrack/proof/cycle-18/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "sha256:4eb90a36d9bc326335d5557575c3ad37d0b33d8d62b6e3e1c98abbe633fc0e8c",
-      "status": "verified",
-      "superseded_by": null,
-      "updated_at": "2026-08-30T22:17:11+00:00",
-      "verification_ref": ".grilltrack/proof/cycle-18/PROOF.md"
+      "updated_at": "2026-09-25T20:05:18+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-19/PROOF.md"
     }
   ],
   "last_activation": {
-    "at": "2026-08-30T21:31:59+00:00",
+    "at": "2026-09-25T19:06:16+00:00",
     "mechanism": "implicit"
   },
   "last_pause": null,
   "pause": null,
-  "predecessor_track_id": "dinkuskit-inventory-v1",
+  "predecessor_track_id": "dinkuskit-inventory-transfer-list-v1",
   "recommendation": null,
   "schema_version": "grilltrack/v0.1",
   "status": "active",
-  "title": "Dinkuskit Inventory transfer-list read model",
-  "track_id": "dinkuskit-inventory-transfer-list-v1",
-  "updated_at": "2026-08-30T22:17:11+00:00"
+  "title": "Dinkuskit Inventory order reservations",
+  "track_id": "dinkuskit-inventory-order-reservations-v1",
+  "updated_at": "2026-09-25T20:05:18+00:00"
 }

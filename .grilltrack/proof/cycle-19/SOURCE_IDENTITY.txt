@@ -1,0 +1,28 @@
+baseline git:61bc604d03d9b482b05daaa3647c84c77ce4fdb3
+files 25
+sha256 ffa25e3975d6c401474f69499a82df004d6fd65d5fd6deb682522136fa3e278b
+.grilltrack/archive/dinkuskit-inventory-transfer-list-v1/
+.grilltrack/events.jsonl
+.grilltrack/ledger.json
+FEATURE_MAP.md
+README.md
+bin/verify-stock-reservation
+docs/CHARTER.md
+docs/implementation/stock-reservation.md
+package.json
+scripts/architecture-rules.mjs
+skills/stock-reservation-verification/
+src/cloudflare/schema.ts
+src/domain/exact-decimal.ts
+src/domain/inventory-read.ts
+src/domain/location-registry.ts
+src/features/stock-reservation/
+src/index.ts
+src/storage/cloudflare-sqlite-inventory-store.ts
+src/storage/inventory-store.ts
+src/storage/local-sqlite-test-store.ts
+tests/cloudflare/inventory-pool.test.mjs
+tests/cloudflare/stock-adjustment.test.mjs
+tests/cloudflare/stock-reservation.test.mjs
+tests/cloudflare/stock-transfer.test.mjs
+tests/stock-reservation/

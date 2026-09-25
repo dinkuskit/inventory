@@ -14,6 +14,7 @@
 		"src/storage/cloudflare-sqlite-inventory-store.ts",
 		"tools/cloudflare-remote-probe.ts",
 		"tools/aggregate-stock-read-local-probe.ts",
-		"tools/stock-adjustment-local-proof.ts"
+		"tools/stock-adjustment-local-proof.ts",
+		"tools/stock-reservation-local-proof.ts"
 	]
 }

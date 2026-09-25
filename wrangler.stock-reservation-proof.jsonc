@@ -1,0 +1,22 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "dinkuskit-inventory-stock-reservation-proof",
+	"main": "tools/stock-reservation-local-proof.ts",
+	"compatibility_date": "2026-08-28",
+	"workers_dev": false,
+	"preview_urls": false,
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "STOCK_RESERVATION_PROOF_POOLS",
+				"class_name": "StockReservationProofPool"
+			}
+		]
+	},
+	"exports": {
+		"StockReservationProofPool": {
+			"type": "durable-object",
+			"storage": "sqlite"
+		}
+	}
+}
