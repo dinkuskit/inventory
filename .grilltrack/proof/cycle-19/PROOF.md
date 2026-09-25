@@ -60,3 +60,14 @@ Still deferred:
 
 This proof is local implementation evidence only. It does not authorize commit,
 push, PR, merge, or deploy.
+
+## Real runtime transcript
+
+ClawSweeper asked for inspectable reserve, conflict, release, and v4-to-v5
+upgrade evidence outside the test harness. `npm run proof:stock-reservation:real`
+ran local SQLite plus `wrangler dev --local`. Transcript:
+`.grilltrack/proof/cycle-19/REAL_RUNTIME_TRANSCRIPT.txt`.
+
+Observed: reserve `rsv_proof_hat` quantity 3; same-line quantity 4 rejected
+`order_line_conflict`; release canceled; exact reserve command replayed after
+restart; schema history `[4, 5]`; reserved returned to `0` available `10`.

@@ -29,7 +29,8 @@
 		"verify:stock-transfer": "bin/verify-stock-transfer",
 		"verify:stock-reservation": "bin/verify-stock-reservation",
     "proof:aggregate-stock-read:real": "bin/prove-aggregate-stock-read-real",
-		"proof:stock-adjustment:real": "bin/prove-stock-adjustment-real"
+		"proof:stock-adjustment:real": "bin/prove-stock-adjustment-real",
+		"proof:stock-reservation:real": "bin/prove-stock-reservation-real"
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "1.1.1",
