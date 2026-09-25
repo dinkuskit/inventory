@@ -193,7 +193,7 @@ Exact-source search at baseline
 - public contract references: `AGENTS.md`, `README.md`, `docs/CHARTER.md`,
   `docs/COMMAND-RECEIPT-CONTRACT.md`, and `docs/CLI-SPEC.md`;
 - unrelated workflow tests retained: `2` files under `tests/workflows/`;
-- external runtime dependencies: none; `emdash@0.35.0` remains a development
+- external runtime dependencies: none; `emdash@0.40.1` remains a development
   scaffold dependency and is not imported by the kernel.
 
 Risk classification:

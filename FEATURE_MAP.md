@@ -19,6 +19,12 @@ behavior-preserving migration cycles are confirmed.
 | `dinkus.stock-adjustment` | Signed-delta preview, five-minute confirmation, exact arithmetic, atomic commit, replay/conflict, oversell warning, and immutable actor receipt | `src/features/stock-adjustment/` | `src/features/stock-adjustment/index.ts`; `src/index.ts` | `src/domain/exact-decimal.ts`; `src/domain/opening-balance.ts`; `src/storage/inventory-store.ts` | `tests/stock-adjustment/`; `tests/cloudflare/stock-adjustment.test.mjs` | `bin/verify-inventory quick` | `bin/verify-inventory full` | adjustment command, preview, confirmation, result, receipt, errors, arithmetic, digest, and execution factory exports | migrated feature |
 | `dinkus.stock-transfer` | Created transfer create/edit/cancel, dispatch, In-transit reopen, atomic whole receipt, contextual detail read, explicit Open/Done location-scoped list read, outgoing/expected/in-transit/on-hand effects, atomic replay/conflict, and immutable actor receipts | `src/features/stock-transfer/` | `src/features/stock-transfer/index.ts`; `src/index.ts` | `src/domain/exact-decimal.ts`; `src/domain/opening-balance.ts`; `src/storage/inventory-store.ts` | `tests/stock-transfer/`; `tests/stock-transfer/list-stock-transfers.test.mjs`; `tests/cloudflare/stock-transfer.test.mjs`; `tests/cloudflare/inventory-pool.test.mjs` | `bin/verify-inventory quick` | `bin/verify-inventory full` | transfer commands, record, line and line-stock context, compact list rows, list view/scope/result and opaque pagination, receipt, warning, detail read result, errors, normalization, digest, and execution/read factories | migrated feature |
 
+## Toolchain pin
+
+- Exact `emdash@0.40.1` is the development scaffold pin with a lockfile. The
+  kernel does not import EmDash; this is not a plugin runtime or
+  minimum-compatible-version claim.
+
 ## Shared kernel and adapter ownership
 
 - `src/storage/inventory-store.ts` is the platform-neutral persistence port
