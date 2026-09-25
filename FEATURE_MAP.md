@@ -20,6 +20,13 @@ behavior-preserving migration cycles are confirmed.
 | `dinkus.stock-transfer` | Created transfer create/edit/cancel, dispatch, In-transit reopen, atomic whole receipt, contextual detail read, explicit Open/Done location-scoped list read, outgoing/expected/in-transit/on-hand effects, atomic replay/conflict, and immutable actor receipts | `src/features/stock-transfer/` | `src/features/stock-transfer/index.ts`; `src/index.ts` | `src/domain/exact-decimal.ts`; `src/domain/opening-balance.ts`; `src/storage/inventory-store.ts` | `tests/stock-transfer/`; `tests/stock-transfer/list-stock-transfers.test.mjs`; `tests/cloudflare/stock-transfer.test.mjs`; `tests/cloudflare/inventory-pool.test.mjs` | `bin/verify-inventory quick` | `bin/verify-inventory full` | transfer commands, record, line and line-stock context, compact list rows, list view/scope/result and opaque pagination, receipt, warning, detail read result, errors, normalization, digest, and execution/read factories | migrated feature |
 | `dinkus.stock-reservation` | Named order-line holds, fail-closed available checks, one active hold per order/line, cancel-to-history release, reserved/available effects, atomic replay/conflict, and immutable actor receipts | `src/features/stock-reservation/` | `src/features/stock-reservation/index.ts`; `src/index.ts` | `src/domain/exact-decimal.ts`; `src/domain/opening-balance.ts`; `src/storage/inventory-store.ts` | `tests/stock-reservation/`; `tests/cloudflare/stock-reservation.test.mjs`; `tests/workflows/stock-reservation-real-proof-contract.test.mjs`; `tools/stock-reservation-local-proof.ts`; `tools/stock-reservation-local-sqlite-proof.mjs`; `bin/prove-stock-reservation-real` | `bin/verify-inventory quick` | `bin/verify-inventory full` | reserve and release commands, reservation record, receipt, rejection codes, normalization, digest, and execution factories | migrated feature |
 
+## Toolchain pin
+
+- Exact `emdash@0.40.1` is the development scaffold pin with a lockfile. The
+  kernel does not import EmDash; this is not a plugin runtime or
+  minimum-compatible-version claim.
+- Live install proof: `proof/emdash-0.40.1-pin-20260925/`.
+
 ## Shared kernel and adapter ownership
 
 - `src/storage/inventory-store.ts` is the platform-neutral persistence port

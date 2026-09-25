@@ -9,17 +9,14 @@ const lockfile = JSON.parse(
 );
 
 test("declares the exact EmDash toolchain and its Node floor", () => {
-	assert.equal(manifest.devDependencies.emdash, "0.35.0");
+	assert.equal(manifest.devDependencies.emdash, "0.40.1");
 	assert.equal(manifest.engines.node, ">=22.12.0");
-	assert.equal(lockfile.packages[""].devDependencies.emdash, "0.35.0");
+	assert.equal(lockfile.packages[""].devDependencies.emdash, "0.40.1");
 	assert.equal(lockfile.packages[""].engines.node, ">=22.12.0");
 	assert.equal(lockfile.packages["node_modules/astro"].engines.node, ">=22.12.0");
 });
 
 test("keeps lifecycle-bearing dependencies visible for maintainer review", () => {
 	assert.equal(lockfile.packages["node_modules/esbuild"].hasInstallScript, true);
-	assert.equal(
-		lockfile.packages["node_modules/better-sqlite3"].hasInstallScript,
-		true,
-	);
+	assert.equal(lockfile.packages["node_modules/workerd"].hasInstallScript, true);
 });
