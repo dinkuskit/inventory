@@ -50,3 +50,9 @@ export function subtractExactDecimal(left: string, right: string): string {
 		formatDecimal({ coefficient: -b.coefficient, scale: b.scale }),
 	);
 }
+
+export function compareExactDecimal(left: string, right: string): -1 | 0 | 1 {
+	const difference = subtractExactDecimal(left, right);
+	if (difference === "0") return 0;
+	return difference.startsWith("-") ? -1 : 1;
+}

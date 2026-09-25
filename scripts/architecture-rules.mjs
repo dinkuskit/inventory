@@ -9,6 +9,7 @@ const FEATURE_IDS = [
 	"dinkus.managed-sku",
 	"dinkus.stock-adjustment",
 	"dinkus.stock-transfer",
+	"dinkus.stock-reservation",
 ];
 
 const FEATURE_STRUCTURE = new Map([
@@ -18,6 +19,7 @@ const FEATURE_STRUCTURE = new Map([
 	["dinkus.managed-sku", "migrated pilot"],
 	["dinkus.stock-adjustment", "migrated feature"],
 	["dinkus.stock-transfer", "migrated feature"],
+	["dinkus.stock-reservation", "migrated feature"],
 ]);
 
 const FEATURE_SHARED_DEPENDENCIES = new Map([
@@ -44,6 +46,14 @@ const FEATURE_SHARED_DEPENDENCIES = new Map([
 			"src/storage/inventory-store.ts",
 		]),
 	],
+	[
+		"stock-reservation",
+		new Set([
+			"src/domain/exact-decimal.ts",
+			"src/domain/opening-balance.ts",
+			"src/storage/inventory-store.ts",
+		]),
+	],
 ]);
 
 const REQUIRED_FILES = [
@@ -64,6 +74,9 @@ const REQUIRED_FILES = [
 	"src/features/stock-transfer/execute.ts",
 	"src/features/stock-transfer/index.ts",
 	"src/features/stock-transfer/read.ts",
+	"src/features/stock-reservation/domain.ts",
+	"src/features/stock-reservation/execute.ts",
+	"src/features/stock-reservation/index.ts",
 	"tests/managed-sku/public-entry.test.mjs",
 	"tests/stock-adjustment/domain.test.mjs",
 	"tests/stock-adjustment/preview-confirm-stock-adjustment.test.mjs",
@@ -80,6 +93,12 @@ const REQUIRED_FILES = [
 	"skills/stock-adjustment-verification/SKILL.md",
 	"bin/verify-stock-transfer",
 	"skills/stock-transfer-verification/SKILL.md",
+	"tests/stock-reservation/domain.test.mjs",
+	"tests/stock-reservation/public-entry.test.mjs",
+	"tests/stock-reservation/reserve-release.test.mjs",
+	"tests/cloudflare/stock-reservation.test.mjs",
+	"bin/verify-stock-reservation",
+	"skills/stock-reservation-verification/SKILL.md",
 	"tests/workflows/repository-architecture.test.mjs",
 	".github/workflows/repo-contract.yml",
 ];

@@ -18,6 +18,7 @@ import type {
 	ReadStockTransferInput,
 	StockTransferRecord,
 } from "../features/stock-transfer/index.ts";
+import type { ReservationRecord } from "../features/stock-reservation/index.ts";
 import type {
 	ActiveLocationBalanceSnapshot,
 	InventoryStore,
@@ -36,16 +37,18 @@ import type {
 	StoredStockTransferListPage,
 	StockAdjustmentCommit,
 	StockTransferCommit,
+	StockReservationCommit,
 } from "./inventory-store.ts";
 
 const STORAGE_ROLE = "local-development-test-only";
-const SCHEMA_VERSION = "opening-balance-local/v7";
+const SCHEMA_VERSION = "opening-balance-local/v8";
 const EXPECTED_TABLES = [
 	"inventory_balances",
 	"inventory_command_results",
 	"inventory_locations",
 	"inventory_opening_balance_confirmations",
 	"inventory_receipts",
+	"inventory_reservations",
 	"inventory_skus",
 	"inventory_storage_metadata",
 	"inventory_transfers",
@@ -86,6 +89,14 @@ function stockTransferFrom(
 	return row === undefined
 		? null
 		: json<StockTransferRecord>(row.transfer_json);
+}
+
+function reservationFrom(
+	row: DatabaseRow | undefined,
+): ReservationRecord | null {
+	return row === undefined
+		? null
+		: json<ReservationRecord>(row.reservation_json);
 }
 
 function locationFrom(row: DatabaseRow | undefined): LocationRecord | null {
@@ -322,6 +333,32 @@ class SqliteInventoryTransaction implements InventoryTransaction {
 					 WHERE pool_id = ? AND reference_key = ?`,
 				)
 				.get(this.#poolId, referenceKey) as DatabaseRow | undefined,
+		);
+	}
+
+	getReservation(reservationId: string): ReservationRecord | null {
+		return reservationFrom(
+			this.#database
+				.prepare(
+					`SELECT reservation_json
+					 FROM inventory_reservations
+					 WHERE pool_id = ? AND reservation_id = ?`,
+				)
+				.get(this.#poolId, reservationId) as DatabaseRow | undefined,
+		);
+	}
+
+	getActiveReservationByOrderLineKey(
+		orderLineKey: string,
+	): ReservationRecord | null {
+		return reservationFrom(
+			this.#database
+				.prepare(
+					`SELECT reservation_json
+					 FROM inventory_reservations
+					 WHERE pool_id = ? AND order_line_key = ? AND status = 'active'`,
+				)
+				.get(this.#poolId, orderLineKey) as DatabaseRow | undefined,
 		);
 	}
 
@@ -801,6 +838,64 @@ class SqliteInventoryTransaction implements InventoryTransaction {
 		).run(input.receipt.receiptId, input.commandId, JSON.stringify(input.receipt));
 		this.storeCommandResult(input);
 	}
+
+	commitStockReservation(input: StockReservationCommit): void {
+		if (input.reservation.poolId !== this.#poolId) {
+			throw new Error("A transaction cannot cross inventory pools.");
+		}
+		this.#assertPool(input.balance);
+		const updatedBalance = this.#database.prepare(
+			`UPDATE inventory_balances
+			 SET reserved_value = ?, available_value = ?, version = ?
+			 WHERE pool_id = ? AND location_id = ? AND sku_id = ? AND version = ?`,
+		).run(
+			input.balance.reserved.value,
+			input.balance.available.value,
+			Number(input.balance.version),
+			input.balance.poolId,
+			input.balance.locationId,
+			input.balance.skuId,
+			Number(input.previousBalance.version),
+		);
+		if (Number(updatedBalance.changes) !== 1) {
+			throw new Error("Reservation balance update lost its target row.");
+		}
+		if (input.previous === null) {
+			this.#database.prepare(
+				`INSERT INTO inventory_reservations
+				   (pool_id, reservation_id, order_line_key, status, version, reservation_json)
+				 VALUES (?, ?, ?, ?, ?, ?)`,
+			).run(
+				input.reservation.poolId,
+				input.reservation.reservationId,
+				input.orderLineKey,
+				input.reservation.status,
+				Number(input.reservation.version),
+				JSON.stringify(input.reservation),
+			);
+		} else {
+			const updated = this.#database.prepare(
+				`UPDATE inventory_reservations
+				 SET status = ?, version = ?, reservation_json = ?
+				 WHERE pool_id = ? AND reservation_id = ? AND version = ?`,
+			).run(
+				input.reservation.status,
+				Number(input.reservation.version),
+				JSON.stringify(input.reservation),
+				input.reservation.poolId,
+				input.reservation.reservationId,
+				Number(input.previous.version),
+			);
+			if (Number(updated.changes) !== 1) {
+				throw new Error("Reservation update lost its target row.");
+			}
+		}
+		this.#database.prepare(
+			`INSERT INTO inventory_receipts (receipt_id, command_id, receipt_json)
+			 VALUES (?, ?, ?)`,
+		).run(input.receipt.receiptId, input.commandId, JSON.stringify(input.receipt));
+		this.storeCommandResult(input);
+	}
 }
 
 export class LocalSqliteTestInventoryStore implements InventoryStore {
@@ -902,6 +997,18 @@ export class LocalSqliteTestInventoryStore implements InventoryStore {
 				PRIMARY KEY (pool_id, transfer_id),
 				UNIQUE (pool_id, reference_key)
 			) STRICT;
+			CREATE TABLE inventory_reservations (
+				pool_id TEXT NOT NULL,
+				reservation_id TEXT NOT NULL,
+				order_line_key TEXT NOT NULL,
+				status TEXT NOT NULL CHECK (status IN ('active', 'canceled')),
+				version INTEGER NOT NULL CHECK (version >= 1),
+				reservation_json TEXT NOT NULL,
+				PRIMARY KEY (pool_id, reservation_id)
+			) STRICT;
+			CREATE UNIQUE INDEX inventory_reservations_active_order_line
+				ON inventory_reservations (pool_id, order_line_key)
+				WHERE status = 'active';
 			CREATE TABLE inventory_receipts (
 				receipt_id TEXT PRIMARY KEY,
 				command_id TEXT NOT NULL UNIQUE,

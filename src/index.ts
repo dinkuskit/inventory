@@ -110,6 +110,36 @@ export type {
 	UpdateStockTransferCommandV1,
 } from "./features/stock-transfer/index.ts";
 export {
+	InvalidStockReservationCommandError,
+	RELEASE_STOCK_TYPE,
+	RESERVE_STOCK_TYPE,
+	RESERVATION_RECORD_SCHEMA,
+	createReleaseStock,
+	createReserveStock,
+	digestStockReservationCommand,
+	normalizeReleaseStockCommand,
+	normalizeReserveStockCommand,
+	normalizeStockReservationCommand,
+} from "./features/stock-reservation/index.ts";
+export type {
+	ReleaseStock,
+	ReleaseStockCommandV1,
+	ReleaseStockDependencies,
+	ReleaseStockExecution,
+	ReservationOrderLine,
+	ReservationRecord,
+	ReservationStatus,
+	ReserveStock,
+	ReserveStockCommandV1,
+	ReserveStockExecution,
+	StockReservationBalanceEffect,
+	StockReservationCommandV1,
+	StockReservationDependencies,
+	StockReservationReceiptV2,
+	StockReservationRejectionCode,
+	StockReservationResult,
+} from "./features/stock-reservation/index.ts";
+export {
 	STOCK_ADJUSTMENT_CONFIRMATION_TTL_MS,
 	StockAdjustmentConfirmationError,
 	StockAdjustmentPreviewError,
@@ -277,4 +307,5 @@ export type {
 	StoredOpeningBalanceConfirmation,
 	StoredCommandResult,
 	StockTransferCommit,
+	StockReservationCommit,
 } from "./storage/inventory-store.ts";
