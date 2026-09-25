@@ -7,6 +7,7 @@ import {
 	RELEASE_STOCK_TYPE,
 	normalizeReleaseStockCommand,
 	normalizeReserveStockCommand,
+	reservationOrderLineKey,
 } from "../../src/index.ts";
 
 function reserveCommand(overrides = {}) {
@@ -58,6 +59,13 @@ test("reserve command trims identity fields and requires a positive quantity", (
 				}),
 			),
 		InvalidStockReservationCommandError,
+	);
+});
+
+test("order-line keys stay distinct when kind or id contains a separator", () => {
+	assert.notEqual(
+		reservationOrderLineKey({ kind: "a\u001fb", id: "c" }),
+		reservationOrderLineKey({ kind: "a", id: "b\u001fc" }),
 	);
 });
 

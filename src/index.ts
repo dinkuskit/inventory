@@ -120,6 +120,7 @@ export {
 	normalizeReleaseStockCommand,
 	normalizeReserveStockCommand,
 	normalizeStockReservationCommand,
+	reservationOrderLineKey,
 } from "./features/stock-reservation/index.ts";
 export type {
 	ReleaseStock,

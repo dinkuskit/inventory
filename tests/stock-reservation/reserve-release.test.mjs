@@ -259,6 +259,46 @@ test("a canceled order line can be reserved again with a new id", async (t) => {
 	assert.equal(again.reservation.reservationId, "rsv_hat_002");
 });
 
+test("distinct order lines with a separator keep separate holds", async (t) => {
+	const store = createLocalSqliteTestStore({
+		filePath: await databasePath(t, "separator"),
+	});
+	await seedHats(store);
+	let nextId = "rsv_sep_1";
+	const reserve = createReserveStock({
+		store,
+		now: () => new Date("2026-09-25T12:00:00.000Z"),
+		createReservationId: () => nextId,
+		createReceiptId: () => `rcpt_${nextId}`,
+	});
+	const first = await reserve(
+		reserveCommand({
+			commandId: "cmd_sep_1",
+			payload: {
+				skuId: "sku_hat",
+				quantity: { value: "3", unit: "each" },
+				orderLine: { kind: "a\u001fb", id: "c" },
+			},
+		}),
+		{ principal },
+	);
+	assert.equal(first.outcome, "reserved");
+	nextId = "rsv_sep_2";
+	const second = await reserve(
+		reserveCommand({
+			commandId: "cmd_sep_2",
+			payload: {
+				skuId: "sku_hat",
+				quantity: { value: "3", unit: "each" },
+				orderLine: { kind: "a", id: "b\u001fc" },
+			},
+		}),
+		{ principal },
+	);
+	assert.equal(second.outcome, "reserved");
+	assert.equal(second.reservation.reservationId, "rsv_sep_2");
+});
+
 test("outgoing transfer commitments reduce reservable stock", async (t) => {
 	const store = createLocalSqliteTestStore({
 		filePath: await databasePath(t, "transfer"),

@@ -224,7 +224,7 @@ function normalizePositiveDecimal(value: unknown, field: string): string {
 }
 
 export function reservationOrderLineKey(orderLine: ReservationOrderLine): string {
-	return `${orderLine.kind}\u001f${orderLine.id}`;
+	return JSON.stringify([orderLine.kind, orderLine.id]);
 }
 
 export function normalizeReserveStockCommand(
