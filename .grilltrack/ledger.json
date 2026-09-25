@@ -4,11 +4,11 @@
   "current_focus": {
     "cadence": "sequential",
     "confirmed": true,
-    "confirmed_at": "2026-09-25T19:48:42+00:00",
-    "domain": "order reservations",
-    "started_at": "2026-09-25T19:06:16+00:00",
+    "confirmed_at": "2026-09-25T20:54:56+00:00",
+    "domain": "packing/commit",
+    "started_at": "2026-09-25T20:37:08+00:00",
     "status": "confirmed",
-    "summary": "Build the platform-neutral order-reservation kernel: named holds with Inventory-minted IDs, fail-closed available checks, one active hold per order/line, and cancel-to-history release. Verify with local SQLite and Cloudflare tests plus bin/verify-inventory full. No GUI, CLI, Commerce transport, packing, expiry, backorder, deploy, or Woo/Katana."
+    "summary": "Build platform-neutral stock.pack: Processing to Packed consumes one named hold in full. On-hand and reserved both drop. Packed is one-way. Pack Some, Pack All, and Unpack wait. Unpaid 60-minute cancel stays Commerce calling existing stock.release. No GUI, CLI, Worker auth, live Commerce, Woo, Katana, deploy, or PR 20 mix."
   },
   "decisions": [
     {
@@ -403,6 +403,290 @@
       "superseded_by": null,
       "updated_at": "2026-09-25T20:05:18+00:00",
       "verification_ref": ".grilltrack/proof/cycle-19/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:61bc604d03d9b482b05daaa3647c84c77ce4fdb3",
+      "candidate_refs": [],
+      "choice": "Consume happens at Packed. Processing \u2192 Packed takes reserved stock off the shelf: on-hand and reserved both drop, and the hold becomes packed history. Payment confirmation only moves the order from Hold to Processing and does not change counts. Shipped/label/Delivered after Packed does not change counts again. Partial pack waits.",
+      "context_ref": "docs/CHARTER.md",
+      "created_at": "2026-09-25T20:37:08+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "reservation-cancel-005"
+      ],
+      "domain": "packing/commit",
+      "history": [
+        {
+          "at": "2026-09-25T20:43:40+00:00",
+          "choice": "The Inventory hold stays reserved from checkout through Processing. Payment confirmation does not change counts. Consume happens when a shipping label is applied (Shipped): on-hand and reserved both drop, and the hold becomes packed/consumed history. Packed is not a separate Inventory status this cycle. Processing is wait-to-pack only.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-25T21:06:00+00:00",
+          "choice": "Consume happens at Packed. Processing \u2192 Packed takes reserved stock off the shelf: on-hand and reserved both drop, and the hold becomes packed history. Payment confirmation only moves the order from Hold to Processing and does not change counts. Shipped/label/Delivered after Packed does not change counts again. Partial pack waits.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-25T21:06:00+00:00",
+          "choice": "Consume happens at Packed. Processing \u2192 Packed takes reserved stock off the shelf: on-hand and reserved both drop, and the hold becomes packed history. Payment confirmation only moves the order from Hold to Processing and does not change counts. Shipped/label/Delivered after Packed does not change counts again. Partial pack waits.",
+          "from": "implemented",
+          "implementation_ref": "src/features/stock-reservation/",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "packing-consume-006",
+      "implementation_ref": "src/features/stock-reservation/",
+      "question": "Which order step takes reserved stock off the shelf?",
+      "rationale": "Bobby: Processing \u2192 Packed is when inventory leaves reserved and actually reduces. Matches Katana Packed (in stock and committed both drop; Delivered after Packed is no further movement). Woo/Shopify unpaid timeout is a different command (release/cancel), not consume.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-09-25T21:06:00+00:00",
+      "verification_ref": "bin/verify-inventory full"
+    },
+    {
+      "baseline_ref": "git:61bc604d03d9b482b05daaa3647c84c77ce4fdb3",
+      "candidate_refs": [],
+      "choice": "Unpaid Hold/Pending Payment never becomes Processing. After 60 minutes it is Cancelled and Inventory release returns reserved stock to available. Processing \u2192 Packed is unrelated. The unpaid clock is an order/Commerce timer that calls existing stock.release; this packing slice does not add an Inventory cron. 60 minutes matches WooCommerce Hold stock (minutes) default. Shopify has no matching unpaid-order auto-cancel; checkout only holds stock for a few minutes during payment.",
+      "context_ref": "docs/CHARTER.md",
+      "created_at": "2026-09-25T20:43:40+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "packing-consume-006"
+      ],
+      "domain": "packing/commit",
+      "history": [
+        {
+          "at": "2026-09-25T20:45:47+00:00",
+          "choice": "Unpaid Hold/Pending Payment never becomes Processing. After 60 minutes it is Cancelled and Inventory release returns reserved stock to available. Processing \u2192 Packed is unrelated. The unpaid clock is an order/Commerce timer that calls existing stock.release; this packing slice does not add an Inventory cron. 60 minutes matches WooCommerce Hold stock (minutes) default. Shopify has no matching unpaid-order auto-cancel; checkout only holds stock for a few minutes during payment.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-25T21:06:00+00:00",
+          "choice": "Unpaid Hold/Pending Payment never becomes Processing. After 60 minutes it is Cancelled and Inventory release returns reserved stock to available. Processing \u2192 Packed is unrelated. The unpaid clock is an order/Commerce timer that calls existing stock.release; this packing slice does not add an Inventory cron. 60 minutes matches WooCommerce Hold stock (minutes) default. Shopify has no matching unpaid-order auto-cancel; checkout only holds stock for a few minutes during payment.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-25T21:06:00+00:00",
+          "choice": "Unpaid Hold/Pending Payment never becomes Processing. After 60 minutes it is Cancelled and Inventory release returns reserved stock to available. Processing \u2192 Packed is unrelated. The unpaid clock is an order/Commerce timer that calls existing stock.release; this packing slice does not add an Inventory cron. 60 minutes matches WooCommerce Hold stock (minutes) default. Shopify has no matching unpaid-order auto-cancel; checkout only holds stock for a few minutes during payment.",
+          "from": "implemented",
+          "implementation_ref": "src/features/stock-reservation/",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "unpaid-hold-cancel-007",
+      "implementation_ref": "src/features/stock-reservation/",
+      "question": "If payment never arrives, what happens to the hold, and after how long?",
+      "rationale": "Bobby asked to cancel unpaid holds instead of sending them to Processing, and to check Shopify/Woo for the length. WooCommerce Products \u2192 Inventory Hold stock default is 60 minutes, then unpaid pending orders cancel and restock. Shopify does not expose a 60-minute unpaid-order setting. Smoky ordering is Woo-first, so 60 minutes is the shop-familiar default. Inventory already has cancel-to-history release.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-09-25T21:06:00+00:00",
+      "verification_ref": "bin/verify-inventory full"
+    },
+    {
+      "baseline_ref": "git:61bc604d03d9b482b05daaa3647c84c77ce4fdb3",
+      "candidate_refs": [],
+      "choice": "One awaited command names one active reservation ID and consumes the full remaining quantity. On-hand and reserved both drop by that amount. Exact command-ID retry returns the original packed result. Missing, already-packed, or canceled holds reject. Pack Some (partial quantity) and Pack All (every hold on the order) are named later growth, not this slice.",
+      "context_ref": "docs/CHARTER.md",
+      "created_at": "2026-09-25T20:45:48+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "unpaid-hold-cancel-007"
+      ],
+      "domain": "packing/commit",
+      "history": [
+        {
+          "at": "2026-09-25T20:47:24+00:00",
+          "choice": "One awaited command names one active reservation ID and consumes the full remaining quantity. On-hand and reserved both drop by that amount. Partial pack, multi-hold cart packing, and label/ship after pack wait. Exact command-ID retry returns the original packed result. Missing, already-packed, or canceled holds reject.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-25T21:06:00+00:00",
+          "choice": "One awaited command names one active reservation ID and consumes the full remaining quantity. On-hand and reserved both drop by that amount. Exact command-ID retry returns the original packed result. Missing, already-packed, or canceled holds reject. Pack Some (partial quantity) and Pack All (every hold on the order) are named later growth, not this slice.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-25T21:06:00+00:00",
+          "choice": "One awaited command names one active reservation ID and consumes the full remaining quantity. On-hand and reserved both drop by that amount. Exact command-ID retry returns the original packed result. Missing, already-packed, or canceled holds reject. Pack Some (partial quantity) and Pack All (every hold on the order) are named later growth, not this slice.",
+          "from": "implemented",
+          "implementation_ref": "src/features/stock-reservation/",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "packing-command-008",
+      "implementation_ref": "src/features/stock-reservation/",
+      "question": "What does one pack command consume?",
+      "rationale": "Bobby: A to start, with Pack Some and Pack All listed as what we want to grow into. This cycle is one hold, full quantity, like transfer receive. Partial and whole-cart packing stay explicit later work, not silent flags.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-09-25T21:06:00+00:00",
+      "verification_ref": "bin/verify-inventory full"
+    },
+    {
+      "baseline_ref": "git:61bc604d03d9b482b05daaa3647c84c77ce4fdb3",
+      "candidate_refs": [],
+      "choice": "Packed is one-way this cycle. Unpack/revert is deferred and named for later implementation. A mistake is not silently rewritten.",
+      "context_ref": "docs/CHARTER.md",
+      "created_at": "2026-09-25T20:47:24+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "packing-command-008"
+      ],
+      "domain": "packing/commit",
+      "history": [
+        {
+          "at": "2026-09-25T20:50:10+00:00",
+          "choice": "Not this cycle. Packed is terminal for that hold. Unpack/revert waits, same as Received reversion on transfers. A mistake is a new hold plus a reasoned adjustment, or a later unpack command.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-25T21:06:00+00:00",
+          "choice": "Packed is one-way this cycle. Unpack/revert is deferred and named for later implementation. A mistake is not silently rewritten.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-25T21:06:00+00:00",
+          "choice": "Packed is one-way this cycle. Unpack/revert is deferred and named for later implementation. A mistake is not silently rewritten.",
+          "from": "implemented",
+          "implementation_ref": "src/features/stock-reservation/",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "packing-unpack-009",
+      "implementation_ref": "src/features/stock-reservation/",
+      "question": "If they packed the wrong bag, can they undo it?",
+      "rationale": "Bobby: Packed with unpack deferred and noted for later. Matches transfer Received: first slice is one-way so the kernel is inspectable.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-09-25T21:06:00+00:00",
+      "verification_ref": "bin/verify-inventory full"
     }
   ],
   "last_activation": {
@@ -412,10 +696,18 @@
   "last_pause": null,
   "pause": null,
   "predecessor_track_id": "dinkuskit-inventory-transfer-list-v1",
-  "recommendation": null,
+  "recommendation": {
+    "alternatives": [
+      "expiry of abandoned holds",
+      "Commerce transport for reserve/release"
+    ],
+    "reason": "Reserve and release exist. Selling still cannot take a held bag off the shelf. Packing is the next Inventory-owned writer. Expiry and Commerce transport do not consume physical stock.",
+    "recommended": "packing/commit: consume a named hold into physical stock when an order is packed",
+    "recorded_at": "2026-09-25T20:11:51+00:00"
+  },
   "schema_version": "grilltrack/v0.1",
   "status": "active",
   "title": "Dinkuskit Inventory order reservations",
   "track_id": "dinkuskit-inventory-order-reservations-v1",
-  "updated_at": "2026-09-25T20:05:18+00:00"
+  "updated_at": "2026-09-25T21:06:00+00:00"
 }

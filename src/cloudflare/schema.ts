@@ -1,6 +1,6 @@
 export const CLOUDFLARE_INVENTORY_SCHEMA =
 	"dinkuskit.inventory.cloudflare-schema-status/v1" as const;
-export const CLOUDFLARE_INVENTORY_SCHEMA_VERSION = 5 as const;
+export const CLOUDFLARE_INVENTORY_SCHEMA_VERSION = 6 as const;
 
 const CLOUDFLARE_INVENTORY_V2_TABLES = [
 	"inventory_balances",
@@ -24,6 +24,7 @@ const V3_MIGRATION_PRINCIPAL_JSON = JSON.stringify({
 });
 const V4_MIGRATION_APPLIED_AT = "2026-08-29T16:30:00.000Z";
 const V5_MIGRATION_APPLIED_AT = "2026-09-25T19:48:00.000Z";
+const V6_MIGRATION_APPLIED_AT = "2026-09-25T20:55:00.000Z";
 
 export const CLOUDFLARE_INVENTORY_V4_TABLES = [
 	"inventory_balances",
@@ -90,10 +91,11 @@ function assertExactSchema(storage: DurableObjectStorage): void {
 	const migrations = migrationVersions(storage);
 	if (
 		![
-			["5"],
-			["4", "5"],
-			["3", "4", "5"],
-			["2", "3", "4", "5"],
+			["6"],
+			["5", "6"],
+			["4", "5", "6"],
+			["3", "4", "5", "6"],
+			["2", "3", "4", "5", "6"],
 		].some((expected) => sameStrings(migrations.map(String), expected))
 	) {
 		throw new Error("Cloudflare Inventory schema migration history is invalid.");
@@ -161,7 +163,7 @@ function createReservationTable(storage: DurableObjectStorage): void {
 				pool_id TEXT NOT NULL,
 				reservation_id TEXT NOT NULL,
 				order_line_key TEXT NOT NULL,
-				status TEXT NOT NULL CHECK (status IN ('active', 'canceled')),
+				status TEXT NOT NULL CHECK (status IN ('active', 'canceled', 'packed')),
 				version INTEGER NOT NULL CHECK (version >= 1),
 				reservation_json TEXT NOT NULL,
 				PRIMARY KEY (pool_id, reservation_id)
@@ -276,8 +278,82 @@ function migrateV4ToV5(storage: DurableObjectStorage): void {
 		.exec(
 			`INSERT INTO inventory_schema_migrations (version, applied_at)
 			 VALUES (?, ?)`,
-			CLOUDFLARE_INVENTORY_SCHEMA_VERSION,
+			5,
 			V5_MIGRATION_APPLIED_AT,
+		)
+		.toArray();
+}
+
+function reservationJsonWithPackedLifecycle(raw: string): string {
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(raw);
+	} catch {
+		throw new Error("Cloudflare Inventory reservation JSON is invalid.");
+	}
+	if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+		throw new Error("Cloudflare Inventory reservation JSON is invalid.");
+	}
+	const record = parsed as Record<string, unknown>;
+	return JSON.stringify({
+		...record,
+		packedAt: record.packedAt ?? null,
+		packedBy: record.packedBy ?? null,
+	});
+}
+
+function migrateV5ToV6(storage: DurableObjectStorage): void {
+	const legacyRows = storage.sql
+		.exec(
+			`SELECT pool_id, reservation_id, order_line_key, status, version, reservation_json
+			 FROM inventory_reservations`,
+		)
+		.toArray();
+	storage.sql
+		.exec(
+			`CREATE TABLE inventory_reservations_v6 (
+				pool_id TEXT NOT NULL,
+				reservation_id TEXT NOT NULL,
+				order_line_key TEXT NOT NULL,
+				status TEXT NOT NULL CHECK (status IN ('active', 'canceled', 'packed')),
+				version INTEGER NOT NULL CHECK (version >= 1),
+				reservation_json TEXT NOT NULL,
+				PRIMARY KEY (pool_id, reservation_id)
+			) STRICT`,
+		)
+		.toArray();
+	for (const row of legacyRows) {
+		storage.sql
+			.exec(
+				`INSERT INTO inventory_reservations_v6
+				   (pool_id, reservation_id, order_line_key, status, version, reservation_json)
+				 VALUES (?, ?, ?, ?, ?, ?)`,
+				String(row.pool_id),
+				String(row.reservation_id),
+				String(row.order_line_key),
+				String(row.status),
+				Number(row.version),
+				reservationJsonWithPackedLifecycle(String(row.reservation_json)),
+			)
+			.toArray();
+	}
+	storage.sql.exec("DROP TABLE inventory_reservations").toArray();
+	storage.sql
+		.exec("ALTER TABLE inventory_reservations_v6 RENAME TO inventory_reservations")
+		.toArray();
+	storage.sql
+		.exec(
+			`CREATE UNIQUE INDEX inventory_reservations_active_order_line
+			 ON inventory_reservations (pool_id, order_line_key)
+			 WHERE status = 'active'`,
+		)
+		.toArray();
+	storage.sql
+		.exec(
+			`INSERT INTO inventory_schema_migrations (version, applied_at)
+			 VALUES (?, ?)`,
+			6,
+			V6_MIGRATION_APPLIED_AT,
 		)
 		.toArray();
 	assertExactSchema(storage);
@@ -290,22 +366,33 @@ export function initializeCloudflareInventorySchema(
 		const existingTables = inventoryTables(storage);
 		if (existingTables.length > 0) {
 			if (sameStrings(existingTables, [...CLOUDFLARE_INVENTORY_TABLES])) {
-				assertExactSchema(storage);
-				return;
+				const versions = migrationVersions(storage);
+				if (versions.includes(6)) {
+					assertExactSchema(storage);
+					return;
+				}
+				if (versions.at(-1) === 5) {
+					migrateV5ToV6(storage);
+					return;
+				}
+				throw new Error("Cloudflare Inventory schema migration history is invalid.");
 			}
 			if (sameStrings(existingTables, [...CLOUDFLARE_INVENTORY_V4_TABLES])) {
 				migrateV4ToV5(storage);
+				migrateV5ToV6(storage);
 				return;
 			}
 			if (sameStrings(existingTables, CLOUDFLARE_INVENTORY_V3_TABLES)) {
 				migrateV3ToV4(storage);
 				migrateV4ToV5(storage);
+				migrateV5ToV6(storage);
 				return;
 			}
 			if (sameStrings(existingTables, CLOUDFLARE_INVENTORY_V2_TABLES)) {
 				migrateV2ToV3(storage);
 				migrateV3ToV4(storage);
 				migrateV4ToV5(storage);
+				migrateV5ToV6(storage);
 				return;
 			}
 			throw new Error(
@@ -403,7 +490,7 @@ export function initializeCloudflareInventorySchema(
 				`INSERT INTO inventory_schema_migrations (version, applied_at)
 				 VALUES (?, ?)`,
 				CLOUDFLARE_INVENTORY_SCHEMA_VERSION,
-				V5_MIGRATION_APPLIED_AT,
+				V6_MIGRATION_APPLIED_AT,
 			)
 			.toArray();
 		assertExactSchema(storage);

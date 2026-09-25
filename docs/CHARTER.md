@@ -160,15 +160,17 @@ share the same normalized name even when one or both are archived.
 ## fresh-schema-initialization-034 — exact predecessor storage upgrades safely (locked)
 
 A new empty Cloudflare Durable Object initializes directly at complete schema
-v5 and records history `[5]`. The committed v2, v3, and v4 schemas remain real
-predecessor contracts even though no production pool exists. Exact v4 storage
-adds reservation records, producing `[4, 5]`. Exact v3 storage first adds the
-transfer-planning quantities and transfer records, then reservation records,
-producing `[3, 4, 5]`. Exact v2 storage first backfills each legacy balanced
-SKU key as a stable managed identity, then advances through v4 to v5,
-producing `[2, 3, 4, 5]`. All paths preserve predecessor records. Version 1,
-partial, conflicting-unit, extra-table, or otherwise incompatible storage
-fails closed without a partial migration.
+v6 and records history `[6]`. The committed v2, v3, v4, and v5 schemas remain
+real predecessor contracts even though no production pool exists. Exact v5
+storage allows packed reservation status, producing `[5, 6]`. Exact v4 storage
+adds reservation records then packed status, producing `[4, 5, 6]`. Exact v3
+storage first adds transfer-planning quantities and transfer records, then
+reservation records and packed status, producing `[3, 4, 5, 6]`. Exact v2
+storage first backfills each legacy balanced SKU key as a stable managed
+identity, then advances through v5 to v6, producing `[2, 3, 4, 5, 6]`. All
+paths preserve predecessor records. Version 1, partial, conflicting-unit,
+extra-table, or otherwise incompatible storage fails closed without a partial
+migration.
 
 ## opening-balance-location-admission-035 — active locations only (locked)
 
@@ -495,6 +497,15 @@ Out: manufacturing orders, recipes/BOM, materials/batches, purchasing,
 production scheduling, costing, forecasting, general MRP; WooCommerce/Katana
 adapters, imports, shadow synchronization, and tail synchronization; Commerce
 product settings and external inventory-provider implementations.
+
+## packing-consume-006 through packing-unpack-009 — consume at Packed (locked)
+
+`stock.pack` consumes one named active hold in full when the order moves
+Processing → Packed. On-hand and reserved both drop by the hold quantity;
+available stays the same because it already came off at reserve. Packed is
+one-way this cycle. Pack Some, Pack All, and Unpack wait. Unpaid Hold cancels
+at 60 minutes through existing `stock.release`; that clock is Commerce, not
+this kernel. Shipped/label after Packed does not change counts.
 
 ## reservation-domain-001 through reservation-cancel-005 — named order holds (locked)
 

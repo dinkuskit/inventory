@@ -4,10 +4,8 @@ import { createExecuteLocationCommand } from "../src/application/location-regist
 import { createSetOpeningBalance } from "../src/application/set-opening-balance.ts";
 import { createRegisterManagedSku } from "../src/features/managed-sku/index.ts";
 import {
-	createReleaseStock,
-	createReserveStock,
-	type ReleaseStockCommandV1,
-	type ReserveStockCommandV1,
+	createPackStock,
+	type PackStockCommandV1,
 } from "../src/features/stock-reservation/index.ts";
 import { createCloudflareSqliteInventoryStore } from "../src/storage/cloudflare-sqlite-inventory-store.ts";
 import {
@@ -33,34 +31,32 @@ interface StockReservationProofEnv {
 	STOCK_RESERVATION_PROOF_POOLS: DurableObjectNamespace<StockReservationProofPool>;
 }
 
-function reserveCommand(
-	commandId: string,
-	quantity: string,
-): ReserveStockCommandV1 {
+function packCommand(): PackStockCommandV1 {
 	return {
 		schema: "dinkuskit.inventory.command/v1",
-		commandId,
-		type: "stock.reserve",
-		context: { siteId: SITE_ID, poolId: POOL_ID, locationId: LOCATION_ID },
-		payload: {
-			skuId: SKU_ID,
-			quantity: { value: quantity, unit: "each" },
-			orderLine: { kind: "commerce.order_line", id: "OL-PROOF-1" },
-		},
-		references: [],
-	};
-}
-
-function releaseCommand(): ReleaseStockCommandV1 {
-	return {
-		schema: "dinkuskit.inventory.command/v1",
-		commandId: "cmd_proof_release",
-		type: "stock.release",
+		commandId: "cmd_proof_pack",
+		type: "stock.pack",
 		context: { siteId: SITE_ID, poolId: POOL_ID },
 		payload: { reservationId: "rsv_proof_hat" },
 		references: [],
 	};
 }
+
+const V5_RESERVATION = Object.freeze({
+	schema: "dinkuskit.inventory.reservation/v1",
+	reservationId: "rsv_proof_hat",
+	poolId: POOL_ID,
+	locationId: LOCATION_ID,
+	skuId: SKU_ID,
+	quantity: { value: "3", unit: "each" },
+	orderLine: { kind: "commerce.order_line", id: "OL-PROOF-1" },
+	status: "active",
+	version: "1",
+	createdAt: "2026-09-25T16:01:00.000Z",
+	canceledAt: null,
+	createdBy: principal,
+	canceledBy: null,
+});
 
 export class StockReservationProofPool extends DurableObject<StockReservationProofEnv> {
 	constructor(ctx: DurableObjectState, env: StockReservationProofEnv) {
@@ -84,22 +80,82 @@ export class StockReservationProofPool extends DurableObject<StockReservationPro
 			.map((row) => Number(row.version));
 	}
 
-	#upgradeExactV4(): { before: number[]; after: number[]; currentVersion: number } {
+	#upgradeExactV5Hold(): {
+		before: number[];
+		after: number[];
+		currentVersion: number;
+		upgradedHold: { packedAt: unknown; packedBy: unknown; status: unknown };
+	} {
 		const before = this.#schemaHistory();
 		this.ctx.storage.transactionSync(() => {
 			this.ctx.storage.sql.exec("DROP TABLE inventory_reservations").toArray();
+			this.ctx.storage.sql
+				.exec(
+					`CREATE TABLE inventory_reservations (
+						pool_id TEXT NOT NULL,
+						reservation_id TEXT NOT NULL,
+						order_line_key TEXT NOT NULL,
+						status TEXT NOT NULL CHECK (status IN ('active', 'canceled')),
+						version INTEGER NOT NULL CHECK (version >= 1),
+						reservation_json TEXT NOT NULL,
+						PRIMARY KEY (pool_id, reservation_id)
+					) STRICT`,
+				)
+				.toArray();
+			this.ctx.storage.sql
+				.exec(
+					`CREATE UNIQUE INDEX inventory_reservations_active_order_line
+					 ON inventory_reservations (pool_id, order_line_key)
+					 WHERE status = 'active'`,
+				)
+				.toArray();
+			this.ctx.storage.sql
+				.exec(
+					`INSERT INTO inventory_reservations
+					   (pool_id, reservation_id, order_line_key, status, version, reservation_json)
+					 VALUES (?, ?, ?, 'active', 1, ?)`,
+					POOL_ID,
+					"rsv_proof_hat",
+					JSON.stringify(["commerce.order_line", "OL-PROOF-1"]),
+					JSON.stringify(V5_RESERVATION),
+				)
+				.toArray();
+			this.ctx.storage.sql
+				.exec(
+					`UPDATE inventory_balances
+					 SET reserved_value = '3', available_value = '7', version = 2
+					 WHERE pool_id = ? AND location_id = ? AND sku_id = ?`,
+					POOL_ID,
+					LOCATION_ID,
+					SKU_ID,
+				)
+				.toArray();
 			this.ctx.storage.sql.exec("DELETE FROM inventory_schema_migrations").toArray();
 			this.ctx.storage.sql
 				.exec(
-					"INSERT INTO inventory_schema_migrations (version, applied_at) VALUES (4, 'v4-proof')",
+					"INSERT INTO inventory_schema_migrations (version, applied_at) VALUES (5, 'v5-proof')",
 				)
 				.toArray();
 		});
 		initializeCloudflareInventorySchema(this.ctx.storage);
+		const upgraded = JSON.parse(
+			String(
+				this.ctx.storage.sql
+					.exec(
+						"SELECT reservation_json FROM inventory_reservations WHERE reservation_id = 'rsv_proof_hat'",
+					)
+					.one().reservation_json,
+				),
+		);
 		return {
 			before,
 			after: this.#schemaHistory(),
 			currentVersion: readCloudflareInventorySchemaStatus(this.ctx.storage).version,
+			upgradedHold: {
+				packedAt: upgraded.packedAt,
+				packedBy: upgraded.packedBy,
+				status: upgraded.status,
+			},
 		};
 	}
 
@@ -180,34 +236,20 @@ export class StockReservationProofPool extends DurableObject<StockReservationPro
 	}
 
 	async #commit() {
-		const upgrade = this.#upgradeExactV4();
 		await this.#ensureProofSetup();
+		const upgrade = this.#upgradeExactV5Hold();
 		const store = await this.#store();
-		const reserved = await createReserveStock({
+		const packed = await createPackStock({
 			store,
-			now: () => new Date("2026-09-25T16:01:00.000Z"),
-			createReservationId: () => "rsv_proof_hat",
-			createReceiptId: () => "rcpt_proof_reserve",
-		})(reserveCommand("cmd_proof_reserve", "3"), { principal });
-		const conflict = await createReserveStock({
-			store,
-			now: () => new Date("2026-09-25T16:01:30.000Z"),
-			createReservationId: () => "must_not_mint_conflict",
-			createReceiptId: () => "must_not_write_conflict",
-		})(reserveCommand("cmd_proof_conflict", "4"), { principal });
-		const released = await createReleaseStock({
-			store,
-			now: () => new Date("2026-09-25T16:02:00.000Z"),
-			createReceiptId: () => "rcpt_proof_release",
-		})(releaseCommand(), { principal });
+			now: () => new Date("2026-09-25T16:05:00.000Z"),
+			createReceiptId: () => "rcpt_proof_pack",
+		})(packCommand(), { principal });
 		return {
 			proof: "real-local-wrangler-durable-object",
 			phase: "commit",
 			remote: false,
 			upgrade,
-			reserve: reserved,
-			conflict,
-			release: released,
+			pack: packed,
 			durable: { balance: await this.#durableBalance() },
 		};
 	}
@@ -215,12 +257,11 @@ export class StockReservationProofPool extends DurableObject<StockReservationPro
 	async #replay() {
 		await this.#ensureProofSetup();
 		const store = await this.#store();
-		const result = await createReserveStock({
+		const result = await createPackStock({
 			store,
-			now: () => new Date("2026-09-25T16:03:00.000Z"),
-			createReservationId: () => "must_not_mint_replay",
+			now: () => new Date("2026-09-25T16:06:00.000Z"),
 			createReceiptId: () => "must_not_write_replay",
-		})(reserveCommand("cmd_proof_reserve", "3"), { principal });
+		})(packCommand(), { principal });
 		return {
 			proof: "real-local-wrangler-durable-object",
 			phase: "replay_after_restart",

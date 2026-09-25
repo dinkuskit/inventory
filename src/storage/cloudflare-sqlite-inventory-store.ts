@@ -855,9 +855,10 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 		this.#assertPool(input.balance);
 		const updatedBalance = this.#storage.sql.exec<SqlRow>(
 			`UPDATE inventory_balances
-			 SET reserved_value = ?, available_value = ?, version = ?
+			 SET on_hand_value = ?, reserved_value = ?, available_value = ?, version = ?
 			 WHERE pool_id = ? AND location_id = ? AND sku_id = ? AND version = ?
 			 RETURNING sku_id`,
+			input.balance.onHand.value,
 			input.balance.reserved.value,
 			input.balance.available.value,
 			Number(input.balance.version),
