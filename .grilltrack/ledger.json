@@ -1,5 +1,43 @@
 {
-  "closeout": null,
+  "closeout": {
+    "closed_at": "2026-09-26T19:18:41+00:00",
+    "confirmed_by": "user",
+    "deferred_decisions": [],
+    "proof_refs": [
+      ".grilltrack/proof/cycle-25/"
+    ],
+    "reason": "Undo Delivered kernel is merged and verified. Bobby confirmed close.",
+    "reviews": [
+      {
+        "classifications": [],
+        "decision_id": "undo-delivered-scope-001",
+        "ref": ".grilltrack/proof/cycle-25/REVIEW.md",
+        "result": "clean",
+        "source_identity": "git:1563ac30f9f6c564498dccc4ab016b33649ef92b"
+      },
+      {
+        "classifications": [],
+        "decision_id": "undo-delivered-counts-002",
+        "ref": ".grilltrack/proof/cycle-25/REVIEW.md",
+        "result": "clean",
+        "source_identity": "git:1563ac30f9f6c564498dccc4ab016b33649ef92b"
+      },
+      {
+        "classifications": [],
+        "decision_id": "undo-delivered-command-003",
+        "ref": ".grilltrack/proof/cycle-25/REVIEW.md",
+        "result": "clean",
+        "source_identity": "git:1563ac30f9f6c564498dccc4ab016b33649ef92b"
+      }
+    ],
+    "summary": "stock.undo_deliver returns one Delivered ticket to Packed, status-only, with durable replay and rejection. PR #30 merged at 1563ac30f9f6c564498dccc4ab016b33649ef92b.",
+    "superseded_decisions": [],
+    "verified_decisions": [
+      "undo-delivered-scope-001",
+      "undo-delivered-counts-002",
+      "undo-delivered-command-003"
+    ]
+  },
   "created_at": "2026-09-26T16:58:57+00:00",
   "current_focus": {
     "cadence": "sequential",
@@ -7,7 +45,7 @@
     "confirmed_at": "2026-09-26T17:37:47+00:00",
     "domain": "packing/revert-from-delivered",
     "started_at": "2026-09-26T16:58:57+00:00",
-    "status": "confirmed",
+    "status": "closed",
     "summary": "Build platform-neutral stock.undo_deliver: Commerce names one Delivered ticket it already has, never an order number. The whole ticket returns to Packed. One ticket per command. Status only: on-hand, reserved, and available do not change. Partial deliveries, partial packs, bulk undo, GUI, live Commerce, Woo, Katana, ShipTheory, and deploy wait. Exact command-ID retry returns the original result. Verify the durable transition, eligibility rejection, unchanged balances, and retry behavior."
   },
   "decisions": [
@@ -71,13 +109,21 @@
       "rationale": "Bobby chose whole-ticket undo and explicitly deferred partial deliveries and partial packs until the product is usable.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-25/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-09-26T19:18:33+00:00",
+          "source_identity": "git:1563ac30f9f6c564498dccc4ab016b33649ef92b"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-25/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "git:1563ac30f9f6c564498dccc4ab016b33649ef92b",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-26T17:47:01+00:00",
+      "updated_at": "2026-09-26T19:18:33+00:00",
       "verification_ref": "bin/verify-inventory full (Node 22.23.1)"
     },
     {
@@ -142,13 +188,21 @@
       "rationale": "Bobby confirmed the status-only outcome; counts already changed at pack.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-25/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-09-26T19:18:33+00:00",
+          "source_identity": "git:1563ac30f9f6c564498dccc4ab016b33649ef92b"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-25/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "git:1563ac30f9f6c564498dccc4ab016b33649ef92b",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-26T17:47:01+00:00",
+      "updated_at": "2026-09-26T19:18:33+00:00",
       "verification_ref": "bin/verify-inventory full (Node 22.23.1)"
     },
     {
@@ -213,13 +267,21 @@
       "rationale": "Bobby prefers Katana\u2019s model: orders can be selected in bulk for delete, export, or print, but reverting Delivered requires opening the individual sales order and using its revert action. Inventory still names a ticket, not a Commerce order number.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-25/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-09-26T19:18:34+00:00",
+          "source_identity": "git:1563ac30f9f6c564498dccc4ab016b33649ef92b"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-25/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "git:1563ac30f9f6c564498dccc4ab016b33649ef92b",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-26T17:47:02+00:00",
+      "updated_at": "2026-09-26T19:18:34+00:00",
       "verification_ref": "bin/verify-inventory full (Node 22.23.1)"
     }
   ],
@@ -232,8 +294,8 @@
   "predecessor_track_id": "gt-20260926150907-b6e31e",
   "recommendation": null,
   "schema_version": "grilltrack/v0.1",
-  "status": "active",
+  "status": "closed",
   "title": "Dinkuskit Inventory undo Delivered back to Packed",
   "track_id": "gt-20260926165857-2cce99",
-  "updated_at": "2026-09-26T17:47:02+00:00"
+  "updated_at": "2026-09-26T19:18:41+00:00"
 }
