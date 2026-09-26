@@ -23,6 +23,7 @@ import {
 	RELEASE_STOCK_TYPE,
 	RESERVE_STOCK_TYPE,
 	UNPACK_STOCK_TYPE,
+	UNDO_DELIVER_STOCK_TYPE,
 	RESERVATION_RECORD_SCHEMA,
 	digestStockReservationCommand,
 	holdIsOpen,
@@ -33,6 +34,7 @@ import {
 	normalizeReleaseStockCommand,
 	normalizeReserveStockCommand,
 	normalizeUnpackStockCommand,
+	normalizeUndoDeliverStockCommand,
 	reservationOrderLineKey,
 	sameReservationContents,
 	type DeliverStockCommandV1,
@@ -41,6 +43,7 @@ import {
 	type PackStockCommandV1,
 	type ReleaseStockCommandV1,
 	type UnpackStockCommandV1,
+	type UndoDeliverStockCommandV1,
 	type ReservationRecord,
 	type ReserveStockCommandV1,
 	type StockReservationBalanceEffect,
@@ -81,9 +84,15 @@ export type UnpackStock = (
 	execution: UnpackStockExecution,
 ) => Promise<StockReservationResult>;
 export type DeliverStockExecution = PackStockExecution;
+export type UndoDeliverStockExecution = PackStockExecution;
 export type DeliverStock = (
 	command: DeliverStockCommandV1,
 	execution: DeliverStockExecution,
+) => Promise<StockReservationResult>;
+
+export type UndoDeliverStock = (
+	command: UndoDeliverStockCommandV1,
+	execution: UndoDeliverStockExecution,
 ) => Promise<StockReservationResult>;
 
 export type StockReservationDependencies = Readonly<{
@@ -103,6 +112,7 @@ export type PackAllStockDependencies = PackStockDependencies;
 export type PackSomeStockDependencies = PackStockDependencies;
 export type UnpackStockDependencies = PackStockDependencies;
 export type DeliverStockDependencies = PackStockDependencies;
+export type UndoDeliverStockDependencies = PackStockDependencies;
 
 function incrementVersion(version: string): string {
 	return (BigInt(version) + 1n).toString();
@@ -258,7 +268,8 @@ function receipt(input: {
 		| typeof PACK_ALL_STOCK_TYPE
 		| typeof PACK_SOME_STOCK_TYPE
 		| typeof UNPACK_STOCK_TYPE
-		| typeof DELIVER_STOCK_TYPE;
+		| typeof DELIVER_STOCK_TYPE
+		| typeof UNDO_DELIVER_STOCK_TYPE;
 	committedAt: string;
 	principal: CommandPrincipal;
 	siteId: string;
@@ -943,6 +954,37 @@ export function executeDeliverStockInTransaction(
 	return result;
 }
 
+export function executeUndoDeliverStockInTransaction(
+	transaction: InventoryTransaction,
+	command: UndoDeliverStockCommandV1,
+	principal: CommandPrincipal,
+	commandDigest: string,
+	dependencies: Readonly<{ now: () => Date; createReceiptId: () => string }>,
+): StockReservationResult {
+	const replayed = replayOrConflict(transaction, command.commandId, commandDigest);
+	if (replayed !== null) return replayed;
+	const current = transaction.getReservation(command.payload.reservationId);
+	if (current === null) {
+		return durableRejection(transaction, command.commandId, commandDigest, "reservation_not_found", "The reservation does not exist in this inventory pool.");
+	}
+	if (current.status !== "delivered") {
+		return durableRejection(transaction, command.commandId, commandDigest, "reservation_not_delivered", "Only a Delivered ticket can be returned to Packed.");
+	}
+	const packed: ReservationRecord = { ...current, status: "packed", version: incrementVersion(current.version) };
+	const committedReceipt = receipt({
+		commandId: command.commandId, commandDigest, type: UNDO_DELIVER_STOCK_TYPE, committedAt: committedAtFrom(dependencies.now), principal,
+		siteId: command.context.siteId, poolId: command.context.poolId, reservationBefore: current, reservationAfter: packed,
+		effects: [], references: command.references, createReceiptId: dependencies.createReceiptId,
+	});
+	const result: StockReservationResult = { schema: COMMAND_RESULT_SCHEMA, outcome: "undelivered", commandId: command.commandId, reservation: packed, receipt: committedReceipt };
+	transaction.commitStockReservationBatch({
+		commandId: command.commandId, commandDigest,
+		reservations: [{ previous: current, reservation: packed, orderLineKey: reservationOrderLineKey(current.orderLine) }],
+		balances: [], receipt: committedReceipt, result,
+	});
+	return result;
+}
+
 export function executePackSomeStockInTransaction(
 	transaction: InventoryTransaction,
 	command: PackSomeStockCommandV1,
@@ -1384,6 +1426,22 @@ export function createDeliverStock(
 					commandDigest,
 					dependencies,
 				),
+		);
+	};
+}
+
+export function createUndoDeliverStock(
+	dependencies: UndoDeliverStockDependencies,
+): UndoDeliverStock {
+	if (dependencies?.store === undefined) throw new TypeError("store is required.");
+	if (typeof dependencies.now !== "function") throw new TypeError("now is required.");
+	if (typeof dependencies.createReceiptId !== "function") throw new TypeError("createReceiptId is required.");
+	return async (commandInput, executionInput) => {
+		const command = normalizeUndoDeliverStockCommand(commandInput);
+		const principal = normalizeCommandPrincipal(executionInput?.principal);
+		const commandDigest = await digestStockReservationCommand(command);
+		return dependencies.store.runTransaction(command.context.poolId, (transaction) =>
+			executeUndoDeliverStockInTransaction(transaction, command, principal, commandDigest, dependencies),
 		);
 	};
 }

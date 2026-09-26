@@ -520,7 +520,7 @@ not hold more stock. `stock.unpack` names one ticket and restores all packed
 bags on that ticket onto the same Not shipped ticket. Packed 3 of 3 restores 3.
 Packed 1 of 3 restores that 1 beside leftover 2. On-hand and reserved both come
 back by the packed amount; available stays the same. No quantity field. Missing,
-not-shipped, and canceled tickets reject. Revert-from-Delivered waits with ship.
+not-shipped, and canceled tickets reject. `stock.undo_deliver` names one Delivered ticket Commerce already has. No quantity. No order number. It returns that whole ticket to Packed, one at a time. Status only: on-hand, reserved, and available do not change. Missing and non-Delivered tickets reject. Exact command-ID retry returns the original result. Partial deliveries, partial packs, bulk undo, GUI, live Commerce, Woo, Katana, ShipTheory, and deploy wait.
 Unpack-some waits; the Katana fix for a wrong pack quantity is unpack then pack
 some again. Unpaid Hold cancels at 60 minutes through existing `stock.release`;
 that clock is Commerce, not this kernel. `stock.deliver` names one or more packed
@@ -529,7 +529,7 @@ become Delivered, or none if any is missing, not shipped, partially packed,
 canceled, or already Delivered. Status only: on-hand, reserved, and available do
 not change. A one-line order uses the same command with one ticket. Human click
 and label-print webhook both call this command later. GUI, live Commerce, Woo,
-Katana, ShipTheory, and revert-from-Delivered wait.
+Katana, ShipTheory, and GUI wait.
 
 ## reservation-domain-001 through reservation-cancel-005 — named order holds (locked)
 
@@ -548,7 +548,7 @@ transport remain deferred.
 ## Next focused grill
 
 Select the next Inventory-owned slice after Packed to Delivered. Unpack-some,
-unpack-all, revert-from-Delivered, expiry, backorder, GUI, CLI, Commerce/Blocks
+unpack-all, expiry, backorder, GUI, CLI, Commerce/Blocks
 integration, service authentication, deployment, and production mutation remain
 deferred until separately grilled and approved. The packing-screen cap/flash
 that stops typing 4 on a 3-hat ticket is GUI, not this kernel.

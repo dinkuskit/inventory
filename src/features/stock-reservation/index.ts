@@ -7,6 +7,7 @@ export {
 	RELEASE_STOCK_TYPE,
 	RESERVE_STOCK_TYPE,
 	UNPACK_STOCK_TYPE,
+	UNDO_DELIVER_STOCK_TYPE,
 	RESERVATION_RECORD_SCHEMA,
 	digestStockReservationCommand,
 	holdIsOpen,
@@ -18,6 +19,7 @@ export {
 	normalizeReserveStockCommand,
 	normalizeStockReservationCommand,
 	normalizeUnpackStockCommand,
+	normalizeUndoDeliverStockCommand,
 	reservationOrderLineKey,
 } from "./domain.ts";
 export type {
@@ -27,6 +29,7 @@ export type {
 	PackStockCommandV1,
 	ReleaseStockCommandV1,
 	UnpackStockCommandV1,
+	UndoDeliverStockCommandV1,
 	ReservationOrderLine,
 	ReservationRecord,
 	ReservationStatus,
@@ -45,6 +48,7 @@ export {
 	createReleaseStock,
 	createReserveStock,
 	createUnpackStock,
+	createUndoDeliverStock,
 } from "./execute.ts";
 export type {
 	DeliverStock,
@@ -66,6 +70,9 @@ export type {
 	ReserveStockExecution,
 	StockReservationDependencies,
 	UnpackStock,
+	UndoDeliverStock,
 	UnpackStockDependencies,
+	UndoDeliverStockDependencies,
 	UnpackStockExecution,
+	UndoDeliverStockExecution,
 } from "./execute.ts";

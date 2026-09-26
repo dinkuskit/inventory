@@ -1,0 +1,1036 @@
+# Undo Delivered local SQLite runtime proof
+$ node --experimental-sqlite --experimental-strip-types --test --test-name-pattern=undo\ Delivered tests/stock-reservation/deliver.test.mjs
+TAP version 13
+# (node:89303) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: undo Delivered returns one ticket to Packed without moving counts and replays exactly
+ok 1 - undo Delivered returns one ticket to Packed without moving counts and replays exactly
+  ---
+  duration_ms: 28.469167
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 154.1545
+
+$ bin/verify-inventory full
+TAP version 13
+# Subtest: accepts public feature entries and declared feature dependencies
+ok 1 - accepts public feature entries and declared feature dependencies
+  ---
+  duration_ms: 1.262583
+  type: 'test'
+  ...
+# Subtest: rejects deep feature imports and undeclared feature dependencies
+ok 2 - rejects deep feature imports and undeclared feature dependencies
+  ---
+  duration_ms: 0.552083
+  type: 'test'
+  ...
+# Subtest: the feature map and committed repository satisfy the architecture contract
+ok 3 - the feature map and committed repository satisfy the architecture contract
+  ---
+  duration_ms: 35.025458
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 81.650833
+inventory_architecture=clean
+
+> @dinkuskit/inventory@0.0.0 typecheck:cloudflare
+> tsc --project tsconfig.cloudflare.json
+
+
+> @dinkuskit/inventory@0.0.0 test:node
+> node --experimental-sqlite --experimental-strip-types --test tests/workflows/*.test.mjs tests/opening-balance/*.test.mjs tests/locations/*.test.mjs tests/inventory/*.test.mjs tests/managed-sku/*.test.mjs tests/stock-adjustment/*.test.mjs tests/stock-transfer/*.test.mjs tests/stock-reservation/*.test.mjs
+
+TAP version 13
+# (node:89383) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: reads one location or all active locations from durable SQLite
+ok 1 - reads one location or all active locations from durable SQLite
+  ---
+  duration_ms: 111.205292
+  type: 'test'
+  ...
+# Subtest: normalizes only an explicit location or all-locations scope
+ok 2 - normalizes only an explicit location or all-locations scope
+  ---
+  duration_ms: 1.814833
+  type: 'test'
+  ...
+# Subtest: sums signed exact decimals, derives available, and fails closed on mixed units
+ok 3 - sums signed exact decimals, derives available, and fails closed on mixed units
+  ---
+  duration_ms: 0.968584
+  type: 'test'
+  ...
+# (node:89384) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: creates one durable location and exactly replays the terminal result
+ok 4 - creates one durable location and exactly replays the terminal result
+  ---
+  duration_ms: 79.057667
+  type: 'test'
+  ...
+# Subtest: reserves each location name across active and archived records
+ok 5 - reserves each location name across active and archived records
+  ---
+  duration_ms: 75.499125
+  type: 'test'
+  ...
+# Subtest: renames, archives, and restores one permanent location with immutable receipts
+ok 6 - renames, archives, and restores one permanent location with immutable receipts
+  ---
+  duration_ms: 90.978958
+  type: 'test'
+  ...
+# Subtest: blocks archive for every physical, order, and transfer quantity and durably replays the blockers
+ok 7 - blocks archive for every physical, order, and transfer quantity and durably replays the blockers
+  ---
+  duration_ms: 115.661375
+  type: 'test'
+  ...
+# Subtest: rolls back location and command state when receipt persistence fails
+ok 8 - rolls back location and command state when receipt persistence fails
+  ---
+  duration_ms: 62.493875
+  type: 'test'
+  ...
+# Subtest: keeps command IDs unique across stock and location commands
+ok 9 - keeps command IDs unique across stock and location commands
+  ---
+  duration_ms: 61.444167
+  type: 'test'
+  ...
+# Subtest: rejects malformed names and missing target locations before storage
+ok 10 - rejects malformed names and missing target locations before storage
+  ---
+  duration_ms: 34.976583
+  type: 'test'
+  ...
+# Subtest: the package root and managed-SKU feature entry expose the same runtime contract
+ok 11 - the package root and managed-SKU feature entry expose the same runtime contract
+  ---
+  duration_ms: 0.52025
+  type: 'test'
+  ...
+# (node:89386) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: new registration mints a hidden identity and stores setup audit without a stock receipt
+ok 12 - new registration mints a hidden identity and stores setup audit without a stock receipt
+  ---
+  duration_ms: 47.177625
+  type: 'test'
+  ...
+# Subtest: existing visible SKU atomically returns its original record for Commerce review
+ok 13 - existing visible SKU atomically returns its original record for Commerce review
+  ---
+  duration_ms: 56.114375
+  type: 'test'
+  ...
+# Subtest: stock APIs resolve only the permanent Inventory identity
+ok 14 - stock APIs resolve only the permanent Inventory identity
+  ---
+  duration_ms: 91.940041
+  type: 'test'
+  ...
+# (node:89387) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: preserves command identity and rejects unsupported registration contents
+ok 15 - preserves command identity and rejects unsupported registration contents
+  ---
+  duration_ms: 82.701584
+  type: 'test'
+  ...
+# Subtest: rolls back the new command when a generated Inventory identity collides
+ok 16 - rolls back the new command when a generated Inventory identity collides
+  ---
+  duration_ms: 64.819416
+  type: 'test'
+  ...
+# Subtest: uses registered hidden identity for logical zero and opening admission
+ok 17 - uses registered hidden identity for logical zero and opening admission
+  ---
+  duration_ms: 119.090125
+  type: 'test'
+  ...
+# Subtest: blocks opening preview before registration and rejects a mismatched unit
+ok 18 - blocks opening preview before registration and rejects a mismatched unit
+  ---
+  duration_ms: 57.635458
+  type: 'test'
+  ...
+# (node:89388) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: confirmed opening balance durably rejects an archived location
+ok 19 - confirmed opening balance durably rejects an archived location
+  ---
+  duration_ms: 95.480208
+  type: 'test'
+  ...
+# Subtest: previews the exact normalized effect for five minutes without mutating stock
+ok 20 - previews the exact normalized effect for five minutes without mutating stock
+  ---
+  duration_ms: 86.674125
+  type: 'test'
+  ...
+# Subtest: requires the editable reason before issuing a preview
+ok 21 - requires the editable reason before issuing a preview
+  ---
+  duration_ms: 76.586166
+  type: 'test'
+  ...
+# Subtest: binds the edited reason into confirmation
+ok 22 - binds the edited reason into confirmation
+  ---
+  duration_ms: 65.747375
+  type: 'test'
+  ...
+# Subtest: confirms immediately and commits the balance and immutable receipt together
+ok 23 - confirms immediately and commits the balance and immutable receipt together
+  ---
+  duration_ms: 62.468041
+  type: 'test'
+  ...
+# Subtest: persists an unconfirmed preview across database close and reopen
+ok 24 - persists an unconfirmed preview across database close and reopen
+  ---
+  duration_ms: 85.481583
+  type: 'test'
+  ...
+# Subtest: rejects an unconfirmed preview at the exact five-minute boundary
+ok 25 - rejects an unconfirmed preview at the exact five-minute boundary
+  ---
+  duration_ms: 63.6815
+  type: 'test'
+  ...
+# Subtest: returns the exact original terminal result when a confirmed request retries after expiry
+ok 26 - returns the exact original terminal result when a confirmed request retries after expiry
+  ---
+  duration_ms: 51.345083
+  type: 'test'
+  ...
+# Subtest: rejects a changed action without consuming the confirmation
+ok 27 - rejects a changed action without consuming the confirmation
+  ---
+  duration_ms: 33.03225
+  type: 'test'
+  ...
+# Subtest: rejects another principal without consuming the confirmation
+ok 28 - rejects another principal without consuming the confirmation
+  ---
+  duration_ms: 27.205834
+  type: 'test'
+  ...
+# Subtest: binds a consumed confirmation to exactly one command ID
+ok 29 - binds a consumed confirmation to exactly one command ID
+  ---
+  duration_ms: 16.2765
+  type: 'test'
+  ...
+# Subtest: rolls back confirmation consumption when atomic receipt persistence fails
+ok 30 - rolls back confirmation consumption when atomic receipt persistence fails
+  ---
+  duration_ms: 15.97175
+  type: 'test'
+  ...
+# Subtest: stores and replays a business rejection after a valid confirmation
+ok 31 - stores and replays a business rejection after a valid confirmation
+  ---
+  duration_ms: 12.247791
+  type: 'test'
+  ...
+# (node:89389) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: reads only one explicit SKU-location balance with explicit not-found
+ok 32 - reads only one explicit SKU-location balance with explicit not-found
+  ---
+  duration_ms: 52.151416
+  type: 'test'
+  ...
+# Subtest: reads one committed mutation by receipt ID or command ID after reopen
+ok 33 - reads one committed mutation by receipt ID or command ID after reopen
+  ---
+  duration_ms: 77.899625
+  type: 'test'
+  ...
+# Subtest: reads a stable rejection by command ID and never invents a receipt
+ok 34 - reads a stable rejection by command ID and never invents a receipt
+  ---
+  duration_ms: 97.955667
+  type: 'test'
+  ...
+# Subtest: returns explicit not-found and rejects ambiguous or blank lookups
+ok 35 - returns explicit not-found and rejects ambiguous or blank lookups
+  ---
+  duration_ms: 69.2125
+  type: 'test'
+  ...
+# Subtest: binds confirmation to stable user identity and freezes the commit-time name
+ok 36 - binds confirmation to stable user identity and freezes the commit-time name
+  ---
+  duration_ms: 71.893542
+  type: 'test'
+  ...
+# Subtest: requires a human display name without inventing one for system receipts
+ok 37 - requires a human display name without inventing one for system receipts
+  ---
+  duration_ms: 61.364875
+  type: 'test'
+  ...
+# (node:89390) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: reads one location or all locations from the same durable receipt ledger
+ok 38 - reads one location or all locations from the same durable receipt ledger
+  ---
+  duration_ms: 178.012166
+  type: 'test'
+  ...
+# Subtest: rejects missing, ambiguous, and unbounded history scope
+ok 39 - rejects missing, ambiguous, and unbounded history scope
+  ---
+  duration_ms: 61.8215
+  type: 'test'
+  ...
+# (node:89391) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: keeps the local SQLite test adapter out of the platform-neutral root API
+ok 40 - keeps the local SQLite test adapter out of the platform-neutral root API
+  ---
+  duration_ms: 0.880625
+  type: 'test'
+  ...
+# Subtest: exposes the exact editable opening-balance reason default
+ok 41 - exposes the exact editable opening-balance reason default
+  ---
+  duration_ms: 0.1725
+  type: 'test'
+  ...
+# Subtest: durably rejects an unknown opening-balance location without stock or receipt
+ok 42 - durably rejects an unknown opening-balance location without stock or receipt
+  ---
+  duration_ms: 153.91075
+  type: 'test'
+  ...
+# Subtest: durably rejects an archived opening-balance location after restoration
+ok 43 - durably rejects an archived opening-balance location after restoration
+  ---
+  duration_ms: 93.127083
+  type: 'test'
+  ...
+# Subtest: commits one opening balance with its immutable receipt and no other location
+ok 44 - commits one opening balance with its immutable receipt and no other location
+  ---
+  duration_ms: 97.892541
+  type: 'test'
+  ...
+# Subtest: returns the byte-stable original result for normalized replay after reopen
+ok 45 - returns the byte-stable original result for normalized replay after reopen
+  ---
+  duration_ms: 65.923958
+  type: 'test'
+  ...
+# Subtest: rejects changed content under one command ID while preserving the original
+ok 46 - rejects changed content under one command ID while preserving the original
+  ---
+  duration_ms: 52.723792
+  type: 'test'
+  ...
+# Subtest: stores a second-opening rejection and replays it after reopen
+ok 47 - stores a second-opening rejection and replays it after reopen
+  ---
+  duration_ms: 73.505125
+  type: 'test'
+  ...
+# Subtest: serializes competing command IDs so only one opening balance commits
+ok 48 - serializes competing command IDs so only one opening balance commits
+  ---
+  duration_ms: 70.791292
+  type: 'test'
+  ...
+# Subtest: rolls back balance and command state when receipt persistence fails
+ok 49 - rolls back balance and command state when receipt persistence fails
+  ---
+  duration_ms: 49.881417
+  type: 'test'
+  ...
+# Subtest: rejects malformed context and quantities before storage
+ok 50 - rejects malformed context and quantities before storage
+  ---
+  duration_ms: 22.648875
+  type: 'test'
+  ...
+# Subtest: requires a final human-readable reason and freezes an edited value
+ok 51 - requires a final human-readable reason and freezes an edited value
+  ---
+  duration_ms: 24.888417
+  type: 'test'
+  ...
+# Subtest: refuses in-memory and production-mode local storage
+ok 52 - refuses in-memory and production-mode local storage
+  ---
+  duration_ms: 1.052917
+  type: 'test'
+  ...
+# Subtest: refuses unrelated and incompatible SQLite files without claiming them
+ok 53 - refuses unrelated and incompatible SQLite files without claiming them
+  ---
+  duration_ms: 7.829334
+  type: 'test'
+  ...
+# Subtest: normalizes a non-zero signed delta, one typed reason, and observed version
+ok 54 - normalizes a non-zero signed delta, one typed reason, and observed version
+  ---
+  duration_ms: 2.272667
+  type: 'test'
+  ...
+# Subtest: uses exact signed decimal arithmetic beyond binary floating-point range
+ok 55 - uses exact signed decimal arithmetic beyond binary floating-point range
+  ---
+  duration_ms: 0.460667
+  type: 'test'
+  ...
+# Subtest: rejects zero, a blank reason, and a reason category
+ok 56 - rejects zero, a blank reason, and a reason category
+  ---
+  duration_ms: 0.657708
+  type: 'test'
+  ...
+# Subtest: requires exactly the command SKU-location and one positive observed version
+ok 57 - requires exactly the command SKU-location and one positive observed version
+  ---
+  duration_ms: 0.442667
+  type: 'test'
+  ...
+# (node:89393) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: previews and commits an allowed oversell with exact quantities and actor receipt
+ok 58 - previews and commits an allowed oversell with exact quantities and actor receipt
+  ---
+  duration_ms: 62.373167
+  type: 'test'
+  ...
+# Subtest: returns the original durable terminal result on retry and conflicts changed content
+ok 59 - returns the original durable terminal result on retry and conflicts changed content
+  ---
+  duration_ms: 85.730875
+  type: 'test'
+  ...
+# Subtest: durably rejects a stale preview after another adjustment commits
+ok 60 - durably rejects a stale preview after another adjustment commits
+  ---
+  duration_ms: 123.760542
+  type: 'test'
+  ...
+# Subtest: expires after five minutes and binds confirmation to the signed-in principal
+ok 61 - expires after five minutes and binds confirmation to the signed-in principal
+  ---
+  duration_ms: 68.311875
+  type: 'test'
+  ...
+# Subtest: rolls back balance, receipt, result, and confirmation binding on commit failure
+ok 62 - rolls back balance, receipt, result, and confirmation binding on commit failure
+  ---
+  duration_ms: 78.276208
+  type: 'test'
+  ...
+# Subtest: preview reports location, registration, and opening-history failures in order
+ok 63 - preview reports location, registration, and opening-history failures in order
+  ---
+  duration_ms: 74.043292
+  type: 'test'
+  ...
+# Subtest: direct command durably requires opening history without creating a receipt
+ok 64 - direct command durably requires opening history without creating a receipt
+  ---
+  duration_ms: 66.614541
+  type: 'test'
+  ...
+# Subtest: direct commands durably reject archived locations and unit mismatches
+ok 65 - direct commands durably reject archived locations and unit mismatches
+  ---
+  duration_ms: 53.510208
+  type: 'test'
+  ...
+# Subtest: the package root composes the stock-adjustment public entry
+ok 66 - the package root composes the stock-adjustment public entry
+  ---
+  duration_ms: 0.631041
+  type: 'test'
+  ...
+# (node:89395) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: deliver marks every named packed ticket Delivered without moving counts
+ok 67 - deliver marks every named packed ticket Delivered without moving counts
+  ---
+  duration_ms: 151.636583
+  type: 'test'
+  ...
+# Subtest: undo Delivered returns one ticket to Packed without moving counts and replays exactly
+ok 68 - undo Delivered returns one ticket to Packed without moving counts and replays exactly
+  ---
+  duration_ms: 131.418625
+  type: 'test'
+  ...
+# Subtest: deliver accepts one packed ticket
+ok 69 - deliver accepts one packed ticket
+  ---
+  duration_ms: 93.6435
+  type: 'test'
+  ...
+# Subtest: deliver replay returns the original delivered result
+ok 70 - deliver replay returns the original delivered result
+  ---
+  duration_ms: 116.170833
+  type: 'test'
+  ...
+# Subtest: deliver stops when one ticket is not fully packed and leaves the rest Packed
+ok 71 - deliver stops when one ticket is not fully packed and leaves the rest Packed
+  ---
+  duration_ms: 74.894583
+  type: 'test'
+  ...
+# Subtest: deliver rejects not shipped, partially packed, canceled, missing, and already Delivered tickets
+ok 72 - deliver rejects not shipped, partially packed, canceled, missing, and already Delivered tickets
+  ---
+  duration_ms: 56.361417
+  type: 'test'
+  ...
+# Subtest: reserve command trims identity fields and requires a positive quantity
+ok 73 - reserve command trims identity fields and requires a positive quantity
+  ---
+  duration_ms: 1.69425
+  type: 'test'
+  ...
+# Subtest: order-line keys stay distinct when kind or id contains a separator
+ok 74 - order-line keys stay distinct when kind or id contains a separator
+  ---
+  duration_ms: 0.139167
+  type: 'test'
+  ...
+# Subtest: pack all command trims ticket ids and requires one or more unique tickets
+ok 75 - pack all command trims ticket ids and requires one or more unique tickets
+  ---
+  duration_ms: 0.339875
+  type: 'test'
+  ...
+# Subtest: deliver command trims ticket ids and requires one or more unique tickets
+ok 76 - deliver command trims ticket ids and requires one or more unique tickets
+  ---
+  duration_ms: 0.149917
+  type: 'test'
+  ...
+# Subtest: pack some command trims the ticket and requires a positive quantity
+ok 77 - pack some command trims the ticket and requires a positive quantity
+  ---
+  duration_ms: 0.16575
+  type: 'test'
+  ...
+# Subtest: unpack command trims the reservation id
+ok 78 - unpack command trims the reservation id
+  ---
+  duration_ms: 0.110375
+  type: 'test'
+  ...
+# Subtest: pack command trims the reservation id
+ok 79 - pack command trims the reservation id
+  ---
+  duration_ms: 0.094458
+  type: 'test'
+  ...
+# Subtest: release command trims the reservation id
+ok 80 - release command trims the reservation id
+  ---
+  duration_ms: 0.093833
+  type: 'test'
+  ...
+# (node:89397) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: pack all consumes every named hold in one shot
+ok 81 - pack all consumes every named hold in one shot
+  ---
+  duration_ms: 97.407209
+  type: 'test'
+  ...
+# Subtest: pack all accepts one ticket
+ok 82 - pack all accepts one ticket
+  ---
+  duration_ms: 105.010167
+  type: 'test'
+  ...
+# Subtest: pack all replay returns the original packed result
+ok 83 - pack all replay returns the original packed result
+  ---
+  duration_ms: 118.587542
+  type: 'test'
+  ...
+# Subtest: pack all stops when one ticket is not active and leaves the rest reserved
+ok 84 - pack all stops when one ticket is not active and leaves the rest reserved
+  ---
+  duration_ms: 98.103667
+  type: 'test'
+  ...
+# (node:89398) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: pack some of a hold leaves the leftover reserved on the same ticket
+ok 85 - pack some of a hold leaves the leftover reserved on the same ticket
+  ---
+  duration_ms: 87.97775
+  type: 'test'
+  ...
+# Subtest: packing the last remaining bags finishes the ticket as packed
+ok 86 - packing the last remaining bags finishes the ticket as packed
+  ---
+  duration_ms: 108.929375
+  type: 'test'
+  ...
+# Subtest: packing the full remaining quantity skips partial and packs
+ok 87 - packing the full remaining quantity skips partial and packs
+  ---
+  duration_ms: 100.613875
+  type: 'test'
+  ...
+# Subtest: asking for more hats than the ticket has packs none
+ok 88 - asking for more hats than the ticket has packs none
+  ---
+  duration_ms: 82.970125
+  type: 'test'
+  ...
+# Subtest: pack some replay returns the original result
+ok 89 - pack some replay returns the original result
+  ---
+  duration_ms: 94.68825
+  type: 'test'
+  ...
+# Subtest: reissuing the original reserve after a partial pack returns the same ticket
+ok 90 - reissuing the original reserve after a partial pack returns the same ticket
+  ---
+  duration_ms: 75.152
+  type: 'test'
+  ...
+# Subtest: one-hold pack can finish a partially packed ticket
+ok 91 - one-hold pack can finish a partially packed ticket
+  ---
+  duration_ms: 57.121375
+  type: 'test'
+  ...
+# (node:89399) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: pack consumes the full hold and leaves available unchanged
+ok 92 - pack consumes the full hold and leaves available unchanged
+  ---
+  duration_ms: 91.2485
+  type: 'test'
+  ...
+# Subtest: pack replay returns the original packed result
+ok 93 - pack replay returns the original packed result
+  ---
+  duration_ms: 110.410333
+  type: 'test'
+  ...
+# Subtest: pack rejects canceled and already packed holds
+ok 94 - pack rejects canceled and already packed holds
+  ---
+  duration_ms: 99.349
+  type: 'test'
+  ...
+# Subtest: pack rejects an already packed hold
+ok 95 - pack rejects an already packed hold
+  ---
+  duration_ms: 83.839166
+  type: 'test'
+  ...
+# Subtest: the package root composes the stock-reservation public entry
+ok 96 - the package root composes the stock-reservation public entry
+  ---
+  duration_ms: 0.6065
+  type: 'test'
+  ...
+# (node:89401) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: reserve holds available stock and release returns it
+ok 97 - reserve holds available stock and release returns it
+  ---
+  duration_ms: 111.353208
+  type: 'test'
+  ...
+# Subtest: reserve fails closed when available is short
+ok 98 - reserve fails closed when available is short
+  ---
+  duration_ms: 64.044291
+  type: 'test'
+  ...
+# Subtest: the same order line returns the original hold or conflicts
+ok 99 - the same order line returns the original hold or conflicts
+  ---
+  duration_ms: 87.051958
+  type: 'test'
+  ...
+# Subtest: a canceled order line can be reserved again with a new id
+ok 100 - a canceled order line can be reserved again with a new id
+  ---
+  duration_ms: 84.230958
+  type: 'test'
+  ...
+# Subtest: distinct order lines with a separator keep separate holds
+ok 101 - distinct order lines with a separator keep separate holds
+  ---
+  duration_ms: 47.325083
+  type: 'test'
+  ...
+# Subtest: outgoing transfer commitments reduce reservable stock
+ok 102 - outgoing transfer commitments reduce reservable stock
+  ---
+  duration_ms: 39.16675
+  type: 'test'
+  ...
+# (node:89402) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: unpack restores a packed ticket to not shipped on the same ticket
+ok 103 - unpack restores a packed ticket to not shipped on the same ticket
+  ---
+  duration_ms: 123.225208
+  type: 'test'
+  ...
+# Subtest: unpack of pack-some remainder joins leftover on the same not-shipped ticket
+ok 104 - unpack of pack-some remainder joins leftover on the same not-shipped ticket
+  ---
+  duration_ms: 80.555208
+  type: 'test'
+  ...
+# Subtest: unpack replay returns the original unpacked result
+ok 105 - unpack replay returns the original unpacked result
+  ---
+  duration_ms: 79.87825
+  type: 'test'
+  ...
+# Subtest: unpack rejects not-shipped and canceled tickets
+ok 106 - unpack rejects not-shipped and canceled tickets
+  ---
+  duration_ms: 86.172459
+  type: 'test'
+  ...
+# (node:89403) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: persists a zero Created draft, edits planning stock, replays, and cancels atomically
+ok 107 - persists a zero Created draft, edits planning stock, replays, and cancels atomically
+  ---
+  duration_ms: 151.730834
+  type: 'test'
+  ...
+# Subtest: allows negative availability with an exact transfer warning and canonical history
+ok 108 - allows negative availability with an exact transfer warning and canonical history
+  ---
+  duration_ms: 79.210625
+  type: 'test'
+  ...
+# Subtest: atomically replaces a multi-SKU destination and preserves commitments through an adjustment
+ok 109 - atomically replaces a multi-SKU destination and preserves commitments through an adjustment
+  ---
+  duration_ms: 163.980667
+  type: 'test'
+  ...
+# Subtest: durably rejects unsafe transfer inputs and rolls back injected persistence failure
+ok 110 - durably rejects unsafe transfer inputs and rolls back injected persistence failure
+  ---
+  duration_ms: 49.76625
+  type: 'test'
+  ...
+# Subtest: normalizes a Created transfer with an editable reference and exact lines
+ok 111 - normalizes a Created transfer with an editable reference and exact lines
+  ---
+  duration_ms: 4.48175
+  type: 'test'
+  ...
+# Subtest: normalizes full Created updates and version-bound cancellation
+ok 112 - normalizes full Created updates and version-bound cancellation
+  ---
+  duration_ms: 1.642875
+  type: 'test'
+  ...
+# Subtest: normalizes version-bound dispatch, receive, and optional-reason reopen commands
+ok 113 - normalizes version-bound dispatch, receive, and optional-reason reopen commands
+  ---
+  duration_ms: 0.702834
+  type: 'test'
+  ...
+# Subtest: rejects ambiguous, duplicate, negative, and invalid-date transfer contents
+ok 114 - rejects ambiguous, duplicate, negative, and invalid-date transfer contents
+  ---
+  duration_ms: 0.286833
+  type: 'test'
+  ...
+# (node:89407) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: dispatches despite order-priority oversell and exactly reopens with immutable audit
+ok 115 - dispatches despite order-priority oversell and exactly reopens with immutable audit
+  ---
+  duration_ms: 116.057416
+  type: 'test'
+  ...
+# Subtest: movable stock excludes this transfer while retaining other outgoing commitments
+ok 116 - movable stock excludes this transfer while retaining other outgoing commitments
+  ---
+  duration_ms: 89.25125
+  type: 'test'
+  ...
+# Subtest: durably rejects zero, wrong-state, stale, and changed-content transitions
+ok 117 - durably rejects zero, wrong-state, stale, and changed-content transitions
+  ---
+  duration_ms: 64.420666
+  type: 'test'
+  ...
+# Subtest: rolls back every dispatch effect when durable persistence fails
+ok 118 - rolls back every dispatch effect when durable persistence fails
+  ---
+  duration_ms: 30.894667
+  type: 'test'
+  ...
+# (node:89408) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: normalizes one exact list query and enforces the bounded opaque contract
+ok 119 - normalizes one exact list query and enforces the bounded opaque contract
+  ---
+  duration_ms: 2.276167
+  type: 'test'
+  ...
+# Subtest: lists compact Open and Done rows by selected location and active endpoint
+ok 120 - lists compact Open and Done rows by selected location and active endpoint
+  ---
+  duration_ms: 99.039583
+  type: 'test'
+  ...
+# Subtest: paginates equal dates without repeats, binds cursors, isolates pools, and reopens durably
+ok 121 - paginates equal dates without repeats, binds cursors, isolates pools, and reopens durably
+  ---
+  duration_ms: 97.602833
+  type: 'test'
+  ...
+# Subtest: enforces the default and maximum page sizes against durable rows
+ok 122 - enforces the default and maximum page sizes against durable rows
+  ---
+  duration_ms: 130.897042
+  type: 'test'
+  ...
+# Subtest: fails closed on status drift, impossible lifecycle dates, and paged terminal corruption
+ok 123 - fails closed on status drift, impossible lifecycle dates, and paged terminal corruption
+  ---
+  duration_ms: 15.6415
+  type: 'test'
+  ...
+# Subtest: the package root composes the stock-transfer public entry
+ok 124 - the package root composes the stock-transfer public entry
+  ---
+  duration_ms: 0.853792
+  type: 'test'
+  ...
+# (node:89410) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: receives every line atomically with automatic actor/time and durable destination history
+ok 125 - receives every line atomically with automatic actor/time and durable destination history
+  ---
+  duration_ms: 135.818167
+  type: 'test'
+  ...
+# Subtest: durably rejects missing, wrong-state, stale, repeated, and changed-content receipt
+ok 126 - durably rejects missing, wrong-state, stale, repeated, and changed-content receipt
+  ---
+  duration_ms: 60.121834
+  type: 'test'
+  ...
+# Subtest: rolls back the transfer, every line, receipt, and terminal result on receive failure
+ok 127 - rolls back the transfer, every line, receipt, and terminal result on receive failure
+  ---
+  duration_ms: 22.909375
+  type: 'test'
+  ...
+# Subtest: receives a frozen shipment after its now-empty origin is archived
+ok 128 - receives a frozen shipment after its now-empty origin is archived
+  ---
+  duration_ms: 16.920333
+  type: 'test'
+  ...
+# Subtest: real aggregate-stock proof stays local and exercises both durable runtimes
+ok 129 - real aggregate-stock proof stays local and exercises both durable runtimes
+  ---
+  duration_ms: 5.804958
+  type: 'test'
+  ...
+# Subtest: recognizes one exact command line inside a longer comment
+ok 130 - recognizes one exact command line inside a longer comment
+  ---
+  duration_ms: 0.765542
+  type: 'test'
+  ...
+# Subtest: accepts a maintainer review request and binds the live PR tuple
+ok 131 - accepts a maintainer review request and binds the live PR tuple
+  ---
+  duration_ms: 0.857166
+  type: 'test'
+  ...
+# Subtest: lets the exact PR author request a fresh read-only re-review
+ok 132 - lets the exact PR author request a fresh read-only re-review
+  ---
+  duration_ms: 0.28875
+  type: 'test'
+  ...
+# Subtest: does not let an untrusted contributor start review or rerun another PR
+ok 133 - does not let an untrusted contributor start review or rerun another PR
+  ---
+  duration_ms: 0.172458
+  type: 'test'
+  ...
+# Subtest: ignores bots, non-PR comments, wrong repositories, and edited comments
+ok 134 - ignores bots, non-PR comments, wrong repositories, and edited comments
+  ---
+  duration_ms: 0.252125
+  type: 'test'
+  ...
+# Subtest: fails closed when the live PR is closed, moved, or malformed
+ok 135 - fails closed when the live PR is closed, moved, or malformed
+  ---
+  duration_ms: 0.123667
+  type: 'test'
+  ...
+# Subtest: declares one private SQLite Durable Object deployment without tenant configuration
+ok 136 - declares one private SQLite Durable Object deployment without tenant configuration
+  ---
+  duration_ms: 7.114958
+  type: 'test'
+  ...
+# Subtest: keeps the remote probe local-only and free of tenant defaults
+ok 137 - keeps the remote probe local-only and free of tenant defaults
+  ---
+  duration_ms: 1.751709
+  type: 'test'
+  ...
+# Subtest: keeps Cloudflare runtime code out of the platform-neutral root API
+ok 138 - keeps Cloudflare runtime code out of the platform-neutral root API
+  ---
+  duration_ms: 1.0705
+  type: 'test'
+  ...
+# Subtest: accepts public feature entries and declared feature dependencies
+ok 139 - accepts public feature entries and declared feature dependencies
+  ---
+  duration_ms: 1.868167
+  type: 'test'
+  ...
+# Subtest: rejects deep feature imports and undeclared feature dependencies
+ok 140 - rejects deep feature imports and undeclared feature dependencies
+  ---
+  duration_ms: 1.246291
+  type: 'test'
+  ...
+# Subtest: the feature map and committed repository satisfy the architecture contract
+ok 141 - the feature map and committed repository satisfy the architecture contract
+  ---
+  duration_ms: 128.439708
+  type: 'test'
+  ...
+# Subtest: real stock-adjustment proof stays local and reopens durable state
+ok 142 - real stock-adjustment proof stays local and reopens durable state
+  ---
+  duration_ms: 6.954583
+  type: 'test'
+  ...
+# Subtest: real stock-reservation proof stays local and reopens durable state
+ok 143 - real stock-reservation proof stays local and reopens durable state
+  ---
+  duration_ms: 7.145167
+  type: 'test'
+  ...
+# Subtest: declares the exact EmDash toolchain and its Node floor
+ok 144 - declares the exact EmDash toolchain and its Node floor
+  ---
+  duration_ms: 0.607875
+  type: 'test'
+  ...
+# Subtest: keeps lifecycle-bearing dependencies visible for maintainer review
+ok 145 - keeps lifecycle-bearing dependencies visible for maintainer review
+  ---
+  duration_ms: 0.254584
+  type: 'test'
+  ...
+1..145
+# tests 145
+# suites 0
+# pass 145
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1183.174542
+
+> @dinkuskit/inventory@0.0.0 typecheck:cloudflare
+> tsc --project tsconfig.cloudflare.json
+
+TAP version 13
+# Subtest: declares one private SQLite Durable Object deployment without tenant configuration
+ok 1 - declares one private SQLite Durable Object deployment without tenant configuration
+  ---
+  duration_ms: 2.863584
+  type: 'test'
+  ...
+# Subtest: keeps the remote probe local-only and free of tenant defaults
+ok 2 - keeps the remote probe local-only and free of tenant defaults
+  ---
+  duration_ms: 0.878041
+  type: 'test'
+  ...
+# Subtest: keeps Cloudflare runtime code out of the platform-neutral root API
+ok 3 - keeps Cloudflare runtime code out of the platform-neutral root API
+  ---
+  duration_ms: 0.565834
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 47.626834
+
+> @dinkuskit/inventory@0.0.0 test:cloudflare
+> vitest run --config vitest.config.ts
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90m/Users/bobbybones/.openclaw-bobby/worktrees/bb2abb8651d27ff8/undo-delivered-20260926[39m
+
+ [32m✓[39m tests/cloudflare/inventory-pool.test.mjs [2m([22m[2m15 tests[22m[2m)[22m[32m 83[2mms[22m[39m
+ [32m✓[39m tests/cloudflare/stock-reservation.test.mjs [2m([22m[2m5 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+ [32m✓[39m tests/cloudflare/stock-transfer.test.mjs [2m([22m[2m3 tests[22m[2m)[22m[32m 38[2mms[22m[39m
+ [32m✓[39m tests/cloudflare/stock-adjustment.test.mjs [2m([22m[2m1 test[22m[2m)[22m[32m 11[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m4 passed[39m[22m[90m (4)[39m
+[2m      Tests [22m [1m[32m24 passed[39m[22m[90m (24)[39m
+[2m   Start at [22m 14:13:24
+[2m   Duration [22m 5.09s[2m (transform 123ms, setup 0ms, import 310ms, tests 160ms, environment 1ms)[22m
+
+
+ ⛅️ wrangler 4.127.0 (update available 4.141.0)
+───────────────────────────────────────────────
+Total Upload: 72.62 KiB / gzip: 11.42 KiB
+Your Worker has access to the following bindings:
+Binding                                  Resource            
+env.INVENTORY_POOLS (InventoryPool)      Durable Object      
+
+--dry-run: exiting now.
+verify-inventory full passed in 9.47s
