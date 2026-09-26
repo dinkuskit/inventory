@@ -6,6 +6,7 @@ import { createSetOpeningBalance } from "../../src/application/set-opening-balan
 import { createReadSkuLocationBalance } from "../../src/application/read-inventory.ts";
 import { initializeCloudflareInventorySchema } from "../../src/cloudflare/schema.ts";
 import {
+	createPackAllStock,
 	createPackStock,
 	createReleaseStock,
 	createReserveStock,
@@ -264,6 +265,118 @@ describe("stock reservation Cloudflare parity", () => {
 				reserved: { value: "0", unit: "each" },
 				available: { value: "7", unit: "each" },
 			});
+		});
+	});
+
+	it("packs every named hold in one Durable Object transaction", async ({
+		expect,
+	}) => {
+		const poolId = "pool_stock_pack_all";
+		const stub = env.INVENTORY_POOLS.getByName(poolId);
+		await runInDurableObject(stub, async (_instance, state) => {
+			const store = createCloudflareSqliteInventoryStore({
+				storage: state.storage,
+				poolId,
+			});
+			await createFixtureLocation(store, { poolId });
+			await createFixtureManagedSku(store, { poolId, skuId: "sku_hat" });
+			await createFixtureManagedSku(store, { poolId, skuId: "sku_shirt" });
+			for (const [skuId, quantity, commandId, receiptId] of [
+				["sku_hat", "10", "cmd_cf_pack_all_open_hat", "rcpt_cf_pack_all_open_hat"],
+				["sku_shirt", "6", "cmd_cf_pack_all_open_shirt", "rcpt_cf_pack_all_open_shirt"],
+			]) {
+				const opening = await createSetOpeningBalance({
+					store,
+					now: () => new Date("2026-09-25T10:00:00.000Z"),
+					createReceiptId: () => receiptId,
+				})(
+					{
+						schema: "dinkuskit.inventory.command/v1",
+						commandId,
+						type: "stock.opening_balance",
+						context: {
+							siteId: "site_test",
+							poolId,
+							locationId: "location_north",
+						},
+						payload: { skuId, quantity: { value: quantity, unit: "each" } },
+						reason: { code: "opening_balance", note: "Set Initial Stock" },
+						references: [],
+						expectedVersions: [
+							{ skuId, locationId: "location_north", version: "0" },
+						],
+					},
+					{ principal },
+				);
+				expect(opening.outcome).toBe("committed");
+			}
+			const hat = await createReserveStock({
+				store,
+				now: () => new Date("2026-09-25T12:00:00.000Z"),
+				createReservationId: () => "rsv_cf_hat",
+				createReceiptId: () => "rcpt_cf_reserve_hat",
+			})(
+				{
+					schema: "dinkuskit.inventory.command/v1",
+					commandId: "cmd_cf_reserve_hat",
+					type: "stock.reserve",
+					context: {
+						siteId: "site_test",
+						poolId,
+						locationId: "location_north",
+					},
+					payload: {
+						skuId: "sku_hat",
+						quantity: { value: "3", unit: "each" },
+						orderLine: { kind: "commerce.order_line", id: "OL-1842-hat" },
+					},
+					references: [],
+				},
+				{ principal },
+			);
+			const shirt = await createReserveStock({
+				store,
+				now: () => new Date("2026-09-25T12:00:00.000Z"),
+				createReservationId: () => "rsv_cf_shirt",
+				createReceiptId: () => "rcpt_cf_reserve_shirt",
+			})(
+				{
+					schema: "dinkuskit.inventory.command/v1",
+					commandId: "cmd_cf_reserve_shirt",
+					type: "stock.reserve",
+					context: {
+						siteId: "site_test",
+						poolId,
+						locationId: "location_north",
+					},
+					payload: {
+						skuId: "sku_shirt",
+						quantity: { value: "2", unit: "each" },
+						orderLine: { kind: "commerce.order_line", id: "OL-1842-shirt" },
+					},
+					references: [],
+				},
+				{ principal },
+			);
+			expect(hat.outcome).toBe("reserved");
+			expect(shirt.outcome).toBe("reserved");
+			const packed = await createPackAllStock({
+				store,
+				now: () => new Date("2026-09-25T12:05:00.000Z"),
+				createReceiptId: () => "rcpt_cf_pack_all",
+			})(
+				{
+					schema: "dinkuskit.inventory.command/v1",
+					commandId: "cmd_cf_pack_all",
+					type: "stock.pack_all",
+					context: { siteId: "site_test", poolId },
+					payload: { reservationIds: ["rsv_cf_hat", "rsv_cf_shirt"] },
+					references: [],
+				},
+				{ principal },
+			);
+			expect(packed.outcome).toBe("packed_all");
+			expect(packed.reservations).toHaveLength(2);
 		});
 	});
 });

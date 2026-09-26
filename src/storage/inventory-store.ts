@@ -103,6 +103,22 @@ export type StockReservationCommit = Readonly<{
 	result: StockReservationResult;
 }>;
 
+export type StockReservationBatchCommit = Readonly<{
+	commandId: string;
+	commandDigest: string;
+	reservations: readonly Readonly<{
+		previous: ReservationRecord;
+		reservation: ReservationRecord;
+		orderLineKey: string;
+	}>[];
+	balances: readonly Readonly<{
+		previous: BalanceRecord;
+		balance: BalanceRecord;
+	}>[];
+	receipt: StockReservationReceiptV2;
+	result: StockReservationResult;
+}>;
+
 export type StoredOpeningBalanceConfirmation = Readonly<{
 	confirmationDigest: string;
 	poolId: string;
@@ -220,6 +236,7 @@ export interface InventoryTransaction {
 	commitManagedSku(input: ManagedSkuCommit): void;
 	commitStockTransfer(input: StockTransferCommit): void;
 	commitStockReservation(input: StockReservationCommit): void;
+	commitStockReservationBatch(input: StockReservationBatchCommit): void;
 }
 
 export interface InventoryStore {
