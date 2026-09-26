@@ -215,6 +215,51 @@ test("pack some replay returns the original result", async (t) => {
 	assert.deepEqual(second, first);
 });
 
+test("reissuing the original reserve after a partial pack returns the same ticket", async (t) => {
+	const store = createLocalSqliteTestStore({
+		filePath: await databasePath(t, "rereserve"),
+	});
+	await seedHats(store);
+	await reserveThree(store);
+	await createPackSomeStock({
+		store,
+		now: () => new Date("2026-09-25T12:05:00.000Z"),
+		createReceiptId: () => "rcpt_pack_some",
+	})(packSomeCommand("1"), { principal });
+	const again = await createReserveStock({
+		store,
+		now: () => new Date("2026-09-25T12:06:00.000Z"),
+		createReservationId: () => "must_not_mint",
+		createReceiptId: () => "must_not_write",
+	})(
+		{
+			schema: "dinkuskit.inventory.command/v1",
+			commandId: "cmd_reserve_hat_retry",
+			type: "stock.reserve",
+			context: {
+				siteId: "site_test",
+				poolId: "pool_test",
+				locationId: "location_north",
+			},
+			payload: {
+				skuId: "sku_hat",
+				quantity: { value: "3", unit: "each" },
+				orderLine: { kind: "commerce.order_line", id: "OL-1842" },
+			},
+			references: [],
+		},
+		{ principal },
+	);
+	assert.equal(again.outcome, "existing");
+	assert.equal(again.reservation.reservationId, "rsv_hat_001");
+	assert.equal(again.reservation.status, "partially_packed");
+	assert.equal(again.reservation.quantity.value, "2");
+	assert.equal(again.reservation.originalQuantity.value, "3");
+	const hat = await readHat(store);
+	assert.equal(hat.reserved.value, "2");
+	assert.equal(hat.available.value, "7");
+});
+
 test("one-hold pack can finish a partially packed ticket", async (t) => {
 	const store = createLocalSqliteTestStore({
 		filePath: await databasePath(t, "pack-rest"),

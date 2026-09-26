@@ -395,6 +395,7 @@ export function executeReserveStockInTransaction(
 		locationId: command.context.locationId,
 		skuId: command.payload.skuId,
 		quantity: command.payload.quantity,
+		originalQuantity: command.payload.quantity,
 		orderLine: command.payload.orderLine,
 		status: "active",
 		version: "1",

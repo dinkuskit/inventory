@@ -510,7 +510,8 @@ nothing; the remaining open ticket stays reserved so the order can still be
 fulfilled. `stock.pack_some` packs a named quantity from one ticket. Same
 ticket shrinks. Leftover stays reserved as partially packed. Last bags or the
 full remaining quantity in one shot is packed. Asking for more than remaining
-packs none. Unpack waits. Unpaid Hold cancels at 60 minutes through existing
+packs none. Reissuing the original reserve for that order line returns the
+same partially packed ticket and does not hold more stock. Unpack waits. Unpaid Hold cancels at 60 minutes through existing
 `stock.release`; that clock is Commerce, not this kernel. Shipped/label after
 Packed does not change counts.
 

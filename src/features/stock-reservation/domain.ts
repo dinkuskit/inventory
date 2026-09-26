@@ -35,6 +35,7 @@ export type ReservationRecord = Readonly<{
 	locationId: string;
 	skuId: string;
 	quantity: ExactQuantity;
+	originalQuantity: ExactQuantity;
 	orderLine: ReservationOrderLine;
 	status: ReservationStatus;
 	version: string;
@@ -557,8 +558,8 @@ export function sameReservationContents(
 	return (
 		reservation.locationId === command.context.locationId &&
 		reservation.skuId === command.payload.skuId &&
-		reservation.quantity.value === command.payload.quantity.value &&
-		reservation.quantity.unit === command.payload.quantity.unit &&
+		reservation.originalQuantity.value === command.payload.quantity.value &&
+		reservation.originalQuantity.unit === command.payload.quantity.unit &&
 		reservation.orderLine.kind === command.payload.orderLine.kind &&
 		reservation.orderLine.id === command.payload.orderLine.id
 	);

@@ -3,6 +3,7 @@ import { dirname } from "node:path";
 
 import {
 	createPackAllStock,
+	createPackSomeStock,
 	createReadSkuLocationBalance,
 	createReserveStock,
 	createSetOpeningBalance,
@@ -146,6 +147,32 @@ const shirt = await createReserveStock({
 })(reserveCommand("cmd_proof_reserve_shirt", "sku_shirt", "2", "OL-PROOF-SHIRT"), {
 	principal,
 });
+const packedSome = await createPackSomeStock({
+	store,
+	now: () => new Date("2026-09-25T16:04:00.000Z"),
+	createReceiptId: () => "rcpt_proof_pack_some_hat",
+})(
+	{
+		schema: "dinkuskit.inventory.command/v1",
+		commandId: "cmd_proof_pack_some_hat",
+		type: "stock.pack_some",
+		context: { siteId: context.siteId, poolId: context.poolId },
+		payload: {
+			reservationId: "rsv_proof_hat",
+			quantity: { value: "1", unit: "each" },
+		},
+		references: [],
+	},
+	{ principal },
+);
+const again = await createReserveStock({
+	store,
+	now: () => new Date("2026-09-25T16:04:30.000Z"),
+	createReservationId: () => "must_not_mint",
+	createReceiptId: () => "must_not_write",
+})(reserveCommand("cmd_proof_reserve_hat_retry", "sku_hat", "3", "OL-PROOF-HAT"), {
+	principal,
+});
 const packed = await createPackAllStock({
 	store,
 	now: () => new Date("2026-09-25T16:05:00.000Z"),
@@ -170,6 +197,16 @@ console.log(
 			created: true,
 			closedAndReopened: true,
 			reserve: { hat: hat.outcome, shirt: shirt.outcome },
+			packSome: {
+				outcome: packedSome.outcome,
+				status: packedSome.reservation?.status,
+				remaining: packedSome.reservation?.quantity?.value,
+			},
+			reReserve: {
+				outcome: again.outcome,
+				id: again.reservation?.reservationId,
+				remaining: again.reservation?.quantity?.value,
+			},
 			packAll: {
 				outcome: packed.outcome,
 				ids: packed.reservations?.map((hold) => hold.reservationId),

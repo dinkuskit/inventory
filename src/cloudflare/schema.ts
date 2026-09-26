@@ -286,6 +286,28 @@ function migrateV4ToV5(storage: DurableObjectStorage): void {
 		.toArray();
 }
 
+function reservationJsonWithOriginalQuantity(raw: string): string {
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(raw);
+	} catch {
+		throw new Error("Cloudflare Inventory reservation JSON is invalid.");
+	}
+	if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+		throw new Error("Cloudflare Inventory reservation JSON is invalid.");
+	}
+	const record = parsed as Record<string, unknown>;
+	const quantity = record.quantity;
+	const originalQuantity =
+		record.originalQuantity !== undefined && record.originalQuantity !== null
+			? record.originalQuantity
+			: quantity;
+	return JSON.stringify({
+		...record,
+		originalQuantity,
+	});
+}
+
 function reservationJsonWithPackedLifecycle(raw: string): string {
 	let parsed: unknown;
 	try {
@@ -391,7 +413,7 @@ function migrateV6ToV7(storage: DurableObjectStorage): void {
 				String(row.order_line_key),
 				String(row.status),
 				Number(row.version),
-				String(row.reservation_json),
+				reservationJsonWithOriginalQuantity(String(row.reservation_json)),
 			)
 			.toArray();
 	}

@@ -363,6 +363,77 @@
       "superseded_by": null,
       "updated_at": "2026-09-26T02:54:46+00:00",
       "verification_ref": "bin/verify-inventory full"
+    },
+    {
+      "baseline_ref": "git:1fbe3a5affb628aa8a541fc0710ee8c36de8c797",
+      "candidate_refs": [],
+      "choice": "Return the same ticket. Matching uses the original reserved quantity. Remaining stays 2. No extra hold. The order is not cancelled.",
+      "context_ref": "docs/CHARTER.md",
+      "created_at": "2026-09-26T03:09:40+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "pack-some-overpack-005"
+      ],
+      "domain": "packing/pack-some",
+      "history": [
+        {
+          "at": "2026-09-26T03:09:40+00:00",
+          "choice": "Return the same ticket. Matching uses the original reserved quantity. Remaining stays 2. No extra hold. The order is not cancelled.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-26T03:10:14+00:00",
+          "choice": "Return the same ticket. Matching uses the original reserved quantity. Remaining stays 2. No extra hold. The order is not cancelled.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-26T03:10:14+00:00",
+          "choice": "Return the same ticket. Matching uses the original reserved quantity. Remaining stays 2. No extra hold. The order is not cancelled.",
+          "from": "implemented",
+          "implementation_ref": "src/features/stock-reservation/",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "pack-some-reserve-match-006",
+      "implementation_ref": "src/features/stock-reservation/",
+      "question": "After packing 1 of 3, does retrying the original 3-hat reserve return the same ticket or conflict?",
+      "rationale": "ClawSweeper P1 recommended preserve original reservation matching. Bobby: make the repairs as needed.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-09-26T03:10:14+00:00",
+      "verification_ref": "bin/verify-inventory full"
     }
   ],
   "last_activation": {
@@ -377,5 +448,5 @@
   "status": "active",
   "title": "Dinkuskit Inventory pack some of a hold",
   "track_id": "dinkuskit-inventory-pack-some-v1",
-  "updated_at": "2026-09-26T02:54:46+00:00"
+  "updated_at": "2026-09-26T03:10:14+00:00"
 }

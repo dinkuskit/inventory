@@ -21,3 +21,7 @@
 {"action": "decision_verified", "at": "2026-09-26T02:54:46+00:00", "data": {"decision_id": "pack-some-full-remaining-004"}, "event_id": "6638ea23-9a37-4e84-8646-ac5aa1f3e168"}
 {"action": "decision_implemented", "at": "2026-09-26T02:54:46+00:00", "data": {"decision_id": "pack-some-overpack-005"}, "event_id": "d84cbde0-cb58-48d7-81ae-84b7413ba3ff"}
 {"action": "decision_verified", "at": "2026-09-26T02:54:46+00:00", "data": {"decision_id": "pack-some-overpack-005"}, "event_id": "02846e20-5be1-4b92-989b-3f6613327530"}
+{"action": "decision_proposed", "at": "2026-09-26T03:09:40+00:00", "data": {"decision_id": "pack-some-reserve-match-006"}, "event_id": "7ea990ed-f78a-4ec4-8f06-3ab46a579b11"}
+{"action": "decision_locked", "at": "2026-09-26T03:09:40+00:00", "data": {"decision_id": "pack-some-reserve-match-006"}, "event_id": "4c3c980b-9da3-4517-85ff-52961327e3e9"}
+{"action": "decision_implemented", "at": "2026-09-26T03:10:14+00:00", "data": {"decision_id": "pack-some-reserve-match-006"}, "event_id": "372e005e-2b54-4cdb-bc25-4ea50cc40307"}
+{"action": "decision_verified", "at": "2026-09-26T03:10:14+00:00", "data": {"decision_id": "pack-some-reserve-match-006"}, "event_id": "ca1f5894-652b-4902-87a3-9606fc1040b8"}

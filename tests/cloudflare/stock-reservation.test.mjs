@@ -234,6 +234,7 @@ describe("stock reservation Cloudflare parity", () => {
 			expect(upgraded.packedAt).toBe(null);
 			expect(upgraded.packedBy).toBe(null);
 			expect(upgraded.status).toBe("active");
+			expect(upgraded.originalQuantity).toEqual({ value: "3", unit: "each" });
 
 			const pack = createPackStock({
 				store,
@@ -461,6 +462,34 @@ describe("stock reservation Cloudflare parity", () => {
 			expect(packed.outcome).toBe("packed_some");
 			expect(packed.reservation.status).toBe("partially_packed");
 			expect(packed.reservation.quantity.value).toBe("2");
+			const again = await createReserveStock({
+				store,
+				now: () => new Date("2026-09-25T12:06:00.000Z"),
+				createReservationId: () => "must_not_mint",
+				createReceiptId: () => "must_not_write",
+			})(
+				{
+					schema: "dinkuskit.inventory.command/v1",
+					commandId: "cmd_cf_reserve_some_retry",
+					type: "stock.reserve",
+					context: {
+						siteId: "site_test",
+						poolId,
+						locationId: "location_north",
+					},
+					payload: {
+						skuId: "sku_hat",
+						quantity: { value: "3", unit: "each" },
+						orderLine: { kind: "commerce.order_line", id: "OL-1842-some" },
+					},
+					references: [],
+				},
+				{ principal },
+			);
+			expect(again.outcome).toBe("existing");
+			expect(again.reservation.reservationId).toBe("rsv_cf_pack_some");
+			expect(again.reservation.quantity.value).toBe("2");
+			expect(again.reservation.originalQuantity.value).toBe("3");
 		});
 	});
 });

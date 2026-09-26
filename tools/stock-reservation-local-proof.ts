@@ -5,8 +5,10 @@ import { createSetOpeningBalance } from "../src/application/set-opening-balance.
 import { createRegisterManagedSku } from "../src/features/managed-sku/index.ts";
 import {
 	createPackAllStock,
+	createPackSomeStock,
 	createReserveStock,
 	type PackAllStockCommandV1,
+	type PackSomeStockCommandV1,
 	type ReserveStockCommandV1,
 } from "../src/features/stock-reservation/index.ts";
 import { createCloudflareSqliteInventoryStore } from "../src/storage/cloudflare-sqlite-inventory-store.ts";
@@ -29,6 +31,20 @@ type ProofAction = "commit" | "replay";
 
 interface StockReservationProofEnv {
 	STOCK_RESERVATION_PROOF_POOLS: DurableObjectNamespace<StockReservationProofPool>;
+}
+
+function packSomeHatCommand(): PackSomeStockCommandV1 {
+	return {
+		schema: "dinkuskit.inventory.command/v1",
+		commandId: "cmd_proof_pack_some_hat",
+		type: "stock.pack_some",
+		context: { siteId: SITE_ID, poolId: POOL_ID },
+		payload: {
+			reservationId: "rsv_proof_hat",
+			quantity: { value: "1", unit: "each" },
+		},
+		references: [],
+	};
 }
 
 function packAllCommand(): PackAllStockCommandV1 {
@@ -195,6 +211,19 @@ export class StockReservationProofPool extends DurableObject<StockReservationPro
 		})(reserveCommand("cmd_proof_reserve_shirt", SHIRT_SKU, "2", "OL-PROOF-SHIRT"), {
 			principal,
 		});
+		const packedSome = await createPackSomeStock({
+			store,
+			now: () => new Date("2026-09-25T16:04:00.000Z"),
+			createReceiptId: () => "rcpt_proof_pack_some_hat",
+		})(packSomeHatCommand(), { principal });
+		const again = await createReserveStock({
+			store,
+			now: () => new Date("2026-09-25T16:04:30.000Z"),
+			createReservationId: () => "must_not_mint",
+			createReceiptId: () => "must_not_write",
+		})(reserveCommand("cmd_proof_reserve_hat_retry", HAT_SKU, "3", "OL-PROOF-HAT"), {
+			principal,
+		});
 		const packed = await createPackAllStock({
 			store,
 			now: () => new Date("2026-09-25T16:05:00.000Z"),
@@ -205,6 +234,8 @@ export class StockReservationProofPool extends DurableObject<StockReservationPro
 			phase: "commit",
 			remote: false,
 			reserve: { hat: hat.outcome, shirt: shirt.outcome },
+			packSome: packedSome,
+			reReserve: again,
 			packAll: packed,
 			durable: { balances: await this.#durableBalances() },
 		};
