@@ -75,7 +75,7 @@ describe("Inventory Cloudflare storage boundary", () => {
 
 		expect(await alpha.schemaStatus()).toEqual({
 			schema: "dinkuskit.inventory.cloudflare-schema-status/v1",
-			version: 6,
+			version: 7,
 			tables: [
 				"inventory_balances",
 				"inventory_command_results",
@@ -99,7 +99,7 @@ describe("Inventory Cloudflare storage boundary", () => {
 		expect(await exports.default.inspectSkuLocation(key("pool_probe"))).toEqual({
 			schema: {
 				schema: "dinkuskit.inventory.cloudflare-schema-status/v1",
-				version: 6,
+				version: 7,
 				tables: [
 					"inventory_balances",
 					"inventory_command_results",
@@ -138,9 +138,9 @@ describe("Inventory Cloudflare storage boundary", () => {
 				.exec("SELECT version FROM inventory_schema_migrations ORDER BY version")
 				.toArray()
 				.map((row) => Number(row.version));
-			expect(versions).toEqual([6]);
+			expect(versions).toEqual([7]);
 			expect(() => initializeCloudflareInventorySchema(state.storage)).not.toThrow();
-			expect(readCloudflareInventorySchemaStatus(state.storage).version).toBe(6);
+			expect(readCloudflareInventorySchemaStatus(state.storage).version).toBe(7);
 		});
 	});
 
@@ -183,7 +183,7 @@ describe("Inventory Cloudflare storage boundary", () => {
 					.exec("SELECT version FROM inventory_schema_migrations ORDER BY version")
 					.toArray()
 					.map((row) => Number(row.version)),
-			).toEqual([3, 4, 5, 6]);
+			).toEqual([3, 4, 5, 6, 7]);
 			const store = createCloudflareSqliteInventoryStore({
 				storage: state.storage,
 				poolId: "pool_v3_upgrade",
@@ -296,7 +296,7 @@ describe("Inventory Cloudflare storage boundary", () => {
 					.exec("SELECT version FROM inventory_schema_migrations ORDER BY version")
 					.toArray()
 					.map((row) => Number(row.version)),
-			).toEqual([2, 3, 4, 5, 6]);
+			).toEqual([2, 3, 4, 5, 6, 7]);
 			const store = createCloudflareSqliteInventoryStore({
 				storage: state.storage,
 				poolId: "pool_v2_upgrade",

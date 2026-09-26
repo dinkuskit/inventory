@@ -12,10 +12,19 @@ export const RESERVE_STOCK_TYPE = "stock.reserve" as const;
 export const RELEASE_STOCK_TYPE = "stock.release" as const;
 export const PACK_STOCK_TYPE = "stock.pack" as const;
 export const PACK_ALL_STOCK_TYPE = "stock.pack_all" as const;
+export const PACK_SOME_STOCK_TYPE = "stock.pack_some" as const;
 export const RESERVATION_RECORD_SCHEMA =
 	"dinkuskit.inventory.reservation/v1" as const;
 
-export type ReservationStatus = "active" | "canceled" | "packed";
+export type ReservationStatus =
+	| "active"
+	| "partially_packed"
+	| "canceled"
+	| "packed";
+
+export function holdIsOpen(status: ReservationStatus): boolean {
+	return status === "active" || status === "partially_packed";
+}
 
 export type ReservationOrderLine = ExternalReference;
 
@@ -94,11 +103,25 @@ export type PackAllStockCommandV1 = ReservationCommandBase &
 		}>;
 	}>;
 
+export type PackSomeStockCommandV1 = ReservationCommandBase &
+	Readonly<{
+		type: typeof PACK_SOME_STOCK_TYPE;
+		context: Readonly<{
+			siteId: string;
+			poolId: string;
+		}>;
+		payload: Readonly<{
+			reservationId: string;
+			quantity: ExactQuantity;
+		}>;
+	}>;
+
 export type StockReservationCommandV1 =
 	| ReserveStockCommandV1
 	| ReleaseStockCommandV1
 	| PackStockCommandV1
-	| PackAllStockCommandV1;
+	| PackAllStockCommandV1
+	| PackSomeStockCommandV1;
 
 export type StockReservationBalanceQuantities = Readonly<{
 	onHand: ExactQuantity;
@@ -149,12 +172,13 @@ export type StockReservationRejectionCode =
 	| "order_line_conflict"
 	| "reservation_not_found"
 	| "reservation_not_active"
-	| "reservation_already_packed";
+	| "reservation_already_packed"
+	| "reservation_quantity_exceeds_hold";
 
 export type StockReservationResult =
 	| Readonly<{
 			schema: typeof COMMAND_RESULT_SCHEMA;
-			outcome: "reserved" | "released" | "packed";
+			outcome: "reserved" | "released" | "packed" | "packed_some";
 			commandId: string;
 			reservation: ReservationRecord;
 			receipt: StockReservationReceiptV2;
@@ -407,6 +431,55 @@ export function normalizePackAllStockCommand(
 	};
 }
 
+export function normalizePackSomeStockCommand(
+	input: unknown,
+): PackSomeStockCommandV1 {
+	const command = record(input, "command");
+	exactKeys(command, "command", [
+		"schema",
+		"commandId",
+		"type",
+		"context",
+		"payload",
+		"references",
+	]);
+	if (command.schema !== COMMAND_SCHEMA) {
+		invalid(`schema must be ${COMMAND_SCHEMA}.`);
+	}
+	if (command.type !== PACK_SOME_STOCK_TYPE) {
+		invalid(`type must be ${PACK_SOME_STOCK_TYPE}.`);
+	}
+	const context = record(command.context, "context");
+	exactKeys(context, "context", ["siteId", "poolId"]);
+	const payload = record(command.payload, "payload");
+	exactKeys(payload, "payload", ["reservationId", "quantity"]);
+	const quantity = record(payload.quantity, "payload.quantity");
+	exactKeys(quantity, "payload.quantity", ["value", "unit"]);
+	return {
+		schema: COMMAND_SCHEMA,
+		commandId: nonEmptyString(command.commandId, "commandId"),
+		type: PACK_SOME_STOCK_TYPE,
+		context: {
+			siteId: nonEmptyString(context.siteId, "context.siteId"),
+			poolId: nonEmptyString(context.poolId, "context.poolId"),
+		},
+		payload: {
+			reservationId: nonEmptyString(
+				payload.reservationId,
+				"payload.reservationId",
+			),
+			quantity: {
+				value: normalizePositiveDecimal(
+					quantity.value,
+					"payload.quantity.value",
+				),
+				unit: nonEmptyString(quantity.unit, "payload.quantity.unit"),
+			},
+		},
+		references: normalizeReferences(command.references),
+	};
+}
+
 export function normalizePackStockCommand(
 	input: unknown,
 ): PackStockCommandV1 {
@@ -463,8 +536,11 @@ export function normalizeStockReservationCommand(
 	if (command.type === PACK_ALL_STOCK_TYPE) {
 		return normalizePackAllStockCommand(input);
 	}
+	if (command.type === PACK_SOME_STOCK_TYPE) {
+		return normalizePackSomeStockCommand(input);
+	}
 	invalid(
-		"type must be stock.reserve, stock.release, stock.pack, or stock.pack_all.",
+		"type must be stock.reserve, stock.release, stock.pack, stock.pack_all, or stock.pack_some.",
 	);
 }
 

@@ -1,15 +1,23 @@
-{"action": "track_initialized", "at": "2026-09-25T22:13:28+00:00", "data": {"archive_ref": ".grilltrack/archive/dinkuskit-inventory-order-reservations-v1", "predecessor_track_id": "dinkuskit-inventory-order-reservations-v1", "track_id": "dinkuskit-inventory-pack-all-v1"}, "event_id": "59d925c8-b994-45ce-a207-fe9719251c07"}
-{"action": "focus_started", "at": "2026-09-25T22:13:28+00:00", "data": {"cadence": "sequential", "domain": "packing/pack-all"}, "event_id": "0fdb90f4-d451-49af-9521-1282f1e257bb"}
-{"action": "decision_proposed", "at": "2026-09-26T01:08:44+00:00", "data": {"decision_id": "pack-all-identity-001"}, "event_id": "a09a30bc-fc16-4a0e-a7c8-c4918bd7cbf5"}
-{"action": "decision_locked", "at": "2026-09-26T01:08:44+00:00", "data": {"decision_id": "pack-all-identity-001"}, "event_id": "8c571b85-f969-400c-8e82-bb0deec1d59c"}
-{"action": "decision_proposed", "at": "2026-09-26T01:28:04+00:00", "data": {"decision_id": "pack-all-atomic-002"}, "event_id": "8af129b5-f918-4aba-af83-7591af8b62f3"}
-{"action": "decision_locked", "at": "2026-09-26T01:28:04+00:00", "data": {"decision_id": "pack-all-atomic-002"}, "event_id": "87ea1170-312a-4081-9336-336629943f9c"}
-{"action": "decision_proposed", "at": "2026-09-26T01:31:57+00:00", "data": {"decision_id": "pack-all-arity-003"}, "event_id": "6f553f24-d214-4829-a324-52015b2b69e4"}
-{"action": "decision_locked", "at": "2026-09-26T01:31:57+00:00", "data": {"decision_id": "pack-all-arity-003"}, "event_id": "186d8315-9993-4bb1-8a82-c75a5805f317"}
-{"action": "shared_understanding_confirmed", "at": "2026-09-26T01:34:37+00:00", "data": {"summary": "Build platform-neutral stock.pack_all: Commerce names one or more hold tickets; Inventory packs all of them in one shot or none. No order number in Inventory. Remaining holds stay reserved so the order can still be fulfilled with one-hold pack. Pack Some, Unpack, GUI, CLI, live Commerce, Woo, Katana, and deploy wait."}, "event_id": "949759ef-1941-4269-9456-daa69c9777b3"}
-{"action": "decision_implemented", "at": "2026-09-26T01:40:45+00:00", "data": {"decision_id": "pack-all-identity-001"}, "event_id": "89f8067d-17f4-43b9-9ff9-983ba43ca3c1"}
-{"action": "decision_verified", "at": "2026-09-26T01:40:45+00:00", "data": {"decision_id": "pack-all-identity-001"}, "event_id": "e2b1ecb5-aa4f-4d5f-b96e-924376edf363"}
-{"action": "decision_implemented", "at": "2026-09-26T01:40:45+00:00", "data": {"decision_id": "pack-all-atomic-002"}, "event_id": "a7117bb4-b7be-406c-bdfc-b35239989fc1"}
-{"action": "decision_verified", "at": "2026-09-26T01:40:45+00:00", "data": {"decision_id": "pack-all-atomic-002"}, "event_id": "8c765065-112f-4198-9496-cc1eb0719061"}
-{"action": "decision_implemented", "at": "2026-09-26T01:40:45+00:00", "data": {"decision_id": "pack-all-arity-003"}, "event_id": "e3cf4e4f-ac36-4331-b140-b32f7f6c7bce"}
-{"action": "decision_verified", "at": "2026-09-26T01:40:46+00:00", "data": {"decision_id": "pack-all-arity-003"}, "event_id": "4b01d00c-98ed-4d7a-8b7f-67ff20df0e22"}
+{"action": "track_initialized", "at": "2026-09-26T02:23:56+00:00", "data": {"archive_ref": ".grilltrack/archive/dinkuskit-inventory-pack-all-v1", "predecessor_track_id": "dinkuskit-inventory-pack-all-v1", "track_id": "dinkuskit-inventory-pack-some-v1"}, "event_id": "f93b2d3e-cccd-4e4f-802e-0231c0d9bc50"}
+{"action": "focus_started", "at": "2026-09-26T02:24:03+00:00", "data": {"cadence": "sequential", "domain": "packing/pack-some"}, "event_id": "c9079b37-a603-4aa3-bf9e-a890e719f5e7"}
+{"action": "decision_proposed", "at": "2026-09-26T02:24:03+00:00", "data": {"decision_id": "pack-some-leftover-001"}, "event_id": "66c2839e-a0e1-40a3-8a52-bd7ffd6484ea"}
+{"action": "decision_locked", "at": "2026-09-26T02:24:04+00:00", "data": {"decision_id": "pack-some-leftover-001"}, "event_id": "b88e7b8c-22f7-41f7-8d3a-9676471e2afa"}
+{"action": "decision_proposed", "at": "2026-09-26T02:27:14+00:00", "data": {"decision_id": "pack-some-same-ticket-002"}, "event_id": "4cbadeac-52b5-4604-840d-885120bc1ff8"}
+{"action": "decision_locked", "at": "2026-09-26T02:27:14+00:00", "data": {"decision_id": "pack-some-same-ticket-002"}, "event_id": "eb43b548-aa61-4c25-8ec2-8b791dedb5d3"}
+{"action": "decision_proposed", "at": "2026-09-26T02:28:50+00:00", "data": {"decision_id": "pack-some-states-003"}, "event_id": "82624d90-9b7e-4cbf-80a4-2a1290eacf14"}
+{"action": "decision_locked", "at": "2026-09-26T02:28:50+00:00", "data": {"decision_id": "pack-some-states-003"}, "event_id": "56f365f3-9974-4075-b7d9-ccb17ed91b21"}
+{"action": "decision_proposed", "at": "2026-09-26T02:33:39+00:00", "data": {"decision_id": "pack-some-full-remaining-004"}, "event_id": "eb46f995-82fe-49dc-9adf-eb6a8d852983"}
+{"action": "decision_locked", "at": "2026-09-26T02:33:39+00:00", "data": {"decision_id": "pack-some-full-remaining-004"}, "event_id": "db416737-c69f-4982-873d-d0b31c120e68"}
+{"action": "decision_proposed", "at": "2026-09-26T02:39:16+00:00", "data": {"decision_id": "pack-some-overpack-005"}, "event_id": "c99f2f9d-055b-4658-ab3c-ebc0ba757efd"}
+{"action": "decision_locked", "at": "2026-09-26T02:42:04+00:00", "data": {"decision_id": "pack-some-overpack-005"}, "event_id": "963a71d4-4727-4250-9e7e-5ffe7ea9d6c3"}
+{"action": "shared_understanding_confirmed", "at": "2026-09-26T02:44:26+00:00", "data": {"summary": "Build platform-neutral stock.pack_some: Commerce names one ticket and a quantity. Same ticket shrinks. Leftover stays reserved as partially packed. Last bags or full remaining in one shot is packed. Asking for more than remaining packs none. Red-flash UI, Unpack, GUI, live Commerce, Woo, Katana, and deploy wait."}, "event_id": "134333b9-c285-4c7e-a47d-9e8aabf0959e"}
+{"action": "decision_implemented", "at": "2026-09-26T02:54:45+00:00", "data": {"decision_id": "pack-some-leftover-001"}, "event_id": "cfa0620e-2c9e-4a12-bb7c-e4f2692faeec"}
+{"action": "decision_verified", "at": "2026-09-26T02:54:46+00:00", "data": {"decision_id": "pack-some-leftover-001"}, "event_id": "8e6120af-53ec-4b62-aafd-35175b3b7bbd"}
+{"action": "decision_implemented", "at": "2026-09-26T02:54:46+00:00", "data": {"decision_id": "pack-some-same-ticket-002"}, "event_id": "bf2de3d2-29ea-45dc-a3f2-7cc6664efb93"}
+{"action": "decision_verified", "at": "2026-09-26T02:54:46+00:00", "data": {"decision_id": "pack-some-same-ticket-002"}, "event_id": "5a48b5a3-30ce-40b6-b28c-aeed8b5ebcc3"}
+{"action": "decision_implemented", "at": "2026-09-26T02:54:46+00:00", "data": {"decision_id": "pack-some-states-003"}, "event_id": "ff258710-3b86-4a22-862a-8900cbdc7868"}
+{"action": "decision_verified", "at": "2026-09-26T02:54:46+00:00", "data": {"decision_id": "pack-some-states-003"}, "event_id": "7575f088-6538-4d8b-b0b9-590920ab7959"}
+{"action": "decision_implemented", "at": "2026-09-26T02:54:46+00:00", "data": {"decision_id": "pack-some-full-remaining-004"}, "event_id": "a7851af4-bfb4-4dab-b93c-c90e9789352f"}
+{"action": "decision_verified", "at": "2026-09-26T02:54:46+00:00", "data": {"decision_id": "pack-some-full-remaining-004"}, "event_id": "6638ea23-9a37-4e84-8646-ac5aa1f3e168"}
+{"action": "decision_implemented", "at": "2026-09-26T02:54:46+00:00", "data": {"decision_id": "pack-some-overpack-005"}, "event_id": "d84cbde0-cb58-48d7-81ae-84b7413ba3ff"}
+{"action": "decision_verified", "at": "2026-09-26T02:54:46+00:00", "data": {"decision_id": "pack-some-overpack-005"}, "event_id": "02846e20-5be1-4b92-989b-3f6613327530"}

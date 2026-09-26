@@ -7,6 +7,7 @@ import { createReadSkuLocationBalance } from "../../src/application/read-invento
 import { initializeCloudflareInventorySchema } from "../../src/cloudflare/schema.ts";
 import {
 	createPackAllStock,
+	createPackSomeStock,
 	createPackStock,
 	createReleaseStock,
 	createReserveStock,
@@ -377,6 +378,89 @@ describe("stock reservation Cloudflare parity", () => {
 			);
 			expect(packed.outcome).toBe("packed_all");
 			expect(packed.reservations).toHaveLength(2);
+		});
+	});
+
+	it("packs some of a hold and leaves leftover reserved", async ({ expect }) => {
+		const poolId = "pool_stock_pack_some";
+		const stub = env.INVENTORY_POOLS.getByName(poolId);
+		await runInDurableObject(stub, async (_instance, state) => {
+			const store = createCloudflareSqliteInventoryStore({
+				storage: state.storage,
+				poolId,
+			});
+			await createFixtureLocation(store, { poolId });
+			await createFixtureManagedSku(store, { poolId, skuId: "sku_hat" });
+			const opening = await createSetOpeningBalance({
+				store,
+				now: () => new Date("2026-09-25T10:00:00.000Z"),
+				createReceiptId: () => "rcpt_cf_pack_some_open",
+			})(
+				{
+					schema: "dinkuskit.inventory.command/v1",
+					commandId: "cmd_cf_pack_some_open",
+					type: "stock.opening_balance",
+					context: {
+						siteId: "site_test",
+						poolId,
+						locationId: "location_north",
+					},
+					payload: { skuId: "sku_hat", quantity: { value: "10", unit: "each" } },
+					reason: { code: "opening_balance", note: "Set Initial Stock" },
+					references: [],
+					expectedVersions: [
+						{ skuId: "sku_hat", locationId: "location_north", version: "0" },
+					],
+				},
+				{ principal },
+			);
+			expect(opening.outcome).toBe("committed");
+			const held = await createReserveStock({
+				store,
+				now: () => new Date("2026-09-25T12:00:00.000Z"),
+				createReservationId: () => "rsv_cf_pack_some",
+				createReceiptId: () => "rcpt_cf_reserve_some",
+			})(
+				{
+					schema: "dinkuskit.inventory.command/v1",
+					commandId: "cmd_cf_reserve_some",
+					type: "stock.reserve",
+					context: {
+						siteId: "site_test",
+						poolId,
+						locationId: "location_north",
+					},
+					payload: {
+						skuId: "sku_hat",
+						quantity: { value: "3", unit: "each" },
+						orderLine: { kind: "commerce.order_line", id: "OL-1842-some" },
+					},
+					references: [],
+				},
+				{ principal },
+			);
+			expect(held.outcome).toBe("reserved");
+			const packed = await createPackSomeStock({
+				store,
+				now: () => new Date("2026-09-25T12:05:00.000Z"),
+				createReceiptId: () => "rcpt_cf_pack_some",
+			})(
+				{
+					schema: "dinkuskit.inventory.command/v1",
+					commandId: "cmd_cf_pack_some",
+					type: "stock.pack_some",
+					context: { siteId: "site_test", poolId },
+					payload: {
+						reservationId: "rsv_cf_pack_some",
+						quantity: { value: "1", unit: "each" },
+					},
+					references: [],
+				},
+				{ principal },
+			);
+			expect(packed.outcome).toBe("packed_some");
+			expect(packed.reservation.status).toBe("partially_packed");
+			expect(packed.reservation.quantity.value).toBe("2");
 		});
 	});
 });

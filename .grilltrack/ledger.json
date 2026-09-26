@@ -1,30 +1,30 @@
 {
   "closeout": null,
-  "created_at": "2026-09-25T22:13:28+00:00",
+  "created_at": "2026-09-26T02:23:56+00:00",
   "current_focus": {
     "cadence": "sequential",
     "confirmed": true,
-    "confirmed_at": "2026-09-26T01:34:37+00:00",
-    "domain": "packing/pack-all",
-    "started_at": "2026-09-25T22:13:28+00:00",
+    "confirmed_at": "2026-09-26T02:44:26+00:00",
+    "domain": "packing/pack-some",
+    "started_at": "2026-09-26T02:24:03+00:00",
     "status": "confirmed",
-    "summary": "Build platform-neutral stock.pack_all: Commerce names one or more hold tickets; Inventory packs all of them in one shot or none. No order number in Inventory. Remaining holds stay reserved so the order can still be fulfilled with one-hold pack. Pack Some, Unpack, GUI, CLI, live Commerce, Woo, Katana, and deploy wait."
+    "summary": "Build platform-neutral stock.pack_some: Commerce names one ticket and a quantity. Same ticket shrinks. Leftover stays reserved as partially packed. Last bags or full remaining in one shot is packed. Asking for more than remaining packs none. Red-flash UI, Unpack, GUI, live Commerce, Woo, Katana, and deploy wait."
   },
   "decisions": [
     {
-      "baseline_ref": "git:4f1bdfc85964fc41fe466336784af62261384679",
+      "baseline_ref": "git:bb76601fdbd41b3196c6af7771d67e21418ecd35",
       "candidate_refs": [],
-      "choice": "Commerce owns the order number. Pack All names the hold IDs Commerce already has for that order. Inventory packs those tickets in one command and does not store or look up an order number.",
+      "choice": "Those 2 stay reserved on the same order. Pack Some consumes only the named quantity. The leftover bags stay set aside so they can still fulfill later. The order is not cancelled.",
       "context_ref": "docs/CHARTER.md",
-      "created_at": "2026-09-26T01:08:44+00:00",
+      "created_at": "2026-09-26T02:24:03+00:00",
       "deferred_reason": null,
       "delivery_ref": null,
       "dependencies": [],
-      "domain": "packing/pack-all",
+      "domain": "packing/pack-some",
       "history": [
         {
-          "at": "2026-09-26T01:08:44+00:00",
-          "choice": "Commerce owns the order number. Pack All names the hold IDs Commerce already has for that order. Inventory packs those tickets in one command and does not store or look up an order number.",
+          "at": "2026-09-26T02:24:04+00:00",
+          "choice": "Those 2 stay reserved on the same order. Pack Some consumes only the named quantity. The leftover bags stay set aside so they can still fulfill later. The order is not cancelled.",
           "from": "proposed",
           "implementation_ref": null,
           "note": "user accepted the scoped decision",
@@ -37,8 +37,8 @@
           "verification_ref": null
         },
         {
-          "at": "2026-09-26T01:40:45+00:00",
-          "choice": "Commerce owns the order number. Pack All names the hold IDs Commerce already has for that order. Inventory packs those tickets in one command and does not store or look up an order number.",
+          "at": "2026-09-26T02:54:45+00:00",
+          "choice": "Those 2 stay reserved on the same order. Pack Some consumes only the named quantity. The leftover bags stay set aside so they can still fulfill later. The order is not cancelled.",
           "from": "locked",
           "implementation_ref": null,
           "note": "bounded implementation recorded",
@@ -51,8 +51,8 @@
           "verification_ref": null
         },
         {
-          "at": "2026-09-26T01:40:45+00:00",
-          "choice": "Commerce owns the order number. Pack All names the hold IDs Commerce already has for that order. Inventory packs those tickets in one command and does not store or look up an order number.",
+          "at": "2026-09-26T02:54:46+00:00",
+          "choice": "Those 2 stay reserved on the same order. Pack Some consumes only the named quantity. The leftover bags stay set aside so they can still fulfill later. The order is not cancelled.",
           "from": "implemented",
           "implementation_ref": "src/features/stock-reservation/",
           "note": "verification recorded in cumulative context",
@@ -65,10 +65,10 @@
           "verification_ref": null
         }
       ],
-      "id": "pack-all-identity-001",
+      "id": "pack-some-leftover-001",
       "implementation_ref": "src/features/stock-reservation/",
-      "question": "How does Inventory know which holds belong to one order at Packed?",
-      "rationale": "Bobby: Commerce assigns the order number at checkout. A hold ID is the ticket Inventory prints when it sets bags aside for one line. Commerce already received those tickets at reserve, so it can hand them back at Packed. Copying 1842 onto each hold is a later lookup convenience, not required to pack. Inventory stays a stock ledger.",
+      "question": "When they pack 1 of 3 reserved hats, what happens to the other 2?",
+      "rationale": "Bobby: yes. Shipping part of a hold must not dump the rest back onto the shelf for a second customer.",
       "repair_required": false,
       "review_classifications": [],
       "review_history": [],
@@ -77,25 +77,25 @@
       "review_source_identity": null,
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-26T01:40:45+00:00",
+      "updated_at": "2026-09-26T02:54:46+00:00",
       "verification_ref": "bin/verify-inventory full"
     },
     {
-      "baseline_ref": "git:4f1bdfc85964fc41fe466336784af62261384679",
+      "baseline_ref": "git:bb76601fdbd41b3196c6af7771d67e21418ecd35",
       "candidate_refs": [],
-      "choice": "Stop. Pack nothing. The mismatch is visible. The remaining active ticket is still reserved; the order is not cancelled. Fulfillment continues with the existing one-hold pack on whatever is still active, or a later Pack Some. Refund-one-line and pack-one-line stay later mechanics. Exact same command ID retry after a full success still returns the original packed result.",
+      "choice": "Same ticket. The hold shrinks from 3 to 2. Commerce keeps the original ticket number. Inventory does not mint a replacement ID.",
       "context_ref": "docs/CHARTER.md",
-      "created_at": "2026-09-26T01:28:04+00:00",
+      "created_at": "2026-09-26T02:27:14+00:00",
       "deferred_reason": null,
       "delivery_ref": null,
       "dependencies": [
-        "pack-all-identity-001"
+        "pack-some-leftover-001"
       ],
-      "domain": "packing/pack-all",
+      "domain": "packing/pack-some",
       "history": [
         {
-          "at": "2026-09-26T01:28:04+00:00",
-          "choice": "Stop. Pack nothing. The mismatch is visible. The remaining active ticket is still reserved; the order is not cancelled. Fulfillment continues with the existing one-hold pack on whatever is still active, or a later Pack Some. Refund-one-line and pack-one-line stay later mechanics. Exact same command ID retry after a full success still returns the original packed result.",
+          "at": "2026-09-26T02:27:14+00:00",
+          "choice": "Same ticket. The hold shrinks from 3 to 2. Commerce keeps the original ticket number. Inventory does not mint a replacement ID.",
           "from": "proposed",
           "implementation_ref": null,
           "note": "user accepted the scoped decision",
@@ -108,8 +108,8 @@
           "verification_ref": null
         },
         {
-          "at": "2026-09-26T01:40:45+00:00",
-          "choice": "Stop. Pack nothing. The mismatch is visible. The remaining active ticket is still reserved; the order is not cancelled. Fulfillment continues with the existing one-hold pack on whatever is still active, or a later Pack Some. Refund-one-line and pack-one-line stay later mechanics. Exact same command ID retry after a full success still returns the original packed result.",
+          "at": "2026-09-26T02:54:46+00:00",
+          "choice": "Same ticket. The hold shrinks from 3 to 2. Commerce keeps the original ticket number. Inventory does not mint a replacement ID.",
           "from": "locked",
           "implementation_ref": null,
           "note": "bounded implementation recorded",
@@ -122,8 +122,8 @@
           "verification_ref": null
         },
         {
-          "at": "2026-09-26T01:40:45+00:00",
-          "choice": "Stop. Pack nothing. The mismatch is visible. The remaining active ticket is still reserved; the order is not cancelled. Fulfillment continues with the existing one-hold pack on whatever is still active, or a later Pack Some. Refund-one-line and pack-one-line stay later mechanics. Exact same command ID retry after a full success still returns the original packed result.",
+          "at": "2026-09-26T02:54:46+00:00",
+          "choice": "Same ticket. The hold shrinks from 3 to 2. Commerce keeps the original ticket number. Inventory does not mint a replacement ID.",
           "from": "implemented",
           "implementation_ref": "src/features/stock-reservation/",
           "note": "verification recorded in cumulative context",
@@ -136,10 +136,10 @@
           "verification_ref": null
         }
       ],
-      "id": "pack-all-atomic-002",
+      "id": "pack-some-same-ticket-002",
       "implementation_ref": "src/features/stock-reservation/",
-      "question": "If Pack All names two tickets and one is not an active hold, what happens?",
-      "rationale": "Bobby: stop, but the order still needs fulfilled. All-or-none is so Inventory never writes hat then dies before shirt. A dead ticket means the named list does not match the shelf; packing the leftover silently would hide that. Remaining bags stay reserved until a later good pack. Commerce still owns fulfilling 1842.",
+      "question": "After packing 1 of 3, is the leftover still the same ticket or a new ticket?",
+      "rationale": "Bobby: same ticket. Commerce already has that number. The hold just shrinks from 3 to 2.",
       "repair_required": false,
       "review_classifications": [],
       "review_history": [],
@@ -148,25 +148,25 @@
       "review_source_identity": null,
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-26T01:40:45+00:00",
+      "updated_at": "2026-09-26T02:54:46+00:00",
       "verification_ref": "bin/verify-inventory full"
     },
     {
-      "baseline_ref": "git:4f1bdfc85964fc41fe466336784af62261384679",
+      "baseline_ref": "git:bb76601fdbd41b3196c6af7771d67e21418ecd35",
       "candidate_refs": [],
-      "choice": "One or more tickets. A one-hat order uses the same Packed action. Commerce always sends the ticket list it has. Inventory does not special-case a single hold.",
+      "choice": "Two states: partially packed after the first partial consume, packed when nothing remains on the ticket. Not an empty open hold. Commerce still uses the same ticket number.",
       "context_ref": "docs/CHARTER.md",
-      "created_at": "2026-09-26T01:31:57+00:00",
+      "created_at": "2026-09-26T02:28:50+00:00",
       "deferred_reason": null,
       "delivery_ref": null,
       "dependencies": [
-        "pack-all-atomic-002"
+        "pack-some-same-ticket-002"
       ],
-      "domain": "packing/pack-all",
+      "domain": "packing/pack-some",
       "history": [
         {
-          "at": "2026-09-26T01:31:57+00:00",
-          "choice": "One or more tickets. A one-hat order uses the same Packed action. Commerce always sends the ticket list it has. Inventory does not special-case a single hold.",
+          "at": "2026-09-26T02:28:50+00:00",
+          "choice": "Two states: partially packed after the first partial consume, packed when nothing remains on the ticket. Not an empty open hold. Commerce still uses the same ticket number.",
           "from": "proposed",
           "implementation_ref": null,
           "note": "user accepted the scoped decision",
@@ -179,8 +179,8 @@
           "verification_ref": null
         },
         {
-          "at": "2026-09-26T01:40:45+00:00",
-          "choice": "One or more tickets. A one-hat order uses the same Packed action. Commerce always sends the ticket list it has. Inventory does not special-case a single hold.",
+          "at": "2026-09-26T02:54:46+00:00",
+          "choice": "Two states: partially packed after the first partial consume, packed when nothing remains on the ticket. Not an empty open hold. Commerce still uses the same ticket number.",
           "from": "locked",
           "implementation_ref": null,
           "note": "bounded implementation recorded",
@@ -193,8 +193,8 @@
           "verification_ref": null
         },
         {
-          "at": "2026-09-26T01:40:46+00:00",
-          "choice": "One or more tickets. A one-hat order uses the same Packed action. Commerce always sends the ticket list it has. Inventory does not special-case a single hold.",
+          "at": "2026-09-26T02:54:46+00:00",
+          "choice": "Two states: partially packed after the first partial consume, packed when nothing remains on the ticket. Not an empty open hold. Commerce still uses the same ticket number.",
           "from": "implemented",
           "implementation_ref": "src/features/stock-reservation/",
           "note": "verification recorded in cumulative context",
@@ -207,10 +207,10 @@
           "verification_ref": null
         }
       ],
-      "id": "pack-all-arity-003",
+      "id": "pack-some-states-003",
       "implementation_ref": "src/features/stock-reservation/",
-      "question": "Can Pack All name a single ticket, or only two or more?",
-      "rationale": "Bobby: let Pack All take one or more. Same Packed button for a one-line order and a two-bag cart. The old one-hold pack remains for later leftover fulfillment after a Pack All stop.",
+      "question": "After packing 1 of 3, is the ticket still a plain hold, or a distinct partially packed ticket? When the last bags go, is it packed?",
+      "rationale": "Bobby: it should have partially packed and packed states. A leftover of 2 is not the same as a fresh hold, and finishing the ticket is packed.",
       "repair_required": false,
       "review_classifications": [],
       "review_history": [],
@@ -219,21 +219,163 @@
       "review_source_identity": null,
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-26T01:40:46+00:00",
+      "updated_at": "2026-09-26T02:54:46+00:00",
+      "verification_ref": "bin/verify-inventory full"
+    },
+    {
+      "baseline_ref": "git:bb76601fdbd41b3196c6af7771d67e21418ecd35",
+      "candidate_refs": [],
+      "choice": "Packed. Partial exists only when bags are still sitting on the ticket. Packing the full remaining quantity in one shot skips partial and finishes the ticket.",
+      "context_ref": "docs/CHARTER.md",
+      "created_at": "2026-09-26T02:33:39+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "pack-some-states-003"
+      ],
+      "domain": "packing/pack-some",
+      "history": [
+        {
+          "at": "2026-09-26T02:33:39+00:00",
+          "choice": "Packed. Partial exists only when bags are still sitting on the ticket. Packing the full remaining quantity in one shot skips partial and finishes the ticket.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-26T02:54:46+00:00",
+          "choice": "Packed. Partial exists only when bags are still sitting on the ticket. Packing the full remaining quantity in one shot skips partial and finishes the ticket.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-26T02:54:46+00:00",
+          "choice": "Packed. Partial exists only when bags are still sitting on the ticket. Packing the full remaining quantity in one shot skips partial and finishes the ticket.",
+          "from": "implemented",
+          "implementation_ref": "src/features/stock-reservation/",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "pack-some-full-remaining-004",
+      "implementation_ref": "src/features/stock-reservation/",
+      "question": "If they pack all 3 reserved hats on the first Pack Some, is the ticket partially packed or packed?",
+      "rationale": "Bobby: yes. Partial is only when bags are still sitting there.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-09-26T02:54:46+00:00",
+      "verification_ref": "bin/verify-inventory full"
+    },
+    {
+      "baseline_ref": "git:bb76601fdbd41b3196c6af7771d67e21418ecd35",
+      "candidate_refs": [],
+      "choice": "Pack none. A 3-hat ticket can only give 3 hats. Asking for 4 is a mismatch, not pack-3-and-ignore-the-extra. The ticket stays 3 reserved. The order is not cancelled. They can still pack 1, 2, or 3 later.",
+      "context_ref": "docs/CHARTER.md",
+      "created_at": "2026-09-26T02:39:16+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "pack-some-full-remaining-004"
+      ],
+      "domain": "packing/pack-some",
+      "history": [
+        {
+          "at": "2026-09-26T02:42:04+00:00",
+          "choice": "Pack none. A 3-hat ticket can only give 3 hats. Asking for 4 is a mismatch, not pack-3-and-ignore-the-extra. The ticket stays 3 reserved. The order is not cancelled. They can still pack 1, 2, or 3 later.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-26T02:54:46+00:00",
+          "choice": "Pack none. A 3-hat ticket can only give 3 hats. Asking for 4 is a mismatch, not pack-3-and-ignore-the-extra. The ticket stays 3 reserved. The order is not cancelled. They can still pack 1, 2, or 3 later.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-26T02:54:46+00:00",
+          "choice": "Pack none. A 3-hat ticket can only give 3 hats. Asking for 4 is a mismatch, not pack-3-and-ignore-the-extra. The ticket stays 3 reserved. The order is not cancelled. They can still pack 1, 2, or 3 later.",
+          "from": "implemented",
+          "implementation_ref": "src/features/stock-reservation/",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "pack-some-overpack-005",
+      "implementation_ref": "src/features/stock-reservation/",
+      "question": "If they try to pack 4 hats off a 3-hat ticket, what happens?",
+      "rationale": "Bobby: a sales order with 3 hats on it should only be allowed to get 3 hats. Stop means pack none, not a silent short pack.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-09-26T02:54:46+00:00",
       "verification_ref": "bin/verify-inventory full"
     }
   ],
   "last_activation": {
-    "at": "2026-09-25T22:13:28+00:00",
+    "at": "2026-09-26T02:23:56+00:00",
     "mechanism": "implicit"
   },
   "last_pause": null,
   "pause": null,
-  "predecessor_track_id": "dinkuskit-inventory-order-reservations-v1",
+  "predecessor_track_id": "dinkuskit-inventory-pack-all-v1",
   "recommendation": null,
   "schema_version": "grilltrack/v0.1",
   "status": "active",
-  "title": "Dinkuskit Inventory pack whole order",
-  "track_id": "dinkuskit-inventory-pack-all-v1",
-  "updated_at": "2026-09-26T01:40:46+00:00"
+  "title": "Dinkuskit Inventory pack some of a hold",
+  "track_id": "dinkuskit-inventory-pack-some-v1",
+  "updated_at": "2026-09-26T02:54:46+00:00"
 }
