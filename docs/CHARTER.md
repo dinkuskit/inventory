@@ -160,17 +160,20 @@ share the same normalized name even when one or both are archived.
 ## fresh-schema-initialization-034 — exact predecessor storage upgrades safely (locked)
 
 A new empty Cloudflare Durable Object initializes directly at complete schema
-v6 and records history `[6]`. The committed v2, v3, v4, and v5 schemas remain
-real predecessor contracts even though no production pool exists. Exact v5
-storage allows packed reservation status, producing `[5, 6]`. Exact v4 storage
-adds reservation records then packed status, producing `[4, 5, 6]`. Exact v3
-storage first adds transfer-planning quantities and transfer records, then
-reservation records and packed status, producing `[3, 4, 5, 6]`. Exact v2
-storage first backfills each legacy balanced SKU key as a stable managed
-identity, then advances through v5 to v6, producing `[2, 3, 4, 5, 6]`. All
-paths preserve predecessor records. Version 1, partial, conflicting-unit,
-extra-table, or otherwise incompatible storage fails closed without a partial
-migration.
+v8 and records history `[8]`. The committed v2 through v7 schemas remain real
+predecessor contracts even though no production pool exists. Exact v7 storage
+renames live reservation status `active` to `not_shipped`, producing `[7, 8]`.
+Exact v6 storage first adds original quantity and partially packed status,
+then the not-shipped rename, producing `[6, 7, 8]`. Exact v5 storage first
+allows packed reservation status, then v7 and v8, producing `[5, 6, 7, 8]`.
+Exact v4 storage adds reservation records then packed status and the later
+reservation upgrades, producing `[4, 5, 6, 7, 8]`. Exact v3 storage first adds
+transfer-planning quantities and transfer records, then reservation records
+and packed status, producing `[3, 4, 5, 6, 7, 8]`. Exact v2 storage first
+backfills each legacy balanced SKU key as a stable managed identity, then
+advances through v8, producing `[2, 3, 4, 5, 6, 7, 8]`. All paths preserve
+predecessor records. Version 1, partial, conflicting-unit, extra-table, or
+otherwise incompatible storage fails closed without a partial migration.
 
 ## opening-balance-location-admission-035 — active locations only (locked)
 
@@ -503,17 +506,23 @@ product settings and external inventory-provider implementations.
 `stock.pack` consumes one named open hold in full when the order moves
 Processing → Packed. On-hand and reserved both drop by the remaining hold
 quantity; available stays the same because it already came off at reserve.
-Packed is one-way this cycle. `stock.pack_all` packs one or more hold tickets
-Commerce already has for that order, all or none. Inventory does not store or
-look up an order number. If any named ticket is not an open hold, pack
-nothing; the remaining open ticket stays reserved so the order can still be
-fulfilled. `stock.pack_some` packs a named quantity from one ticket. Same
-ticket shrinks. Leftover stays reserved as partially packed. Last bags or the
-full remaining quantity in one shot is packed. Asking for more than remaining
-packs none. Reissuing the original reserve for that order line returns the
-same partially packed ticket and does not hold more stock. Unpack waits. Unpaid Hold cancels at 60 minutes through existing
-`stock.release`; that clock is Commerce, not this kernel. Shipped/label after
-Packed does not change counts.
+`stock.pack_all` packs one or more hold tickets Commerce already has for that
+order, all or none. Inventory does not store or look up an order number. If any
+named ticket is not an open hold, pack nothing; the remaining open ticket stays
+reserved so the order can still be fulfilled. `stock.pack_some` packs a named
+quantity from one ticket. Same ticket shrinks. Leftover stays reserved as
+partially packed. Last bags or the full remaining quantity in one shot is
+packed. Asking for more than remaining packs none. Reissuing the original
+reserve for that order line returns the same partially packed ticket and does
+not hold more stock. `stock.unpack` names one ticket and restores all packed
+bags on that ticket onto the same Not shipped ticket. Packed 3 of 3 restores 3.
+Packed 1 of 3 restores that 1 beside leftover 2. On-hand and reserved both come
+back by the packed amount; available stays the same. No quantity field. Missing,
+not-shipped, and canceled tickets reject. Revert-from-Delivered waits with ship.
+Unpack-some waits; the Katana fix for a wrong pack quantity is unpack then pack
+some again. Unpaid Hold cancels at 60 minutes through existing `stock.release`;
+that clock is Commerce, not this kernel. Shipped/label after Packed does not
+change counts.
 
 ## reservation-domain-001 through reservation-cancel-005 — named order holds (locked)
 
@@ -531,11 +540,11 @@ transport remain deferred.
 
 ## Next focused grill
 
-Select the next Inventory-owned slice after pack-some. Unpack, expiry,
-backorder, GUI, CLI, Commerce/Blocks integration, service authentication,
-deployment, and production mutation remain deferred until separately grilled
-and approved. The packing-screen cap/flash that stops typing 4 on a 3-hat
-ticket is GUI, not this kernel.
+Select the next Inventory-owned slice after unpack. Unpack-some, unpack-all,
+revert-from-Delivered, expiry, backorder, GUI, CLI, Commerce/Blocks
+integration, service authentication, deployment, and production mutation remain
+deferred until separately grilled and approved. The packing-screen cap/flash
+that stops typing 4 on a 3-hat ticket is GUI, not this kernel.
 
 ## Cross-references
 

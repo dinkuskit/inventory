@@ -356,7 +356,7 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 				this.#storage,
 				`SELECT reservation_json
 				 FROM inventory_reservations
-				 WHERE pool_id = ? AND order_line_key = ? AND status IN ('active', 'partially_packed')`,
+				 WHERE pool_id = ? AND order_line_key = ? AND status IN ('not_shipped', 'partially_packed')`,
 				this.#poolId,
 				orderLineKey,
 			),

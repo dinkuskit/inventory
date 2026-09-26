@@ -140,14 +140,17 @@ outgoing transfer commitments. One active hold exists per order line: matching
 contents return the original hold, different contents conflict. `stock.release`
 cancels the hold into durable history and returns reserved stock to available.
 `stock.pack` consumes one open hold in full at Packed: on-hand and reserved
-both drop; available stays the same. Packed is one-way. `stock.pack_all` packs
-one or more named tickets in one shot, or none if any ticket is not an open
-hold. `stock.pack_some` packs a named quantity from one ticket. Same ticket
-shrinks; leftover stays reserved as partially packed; last bags or the full
-remaining quantity finish the ticket as packed. Asking for more than remaining packs none. Retrying the original reserve for
-that order line returns the same ticket and does not hold more stock.
-Inventory does not store an order number. Unpack, expiry,
-backorder, GUI, CLI, and live Commerce transport remain later slices.
+both drop; available stays the same. `stock.pack_all` packs one or more named
+tickets in one shot, or none if any ticket is not an open hold.
+`stock.pack_some` packs a named quantity from one ticket. Same ticket shrinks;
+leftover stays reserved as partially packed; last bags or the full remaining
+quantity finish the ticket as packed. Asking for more than remaining packs
+none. `stock.unpack` names one ticket and restores all packed bags onto the
+same Not shipped ticket; leftover already reserved stays reserved. Retrying the
+original reserve for that order line returns the same ticket and does not hold
+more stock. Inventory does not store an order number. Unpack-some,
+revert-from-Delivered, expiry, backorder, GUI, CLI, and live Commerce transport
+remain later slices.
 
 The real local SQLite test adapter remains explicitly development/test-only and
 refuses production mode or in-memory use. It is not the final storage layer.
@@ -156,14 +159,17 @@ Cloudflare Worker with a SQLite-backed Durable Object namespace and one object
 database per explicit pool. Workers.dev and preview URLs are disabled, no route
 is deployed, and its remote surface remains private and read-only: same-account
 SKU-location inspection and aggregate SKU stock reads.
-The source schema defines version 6 as the complete current real-database
-schema, including packed reservation status on top of location, managed-SKU,
-stock-transfer, and reservation records plus the six stock dimensions. Fresh
-empty storage initializes directly at version 6. Exact committed version-5
-storage allows packed status; exact version-4 storage adds reservation records
-then packed status; exact version-3 storage upgrades through v4, v5, and v6;
-exact version-2 storage moves through v3, v4, v5, and v6. Those paths preserve prior durable records,
-and the v2 path backfills legacy balanced SKU keys as stable managed identities.
+The source schema defines version 8 as the complete current real-database
+schema, including Not shipped / partially packed / packed reservation status on
+top of location, managed-SKU, stock-transfer, and reservation records plus the
+six stock dimensions. Fresh empty storage initializes directly at version 8.
+Exact committed version-7 storage renames live reservation `active` to
+`not_shipped`; exact version-6 storage first adds original quantity and
+partially packed status; exact version-5 storage allows packed status; exact
+version-4 storage adds reservation records then packed status; exact version-3
+storage upgrades through v4 to v8; exact version-2 storage moves through v3 to
+v8. Those paths preserve prior durable records, and the v2 path backfills
+legacy balanced SKU keys as stable managed identities.
 Incompatible shapes fail closed without a partial upgrade. Workerd runtime
 tests prove those transitions, but this is not a deployment or live-database
 claim. Inventory mutations are not remotely exposed, no

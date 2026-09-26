@@ -21,6 +21,7 @@ import {
 	PACK_STOCK_TYPE,
 	RELEASE_STOCK_TYPE,
 	RESERVE_STOCK_TYPE,
+	UNPACK_STOCK_TYPE,
 	RESERVATION_RECORD_SCHEMA,
 	digestStockReservationCommand,
 	holdIsOpen,
@@ -29,12 +30,14 @@ import {
 	normalizePackStockCommand,
 	normalizeReleaseStockCommand,
 	normalizeReserveStockCommand,
+	normalizeUnpackStockCommand,
 	reservationOrderLineKey,
 	sameReservationContents,
 	type PackAllStockCommandV1,
 	type PackSomeStockCommandV1,
 	type PackStockCommandV1,
 	type ReleaseStockCommandV1,
+	type UnpackStockCommandV1,
 	type ReservationRecord,
 	type ReserveStockCommandV1,
 	type StockReservationBalanceEffect,
@@ -69,6 +72,11 @@ export type PackSomeStock = (
 	command: PackSomeStockCommandV1,
 	execution: PackSomeStockExecution,
 ) => Promise<StockReservationResult>;
+export type UnpackStockExecution = PackStockExecution;
+export type UnpackStock = (
+	command: UnpackStockCommandV1,
+	execution: UnpackStockExecution,
+) => Promise<StockReservationResult>;
 
 export type StockReservationDependencies = Readonly<{
 	store: InventoryStore;
@@ -85,6 +93,7 @@ export type ReleaseStockDependencies = Readonly<{
 export type PackStockDependencies = ReleaseStockDependencies;
 export type PackAllStockDependencies = PackStockDependencies;
 export type PackSomeStockDependencies = PackStockDependencies;
+export type UnpackStockDependencies = PackStockDependencies;
 
 function incrementVersion(version: string): string {
 	return (BigInt(version) + 1n).toString();
@@ -193,6 +202,23 @@ function applyPackDelta(before: BalanceRecord, quantity: string): BalanceRecord 
 	};
 }
 
+function applyUnpackDelta(before: BalanceRecord, quantity: string): BalanceRecord {
+	const unit = before.onHand.unit;
+	const nextOnHand = addExactDecimal(before.onHand.value, quantity);
+	const nextReserved = addExactDecimal(before.reserved.value, quantity);
+	const nextAvailable = subtractExactDecimal(
+		subtractExactDecimal(nextOnHand, nextReserved),
+		before.outgoingTransferCommitted.value,
+	);
+	return {
+		...before,
+		onHand: { value: nextOnHand, unit },
+		reserved: { value: nextReserved, unit },
+		available: { value: nextAvailable, unit },
+		version: incrementVersion(before.version),
+	};
+}
+
 function zero(unit: string): ExactQuantity {
 	return { value: "0", unit };
 }
@@ -221,7 +247,8 @@ function receipt(input: {
 		| typeof RELEASE_STOCK_TYPE
 		| typeof PACK_STOCK_TYPE
 		| typeof PACK_ALL_STOCK_TYPE
-		| typeof PACK_SOME_STOCK_TYPE;
+		| typeof PACK_SOME_STOCK_TYPE
+		| typeof UNPACK_STOCK_TYPE;
 	committedAt: string;
 	principal: CommandPrincipal;
 	siteId: string;
@@ -397,7 +424,7 @@ export function executeReserveStockInTransaction(
 		quantity: command.payload.quantity,
 		originalQuantity: command.payload.quantity,
 		orderLine: command.payload.orderLine,
-		status: "active",
+		status: "not_shipped",
 		version: "1",
 		createdAt,
 		canceledAt: null,
@@ -936,6 +963,125 @@ export function executePackSomeStockInTransaction(
 	return result;
 }
 
+export function executeUnpackStockInTransaction(
+	transaction: InventoryTransaction,
+	command: UnpackStockCommandV1,
+	principal: CommandPrincipal,
+	commandDigest: string,
+	dependencies: Readonly<{
+		now: () => Date;
+		createReceiptId: () => string;
+	}>,
+): StockReservationResult {
+	const replayed = replayOrConflict(
+		transaction,
+		command.commandId,
+		commandDigest,
+	);
+	if (replayed !== null) return replayed;
+
+	const current = transaction.getReservation(command.payload.reservationId);
+	if (current === null) {
+		return durableRejection(
+			transaction,
+			command.commandId,
+			commandDigest,
+			"reservation_not_found",
+			"The reservation does not exist in this inventory pool.",
+		);
+	}
+	if (current.status !== "packed" && current.status !== "partially_packed") {
+		if (current.status === "canceled") {
+			return durableRejection(
+				transaction,
+				command.commandId,
+				commandDigest,
+				"reservation_not_active",
+				"The reservation is not active.",
+			);
+		}
+		return durableRejection(
+			transaction,
+			command.commandId,
+			commandDigest,
+			"reservation_not_packed",
+			"The ticket has no packed bags to unpack.",
+		);
+	}
+
+	const packedQuantity = subtractExactDecimal(
+		current.originalQuantity.value,
+		current.quantity.value,
+	);
+	if (compareExactDecimal(packedQuantity, "0") <= 0) {
+		return durableRejection(
+			transaction,
+			command.commandId,
+			commandDigest,
+			"reservation_not_packed",
+			"The ticket has no packed bags to unpack.",
+		);
+	}
+
+	const key = {
+		poolId: command.context.poolId,
+		locationId: current.locationId,
+		skuId: current.skuId,
+	};
+	const before = transaction.getBalance(key);
+	if (before === null) {
+		throw new Error("A packed reservation is missing its balance row.");
+	}
+
+	const after = applyUnpackDelta(before, packedQuantity);
+	const unpackedAt = committedAtFrom(dependencies.now);
+	const restored: ReservationRecord = {
+		...current,
+		quantity: current.originalQuantity,
+		status: "not_shipped",
+		version: incrementVersion(current.version),
+		packedAt: null,
+		packedBy: null,
+	};
+	const unpackedDelta = {
+		value: packedQuantity,
+		unit: current.quantity.unit,
+	};
+	const committedReceipt = receipt({
+		commandId: command.commandId,
+		commandDigest,
+		type: UNPACK_STOCK_TYPE,
+		committedAt: unpackedAt,
+		principal,
+		siteId: command.context.siteId,
+		poolId: command.context.poolId,
+		reservationBefore: current,
+		reservationAfter: restored,
+		effects: [effect(before, after, unpackedDelta, unpackedDelta)],
+		references: command.references,
+		createReceiptId: dependencies.createReceiptId,
+	});
+	const result: StockReservationResult = {
+		schema: COMMAND_RESULT_SCHEMA,
+		outcome: "unpacked",
+		commandId: command.commandId,
+		reservation: restored,
+		receipt: committedReceipt,
+	};
+	transaction.commitStockReservation({
+		commandId: command.commandId,
+		commandDigest,
+		previous: current,
+		reservation: restored,
+		orderLineKey: reservationOrderLineKey(current.orderLine),
+		previousBalance: before,
+		balance: after,
+		receipt: committedReceipt,
+		result,
+	});
+	return result;
+}
+
 export function createReserveStock(
 	dependencies: StockReservationDependencies,
 ): ReserveStock {
@@ -1049,6 +1195,36 @@ export function createPackSomeStock(
 			command.context.poolId,
 			(transaction) =>
 				executePackSomeStockInTransaction(
+					transaction,
+					command,
+					principal,
+					commandDigest,
+					dependencies,
+				),
+		);
+	};
+}
+
+export function createUnpackStock(
+	dependencies: UnpackStockDependencies,
+): UnpackStock {
+	if (dependencies?.store === undefined) {
+		throw new TypeError("store is required.");
+	}
+	if (typeof dependencies.now !== "function") {
+		throw new TypeError("now is required.");
+	}
+	if (typeof dependencies.createReceiptId !== "function") {
+		throw new TypeError("createReceiptId is required.");
+	}
+	return async (commandInput, executionInput) => {
+		const command = normalizeUnpackStockCommand(commandInput);
+		const principal = normalizeCommandPrincipal(executionInput?.principal);
+		const commandDigest = await digestStockReservationCommand(command);
+		return dependencies.store.runTransaction(
+			command.context.poolId,
+			(transaction) =>
+				executeUnpackStockInTransaction(
 					transaction,
 					command,
 					principal,
