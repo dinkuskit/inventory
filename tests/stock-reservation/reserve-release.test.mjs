@@ -93,7 +93,7 @@ test("reserve holds available stock and release returns it", async (t) => {
 	const result = await reserve(reserveCommand(), { principal });
 	assert.equal(result.outcome, "reserved");
 	assert.equal(result.reservation.reservationId, "rsv_hat_001");
-	assert.equal(result.reservation.status, "active");
+	assert.equal(result.reservation.status, "not_shipped");
 	const read = createReadSkuLocationBalance({ store });
 	assert.deepEqual(
 		(await read({

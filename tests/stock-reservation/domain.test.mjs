@@ -8,11 +8,13 @@ import {
 	PACK_STOCK_TYPE,
 	RESERVE_STOCK_TYPE,
 	RELEASE_STOCK_TYPE,
+	UNPACK_STOCK_TYPE,
 	normalizePackAllStockCommand,
 	normalizePackSomeStockCommand,
 	normalizePackStockCommand,
 	normalizeReleaseStockCommand,
 	normalizeReserveStockCommand,
+	normalizeUnpackStockCommand,
 	reservationOrderLineKey,
 } from "../../src/index.ts";
 
@@ -159,6 +161,27 @@ test("pack some command trims the ticket and requires a positive quantity", () =
 				references: [],
 			}),
 		InvalidStockReservationCommandError,
+	);
+});
+
+test("unpack command trims the reservation id", () => {
+	assert.deepEqual(
+		normalizeUnpackStockCommand({
+			schema: "dinkuskit.inventory.command/v1",
+			commandId: " cmd_unpack_001 ",
+			type: UNPACK_STOCK_TYPE,
+			context: { siteId: " site_test ", poolId: " pool_test " },
+			payload: { reservationId: " rsv_hat_001 " },
+			references: [],
+		}),
+		{
+			schema: "dinkuskit.inventory.command/v1",
+			commandId: "cmd_unpack_001",
+			type: "stock.unpack",
+			context: { siteId: "site_test", poolId: "pool_test" },
+			payload: { reservationId: "rsv_hat_001" },
+			references: [],
+		},
 	);
 });
 

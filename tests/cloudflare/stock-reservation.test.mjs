@@ -11,6 +11,7 @@ import {
 	createPackStock,
 	createReleaseStock,
 	createReserveStock,
+	createUnpackStock,
 } from "../../src/features/stock-reservation/index.ts";
 import { createCloudflareSqliteInventoryStore } from "../../src/storage/cloudflare-sqlite-inventory-store.ts";
 import { createFixtureLocation } from "../helpers/location-fixture.mjs";
@@ -233,7 +234,7 @@ describe("stock reservation Cloudflare parity", () => {
 			);
 			expect(upgraded.packedAt).toBe(null);
 			expect(upgraded.packedBy).toBe(null);
-			expect(upgraded.status).toBe("active");
+			expect(upgraded.status).toBe("not_shipped");
 			expect(upgraded.originalQuantity).toEqual({ value: "3", unit: "each" });
 
 			const pack = createPackStock({
@@ -490,6 +491,113 @@ describe("stock reservation Cloudflare parity", () => {
 			expect(again.reservation.reservationId).toBe("rsv_cf_pack_some");
 			expect(again.reservation.quantity.value).toBe("2");
 			expect(again.reservation.originalQuantity.value).toBe("3");
+		});
+	});
+
+	it("unpacks a pack-some remainder onto the same not-shipped ticket", async ({ expect }) => {
+		const poolId = "pool_stock_unpack_parity";
+		const stub = env.INVENTORY_POOLS.getByName(poolId);
+		await runInDurableObject(stub, async (_instance, state) => {
+			const store = createCloudflareSqliteInventoryStore({
+				storage: state.storage,
+				poolId,
+			});
+			await createFixtureLocation(store, { poolId });
+			await createFixtureManagedSku(store, { poolId, skuId: "sku_hat" });
+			const opening = await createSetOpeningBalance({
+				store,
+				now: () => new Date("2026-09-25T10:00:00.000Z"),
+				createReceiptId: () => "rcpt_cf_unpack_open",
+			})(
+				{
+					schema: "dinkuskit.inventory.command/v1",
+					commandId: "cmd_cf_unpack_open",
+					type: "stock.opening_balance",
+					context: {
+						siteId: "site_test",
+						poolId,
+						locationId: "location_north",
+					},
+					payload: { skuId: "sku_hat", quantity: { value: "10", unit: "each" } },
+					reason: { code: "opening_balance", note: "Set Initial Stock" },
+					references: [],
+					expectedVersions: [
+						{ skuId: "sku_hat", locationId: "location_north", version: "0" },
+					],
+				},
+				{ principal },
+			);
+			expect(opening.outcome).toBe("committed");
+			const held = await createReserveStock({
+				store,
+				now: () => new Date("2026-09-25T12:00:00.000Z"),
+				createReservationId: () => "rsv_cf_unpack",
+				createReceiptId: () => "rcpt_cf_unpack_reserve",
+			})(
+				{
+					schema: "dinkuskit.inventory.command/v1",
+					commandId: "cmd_cf_unpack_reserve",
+					type: "stock.reserve",
+					context: {
+						siteId: "site_test",
+						poolId,
+						locationId: "location_north",
+					},
+					payload: {
+						skuId: "sku_hat",
+						quantity: { value: "3", unit: "each" },
+						orderLine: { kind: "commerce.order_line", id: "OL-1842-unpack" },
+					},
+					references: [],
+				},
+				{ principal },
+			);
+			expect(held.outcome).toBe("reserved");
+			await createPackSomeStock({
+				store,
+				now: () => new Date("2026-09-25T12:05:00.000Z"),
+				createReceiptId: () => "rcpt_cf_unpack_pack_some",
+			})(
+				{
+					schema: "dinkuskit.inventory.command/v1",
+					commandId: "cmd_cf_unpack_pack_some",
+					type: "stock.pack_some",
+					context: { siteId: "site_test", poolId },
+					payload: {
+						reservationId: "rsv_cf_unpack",
+						quantity: { value: "1", unit: "each" },
+					},
+					references: [],
+				},
+				{ principal },
+			);
+			const unpacked = await createUnpackStock({
+				store,
+				now: () => new Date("2026-09-25T12:10:00.000Z"),
+				createReceiptId: () => "rcpt_cf_unpack",
+			})(
+				{
+					schema: "dinkuskit.inventory.command/v1",
+					commandId: "cmd_cf_unpack",
+					type: "stock.unpack",
+					context: { siteId: "site_test", poolId },
+					payload: { reservationId: "rsv_cf_unpack" },
+					references: [],
+				},
+				{ principal },
+			);
+			expect(unpacked.outcome).toBe("unpacked");
+			expect(unpacked.reservation.status).toBe("not_shipped");
+			expect(unpacked.reservation.quantity.value).toBe("3");
+			const found = await createReadSkuLocationBalance({ store })({
+				poolId,
+				locationId: "location_north",
+				skuId: "sku_hat",
+			});
+			expect(found.outcome).toBe("found");
+			expect(found.balance.onHand.value).toBe("10");
+			expect(found.balance.reserved.value).toBe("3");
+			expect(found.balance.available.value).toBe("7");
 		});
 	});
 });
