@@ -1,0 +1,138 @@
+name: ClawSweeper dispatch
+
+on:
+  pull_request_target:
+    types: [opened, reopened, edited, synchronize, ready_for_review]
+
+permissions: {}
+
+jobs:
+  bind:
+    name: Read the live pull request tuple
+    if: >-
+      github.event.repository.full_name == 'dinkuskit/inventory' &&
+      github.event.repository.id == 1307843786 &&
+      github.event.pull_request.base.repo.full_name == 'dinkuskit/inventory' &&
+      github.event.pull_request.draft == false &&
+      (
+        github.event.action != 'edited' ||
+        toJSON(github.event.changes) != '{}'
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      requested: ${{ steps.live.outputs.requested }}
+      pr_number: ${{ steps.live.outputs.pr_number }}
+      base_sha: ${{ steps.live.outputs.base_sha }}
+      head_sha: ${{ steps.live.outputs.head_sha }}
+    steps:
+      - name: Read the live base and head
+        id: live
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+            echo "pr_number must be a positive integer." >&2
+            exit 1
+          fi
+
+          repo_json="$(gh api repos/dinkuskit/inventory)"
+          repository_id="$(jq -r '.id' <<<"$repo_json")"
+          default_branch="$(jq -r '.default_branch' <<<"$repo_json")"
+          if [ "$repository_id" != "1307843786" ] \
+            || ! [[ "$default_branch" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+            echo "dinkuskit/inventory identity is not admitted." >&2
+            exit 1
+          fi
+
+          pull_json="$(gh api "repos/dinkuskit/inventory/pulls/$PR_NUMBER")"
+          state="$(jq -r '.state' <<<"$pull_json")"
+          draft="$(jq -r '.draft' <<<"$pull_json")"
+          base_repo="$(jq -r '.base.repo.full_name' <<<"$pull_json")"
+          base_ref="$(jq -r '.base.ref' <<<"$pull_json")"
+          head_sha="$(jq -r '.head.sha' <<<"$pull_json")"
+          if [ "$state" != "open" ] \
+            || [ "$draft" != "false" ] \
+            || [ "$base_repo" != "dinkuskit/inventory" ] \
+            || [ "$base_ref" != "$default_branch" ]; then
+            echo "requested=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! [[ "$head_sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "The live head SHA is invalid." >&2
+            exit 1
+          fi
+
+          base_sha="$(gh api "repos/dinkuskit/inventory/git/ref/heads/$default_branch" --jq '.object.sha')"
+          if ! [[ "$base_sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "The live base SHA is invalid." >&2
+            exit 1
+          fi
+
+          {
+            echo "requested=true"
+            echo "pr_number=$PR_NUMBER"
+            echo "base_sha=$base_sha"
+            echo "head_sha=$head_sha"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Mint the pickup token
+        id: pickup-token
+        if: steps.live.outputs.requested == 'true'
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1
+        with:
+          client-id: ${{ vars.CLAWSWEEPER_APP_CLIENT_ID }}
+          private-key: ${{ secrets.CLAWSWEEPER_APP_PRIVATE_KEY }}
+          owner: dinkuskit
+          repositories: inventory
+          permission-issues: write
+          permission-pull-requests: write
+
+      - name: Post the pickup comment
+        if: steps.live.outputs.requested == 'true'
+        env:
+          GH_TOKEN: ${{ steps.pickup-token.outputs.token }}
+          PR_NUMBER: ${{ steps.live.outputs.pr_number }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+            echo "The pull request number is invalid." >&2
+            exit 1
+          fi
+          marker="<!-- clawsweeper-review item=${PR_NUMBER} -->"
+          payload="$(jq -n --arg marker "$marker" '{body: ("\ud83e\udd9e\ud83d\udc40\nClawSweeper picked this up.\n\nPull request received. I will update this comment when the review is ready.\n\n" + $marker)}')"
+          comments="$(gh api --paginate "repos/dinkuskit/inventory/issues/${PR_NUMBER}/comments?per_page=100" | jq -s 'add // []')"
+          existing="$(jq -r --arg marker "$marker" '[.[] | select((.body // "") | contains($marker))] | first | .id // empty' <<<"$comments")"
+          if [ -n "$existing" ]; then
+            gh api -X PATCH "repos/dinkuskit/inventory/issues/comments/${existing}" --input - <<<"$payload" >/dev/null
+          else
+            gh api -X POST "repos/dinkuskit/inventory/issues/${PR_NUMBER}/comments" --input - <<<"$payload" >/dev/null
+          fi
+
+  review:
+    name: Run pinned native ClawSweeper
+    needs: bind
+    if: needs.bind.outputs.requested == 'true'
+    concurrency:
+      group: inventory-clawsweeper-dispatch-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    permissions:
+      actions: read
+      contents: read
+    uses: dinkuskit/clawsweeper/.github/workflows/dinkuskit-native-canary.yml@80cdeb241ab529008b1082749584be28a318e9ca
+    with:
+      target_repository: inventory
+      target_repository_id: "1307843786"
+      pr_number: ${{ needs.bind.outputs.pr_number }}
+      expected_base_sha: ${{ needs.bind.outputs.base_sha }}
+      expected_head_sha: ${{ needs.bind.outputs.head_sha }}
+      engine_sha: 80cdeb241ab529008b1082749584be28a318e9ca
+      publish: true
+    secrets:
+      CLAWSWEEPER_APP_PRIVATE_KEY: ${{ secrets.CLAWSWEEPER_APP_PRIVATE_KEY }}
+      COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
