@@ -139,10 +139,14 @@ when available stock is short. Available is on-hand minus existing holds minus
 outgoing transfer commitments. One active hold exists per order line: matching
 contents return the original hold, different contents conflict. `stock.release`
 cancels the hold into durable history and returns reserved stock to available.
-`stock.pack` consumes one active hold in full at Packed: on-hand and reserved
+`stock.pack` consumes one open hold in full at Packed: on-hand and reserved
 both drop; available stays the same. Packed is one-way. `stock.pack_all` packs
-one or more named tickets in one shot, or none if any ticket is not an active
-hold. Inventory does not store an order number. Pack Some, Unpack, expiry,
+one or more named tickets in one shot, or none if any ticket is not an open
+hold. `stock.pack_some` packs a named quantity from one ticket. Same ticket
+shrinks; leftover stays reserved as partially packed; last bags or the full
+remaining quantity finish the ticket as packed. Asking for more than remaining packs none. Retrying the original reserve for
+that order line returns the same ticket and does not hold more stock.
+Inventory does not store an order number. Unpack, expiry,
 backorder, GUI, CLI, and live Commerce transport remain later slices.
 
 The real local SQLite test adapter remains explicitly development/test-only and

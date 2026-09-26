@@ -1,12 +1,15 @@
 export {
 	InvalidStockReservationCommandError,
 	PACK_ALL_STOCK_TYPE,
+	PACK_SOME_STOCK_TYPE,
 	PACK_STOCK_TYPE,
 	RELEASE_STOCK_TYPE,
 	RESERVE_STOCK_TYPE,
 	RESERVATION_RECORD_SCHEMA,
 	digestStockReservationCommand,
+	holdIsOpen,
 	normalizePackAllStockCommand,
+	normalizePackSomeStockCommand,
 	normalizePackStockCommand,
 	normalizeReleaseStockCommand,
 	normalizeReserveStockCommand,
@@ -15,6 +18,7 @@ export {
 } from "./domain.ts";
 export type {
 	PackAllStockCommandV1,
+	PackSomeStockCommandV1,
 	PackStockCommandV1,
 	ReleaseStockCommandV1,
 	ReservationOrderLine,
@@ -29,6 +33,7 @@ export type {
 } from "./domain.ts";
 export {
 	createPackAllStock,
+	createPackSomeStock,
 	createPackStock,
 	createReleaseStock,
 	createReserveStock,
@@ -37,6 +42,9 @@ export type {
 	PackAllStock,
 	PackAllStockDependencies,
 	PackAllStockExecution,
+	PackSomeStock,
+	PackSomeStockDependencies,
+	PackSomeStockExecution,
 	PackStock,
 	PackStockDependencies,
 	PackStockExecution,

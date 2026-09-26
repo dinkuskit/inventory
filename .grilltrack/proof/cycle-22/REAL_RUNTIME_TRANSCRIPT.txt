@@ -1,0 +1,250 @@
+PR #26 contributor-supplied real behavior proof
+Captured: 2026-09-25
+Redaction: complete; temporary paths omitted; synthetic identifiers only
+Network/account boundary: loopback only; Wrangler --local; no --remote
+
+> @dinkuskit/inventory@0.0.0 proof:stock-reservation:real
+> bin/prove-stock-reservation-real
+
+$ node --experimental-sqlite --experimental-strip-types tools/stock-reservation-local-sqlite-proof.mjs <new-temporary-sqlite-file>
+{
+  "proof": "real-local-sqlite-file",
+  "created": true,
+  "closedAndReopened": true,
+  "reserve": {
+    "hat": "reserved",
+    "shirt": "reserved"
+  },
+  "packSome": {
+    "outcome": "packed_some",
+    "status": "partially_packed",
+    "remaining": "2"
+  },
+  "reReserve": {
+    "outcome": "existing",
+    "id": "rsv_proof_hat",
+    "remaining": "2"
+  },
+  "packAll": {
+    "outcome": "packed_all",
+    "ids": [
+      "rsv_proof_hat",
+      "rsv_proof_shirt"
+    ]
+  },
+  "replayedOriginalPackAll": {
+    "outcome": "packed_all",
+    "ids": [
+      "rsv_proof_hat",
+      "rsv_proof_shirt"
+    ]
+  },
+  "balanceAfterPackAll": {
+    "hat": {
+      "poolId": "pool_reservation_proof",
+      "locationId": "location_proof_shelf",
+      "skuId": "sku_hat",
+      "onHand": {
+        "value": "7",
+        "unit": "each"
+      },
+      "reserved": {
+        "value": "0",
+        "unit": "each"
+      },
+      "outgoingTransferCommitted": {
+        "value": "0",
+        "unit": "each"
+      },
+      "available": {
+        "value": "7",
+        "unit": "each"
+      },
+      "expected": {
+        "value": "0",
+        "unit": "each"
+      },
+      "inTransit": {
+        "value": "0",
+        "unit": "each"
+      },
+      "version": "4",
+      "hasStockHistory": true
+    },
+    "shirt": {
+      "poolId": "pool_reservation_proof",
+      "locationId": "location_proof_shelf",
+      "skuId": "sku_shirt",
+      "onHand": {
+        "value": "4",
+        "unit": "each"
+      },
+      "reserved": {
+        "value": "0",
+        "unit": "each"
+      },
+      "outgoingTransferCommitted": {
+        "value": "0",
+        "unit": "each"
+      },
+      "available": {
+        "value": "4",
+        "unit": "each"
+      },
+      "expected": {
+        "value": "0",
+        "unit": "each"
+      },
+      "inTransit": {
+        "value": "0",
+        "unit": "each"
+      },
+      "version": "3",
+      "hasStockHistory": true
+    }
+  },
+  "balanceAfterReopen": {
+    "hat": {
+      "poolId": "pool_reservation_proof",
+      "locationId": "location_proof_shelf",
+      "skuId": "sku_hat",
+      "onHand": {
+        "value": "7",
+        "unit": "each"
+      },
+      "reserved": {
+        "value": "0",
+        "unit": "each"
+      },
+      "outgoingTransferCommitted": {
+        "value": "0",
+        "unit": "each"
+      },
+      "available": {
+        "value": "7",
+        "unit": "each"
+      },
+      "expected": {
+        "value": "0",
+        "unit": "each"
+      },
+      "inTransit": {
+        "value": "0",
+        "unit": "each"
+      },
+      "version": "4",
+      "hasStockHistory": true
+    },
+    "shirt": {
+      "poolId": "pool_reservation_proof",
+      "locationId": "location_proof_shelf",
+      "skuId": "sku_shirt",
+      "onHand": {
+        "value": "4",
+        "unit": "each"
+      },
+      "reserved": {
+        "value": "0",
+        "unit": "each"
+      },
+      "outgoingTransferCommitted": {
+        "value": "0",
+        "unit": "each"
+      },
+      "available": {
+        "value": "4",
+        "unit": "each"
+      },
+      "expected": {
+        "value": "0",
+        "unit": "each"
+      },
+      "inTransit": {
+        "value": "0",
+        "unit": "each"
+      },
+      "version": "3",
+      "hasStockHistory": true
+    }
+  }
+}
+$ wrangler dev --local --persist-to <temporary-cloudflare-state> -c wrangler.stock-reservation-proof.jsonc
+$ curl --request POST --data {"action":"commit"} http://127.0.0.1:<temporary-port>/
+$ stop Wrangler, reopen the same temporary persisted state, and replay the exact reserve command
+{
+  "proof": "real-local-wrangler-durable-object",
+  "remote": false,
+  "runtime": "wrangler dev --local",
+  "stoppedAndReopened": true,
+  "persistedStateFiles": 15,
+  "packAllOutcome": "packed_all",
+  "packedTickets": [
+    "rsv_proof_hat",
+    "rsv_proof_shirt"
+  ],
+  "replayReturnedOriginalPackAll": true,
+  "durableAfterPackAll": {
+    "hat": {
+      "poolId": "pool_reservation_proof",
+      "locationId": "location_proof_shelf",
+      "skuId": "inventory_sku_proof_hat",
+      "onHand": {
+        "value": "7",
+        "unit": "each"
+      },
+      "reserved": {
+        "value": "0",
+        "unit": "each"
+      },
+      "outgoingTransferCommitted": {
+        "value": "0",
+        "unit": "each"
+      },
+      "available": {
+        "value": "7",
+        "unit": "each"
+      },
+      "expected": {
+        "value": "0",
+        "unit": "each"
+      },
+      "inTransit": {
+        "value": "0",
+        "unit": "each"
+      },
+      "version": "4",
+      "hasStockHistory": true
+    },
+    "shirt": {
+      "poolId": "pool_reservation_proof",
+      "locationId": "location_proof_shelf",
+      "skuId": "inventory_sku_proof_shirt",
+      "onHand": {
+        "value": "4",
+        "unit": "each"
+      },
+      "reserved": {
+        "value": "0",
+        "unit": "each"
+      },
+      "outgoingTransferCommitted": {
+        "value": "0",
+        "unit": "each"
+      },
+      "available": {
+        "value": "4",
+        "unit": "each"
+      },
+      "expected": {
+        "value": "0",
+        "unit": "each"
+      },
+      "inTransit": {
+        "value": "0",
+        "unit": "each"
+      },
+      "version": "3",
+      "hasStockHistory": true
+    }
+  }
+}

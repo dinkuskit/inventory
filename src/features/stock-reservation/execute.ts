@@ -17,18 +17,22 @@ import type {
 } from "../../storage/inventory-store.ts";
 import {
 	PACK_ALL_STOCK_TYPE,
+	PACK_SOME_STOCK_TYPE,
 	PACK_STOCK_TYPE,
 	RELEASE_STOCK_TYPE,
 	RESERVE_STOCK_TYPE,
 	RESERVATION_RECORD_SCHEMA,
 	digestStockReservationCommand,
+	holdIsOpen,
 	normalizePackAllStockCommand,
+	normalizePackSomeStockCommand,
 	normalizePackStockCommand,
 	normalizeReleaseStockCommand,
 	normalizeReserveStockCommand,
 	reservationOrderLineKey,
 	sameReservationContents,
 	type PackAllStockCommandV1,
+	type PackSomeStockCommandV1,
 	type PackStockCommandV1,
 	type ReleaseStockCommandV1,
 	type ReservationRecord,
@@ -60,6 +64,11 @@ export type PackAllStock = (
 	command: PackAllStockCommandV1,
 	execution: PackAllStockExecution,
 ) => Promise<StockReservationResult>;
+export type PackSomeStockExecution = PackStockExecution;
+export type PackSomeStock = (
+	command: PackSomeStockCommandV1,
+	execution: PackSomeStockExecution,
+) => Promise<StockReservationResult>;
 
 export type StockReservationDependencies = Readonly<{
 	store: InventoryStore;
@@ -75,6 +84,7 @@ export type ReleaseStockDependencies = Readonly<{
 }>;
 export type PackStockDependencies = ReleaseStockDependencies;
 export type PackAllStockDependencies = PackStockDependencies;
+export type PackSomeStockDependencies = PackStockDependencies;
 
 function incrementVersion(version: string): string {
 	return (BigInt(version) + 1n).toString();
@@ -210,7 +220,8 @@ function receipt(input: {
 		| typeof RESERVE_STOCK_TYPE
 		| typeof RELEASE_STOCK_TYPE
 		| typeof PACK_STOCK_TYPE
-		| typeof PACK_ALL_STOCK_TYPE;
+		| typeof PACK_ALL_STOCK_TYPE
+		| typeof PACK_SOME_STOCK_TYPE;
 	committedAt: string;
 	principal: CommandPrincipal;
 	siteId: string;
@@ -384,6 +395,7 @@ export function executeReserveStockInTransaction(
 		locationId: command.context.locationId,
 		skuId: command.payload.skuId,
 		quantity: command.payload.quantity,
+		originalQuantity: command.payload.quantity,
 		orderLine: command.payload.orderLine,
 		status: "active",
 		version: "1",
@@ -456,7 +468,7 @@ export function executeReleaseStockInTransaction(
 			"The reservation does not exist in this inventory pool.",
 		);
 	}
-	if (current.status !== "active") {
+	if (!holdIsOpen(current.status)) {
 		return durableRejection(
 			transaction,
 			command.commandId,
@@ -564,7 +576,7 @@ export function executePackStockInTransaction(
 			"The reservation is already packed.",
 		);
 	}
-	if (current.status !== "active") {
+	if (!holdIsOpen(current.status)) {
 		return durableRejection(
 			transaction,
 			command.commandId,
@@ -591,6 +603,7 @@ export function executePackStockInTransaction(
 	const packedAt = committedAtFrom(dependencies.now);
 	const packed: ReservationRecord = {
 		...current,
+		quantity: { value: "0", unit: current.quantity.unit },
 		status: "packed",
 		version: incrementVersion(current.version),
 		packedAt,
@@ -650,7 +663,7 @@ function packAllHoldRejection(
 			message: "The reservation is already packed.",
 		};
 	}
-	if (current.status !== "active") {
+	if (!holdIsOpen(current.status)) {
 		return {
 			code: "reservation_not_active",
 			message: "The reservation is not active.",
@@ -725,6 +738,7 @@ export function executePackAllStockInTransaction(
 		working.set(key, after);
 		const packed: ReservationRecord = {
 			...current,
+			quantity: { value: "0", unit: current.quantity.unit },
 			status: "packed",
 			version: incrementVersion(current.version),
 			packedAt,
@@ -773,6 +787,149 @@ export function executePackAllStockInTransaction(
 			previous: originals.get(key) as BalanceRecord,
 			balance,
 		})),
+		receipt: committedReceipt,
+		result,
+	});
+	return result;
+}
+
+export function executePackSomeStockInTransaction(
+	transaction: InventoryTransaction,
+	command: PackSomeStockCommandV1,
+	principal: CommandPrincipal,
+	commandDigest: string,
+	dependencies: Readonly<{
+		now: () => Date;
+		createReceiptId: () => string;
+	}>,
+): StockReservationResult {
+	const replayed = replayOrConflict(
+		transaction,
+		command.commandId,
+		commandDigest,
+	);
+	if (replayed !== null) return replayed;
+
+	const current = transaction.getReservation(command.payload.reservationId);
+	if (current === null) {
+		return durableRejection(
+			transaction,
+			command.commandId,
+			commandDigest,
+			"reservation_not_found",
+			"The reservation does not exist in this inventory pool.",
+		);
+	}
+	if (current.status === "packed") {
+		return durableRejection(
+			transaction,
+			command.commandId,
+			commandDigest,
+			"reservation_already_packed",
+			"The reservation is already packed.",
+		);
+	}
+	if (!holdIsOpen(current.status)) {
+		return durableRejection(
+			transaction,
+			command.commandId,
+			commandDigest,
+			"reservation_not_active",
+			"The reservation is not active.",
+		);
+	}
+	if (command.payload.quantity.unit !== current.quantity.unit) {
+		return durableRejection(
+			transaction,
+			command.commandId,
+			commandDigest,
+			"sku_unit_mismatch",
+			"The packed quantity unit does not match the hold.",
+		);
+	}
+	if (
+		compareExactDecimal(command.payload.quantity.value, current.quantity.value) >
+		0
+	) {
+		return durableRejection(
+			transaction,
+			command.commandId,
+			commandDigest,
+			"reservation_quantity_exceeds_hold",
+			"A ticket can only pack the hats still reserved on it.",
+		);
+	}
+
+	const key = {
+		poolId: command.context.poolId,
+		locationId: current.locationId,
+		skuId: current.skuId,
+	};
+	const before = transaction.getBalance(key);
+	if (before === null) {
+		throw new Error("An active reservation is missing its balance row.");
+	}
+	if (
+		compareExactDecimal(before.reserved.value, command.payload.quantity.value) < 0
+	) {
+		throw new Error("Reserved stock is short of the packed hold.");
+	}
+
+	const remaining = subtractExactDecimal(
+		current.quantity.value,
+		command.payload.quantity.value,
+	);
+	const finished = compareExactDecimal(remaining, "0") === 0;
+	const after = applyPackDelta(before, command.payload.quantity.value);
+	const packedAt = committedAtFrom(dependencies.now);
+	const next: ReservationRecord = finished
+		? {
+				...current,
+				quantity: { value: "0", unit: current.quantity.unit },
+				status: "packed",
+				version: incrementVersion(current.version),
+				packedAt,
+				packedBy: principal,
+			}
+		: {
+				...current,
+				quantity: { value: remaining, unit: current.quantity.unit },
+				status: "partially_packed",
+				version: incrementVersion(current.version),
+			};
+	const packedDelta = {
+		value: `-${command.payload.quantity.value}`,
+		unit: current.quantity.unit,
+	};
+	const committedReceipt = receipt({
+		commandId: command.commandId,
+		commandDigest,
+		type: PACK_SOME_STOCK_TYPE,
+		committedAt: packedAt,
+		principal,
+		siteId: command.context.siteId,
+		poolId: command.context.poolId,
+		reservationBefore: current,
+		reservationAfter: next,
+		effects: [effect(before, after, packedDelta, packedDelta)],
+		references: command.references,
+		createReceiptId: dependencies.createReceiptId,
+	});
+	const result: StockReservationResult = {
+		schema: COMMAND_RESULT_SCHEMA,
+		outcome: finished ? "packed" : "packed_some",
+		commandId: command.commandId,
+		reservation: next,
+		receipt: committedReceipt,
+	};
+	transaction.commitStockReservation({
+		commandId: command.commandId,
+		commandDigest,
+		previous: current,
+		reservation: next,
+		orderLineKey: reservationOrderLineKey(current.orderLine),
+		previousBalance: before,
+		balance: after,
 		receipt: committedReceipt,
 		result,
 	});
@@ -862,6 +1019,36 @@ export function createPackStock(
 			command.context.poolId,
 			(transaction) =>
 				executePackStockInTransaction(
+					transaction,
+					command,
+					principal,
+					commandDigest,
+					dependencies,
+				),
+		);
+	};
+}
+
+export function createPackSomeStock(
+	dependencies: PackSomeStockDependencies,
+): PackSomeStock {
+	if (dependencies?.store === undefined) {
+		throw new TypeError("store is required.");
+	}
+	if (typeof dependencies.now !== "function") {
+		throw new TypeError("now is required.");
+	}
+	if (typeof dependencies.createReceiptId !== "function") {
+		throw new TypeError("createReceiptId is required.");
+	}
+	return async (commandInput, executionInput) => {
+		const command = normalizePackSomeStockCommand(commandInput);
+		const principal = normalizeCommandPrincipal(executionInput?.principal);
+		const commandDigest = await digestStockReservationCommand(command);
+		return dependencies.store.runTransaction(
+			command.context.poolId,
+			(transaction) =>
+				executePackSomeStockInTransaction(
 					transaction,
 					command,
 					principal,

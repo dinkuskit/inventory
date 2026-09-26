@@ -4,10 +4,12 @@ import test from "node:test";
 import {
 	InvalidStockReservationCommandError,
 	PACK_ALL_STOCK_TYPE,
+	PACK_SOME_STOCK_TYPE,
 	PACK_STOCK_TYPE,
 	RESERVE_STOCK_TYPE,
 	RELEASE_STOCK_TYPE,
 	normalizePackAllStockCommand,
+	normalizePackSomeStockCommand,
 	normalizePackStockCommand,
 	normalizeReleaseStockCommand,
 	normalizeReserveStockCommand,
@@ -112,6 +114,48 @@ test("pack all command trims ticket ids and requires one or more unique tickets"
 				type: PACK_ALL_STOCK_TYPE,
 				context: { siteId: "site_test", poolId: "pool_test" },
 				payload: { reservationIds: ["rsv_hat", "rsv_hat"] },
+				references: [],
+			}),
+		InvalidStockReservationCommandError,
+	);
+});
+
+test("pack some command trims the ticket and requires a positive quantity", () => {
+	assert.deepEqual(
+		normalizePackSomeStockCommand({
+			schema: "dinkuskit.inventory.command/v1",
+			commandId: " cmd_pack_some_001 ",
+			type: PACK_SOME_STOCK_TYPE,
+			context: { siteId: " site_test ", poolId: " pool_test " },
+			payload: {
+				reservationId: " rsv_hat ",
+				quantity: { value: "1", unit: " each " },
+			},
+			references: [],
+		}),
+		{
+			schema: "dinkuskit.inventory.command/v1",
+			commandId: "cmd_pack_some_001",
+			type: "stock.pack_some",
+			context: { siteId: "site_test", poolId: "pool_test" },
+			payload: {
+				reservationId: "rsv_hat",
+				quantity: { value: "1", unit: "each" },
+			},
+			references: [],
+		},
+	);
+	assert.throws(
+		() =>
+			normalizePackSomeStockCommand({
+				schema: "dinkuskit.inventory.command/v1",
+				commandId: "cmd_pack_some_zero",
+				type: PACK_SOME_STOCK_TYPE,
+				context: { siteId: "site_test", poolId: "pool_test" },
+				payload: {
+					reservationId: "rsv_hat",
+					quantity: { value: "0", unit: "each" },
+				},
 				references: [],
 			}),
 		InvalidStockReservationCommandError,

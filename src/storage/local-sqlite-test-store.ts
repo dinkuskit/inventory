@@ -42,7 +42,7 @@ import type {
 } from "./inventory-store.ts";
 
 const STORAGE_ROLE = "local-development-test-only";
-const SCHEMA_VERSION = "opening-balance-local/v9";
+const SCHEMA_VERSION = "opening-balance-local/v10";
 const EXPECTED_TABLES = [
 	"inventory_balances",
 	"inventory_command_results",
@@ -357,7 +357,7 @@ class SqliteInventoryTransaction implements InventoryTransaction {
 				.prepare(
 					`SELECT reservation_json
 					 FROM inventory_reservations
-					 WHERE pool_id = ? AND order_line_key = ? AND status = 'active'`,
+					 WHERE pool_id = ? AND order_line_key = ? AND status IN ('active', 'partially_packed')`,
 				)
 				.get(this.#poolId, orderLineKey) as DatabaseRow | undefined,
 		);
@@ -1051,14 +1051,14 @@ export class LocalSqliteTestInventoryStore implements InventoryStore {
 				pool_id TEXT NOT NULL,
 				reservation_id TEXT NOT NULL,
 				order_line_key TEXT NOT NULL,
-				status TEXT NOT NULL CHECK (status IN ('active', 'canceled', 'packed')),
+				status TEXT NOT NULL CHECK (status IN ('active', 'partially_packed', 'canceled', 'packed')),
 				version INTEGER NOT NULL CHECK (version >= 1),
 				reservation_json TEXT NOT NULL,
 				PRIMARY KEY (pool_id, reservation_id)
 			) STRICT;
 			CREATE UNIQUE INDEX inventory_reservations_active_order_line
 				ON inventory_reservations (pool_id, order_line_key)
-				WHERE status = 'active';
+				WHERE status IN ('active', 'partially_packed');
 			CREATE TABLE inventory_receipts (
 				receipt_id TEXT PRIMARY KEY,
 				command_id TEXT NOT NULL UNIQUE,

@@ -500,16 +500,20 @@ product settings and external inventory-provider implementations.
 
 ## packing-consume-006 through packing-unpack-009 — consume at Packed (locked)
 
-`stock.pack` consumes one named active hold in full when the order moves
-Processing → Packed. On-hand and reserved both drop by the hold quantity;
-available stays the same because it already came off at reserve. Packed is
-one-way this cycle. `stock.pack_all` packs one or more hold tickets Commerce
-already has for that order, all or none. Inventory does not store or look up
-an order number. If any named ticket is not an active hold, pack nothing; the
-remaining active ticket stays reserved so the order can still be fulfilled
-with `stock.pack`. Pack Some and Unpack wait. Unpaid Hold cancels at 60
-minutes through existing `stock.release`; that clock is Commerce, not this
-kernel. Shipped/label after Packed does not change counts.
+`stock.pack` consumes one named open hold in full when the order moves
+Processing → Packed. On-hand and reserved both drop by the remaining hold
+quantity; available stays the same because it already came off at reserve.
+Packed is one-way this cycle. `stock.pack_all` packs one or more hold tickets
+Commerce already has for that order, all or none. Inventory does not store or
+look up an order number. If any named ticket is not an open hold, pack
+nothing; the remaining open ticket stays reserved so the order can still be
+fulfilled. `stock.pack_some` packs a named quantity from one ticket. Same
+ticket shrinks. Leftover stays reserved as partially packed. Last bags or the
+full remaining quantity in one shot is packed. Asking for more than remaining
+packs none. Reissuing the original reserve for that order line returns the
+same partially packed ticket and does not hold more stock. Unpack waits. Unpaid Hold cancels at 60 minutes through existing
+`stock.release`; that clock is Commerce, not this kernel. Shipped/label after
+Packed does not change counts.
 
 ## reservation-domain-001 through reservation-cancel-005 — named order holds (locked)
 
@@ -527,10 +531,11 @@ transport remain deferred.
 
 ## Next focused grill
 
-Select the next Inventory-owned slice after pack-all. Pack Some, Unpack,
-expiry, backorder, GUI, CLI, Commerce/Blocks integration, service
-authentication, deployment, and production mutation remain deferred until
-separately grilled and approved.
+Select the next Inventory-owned slice after pack-some. Unpack, expiry,
+backorder, GUI, CLI, Commerce/Blocks integration, service authentication,
+deployment, and production mutation remain deferred until separately grilled
+and approved. The packing-screen cap/flash that stops typing 4 on a 3-hat
+ticket is GUI, not this kernel.
 
 ## Cross-references
 
