@@ -160,20 +160,22 @@ share the same normalized name even when one or both are archived.
 ## fresh-schema-initialization-034 — exact predecessor storage upgrades safely (locked)
 
 A new empty Cloudflare Durable Object initializes directly at complete schema
-v8 and records history `[8]`. The committed v2 through v7 schemas remain real
-predecessor contracts even though no production pool exists. Exact v7 storage
-renames live reservation status `active` to `not_shipped`, producing `[7, 8]`.
-Exact v6 storage first adds original quantity and partially packed status,
-then the not-shipped rename, producing `[6, 7, 8]`. Exact v5 storage first
-allows packed reservation status, then v7 and v8, producing `[5, 6, 7, 8]`.
-Exact v4 storage adds reservation records then packed status and the later
-reservation upgrades, producing `[4, 5, 6, 7, 8]`. Exact v3 storage first adds
-transfer-planning quantities and transfer records, then reservation records
-and packed status, producing `[3, 4, 5, 6, 7, 8]`. Exact v2 storage first
-backfills each legacy balanced SKU key as a stable managed identity, then
-advances through v8, producing `[2, 3, 4, 5, 6, 7, 8]`. All paths preserve
-predecessor records. Version 1, partial, conflicting-unit, extra-table, or
-otherwise incompatible storage fails closed without a partial migration.
+v9 and records history `[9]`. The committed v2 through v8 schemas remain real
+predecessor contracts even though no production pool exists. Exact v8 storage
+allows packed tickets to become Delivered, producing `[8, 9]`. Exact v7 storage
+renames live reservation status `active` to `not_shipped`, then allows Delivered,
+producing `[7, 8, 9]`. Exact v6 storage first adds original quantity and
+partially packed status, then the not-shipped rename and Delivered, producing
+`[6, 7, 8, 9]`. Exact v5 storage first allows packed reservation status, then
+v7 through v9, producing `[5, 6, 7, 8, 9]`. Exact v4 storage adds reservation
+records then packed status and the later reservation upgrades, producing
+`[4, 5, 6, 7, 8, 9]`. Exact v3 storage first adds transfer-planning quantities
+and transfer records, then reservation records and packed status, producing
+`[3, 4, 5, 6, 7, 8, 9]`. Exact v2 storage first backfills each legacy balanced
+SKU key as a stable managed identity, then advances through v9, producing
+`[2, 3, 4, 5, 6, 7, 8, 9]`. All paths preserve predecessor records. Version 1,
+partial, conflicting-unit, extra-table, or otherwise incompatible storage fails
+closed without a partial migration.
 
 ## opening-balance-location-admission-035 — active locations only (locked)
 
@@ -521,8 +523,13 @@ back by the packed amount; available stays the same. No quantity field. Missing,
 not-shipped, and canceled tickets reject. Revert-from-Delivered waits with ship.
 Unpack-some waits; the Katana fix for a wrong pack quantity is unpack then pack
 some again. Unpaid Hold cancels at 60 minutes through existing `stock.release`;
-that clock is Commerce, not this kernel. Shipped/label after Packed does not
-change counts.
+that clock is Commerce, not this kernel. `stock.deliver` names one or more packed
+tickets Commerce already has. No quantity. No order number. All named tickets
+become Delivered, or none if any is missing, not shipped, partially packed,
+canceled, or already Delivered. Status only: on-hand, reserved, and available do
+not change. A one-line order uses the same command with one ticket. Human click
+and label-print webhook both call this command later. GUI, live Commerce, Woo,
+Katana, ShipTheory, and revert-from-Delivered wait.
 
 ## reservation-domain-001 through reservation-cancel-005 — named order holds (locked)
 
@@ -540,8 +547,8 @@ transport remain deferred.
 
 ## Next focused grill
 
-Select the next Inventory-owned slice after unpack. Unpack-some, unpack-all,
-revert-from-Delivered, expiry, backorder, GUI, CLI, Commerce/Blocks
+Select the next Inventory-owned slice after Packed to Delivered. Unpack-some,
+unpack-all, revert-from-Delivered, expiry, backorder, GUI, CLI, Commerce/Blocks
 integration, service authentication, deployment, and production mutation remain
 deferred until separately grilled and approved. The packing-screen cap/flash
 that stops typing 4 on a 3-hat ticket is GUI, not this kernel.

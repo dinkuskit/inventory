@@ -32,6 +32,14 @@ assert.equal(commit.unpack.reservation.status, "not_shipped");
 assert.equal(commit.unpack.reservation.quantity.value, "3");
 assert.equal(commit.durableAfterUnpack.balances.hat.onHand.value, "10");
 assert.equal(commit.durableAfterUnpack.balances.hat.reserved.value, "3");
+assert.equal(commit.packHat.outcome, "packed");
+assert.equal(commit.deliver.outcome, "delivered");
+assert.equal(commit.deliver.reservations.length, 2);
+assert.equal(commit.deliver.reservations[0].status, "delivered");
+assert.equal(commit.deliver.reservations[1].status, "delivered");
+assert.equal(commit.durableAfterDeliver.balances.hat.onHand.value, "7");
+assert.equal(commit.durableAfterDeliver.balances.hat.reserved.value, "0");
+assert.equal(commit.durableAfterDeliver.balances.hat.available.value, "7");
 assert.equal(commit.packAll.reservations.length, 2);
 assert.equal(commit.packAll.reservations[0].reservationId, "rsv_proof_hat");
 assert.equal(commit.packAll.reservations[1].reservationId, "rsv_proof_shirt");
@@ -40,8 +48,9 @@ assert.equal(commit.durable.balances.hat.reserved.value, "0");
 assert.equal(commit.durable.balances.shirt.onHand.value, "4");
 assert.equal(commit.durable.balances.shirt.reserved.value, "0");
 assert.deepEqual(replay.result, commit.packAll);
-assert.equal(replay.durable.balances.hat.onHand.value, "10");
-assert.equal(replay.durable.balances.hat.reserved.value, "3");
+assert.deepEqual(replay.deliver, commit.deliver);
+assert.equal(replay.durable.balances.hat.onHand.value, "7");
+assert.equal(replay.durable.balances.hat.reserved.value, "0");
 assert.equal(replay.durable.balances.shirt.onHand.value, "4");
 
 console.log(
@@ -57,7 +66,10 @@ console.log(
 				(hold) => hold.reservationId,
 			),
 			replayReturnedOriginalPackAll: true,
+			replayReturnedOriginalDeliver: true,
+			deliverOutcome: commit.deliver.outcome,
 			durableAfterPackAll: commit.durable.balances,
+			durableAfterDeliver: commit.durableAfterDeliver.balances,
 		},
 		null,
 		2,

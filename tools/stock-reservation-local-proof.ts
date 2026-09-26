@@ -4,12 +4,16 @@ import { createExecuteLocationCommand } from "../src/application/location-regist
 import { createSetOpeningBalance } from "../src/application/set-opening-balance.ts";
 import { createRegisterManagedSku } from "../src/features/managed-sku/index.ts";
 import {
+	createDeliverStock,
 	createPackAllStock,
 	createPackSomeStock,
+	createPackStock,
 	createReserveStock,
 	createUnpackStock,
+	type DeliverStockCommandV1,
 	type PackAllStockCommandV1,
 	type PackSomeStockCommandV1,
+	type PackStockCommandV1,
 	type ReserveStockCommandV1,
 	type UnpackStockCommandV1,
 } from "../src/features/stock-reservation/index.ts";
@@ -67,6 +71,28 @@ function unpackHatCommand(): UnpackStockCommandV1 {
 		type: "stock.unpack",
 		context: { siteId: SITE_ID, poolId: POOL_ID },
 		payload: { reservationId: "rsv_proof_hat" },
+		references: [],
+	};
+}
+
+function packHatCommand(): PackStockCommandV1 {
+	return {
+		schema: "dinkuskit.inventory.command/v1",
+		commandId: "cmd_proof_pack_hat_again",
+		type: "stock.pack",
+		context: { siteId: SITE_ID, poolId: POOL_ID },
+		payload: { reservationId: "rsv_proof_hat" },
+		references: [],
+	};
+}
+
+function deliverCommand(): DeliverStockCommandV1 {
+	return {
+		schema: "dinkuskit.inventory.command/v1",
+		commandId: "cmd_proof_deliver",
+		type: "stock.deliver",
+		context: { siteId: SITE_ID, poolId: POOL_ID },
+		payload: { reservationIds: ["rsv_proof_hat", "rsv_proof_shirt"] },
 		references: [],
 	};
 }
@@ -248,6 +274,17 @@ export class StockReservationProofPool extends DurableObject<StockReservationPro
 			now: () => new Date("2026-09-25T16:05:30.000Z"),
 			createReceiptId: () => "rcpt_proof_unpack_hat",
 		})(unpackHatCommand(), { principal });
+		const durableAfterUnpack = { balances: await this.#durableBalances() };
+		const packedHat = await createPackStock({
+			store,
+			now: () => new Date("2026-09-25T16:05:45.000Z"),
+			createReceiptId: () => "rcpt_proof_pack_hat_again",
+		})(packHatCommand(), { principal });
+		const delivered = await createDeliverStock({
+			store,
+			now: () => new Date("2026-09-25T16:06:00.000Z"),
+			createReceiptId: () => "rcpt_proof_deliver",
+		})(deliverCommand(), { principal });
 		return {
 			proof: "real-local-wrangler-durable-object",
 			phase: "commit",
@@ -257,8 +294,11 @@ export class StockReservationProofPool extends DurableObject<StockReservationPro
 			reReserve: again,
 			packAll: packed,
 			unpack: unpacked,
+			packHat: packedHat,
+			deliver: delivered,
 			durable: { balances: packAllBalances },
-			durableAfterUnpack: { balances: await this.#durableBalances() },
+			durableAfterUnpack,
+			durableAfterDeliver: { balances: await this.#durableBalances() },
 		};
 	}
 
@@ -270,11 +310,17 @@ export class StockReservationProofPool extends DurableObject<StockReservationPro
 			now: () => new Date("2026-09-25T16:06:00.000Z"),
 			createReceiptId: () => "must_not_write_replay",
 		})(packAllCommand(), { principal });
+		const deliver = await createDeliverStock({
+			store,
+			now: () => new Date("2026-09-25T16:06:30.000Z"),
+			createReceiptId: () => "must_not_write_deliver_replay",
+		})(deliverCommand(), { principal });
 		return {
 			proof: "real-local-wrangler-durable-object",
 			phase: "replay_after_restart",
 			remote: false,
 			result,
+			deliver,
 			durable: { balances: await this.#durableBalances() },
 		};
 	}

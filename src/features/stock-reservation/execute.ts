@@ -16,6 +16,7 @@ import type {
 	InventoryTransaction,
 } from "../../storage/inventory-store.ts";
 import {
+	DELIVER_STOCK_TYPE,
 	PACK_ALL_STOCK_TYPE,
 	PACK_SOME_STOCK_TYPE,
 	PACK_STOCK_TYPE,
@@ -25,6 +26,7 @@ import {
 	RESERVATION_RECORD_SCHEMA,
 	digestStockReservationCommand,
 	holdIsOpen,
+	normalizeDeliverStockCommand,
 	normalizePackAllStockCommand,
 	normalizePackSomeStockCommand,
 	normalizePackStockCommand,
@@ -33,6 +35,7 @@ import {
 	normalizeUnpackStockCommand,
 	reservationOrderLineKey,
 	sameReservationContents,
+	type DeliverStockCommandV1,
 	type PackAllStockCommandV1,
 	type PackSomeStockCommandV1,
 	type PackStockCommandV1,
@@ -77,6 +80,11 @@ export type UnpackStock = (
 	command: UnpackStockCommandV1,
 	execution: UnpackStockExecution,
 ) => Promise<StockReservationResult>;
+export type DeliverStockExecution = PackStockExecution;
+export type DeliverStock = (
+	command: DeliverStockCommandV1,
+	execution: DeliverStockExecution,
+) => Promise<StockReservationResult>;
 
 export type StockReservationDependencies = Readonly<{
 	store: InventoryStore;
@@ -94,6 +102,7 @@ export type PackStockDependencies = ReleaseStockDependencies;
 export type PackAllStockDependencies = PackStockDependencies;
 export type PackSomeStockDependencies = PackStockDependencies;
 export type UnpackStockDependencies = PackStockDependencies;
+export type DeliverStockDependencies = PackStockDependencies;
 
 function incrementVersion(version: string): string {
 	return (BigInt(version) + 1n).toString();
@@ -248,7 +257,8 @@ function receipt(input: {
 		| typeof PACK_STOCK_TYPE
 		| typeof PACK_ALL_STOCK_TYPE
 		| typeof PACK_SOME_STOCK_TYPE
-		| typeof UNPACK_STOCK_TYPE;
+		| typeof UNPACK_STOCK_TYPE
+		| typeof DELIVER_STOCK_TYPE;
 	committedAt: string;
 	principal: CommandPrincipal;
 	siteId: string;
@@ -820,6 +830,119 @@ export function executePackAllStockInTransaction(
 	return result;
 }
 
+function deliverHoldRejection(
+	current: ReservationRecord | null,
+): Readonly<{ code: StockReservationRejectionCode; message: string }> | null {
+	if (current === null) {
+		return {
+			code: "reservation_not_found",
+			message: "The reservation does not exist in this inventory pool.",
+		};
+	}
+	if (current.status === "delivered") {
+		return {
+			code: "reservation_already_delivered",
+			message: "The ticket is already Delivered.",
+		};
+	}
+	if (current.status !== "packed") {
+		if (current.status === "canceled") {
+			return {
+				code: "reservation_not_active",
+				message: "The reservation is not active.",
+			};
+		}
+		return {
+			code: "reservation_not_packed",
+			message: "Only a fully Packed ticket can be marked Delivered.",
+		};
+	}
+	return null;
+}
+
+export function executeDeliverStockInTransaction(
+	transaction: InventoryTransaction,
+	command: DeliverStockCommandV1,
+	principal: CommandPrincipal,
+	commandDigest: string,
+	dependencies: Readonly<{
+		now: () => Date;
+		createReceiptId: () => string;
+	}>,
+): StockReservationResult {
+	const replayed = replayOrConflict(
+		transaction,
+		command.commandId,
+		commandDigest,
+	);
+	if (replayed !== null) return replayed;
+
+	const currents: ReservationRecord[] = [];
+	for (const reservationId of command.payload.reservationIds) {
+		const current = transaction.getReservation(reservationId);
+		const rejected = deliverHoldRejection(current);
+		if (rejected !== null) {
+			return durableRejection(
+				transaction,
+				command.commandId,
+				commandDigest,
+				rejected.code,
+				rejected.message,
+			);
+		}
+		currents.push(current as ReservationRecord);
+	}
+
+	const deliveredAt = committedAtFrom(dependencies.now);
+	const deliveredHolds: ReservationRecord[] = [];
+	const holds: { before: ReservationRecord; after: ReservationRecord }[] = [];
+	for (const current of currents) {
+		const delivered: ReservationRecord = {
+			...current,
+			status: "delivered",
+			version: incrementVersion(current.version),
+		};
+		deliveredHolds.push(delivered);
+		holds.push({ before: current, after: delivered });
+	}
+
+	const committedReceipt = receipt({
+		commandId: command.commandId,
+		commandDigest,
+		type: DELIVER_STOCK_TYPE,
+		committedAt: deliveredAt,
+		principal,
+		siteId: command.context.siteId,
+		poolId: command.context.poolId,
+		reservationBefore: currents[0] ?? null,
+		reservationAfter: deliveredHolds[0] as ReservationRecord,
+		holds,
+		effects: [],
+		references: command.references,
+		createReceiptId: dependencies.createReceiptId,
+	});
+	const result: StockReservationResult = {
+		schema: COMMAND_RESULT_SCHEMA,
+		outcome: "delivered",
+		commandId: command.commandId,
+		reservations: deliveredHolds,
+		receipt: committedReceipt,
+	};
+	transaction.commitStockReservationBatch({
+		commandId: command.commandId,
+		commandDigest,
+		reservations: holds.map((hold) => ({
+			previous: hold.before,
+			reservation: hold.after,
+			orderLineKey: reservationOrderLineKey(hold.before.orderLine),
+		})),
+		balances: [],
+		receipt: committedReceipt,
+		result,
+	});
+	return result;
+}
+
 export function executePackSomeStockInTransaction(
 	transaction: InventoryTransaction,
 	command: PackSomeStockCommandV1,
@@ -1225,6 +1348,36 @@ export function createUnpackStock(
 			command.context.poolId,
 			(transaction) =>
 				executeUnpackStockInTransaction(
+					transaction,
+					command,
+					principal,
+					commandDigest,
+					dependencies,
+				),
+		);
+	};
+}
+
+export function createDeliverStock(
+	dependencies: DeliverStockDependencies,
+): DeliverStock {
+	if (dependencies?.store === undefined) {
+		throw new TypeError("store is required.");
+	}
+	if (typeof dependencies.now !== "function") {
+		throw new TypeError("now is required.");
+	}
+	if (typeof dependencies.createReceiptId !== "function") {
+		throw new TypeError("createReceiptId is required.");
+	}
+	return async (commandInput, executionInput) => {
+		const command = normalizeDeliverStockCommand(commandInput);
+		const principal = normalizeCommandPrincipal(executionInput?.principal);
+		const commandDigest = await digestStockReservationCommand(command);
+		return dependencies.store.runTransaction(
+			command.context.poolId,
+			(transaction) =>
+				executeDeliverStockInTransaction(
 					transaction,
 					command,
 					principal,

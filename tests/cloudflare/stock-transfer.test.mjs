@@ -376,7 +376,7 @@ describe("stock transfer Cloudflare parity", () => {
 					.exec("SELECT version FROM inventory_schema_migrations ORDER BY version")
 					.toArray()
 					.map((row) => Number(row.version)),
-			).toEqual([8]);
+			).toEqual([9]);
 		});
 	});
 
@@ -637,7 +637,7 @@ describe("stock transfer Cloudflare parity", () => {
 					.exec("SELECT version FROM inventory_schema_migrations ORDER BY version")
 					.toArray()
 					.map((row) => Number(row.version)),
-			).toEqual([8]);
+			).toEqual([9]);
 		});
 	});
 
@@ -796,7 +796,7 @@ describe("stock transfer Cloudflare parity", () => {
 					.exec("SELECT version FROM inventory_schema_migrations ORDER BY version")
 					.toArray()
 					.map((row) => Number(row.version)),
-			).toEqual([8]);
+			).toEqual([9]);
 
 			const selectedDone = await read({
 				poolId,

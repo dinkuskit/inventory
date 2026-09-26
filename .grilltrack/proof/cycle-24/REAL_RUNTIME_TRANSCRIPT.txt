@@ -1,0 +1,30 @@
+# Real runtime transcript — stock.deliver
+# Command: npm run proof:stock-reservation:real
+# Date: 2026-09-26
+# Redacted: temporary SQLite path and Wrangler persist dir/port.
+
+$ node --experimental-sqlite --experimental-strip-types tools/stock-reservation-local-sqlite-proof.mjs <new-temporary-sqlite-file>
+deliver.outcome=delivered
+deliver.ids=rsv_proof_hat,rsv_proof_shirt
+deliver.status=delivered,delivered
+balanceAfterDeliver.hat.onHand=7
+balanceAfterDeliver.hat.reserved=0
+balanceAfterDeliver.hat.available=7
+replayedOriginalDeliver.outcome=delivered
+
+$ wrangler dev --local --persist-to <temporary-cloudflare-state> -c wrangler.stock-reservation-proof.jsonc
+$ curl --request POST --data {"action":"commit"} http://127.0.0.1:<temporary-port>/
+$ stop Wrangler, reopen the same temporary persisted state, and replay the exact pack-all and deliver commands
+
+proof=real-local-wrangler-durable-object
+remote=false
+runtime=wrangler dev --local
+stoppedAndReopened=true
+persistedStateFiles=15
+packAllOutcome=packed_all
+deliverOutcome=delivered
+replayReturnedOriginalPackAll=true
+replayReturnedOriginalDeliver=true
+durableAfterDeliver.hat.onHand=7
+durableAfterDeliver.hat.reserved=0
+durableAfterDeliver.hat.available=7

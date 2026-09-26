@@ -2,8 +2,10 @@ import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 
 import {
+	createDeliverStock,
 	createPackAllStock,
 	createPackSomeStock,
+	createPackStock,
 	createReadSkuLocationBalance,
 	createReserveStock,
 	createSetOpeningBalance,
@@ -196,6 +198,37 @@ const unpacked = await createUnpackStock({
 	{ principal },
 );
 const afterUnpack = await balances(store);
+const packedHat = await createPackStock({
+	store,
+	now: () => new Date("2026-09-25T16:05:45.000Z"),
+	createReceiptId: () => "rcpt_proof_pack_hat_again",
+})(
+	{
+		schema: "dinkuskit.inventory.command/v1",
+		commandId: "cmd_proof_pack_hat_again",
+		type: "stock.pack",
+		context: { siteId: context.siteId, poolId: context.poolId },
+		payload: { reservationId: "rsv_proof_hat" },
+		references: [],
+	},
+	{ principal },
+);
+const delivered = await createDeliverStock({
+	store,
+	now: () => new Date("2026-09-25T16:06:00.000Z"),
+	createReceiptId: () => "rcpt_proof_deliver",
+})(
+	{
+		schema: "dinkuskit.inventory.command/v1",
+		commandId: "cmd_proof_deliver",
+		type: "stock.deliver",
+		context: { siteId: context.siteId, poolId: context.poolId },
+		payload: { reservationIds: ["rsv_proof_hat", "rsv_proof_shirt"] },
+		references: [],
+	},
+	{ principal },
+);
+const afterDeliver = await balances(store);
 await store.close();
 
 const reopened = createLocalSqliteTestStore({ filePath });
@@ -204,6 +237,21 @@ const replayed = await createPackAllStock({
 	now: () => new Date("2026-09-25T16:06:00.000Z"),
 	createReceiptId: () => "must_not_write",
 })(packAllCommand(), { principal });
+const replayedDeliver = await createDeliverStock({
+	store: reopened,
+	now: () => new Date("2026-09-25T16:06:30.000Z"),
+	createReceiptId: () => "must_not_write_deliver",
+})(
+	{
+		schema: "dinkuskit.inventory.command/v1",
+		commandId: "cmd_proof_deliver",
+		type: "stock.deliver",
+		context: { siteId: context.siteId, poolId: context.poolId },
+		payload: { reservationIds: ["rsv_proof_hat", "rsv_proof_shirt"] },
+		references: [],
+	},
+	{ principal },
+);
 const afterReopen = await balances(reopened);
 await reopened.close();
 
@@ -233,12 +281,26 @@ console.log(
 				status: unpacked.reservation?.status,
 				quantity: unpacked.reservation?.quantity?.value,
 			},
+			packHat: {
+				outcome: packedHat.outcome,
+				status: packedHat.reservation?.status,
+			},
+			deliver: {
+				outcome: delivered.outcome,
+				ids: delivered.reservations?.map((hold) => hold.reservationId),
+				status: delivered.reservations?.map((hold) => hold.status),
+			},
 			replayedOriginalPackAll: {
 				outcome: replayed.outcome,
 				ids: replayed.reservations?.map((hold) => hold.reservationId),
 			},
+			replayedOriginalDeliver: {
+				outcome: replayedDeliver.outcome,
+				ids: replayedDeliver.reservations?.map((hold) => hold.reservationId),
+			},
 			balanceAfterPackAll: afterPack,
 			balanceAfterUnpack: afterUnpack,
+			balanceAfterDeliver: afterDeliver,
 			balanceAfterReopen: afterReopen,
 		},
 		null,
