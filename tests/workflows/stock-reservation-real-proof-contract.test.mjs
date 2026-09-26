@@ -44,14 +44,17 @@ test("real stock-reservation proof stays local and reopens durable state", async
 	assert.match(probe, /initializeCloudflareInventorySchema/u);
 	assert.match(probe, /createPackAllStock/u);
 	assert.match(probe, /createPackSomeStock/u);
+	assert.match(probe, /createUnpackStock/u);
 	assert.match(probe, /rsv_proof_hat/u);
 	assert.match(probe, /rsv_proof_shirt/u);
 	assert.match(sqliteProof, /createLocalSqliteTestStore\(\{ filePath \}\)/u);
 	assert.match(sqliteProof, /await store\.close\(\)/u);
 	assert.match(sqliteProof, /stock.pack_some/u);
+	assert.match(sqliteProof, /stock.unpack/u);
 	assert.match(assertion, /deepEqual\(replay\.result, commit\.packAll\)/u);
 	assert.match(assertion, /packed_all/u);
 	assert.match(assertion, /packed_some/u);
+	assert.match(assertion, /not_shipped/u);
 	assert.match(assertion, /rsv_proof_shirt/u);
 	assert.match(runner, /wrangler dev/u);
 	assert.match(runner, /--local/u);

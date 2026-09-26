@@ -7,6 +7,7 @@ import {
 	createReadSkuLocationBalance,
 	createReserveStock,
 	createSetOpeningBalance,
+	createUnpackStock,
 } from "../src/index.ts";
 import { createLocalSqliteTestStore } from "../src/storage/local-sqlite-test-store.ts";
 import { createFixtureLocation } from "../tests/helpers/location-fixture.mjs";
@@ -179,6 +180,22 @@ const packed = await createPackAllStock({
 	createReceiptId: () => "rcpt_proof_pack_all",
 })(packAllCommand(), { principal });
 const afterPack = await balances(store);
+const unpacked = await createUnpackStock({
+	store,
+	now: () => new Date("2026-09-25T16:05:30.000Z"),
+	createReceiptId: () => "rcpt_proof_unpack_hat",
+})(
+	{
+		schema: "dinkuskit.inventory.command/v1",
+		commandId: "cmd_proof_unpack_hat",
+		type: "stock.unpack",
+		context: { siteId: context.siteId, poolId: context.poolId },
+		payload: { reservationId: "rsv_proof_hat" },
+		references: [],
+	},
+	{ principal },
+);
+const afterUnpack = await balances(store);
 await store.close();
 
 const reopened = createLocalSqliteTestStore({ filePath });
@@ -211,11 +228,17 @@ console.log(
 				outcome: packed.outcome,
 				ids: packed.reservations?.map((hold) => hold.reservationId),
 			},
+			unpack: {
+				outcome: unpacked.outcome,
+				status: unpacked.reservation?.status,
+				quantity: unpacked.reservation?.quantity?.value,
+			},
 			replayedOriginalPackAll: {
 				outcome: replayed.outcome,
 				ids: replayed.reservations?.map((hold) => hold.reservationId),
 			},
 			balanceAfterPackAll: afterPack,
+			balanceAfterUnpack: afterUnpack,
 			balanceAfterReopen: afterReopen,
 		},
 		null,

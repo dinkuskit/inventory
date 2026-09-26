@@ -7,9 +7,11 @@ import {
 	createPackAllStock,
 	createPackSomeStock,
 	createReserveStock,
+	createUnpackStock,
 	type PackAllStockCommandV1,
 	type PackSomeStockCommandV1,
 	type ReserveStockCommandV1,
+	type UnpackStockCommandV1,
 } from "../src/features/stock-reservation/index.ts";
 import { createCloudflareSqliteInventoryStore } from "../src/storage/cloudflare-sqlite-inventory-store.ts";
 import { initializeCloudflareInventorySchema } from "../src/cloudflare/schema.ts";
@@ -54,6 +56,17 @@ function packAllCommand(): PackAllStockCommandV1 {
 		type: "stock.pack_all",
 		context: { siteId: SITE_ID, poolId: POOL_ID },
 		payload: { reservationIds: ["rsv_proof_hat", "rsv_proof_shirt"] },
+		references: [],
+	};
+}
+
+function unpackHatCommand(): UnpackStockCommandV1 {
+	return {
+		schema: "dinkuskit.inventory.command/v1",
+		commandId: "cmd_proof_unpack_hat",
+		type: "stock.unpack",
+		context: { siteId: SITE_ID, poolId: POOL_ID },
+		payload: { reservationId: "rsv_proof_hat" },
 		references: [],
 	};
 }
@@ -229,6 +242,12 @@ export class StockReservationProofPool extends DurableObject<StockReservationPro
 			now: () => new Date("2026-09-25T16:05:00.000Z"),
 			createReceiptId: () => "rcpt_proof_pack_all",
 		})(packAllCommand(), { principal });
+		const packAllBalances = await this.#durableBalances();
+		const unpacked = await createUnpackStock({
+			store,
+			now: () => new Date("2026-09-25T16:05:30.000Z"),
+			createReceiptId: () => "rcpt_proof_unpack_hat",
+		})(unpackHatCommand(), { principal });
 		return {
 			proof: "real-local-wrangler-durable-object",
 			phase: "commit",
@@ -237,7 +256,9 @@ export class StockReservationProofPool extends DurableObject<StockReservationPro
 			packSome: packedSome,
 			reReserve: again,
 			packAll: packed,
-			durable: { balances: await this.#durableBalances() },
+			unpack: unpacked,
+			durable: { balances: packAllBalances },
+			durableAfterUnpack: { balances: await this.#durableBalances() },
 		};
 	}
 

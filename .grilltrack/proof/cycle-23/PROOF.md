@@ -1,6 +1,8 @@
 # Cycle 23 proof — stock.unpack
 
-Command: `bin/verify-inventory full`
+Command: `npm run proof:stock-reservation:real`
+
+Transcript: `.grilltrack/proof/cycle-23/REAL_RUNTIME_TRANSCRIPT.txt`
 
 Observed 2026-09-26:
 - `stock.unpack` restores a packed 3-hat ticket to `not_shipped` of 3
@@ -11,6 +13,8 @@ Observed 2026-09-26:
 - not-shipped and canceled tickets reject
 - Cloudflare v5 reservation upgrade remaps live `active` to `not_shipped`
 - Cloudflare unpack parity matches local SQLite
+- Real local SQLite file: unpack restored hat to not_shipped 3; on-hand 10 reserved 3 available 7
+- Real Wrangler Durable Object: same unpack, then exact pack-all command replayed after restart
 
 `bin/verify-inventory full` passed: architecture, typecheck, 138 Node tests,
 24 Cloudflare tests, Wrangler dry-run.
