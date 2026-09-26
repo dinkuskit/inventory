@@ -177,7 +177,7 @@ storefront traffic is bound, and no physical stock cutover has happened. There
 is still no installable plugin, executable CLI, or published npm package. The
 package manifest remains private at `0.0.0` to prevent accidental publication.
 
-Scaffold development is pinned to exact `emdash@0.40.1` with a lockfile. This
+Scaffold development is pinned to exact `emdash@0.41.0` with a lockfile. This
 is the implementation target for the first standard-format plugin fixture, not
 a claim that the unimplemented plugin already has a proven runtime or minimum
 compatible version.

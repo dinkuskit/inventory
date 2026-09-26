@@ -22,10 +22,10 @@ behavior-preserving migration cycles are confirmed.
 
 ## Toolchain pin
 
-- Exact `emdash@0.40.1` is the development scaffold pin with a lockfile. The
+- Exact `emdash@0.41.0` is the development scaffold pin with a lockfile. The
   kernel does not import EmDash; this is not a plugin runtime or
   minimum-compatible-version claim.
-- Live install proof: `proof/emdash-0.40.1-pin-20260925/`.
+- Live install proof: `proof/emdash-0.41.0-pin-20260926/`.
 
 ## Shared kernel and adapter ownership
 
