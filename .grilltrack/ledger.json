@@ -71,13 +71,21 @@
       "rationale": "Bobby: they go back on hold for the same order; they would not go back into inventory until the order has been marked cancelled or refunded.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-23/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-09-26T13:36:42+00:00",
+          "source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-23/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-26T13:34:45+00:00",
+      "updated_at": "2026-09-26T13:36:42+00:00",
       "verification_ref": "bin/verify-inventory full"
     },
     {
@@ -142,13 +150,21 @@
       "rationale": "Bobby: same ticket.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-23/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-09-26T13:36:42+00:00",
+          "source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-23/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-26T13:34:45+00:00",
+      "updated_at": "2026-09-26T13:36:42+00:00",
       "verification_ref": "bin/verify-inventory full"
     },
     {
@@ -213,13 +229,21 @@
       "rationale": "Bobby: normal 3 bag; state would likely be processing in commerce and not shipped in inventory, or something like that.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-23/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-09-26T13:36:42+00:00",
+          "source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-23/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-26T13:34:45+00:00",
+      "updated_at": "2026-09-26T13:36:42+00:00",
       "verification_ref": "bin/verify-inventory full"
     },
     {
@@ -284,13 +308,21 @@
       "rationale": "Bobby: yes.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-23/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-09-26T13:36:42+00:00",
+          "source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-23/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-26T13:34:45+00:00",
+      "updated_at": "2026-09-26T13:36:42+00:00",
       "verification_ref": "bin/verify-inventory full"
     },
     {
@@ -398,13 +430,21 @@
       "rationale": "Bobby: name a quantity / unpack some should be allowed eventually; he thinks Katana allows this. Katana Pack some exists; revert undoes a whole fulfillment then they pack some again. Named unpack-some is the later grill.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-23/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-09-26T13:36:43+00:00",
+          "source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-23/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-26T13:34:45+00:00",
+      "updated_at": "2026-09-26T13:36:43+00:00",
       "verification_ref": "bin/verify-inventory full"
     },
     {
@@ -469,13 +509,21 @@
       "rationale": "Bobby: yes to the Katana-shaped unpack. Revert from delivered is a can of worms he does not want to get into yet.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-23/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-09-26T13:36:43+00:00",
+          "source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-23/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-26T13:34:45+00:00",
+      "updated_at": "2026-09-26T13:36:43+00:00",
       "verification_ref": "bin/verify-inventory full"
     },
     {
@@ -540,13 +588,21 @@
       "rationale": "Bobby: yes.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-23/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-09-26T13:36:43+00:00",
+          "source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-23/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-26T13:34:45+00:00",
+      "updated_at": "2026-09-26T13:36:43+00:00",
       "verification_ref": "bin/verify-inventory full"
     }
   ],
@@ -562,5 +618,5 @@
   "status": "active",
   "title": "Dinkuskit Inventory unpack a packed hold",
   "track_id": "gt-20260926122606-08be01",
-  "updated_at": "2026-09-26T13:34:45+00:00"
+  "updated_at": "2026-09-26T13:36:43+00:00"
 }
