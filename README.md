@@ -181,16 +181,16 @@ storefront traffic is bound, and no physical stock cutover has happened. There
 is still no installable plugin, executable CLI, or published npm package. The
 package manifest remains private at `0.0.0` to prevent accidental publication.
 
-Scaffold development is pinned to exact `emdash@0.40.1` with a lockfile. This
+Scaffold development is pinned to exact `emdash@0.41.0` with a lockfile. This
 is the implementation target for the first standard-format plugin fixture, not
 a claim that the unimplemented plugin already has a proven runtime or minimum
 compatible version.
 
 The locked development toolchain requires Node `>=22.12.0`. Its dependency tree
 declares third-party lifecycle scripts, including install scripts for
-`esbuild` and `workerd`. On the proof host, npm 11.19 reports
-those scripts as not covered by `allowScripts` and does not approve them;
-another npm version or operator policy may execute them during `npm ci`. The
+`esbuild` and `workerd`. On the proof host, npm 11.13.0 does not implement `install-scripts` and did not
+print `allowScripts` coverage warnings; another npm version or operator policy
+may execute those scripts during `npm ci`. The
 repository adds no lifecycle approval or bypass. Accepting this
 development-only supply-chain boundary remains an explicit maintainer decision
 at merge.

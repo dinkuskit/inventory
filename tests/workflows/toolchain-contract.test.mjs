@@ -9,9 +9,9 @@ const lockfile = JSON.parse(
 );
 
 test("declares the exact EmDash toolchain and its Node floor", () => {
-	assert.equal(manifest.devDependencies.emdash, "0.40.1");
+	assert.equal(manifest.devDependencies.emdash, "0.41.0");
 	assert.equal(manifest.engines.node, ">=22.12.0");
-	assert.equal(lockfile.packages[""].devDependencies.emdash, "0.40.1");
+	assert.equal(lockfile.packages[""].devDependencies.emdash, "0.41.0");
 	assert.equal(lockfile.packages[""].engines.node, ">=22.12.0");
 	assert.equal(lockfile.packages["node_modules/astro"].engines.node, ">=22.12.0");
 });
