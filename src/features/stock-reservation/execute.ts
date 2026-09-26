@@ -16,16 +16,19 @@ import type {
 	InventoryTransaction,
 } from "../../storage/inventory-store.ts";
 import {
+	PACK_ALL_STOCK_TYPE,
 	PACK_STOCK_TYPE,
 	RELEASE_STOCK_TYPE,
 	RESERVE_STOCK_TYPE,
 	RESERVATION_RECORD_SCHEMA,
 	digestStockReservationCommand,
+	normalizePackAllStockCommand,
 	normalizePackStockCommand,
 	normalizeReleaseStockCommand,
 	normalizeReserveStockCommand,
 	reservationOrderLineKey,
 	sameReservationContents,
+	type PackAllStockCommandV1,
 	type PackStockCommandV1,
 	type ReleaseStockCommandV1,
 	type ReservationRecord,
@@ -52,6 +55,11 @@ export type PackStock = (
 	command: PackStockCommandV1,
 	execution: PackStockExecution,
 ) => Promise<StockReservationResult>;
+export type PackAllStockExecution = PackStockExecution;
+export type PackAllStock = (
+	command: PackAllStockCommandV1,
+	execution: PackAllStockExecution,
+) => Promise<StockReservationResult>;
 
 export type StockReservationDependencies = Readonly<{
 	store: InventoryStore;
@@ -66,6 +74,7 @@ export type ReleaseStockDependencies = Readonly<{
 	createReceiptId: () => string;
 }>;
 export type PackStockDependencies = ReleaseStockDependencies;
+export type PackAllStockDependencies = PackStockDependencies;
 
 function incrementVersion(version: string): string {
 	return (BigInt(version) + 1n).toString();
@@ -200,13 +209,18 @@ function receipt(input: {
 	type:
 		| typeof RESERVE_STOCK_TYPE
 		| typeof RELEASE_STOCK_TYPE
-		| typeof PACK_STOCK_TYPE;
+		| typeof PACK_STOCK_TYPE
+		| typeof PACK_ALL_STOCK_TYPE;
 	committedAt: string;
 	principal: CommandPrincipal;
 	siteId: string;
 	poolId: string;
 	reservationBefore: ReservationRecord | null;
 	reservationAfter: ReservationRecord;
+	holds?: readonly Readonly<{
+		before: ReservationRecord;
+		after: ReservationRecord;
+	}>[];
 	effects: readonly StockReservationBalanceEffect[];
 	references: ReserveStockCommandV1["references"];
 	createReceiptId: () => string;
@@ -225,6 +239,7 @@ function receipt(input: {
 			before: input.reservationBefore,
 			after: input.reservationAfter,
 		},
+		...(input.holds === undefined ? {} : { holds: input.holds }),
 		effects: input.effects,
 		references: input.references,
 	};
@@ -620,6 +635,150 @@ export function executePackStockInTransaction(
 	return result;
 }
 
+function packAllHoldRejection(
+	current: ReservationRecord | null,
+): Readonly<{ code: StockReservationRejectionCode; message: string }> | null {
+	if (current === null) {
+		return {
+			code: "reservation_not_found",
+			message: "The reservation does not exist in this inventory pool.",
+		};
+	}
+	if (current.status === "packed") {
+		return {
+			code: "reservation_already_packed",
+			message: "The reservation is already packed.",
+		};
+	}
+	if (current.status !== "active") {
+		return {
+			code: "reservation_not_active",
+			message: "The reservation is not active.",
+		};
+	}
+	return null;
+}
+
+function balanceKey(locationId: string, skuId: string): string {
+	return JSON.stringify([locationId, skuId]);
+}
+
+export function executePackAllStockInTransaction(
+	transaction: InventoryTransaction,
+	command: PackAllStockCommandV1,
+	principal: CommandPrincipal,
+	commandDigest: string,
+	dependencies: Readonly<{
+		now: () => Date;
+		createReceiptId: () => string;
+	}>,
+): StockReservationResult {
+	const replayed = replayOrConflict(
+		transaction,
+		command.commandId,
+		commandDigest,
+	);
+	if (replayed !== null) return replayed;
+
+	const currents: ReservationRecord[] = [];
+	for (const reservationId of command.payload.reservationIds) {
+		const current = transaction.getReservation(reservationId);
+		const rejected = packAllHoldRejection(current);
+		if (rejected !== null) {
+			return durableRejection(
+				transaction,
+				command.commandId,
+				commandDigest,
+				rejected.code,
+				rejected.message,
+			);
+		}
+		currents.push(current as ReservationRecord);
+	}
+
+	const packedAt = committedAtFrom(dependencies.now);
+	const originals = new Map<string, BalanceRecord>();
+	const working = new Map<string, BalanceRecord>();
+	const packedHolds: ReservationRecord[] = [];
+	const holds: { before: ReservationRecord; after: ReservationRecord }[] = [];
+	const effects: StockReservationBalanceEffect[] = [];
+
+	for (const current of currents) {
+		const key = balanceKey(current.locationId, current.skuId);
+		let before = working.get(key);
+		if (before === undefined) {
+			const loaded = transaction.getBalance({
+				poolId: command.context.poolId,
+				locationId: current.locationId,
+				skuId: current.skuId,
+			});
+			if (loaded === null) {
+				throw new Error("An active reservation is missing its balance row.");
+			}
+			originals.set(key, loaded);
+			before = loaded;
+		}
+		if (compareExactDecimal(before.reserved.value, current.quantity.value) < 0) {
+			throw new Error("Reserved stock is short of the packed hold.");
+		}
+		const after = applyPackDelta(before, current.quantity.value);
+		working.set(key, after);
+		const packed: ReservationRecord = {
+			...current,
+			status: "packed",
+			version: incrementVersion(current.version),
+			packedAt,
+			packedBy: principal,
+		};
+		packedHolds.push(packed);
+		holds.push({ before: current, after: packed });
+		const packedDelta = {
+			value: `-${current.quantity.value}`,
+			unit: current.quantity.unit,
+		};
+		effects.push(effect(before, after, packedDelta, packedDelta));
+	}
+
+	const committedReceipt = receipt({
+		commandId: command.commandId,
+		commandDigest,
+		type: PACK_ALL_STOCK_TYPE,
+		committedAt: packedAt,
+		principal,
+		siteId: command.context.siteId,
+		poolId: command.context.poolId,
+		reservationBefore: currents[0] ?? null,
+		reservationAfter: packedHolds[0] as ReservationRecord,
+		holds,
+		effects,
+		references: command.references,
+		createReceiptId: dependencies.createReceiptId,
+	});
+	const result: StockReservationResult = {
+		schema: COMMAND_RESULT_SCHEMA,
+		outcome: "packed_all",
+		commandId: command.commandId,
+		reservations: packedHolds,
+		receipt: committedReceipt,
+	};
+	transaction.commitStockReservationBatch({
+		commandId: command.commandId,
+		commandDigest,
+		reservations: holds.map((hold) => ({
+			previous: hold.before,
+			reservation: hold.after,
+			orderLineKey: reservationOrderLineKey(hold.before.orderLine),
+		})),
+		balances: [...working.entries()].map(([key, balance]) => ({
+			previous: originals.get(key) as BalanceRecord,
+			balance,
+		})),
+		receipt: committedReceipt,
+		result,
+	});
+	return result;
+}
+
 export function createReserveStock(
 	dependencies: StockReservationDependencies,
 ): ReserveStock {
@@ -703,6 +862,36 @@ export function createPackStock(
 			command.context.poolId,
 			(transaction) =>
 				executePackStockInTransaction(
+					transaction,
+					command,
+					principal,
+					commandDigest,
+					dependencies,
+				),
+		);
+	};
+}
+
+export function createPackAllStock(
+	dependencies: PackAllStockDependencies,
+): PackAllStock {
+	if (dependencies?.store === undefined) {
+		throw new TypeError("store is required.");
+	}
+	if (typeof dependencies.now !== "function") {
+		throw new TypeError("now is required.");
+	}
+	if (typeof dependencies.createReceiptId !== "function") {
+		throw new TypeError("createReceiptId is required.");
+	}
+	return async (commandInput, executionInput) => {
+		const command = normalizePackAllStockCommand(commandInput);
+		const principal = normalizeCommandPrincipal(executionInput?.principal);
+		const commandDigest = await digestStockReservationCommand(command);
+		return dependencies.store.runTransaction(
+			command.context.poolId,
+			(transaction) =>
+				executePackAllStockInTransaction(
 					transaction,
 					command,
 					principal,

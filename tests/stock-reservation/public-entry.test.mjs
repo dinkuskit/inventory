@@ -9,13 +9,16 @@ test("the package root composes the stock-reservation public entry", () => {
 		"RESERVE_STOCK_TYPE",
 		"RELEASE_STOCK_TYPE",
 		"PACK_STOCK_TYPE",
+		"PACK_ALL_STOCK_TYPE",
 		"RESERVATION_RECORD_SCHEMA",
 		"normalizeReserveStockCommand",
 		"normalizeReleaseStockCommand",
 		"normalizePackStockCommand",
+		"normalizePackAllStockCommand",
 		"createReserveStock",
 		"createReleaseStock",
 		"createPackStock",
+		"createPackAllStock",
 	]) {
 		assert.equal(root[name], feature[name], `${name} must use the feature entry`);
 	}

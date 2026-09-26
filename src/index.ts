@@ -111,14 +111,17 @@ export type {
 } from "./features/stock-transfer/index.ts";
 export {
 	InvalidStockReservationCommandError,
+	PACK_ALL_STOCK_TYPE,
 	PACK_STOCK_TYPE,
 	RELEASE_STOCK_TYPE,
 	RESERVE_STOCK_TYPE,
 	RESERVATION_RECORD_SCHEMA,
+	createPackAllStock,
 	createPackStock,
 	createReleaseStock,
 	createReserveStock,
 	digestStockReservationCommand,
+	normalizePackAllStockCommand,
 	normalizePackStockCommand,
 	normalizeReleaseStockCommand,
 	normalizeReserveStockCommand,
@@ -126,6 +129,10 @@ export {
 	reservationOrderLineKey,
 } from "./features/stock-reservation/index.ts";
 export type {
+	PackAllStock,
+	PackAllStockCommandV1,
+	PackAllStockDependencies,
+	PackAllStockExecution,
 	PackStock,
 	PackStockCommandV1,
 	PackStockDependencies,
@@ -315,5 +322,6 @@ export type {
 	StoredOpeningBalanceConfirmation,
 	StoredCommandResult,
 	StockTransferCommit,
+	StockReservationBatchCommit,
 	StockReservationCommit,
 } from "./storage/inventory-store.ts";

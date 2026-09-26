@@ -1,0 +1,771 @@
+{
+  "closeout": {
+    "closed_at": "2026-09-25T22:13:28+00:00",
+    "confirmed_by": "user",
+    "deferred_decisions": [],
+    "proof_refs": [
+      ".grilltrack/proof/cycle-20/PROOF.md"
+    ],
+    "reason": "Reservation kernel and full-hold pack landed on main. Next domain is packing every hold on one order together.",
+    "reviews": [
+      {
+        "classifications": [],
+        "decision_id": "reservation-domain-001",
+        "ref": ".grilltrack/proof/cycle-19/REVIEW.md",
+        "result": "clean",
+        "source_identity": "sha256:ffa25e3975d6c401474f69499a82df004d6fd65d5fd6deb682522136fa3e278b"
+      },
+      {
+        "classifications": [],
+        "decision_id": "reservation-record-002",
+        "ref": ".grilltrack/proof/cycle-19/REVIEW.md",
+        "result": "clean",
+        "source_identity": "sha256:ffa25e3975d6c401474f69499a82df004d6fd65d5fd6deb682522136fa3e278b"
+      },
+      {
+        "classifications": [],
+        "decision_id": "reservation-availability-003",
+        "ref": ".grilltrack/proof/cycle-19/REVIEW.md",
+        "result": "clean",
+        "source_identity": "sha256:ffa25e3975d6c401474f69499a82df004d6fd65d5fd6deb682522136fa3e278b"
+      },
+      {
+        "classifications": [],
+        "decision_id": "reservation-uniqueness-004",
+        "ref": ".grilltrack/proof/cycle-19/REVIEW.md",
+        "result": "clean",
+        "source_identity": "sha256:ffa25e3975d6c401474f69499a82df004d6fd65d5fd6deb682522136fa3e278b"
+      },
+      {
+        "classifications": [],
+        "decision_id": "reservation-cancel-005",
+        "ref": ".grilltrack/proof/cycle-19/REVIEW.md",
+        "result": "clean",
+        "source_identity": "sha256:ffa25e3975d6c401474f69499a82df004d6fd65d5fd6deb682522136fa3e278b"
+      }
+    ],
+    "summary": "Named order-line holds, fail-closed reserve, cancel-to-history release, and one-way full-hold pack at Packed. Pack Some, Pack All, and Unpack wait.",
+    "superseded_decisions": [],
+    "verified_decisions": [
+      "reservation-domain-001",
+      "reservation-record-002",
+      "reservation-availability-003",
+      "reservation-uniqueness-004",
+      "reservation-cancel-005",
+      "packing-consume-006",
+      "unpaid-hold-cancel-007",
+      "packing-command-008",
+      "packing-unpack-009"
+    ]
+  },
+  "created_at": "2026-09-25T19:06:16+00:00",
+  "current_focus": {
+    "cadence": "sequential",
+    "confirmed": true,
+    "confirmed_at": "2026-09-25T20:54:56+00:00",
+    "domain": "packing/commit",
+    "started_at": "2026-09-25T20:37:08+00:00",
+    "status": "closed",
+    "summary": "Build platform-neutral stock.pack: Processing to Packed consumes one named hold in full. On-hand and reserved both drop. Packed is one-way. Pack Some, Pack All, and Unpack wait. Unpaid 60-minute cancel stays Commerce calling existing stock.release. No GUI, CLI, Worker auth, live Commerce, Woo, Katana, deploy, or PR 20 mix."
+  },
+  "decisions": [
+    {
+      "baseline_ref": "git:61bc604d03d9b482b05daaa3647c84c77ce4fdb3",
+      "candidate_refs": [],
+      "choice": "Order reservations: durable reservation records plus commands that write reserved stock and derived available. Stock-in and site-to-pool mapping wait.",
+      "context_ref": "docs/CHARTER.md",
+      "created_at": "2026-09-25T19:06:16+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [],
+      "domain": "order reservations",
+      "history": [
+        {
+          "at": "2026-09-25T19:06:16+00:00",
+          "choice": "Order reservations: durable reservation records plus commands that write reserved stock and derived available. Stock-in and site-to-pool mapping wait.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-25T20:05:17+00:00",
+          "choice": "Order reservations: durable reservation records plus commands that write reserved stock and derived available. Stock-in and site-to-pool mapping wait.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-25T20:05:17+00:00",
+          "choice": "Order reservations: durable reservation records plus commands that write reserved stock and derived available. Stock-in and site-to-pool mapping wait.",
+          "from": "implemented",
+          "implementation_ref": ".grilltrack/proof/cycle-19/PROOF.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "reservation-domain-001",
+      "implementation_ref": ".grilltrack/proof/cycle-19/PROOF.md",
+      "question": "What is the next Inventory-owned kernel slice after the transfer-list read model?",
+      "rationale": "The reserved balance field already exists and is preserved by opening, adjust, and transfer, but nothing writes a reservation record. Commerce cannot sell without reserve/release. CHARTER already names reservation records and order references as Inventory-owned. Stock-in and site mapping do not unblock selling.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-19/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-09-25T20:05:17+00:00",
+          "source_identity": "sha256:ffa25e3975d6c401474f69499a82df004d6fd65d5fd6deb682522136fa3e278b"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-19/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:ffa25e3975d6c401474f69499a82df004d6fd65d5fd6deb682522136fa3e278b",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-09-25T20:05:17+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-19/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:61bc604d03d9b482b05daaa3647c84c77ce4fdb3",
+      "candidate_refs": [],
+      "choice": "A named hold. Inventory mints a permanent opaque reservation ID. The record names one explicit pool, one active location, one managed SKU, one exact positive quantity, and one public-safe order/line reference. No customer, address, or payment data. This cycle creates the hold and cancels it. Packing, expiry, and whole-cart documents wait.",
+      "context_ref": "docs/CHARTER.md",
+      "created_at": "2026-09-25T19:16:05+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "reservation-domain-001"
+      ],
+      "domain": "order reservations",
+      "history": [
+        {
+          "at": "2026-09-25T19:16:05+00:00",
+          "choice": "A named hold. Inventory mints a permanent opaque reservation ID. The record names one explicit pool, one active location, one managed SKU, one exact positive quantity, and one public-safe order/line reference. No customer, address, or payment data. This cycle creates the hold and cancels it. Packing, expiry, and whole-cart documents wait.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-25T20:05:17+00:00",
+          "choice": "A named hold. Inventory mints a permanent opaque reservation ID. The record names one explicit pool, one active location, one managed SKU, one exact positive quantity, and one public-safe order/line reference. No customer, address, or payment data. This cycle creates the hold and cancels it. Packing, expiry, and whole-cart documents wait.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-25T20:05:17+00:00",
+          "choice": "A named hold. Inventory mints a permanent opaque reservation ID. The record names one explicit pool, one active location, one managed SKU, one exact positive quantity, and one public-safe order/line reference. No customer, address, or payment data. This cycle creates the hold and cancels it. Packing, expiry, and whole-cart documents wait.",
+          "from": "implemented",
+          "implementation_ref": ".grilltrack/proof/cycle-19/PROOF.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "reservation-record-002",
+      "implementation_ref": ".grilltrack/proof/cycle-19/PROOF.md",
+      "question": "What is one reservation?",
+      "rationale": "CHARTER already requires Inventory-owned reservation records and order references so a later admin view can show order number, quantity, and location. A naked reserved counter cannot do that. One SKU-location line keeps the first commands inspectable; a cart is several holds, not one blob. Packing is a different command that consumes a hold.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-19/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-09-25T20:05:17+00:00",
+          "source_identity": "sha256:ffa25e3975d6c401474f69499a82df004d6fd65d5fd6deb682522136fa3e278b"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-19/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:ffa25e3975d6c401474f69499a82df004d6fd65d5fd6deb682522136fa3e278b",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-09-25T20:05:17+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-19/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:61bc604d03d9b482b05daaa3647c84c77ce4fdb3",
+      "candidate_refs": [],
+      "choice": "No. Reserve fails closed when available is less than the requested quantity. No reservation record, no reserved bump, durable business rejection. Available is on-hand minus existing order reservations minus outgoing transfer commitments. Transfers may warn and go negative; sales may not. No backorder flag in this slice.",
+      "context_ref": "docs/CHARTER.md",
+      "created_at": "2026-09-25T19:30:38+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "reservation-record-002"
+      ],
+      "domain": "order reservations",
+      "history": [
+        {
+          "at": "2026-09-25T19:30:39+00:00",
+          "choice": "No. Reserve fails closed when available is less than the requested quantity. No reservation record, no reserved bump, durable business rejection. Available is on-hand minus existing order reservations minus outgoing transfer commitments. Transfers may warn and go negative; sales may not. No backorder flag in this slice.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-25T20:05:17+00:00",
+          "choice": "No. Reserve fails closed when available is less than the requested quantity. No reservation record, no reserved bump, durable business rejection. Available is on-hand minus existing order reservations minus outgoing transfer commitments. Transfers may warn and go negative; sales may not. No backorder flag in this slice.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-25T20:05:18+00:00",
+          "choice": "No. Reserve fails closed when available is less than the requested quantity. No reservation record, no reserved bump, durable business rejection. Available is on-hand minus existing order reservations minus outgoing transfer commitments. Transfers may warn and go negative; sales may not. No backorder flag in this slice.",
+          "from": "implemented",
+          "implementation_ref": ".grilltrack/proof/cycle-19/PROOF.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "reservation-availability-003",
+      "implementation_ref": ".grilltrack/proof/cycle-19/PROOF.md",
+      "question": "If available stock is not enough, does reserve still create a hold?",
+      "rationale": "Reservations are the customer-order quantity that already has priority over transfers. Allowing a sale hold to go negative would reintroduce oversell. Backorder is a later explicit command flag, not a silent default and not a read of Commerce settings.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-19/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-09-25T20:05:18+00:00",
+          "source_identity": "sha256:ffa25e3975d6c401474f69499a82df004d6fd65d5fd6deb682522136fa3e278b"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-19/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:ffa25e3975d6c401474f69499a82df004d6fd65d5fd6deb682522136fa3e278b",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-09-25T20:05:18+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-19/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:61bc604d03d9b482b05daaa3647c84c77ce4fdb3",
+      "candidate_refs": [],
+      "choice": "One active hold per pool and order/line reference. A new reserve whose location, SKU, and quantity match returns the original hold. Different contents under that same order/line conflict. Exact command-ID retry still returns the original terminal result. This does not replace quantity; replacement is a later edit or release-then-reserve.",
+      "context_ref": "docs/CHARTER.md",
+      "created_at": "2026-09-25T19:44:36+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "reservation-availability-003"
+      ],
+      "domain": "order reservations",
+      "history": [
+        {
+          "at": "2026-09-25T19:44:36+00:00",
+          "choice": "One active hold per pool and order/line reference. A new reserve whose location, SKU, and quantity match returns the original hold. Different contents under that same order/line conflict. Exact command-ID retry still returns the original terminal result. This does not replace quantity; replacement is a later edit or release-then-reserve.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-25T20:05:18+00:00",
+          "choice": "One active hold per pool and order/line reference. A new reserve whose location, SKU, and quantity match returns the original hold. Different contents under that same order/line conflict. Exact command-ID retry still returns the original terminal result. This does not replace quantity; replacement is a later edit or release-then-reserve.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-25T20:05:18+00:00",
+          "choice": "One active hold per pool and order/line reference. A new reserve whose location, SKU, and quantity match returns the original hold. Different contents under that same order/line conflict. Exact command-ID retry still returns the original terminal result. This does not replace quantity; replacement is a later edit or release-then-reserve.",
+          "from": "implemented",
+          "implementation_ref": ".grilltrack/proof/cycle-19/PROOF.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "reservation-uniqueness-004",
+      "implementation_ref": ".grilltrack/proof/cycle-19/PROOF.md",
+      "question": "If checkout asks twice for the same order line, what happens?",
+      "rationale": "A second hold for the same order line would double-count reserved stock and oversell. This matches sku.register: same identity returns the original, changed contents conflict. Command-ID replay remains the CHARTER timeout rule and is not a second business key.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-19/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-09-25T20:05:18+00:00",
+          "source_identity": "sha256:ffa25e3975d6c401474f69499a82df004d6fd65d5fd6deb682522136fa3e278b"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-19/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:ffa25e3975d6c401474f69499a82df004d6fd65d5fd6deb682522136fa3e278b",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-09-25T20:05:18+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-19/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:61bc604d03d9b482b05daaa3647c84c77ce4fdb3",
+      "candidate_refs": [],
+      "choice": "Cancel is an awaited command, not a hard delete. The hold stays as durable canceled history, reserved stock returns to available, and one immutable receipt records the actor and effects. The same order/line may reserve again after cancel, which mints a new reservation ID. Exact command-ID retry returns the original cancel result. Already-canceled or missing holds reject. Packing still waits.",
+      "context_ref": "docs/CHARTER.md",
+      "created_at": "2026-09-25T19:45:34+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "reservation-uniqueness-004"
+      ],
+      "domain": "order reservations",
+      "history": [
+        {
+          "at": "2026-09-25T19:45:34+00:00",
+          "choice": "Cancel is an awaited command, not a hard delete. The hold stays as durable canceled history, reserved stock returns to available, and one immutable receipt records the actor and effects. The same order/line may reserve again after cancel, which mints a new reservation ID. Exact command-ID retry returns the original cancel result. Already-canceled or missing holds reject. Packing still waits.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-25T20:05:18+00:00",
+          "choice": "Cancel is an awaited command, not a hard delete. The hold stays as durable canceled history, reserved stock returns to available, and one immutable receipt records the actor and effects. The same order/line may reserve again after cancel, which mints a new reservation ID. Exact command-ID retry returns the original cancel result. Already-canceled or missing holds reject. Packing still waits.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-25T20:05:18+00:00",
+          "choice": "Cancel is an awaited command, not a hard delete. The hold stays as durable canceled history, reserved stock returns to available, and one immutable receipt records the actor and effects. The same order/line may reserve again after cancel, which mints a new reservation ID. Exact command-ID retry returns the original cancel result. Already-canceled or missing holds reject. Packing still waits.",
+          "from": "implemented",
+          "implementation_ref": ".grilltrack/proof/cycle-19/PROOF.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "reservation-cancel-005",
+      "implementation_ref": ".grilltrack/proof/cycle-19/PROOF.md",
+      "question": "When a hold is canceled, what remains?",
+      "rationale": "CHARTER forbids rewriting history. Canceled transfers already keep Done/Canceled records and release planning stock. A deleted hold would leave only a receipt and could not answer which order released which quantity. Uniqueness applies to active holds, so a later checkout for the same order line is a new hold, not a resurrection of the canceled ID.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-19/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-09-25T20:05:18+00:00",
+          "source_identity": "sha256:ffa25e3975d6c401474f69499a82df004d6fd65d5fd6deb682522136fa3e278b"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-19/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "sha256:ffa25e3975d6c401474f69499a82df004d6fd65d5fd6deb682522136fa3e278b",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-09-25T20:05:18+00:00",
+      "verification_ref": ".grilltrack/proof/cycle-19/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:61bc604d03d9b482b05daaa3647c84c77ce4fdb3",
+      "candidate_refs": [],
+      "choice": "Consume happens at Packed. Processing \u2192 Packed takes reserved stock off the shelf: on-hand and reserved both drop, and the hold becomes packed history. Payment confirmation only moves the order from Hold to Processing and does not change counts. Shipped/label/Delivered after Packed does not change counts again. Partial pack waits.",
+      "context_ref": "docs/CHARTER.md",
+      "created_at": "2026-09-25T20:37:08+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "reservation-cancel-005"
+      ],
+      "domain": "packing/commit",
+      "history": [
+        {
+          "at": "2026-09-25T20:43:40+00:00",
+          "choice": "The Inventory hold stays reserved from checkout through Processing. Payment confirmation does not change counts. Consume happens when a shipping label is applied (Shipped): on-hand and reserved both drop, and the hold becomes packed/consumed history. Packed is not a separate Inventory status this cycle. Processing is wait-to-pack only.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-25T21:06:00+00:00",
+          "choice": "Consume happens at Packed. Processing \u2192 Packed takes reserved stock off the shelf: on-hand and reserved both drop, and the hold becomes packed history. Payment confirmation only moves the order from Hold to Processing and does not change counts. Shipped/label/Delivered after Packed does not change counts again. Partial pack waits.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-25T21:06:00+00:00",
+          "choice": "Consume happens at Packed. Processing \u2192 Packed takes reserved stock off the shelf: on-hand and reserved both drop, and the hold becomes packed history. Payment confirmation only moves the order from Hold to Processing and does not change counts. Shipped/label/Delivered after Packed does not change counts again. Partial pack waits.",
+          "from": "implemented",
+          "implementation_ref": "src/features/stock-reservation/",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "packing-consume-006",
+      "implementation_ref": "src/features/stock-reservation/",
+      "question": "Which order step takes reserved stock off the shelf?",
+      "rationale": "Bobby: Processing \u2192 Packed is when inventory leaves reserved and actually reduces. Matches Katana Packed (in stock and committed both drop; Delivered after Packed is no further movement). Woo/Shopify unpaid timeout is a different command (release/cancel), not consume.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-09-25T21:06:00+00:00",
+      "verification_ref": "bin/verify-inventory full"
+    },
+    {
+      "baseline_ref": "git:61bc604d03d9b482b05daaa3647c84c77ce4fdb3",
+      "candidate_refs": [],
+      "choice": "Unpaid Hold/Pending Payment never becomes Processing. After 60 minutes it is Cancelled and Inventory release returns reserved stock to available. Processing \u2192 Packed is unrelated. The unpaid clock is an order/Commerce timer that calls existing stock.release; this packing slice does not add an Inventory cron. 60 minutes matches WooCommerce Hold stock (minutes) default. Shopify has no matching unpaid-order auto-cancel; checkout only holds stock for a few minutes during payment.",
+      "context_ref": "docs/CHARTER.md",
+      "created_at": "2026-09-25T20:43:40+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "packing-consume-006"
+      ],
+      "domain": "packing/commit",
+      "history": [
+        {
+          "at": "2026-09-25T20:45:47+00:00",
+          "choice": "Unpaid Hold/Pending Payment never becomes Processing. After 60 minutes it is Cancelled and Inventory release returns reserved stock to available. Processing \u2192 Packed is unrelated. The unpaid clock is an order/Commerce timer that calls existing stock.release; this packing slice does not add an Inventory cron. 60 minutes matches WooCommerce Hold stock (minutes) default. Shopify has no matching unpaid-order auto-cancel; checkout only holds stock for a few minutes during payment.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-25T21:06:00+00:00",
+          "choice": "Unpaid Hold/Pending Payment never becomes Processing. After 60 minutes it is Cancelled and Inventory release returns reserved stock to available. Processing \u2192 Packed is unrelated. The unpaid clock is an order/Commerce timer that calls existing stock.release; this packing slice does not add an Inventory cron. 60 minutes matches WooCommerce Hold stock (minutes) default. Shopify has no matching unpaid-order auto-cancel; checkout only holds stock for a few minutes during payment.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-25T21:06:00+00:00",
+          "choice": "Unpaid Hold/Pending Payment never becomes Processing. After 60 minutes it is Cancelled and Inventory release returns reserved stock to available. Processing \u2192 Packed is unrelated. The unpaid clock is an order/Commerce timer that calls existing stock.release; this packing slice does not add an Inventory cron. 60 minutes matches WooCommerce Hold stock (minutes) default. Shopify has no matching unpaid-order auto-cancel; checkout only holds stock for a few minutes during payment.",
+          "from": "implemented",
+          "implementation_ref": "src/features/stock-reservation/",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "unpaid-hold-cancel-007",
+      "implementation_ref": "src/features/stock-reservation/",
+      "question": "If payment never arrives, what happens to the hold, and after how long?",
+      "rationale": "Bobby asked to cancel unpaid holds instead of sending them to Processing, and to check Shopify/Woo for the length. WooCommerce Products \u2192 Inventory Hold stock default is 60 minutes, then unpaid pending orders cancel and restock. Shopify does not expose a 60-minute unpaid-order setting. Smoky ordering is Woo-first, so 60 minutes is the shop-familiar default. Inventory already has cancel-to-history release.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-09-25T21:06:00+00:00",
+      "verification_ref": "bin/verify-inventory full"
+    },
+    {
+      "baseline_ref": "git:61bc604d03d9b482b05daaa3647c84c77ce4fdb3",
+      "candidate_refs": [],
+      "choice": "One awaited command names one active reservation ID and consumes the full remaining quantity. On-hand and reserved both drop by that amount. Exact command-ID retry returns the original packed result. Missing, already-packed, or canceled holds reject. Pack Some (partial quantity) and Pack All (every hold on the order) are named later growth, not this slice.",
+      "context_ref": "docs/CHARTER.md",
+      "created_at": "2026-09-25T20:45:48+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "unpaid-hold-cancel-007"
+      ],
+      "domain": "packing/commit",
+      "history": [
+        {
+          "at": "2026-09-25T20:47:24+00:00",
+          "choice": "One awaited command names one active reservation ID and consumes the full remaining quantity. On-hand and reserved both drop by that amount. Partial pack, multi-hold cart packing, and label/ship after pack wait. Exact command-ID retry returns the original packed result. Missing, already-packed, or canceled holds reject.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-25T21:06:00+00:00",
+          "choice": "One awaited command names one active reservation ID and consumes the full remaining quantity. On-hand and reserved both drop by that amount. Exact command-ID retry returns the original packed result. Missing, already-packed, or canceled holds reject. Pack Some (partial quantity) and Pack All (every hold on the order) are named later growth, not this slice.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-25T21:06:00+00:00",
+          "choice": "One awaited command names one active reservation ID and consumes the full remaining quantity. On-hand and reserved both drop by that amount. Exact command-ID retry returns the original packed result. Missing, already-packed, or canceled holds reject. Pack Some (partial quantity) and Pack All (every hold on the order) are named later growth, not this slice.",
+          "from": "implemented",
+          "implementation_ref": "src/features/stock-reservation/",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "packing-command-008",
+      "implementation_ref": "src/features/stock-reservation/",
+      "question": "What does one pack command consume?",
+      "rationale": "Bobby: A to start, with Pack Some and Pack All listed as what we want to grow into. This cycle is one hold, full quantity, like transfer receive. Partial and whole-cart packing stay explicit later work, not silent flags.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-09-25T21:06:00+00:00",
+      "verification_ref": "bin/verify-inventory full"
+    },
+    {
+      "baseline_ref": "git:61bc604d03d9b482b05daaa3647c84c77ce4fdb3",
+      "candidate_refs": [],
+      "choice": "Packed is one-way this cycle. Unpack/revert is deferred and named for later implementation. A mistake is not silently rewritten.",
+      "context_ref": "docs/CHARTER.md",
+      "created_at": "2026-09-25T20:47:24+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "packing-command-008"
+      ],
+      "domain": "packing/commit",
+      "history": [
+        {
+          "at": "2026-09-25T20:50:10+00:00",
+          "choice": "Not this cycle. Packed is terminal for that hold. Unpack/revert waits, same as Received reversion on transfers. A mistake is a new hold plus a reasoned adjustment, or a later unpack command.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-25T21:06:00+00:00",
+          "choice": "Packed is one-way this cycle. Unpack/revert is deferred and named for later implementation. A mistake is not silently rewritten.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-25T21:06:00+00:00",
+          "choice": "Packed is one-way this cycle. Unpack/revert is deferred and named for later implementation. A mistake is not silently rewritten.",
+          "from": "implemented",
+          "implementation_ref": "src/features/stock-reservation/",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "packing-unpack-009",
+      "implementation_ref": "src/features/stock-reservation/",
+      "question": "If they packed the wrong bag, can they undo it?",
+      "rationale": "Bobby: Packed with unpack deferred and noted for later. Matches transfer Received: first slice is one-way so the kernel is inspectable.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-09-25T21:06:00+00:00",
+      "verification_ref": "bin/verify-inventory full"
+    }
+  ],
+  "last_activation": {
+    "at": "2026-09-25T19:06:16+00:00",
+    "mechanism": "implicit"
+  },
+  "last_pause": null,
+  "pause": null,
+  "predecessor_track_id": "dinkuskit-inventory-transfer-list-v1",
+  "recommendation": {
+    "alternatives": [
+      "expiry of abandoned holds",
+      "Commerce transport for reserve/release"
+    ],
+    "reason": "Reserve and release exist. Selling still cannot take a held bag off the shelf. Packing is the next Inventory-owned writer. Expiry and Commerce transport do not consume physical stock.",
+    "recommended": "packing/commit: consume a named hold into physical stock when an order is packed",
+    "recorded_at": "2026-09-25T20:11:51+00:00"
+  },
+  "schema_version": "grilltrack/v0.1",
+  "status": "closed",
+  "title": "Dinkuskit Inventory order reservations",
+  "track_id": "dinkuskit-inventory-order-reservations-v1",
+  "updated_at": "2026-09-25T22:13:28+00:00"
+}

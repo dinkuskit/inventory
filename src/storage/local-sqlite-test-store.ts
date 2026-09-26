@@ -37,6 +37,7 @@ import type {
 	StoredStockTransferListPage,
 	StockAdjustmentCommit,
 	StockTransferCommit,
+	StockReservationBatchCommit,
 	StockReservationCommit,
 } from "./inventory-store.ts";
 
@@ -886,6 +887,54 @@ class SqliteInventoryTransaction implements InventoryTransaction {
 				input.reservation.poolId,
 				input.reservation.reservationId,
 				Number(input.previous.version),
+			);
+			if (Number(updated.changes) !== 1) {
+				throw new Error("Reservation update lost its target row.");
+			}
+		}
+		this.#database.prepare(
+			`INSERT INTO inventory_receipts (receipt_id, command_id, receipt_json)
+			 VALUES (?, ?, ?)`,
+		).run(input.receipt.receiptId, input.commandId, JSON.stringify(input.receipt));
+		this.storeCommandResult(input);
+	}
+
+	commitStockReservationBatch(input: StockReservationBatchCommit): void {
+		for (const entry of input.balances) {
+			this.#assertPool(entry.balance);
+			const updatedBalance = this.#database.prepare(
+				`UPDATE inventory_balances
+				 SET on_hand_value = ?, reserved_value = ?, available_value = ?, version = ?
+				 WHERE pool_id = ? AND location_id = ? AND sku_id = ? AND version = ?`,
+			).run(
+				entry.balance.onHand.value,
+				entry.balance.reserved.value,
+				entry.balance.available.value,
+				Number(entry.balance.version),
+				entry.balance.poolId,
+				entry.balance.locationId,
+				entry.balance.skuId,
+				Number(entry.previous.version),
+			);
+			if (Number(updatedBalance.changes) !== 1) {
+				throw new Error("Reservation balance update lost its target row.");
+			}
+		}
+		for (const entry of input.reservations) {
+			if (entry.reservation.poolId !== this.#poolId) {
+				throw new Error("A transaction cannot cross inventory pools.");
+			}
+			const updated = this.#database.prepare(
+				`UPDATE inventory_reservations
+				 SET status = ?, version = ?, reservation_json = ?
+				 WHERE pool_id = ? AND reservation_id = ? AND version = ?`,
+			).run(
+				entry.reservation.status,
+				Number(entry.reservation.version),
+				JSON.stringify(entry.reservation),
+				entry.reservation.poolId,
+				entry.reservation.reservationId,
+				Number(entry.previous.version),
 			);
 			if (Number(updated.changes) !== 1) {
 				throw new Error("Reservation update lost its target row.");
