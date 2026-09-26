@@ -2,8 +2,8 @@ import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 
 import {
+	createPackAllStock,
 	createReadSkuLocationBalance,
-	createReleaseStock,
 	createReserveStock,
 	createSetOpeningBalance,
 } from "../src/index.ts";
@@ -31,6 +31,29 @@ const context = Object.freeze({
 	locationId: "location_proof_shelf",
 });
 
+async function openSku(store, skuId, quantity, commandId, receiptId) {
+	const opening = await createSetOpeningBalance({
+		store,
+		now: () => new Date("2026-09-25T16:00:00.000Z"),
+		createReceiptId: () => receiptId,
+	})(
+		{
+			schema: "dinkuskit.inventory.command/v1",
+			commandId,
+			type: "stock.opening_balance",
+			context,
+			payload: { skuId, quantity: { value: quantity, unit: "each" } },
+			reason: { code: "opening_balance", note: "Set Initial Stock" },
+			references: [],
+			expectedVersions: [{ skuId, locationId: context.locationId, version: "0" }],
+		},
+		{ principal },
+	);
+	if (opening.outcome !== "committed") {
+		throw new Error(`Proof opening failed: ${opening.code}`);
+	}
+}
+
 async function seed(store) {
 	await createFixtureLocation(store, {
 		poolId: context.poolId,
@@ -43,94 +66,101 @@ async function seed(store) {
 		sku: "PROOF-HAT",
 		displayName: "Proof Hat",
 	});
-	const opening = await createSetOpeningBalance({
+	await createFixtureManagedSku(store, {
+		poolId: context.poolId,
+		skuId: "sku_shirt",
+		sku: "PROOF-SHIRT",
+		displayName: "Proof Shirt",
+	});
+	await openSku(store, "sku_hat", "10", "cmd_proof_opening_hat", "rcpt_proof_opening_hat");
+	await openSku(
 		store,
-		now: () => new Date("2026-09-25T16:00:00.000Z"),
-		createReceiptId: () => "rcpt_proof_opening",
-	})(
-		{
-			schema: "dinkuskit.inventory.command/v1",
-			commandId: "cmd_proof_opening",
-			type: "stock.opening_balance",
-			context,
-			payload: { skuId: "sku_hat", quantity: { value: "10", unit: "each" } },
-			reason: { code: "opening_balance", note: "Set Initial Stock" },
-			references: [],
-			expectedVersions: [
-				{ skuId: "sku_hat", locationId: context.locationId, version: "0" },
-			],
-		},
-		{ principal },
+		"sku_shirt",
+		"6",
+		"cmd_proof_opening_shirt",
+		"rcpt_proof_opening_shirt",
 	);
-	if (opening.outcome !== "committed") {
-		throw new Error(`Proof opening failed: ${opening.code}`);
-	}
 }
 
-function reserveCommand(commandId, quantity) {
+function reserveCommand(commandId, skuId, quantity, lineId) {
 	return {
 		schema: "dinkuskit.inventory.command/v1",
 		commandId,
 		type: "stock.reserve",
 		context,
 		payload: {
-			skuId: "sku_hat",
+			skuId,
 			quantity: { value: quantity, unit: "each" },
-			orderLine: { kind: "commerce.order_line", id: "OL-PROOF-1" },
+			orderLine: { kind: "commerce.order_line", id: lineId },
 		},
 		references: [],
 	};
 }
 
+function packAllCommand() {
+	return {
+		schema: "dinkuskit.inventory.command/v1",
+		commandId: "cmd_proof_pack_all",
+		type: "stock.pack_all",
+		context: { siteId: context.siteId, poolId: context.poolId },
+		payload: { reservationIds: ["rsv_proof_hat", "rsv_proof_shirt"] },
+		references: [],
+	};
+}
+
+async function balances(store) {
+	const read = createReadSkuLocationBalance({ store });
+	return {
+		hat: (
+			await read({
+				poolId: context.poolId,
+				locationId: context.locationId,
+				skuId: "sku_hat",
+			})
+		).balance,
+		shirt: (
+			await read({
+				poolId: context.poolId,
+				locationId: context.locationId,
+				skuId: "sku_shirt",
+			})
+		).balance,
+	};
+}
+
 const store = createLocalSqliteTestStore({ filePath });
 await seed(store);
-const reserve = createReserveStock({
+const hat = await createReserveStock({
 	store,
 	now: () => new Date("2026-09-25T16:01:00.000Z"),
 	createReservationId: () => "rsv_proof_hat",
-	createReceiptId: () => "rcpt_proof_reserve",
-});
-const reserved = await reserve(reserveCommand("cmd_proof_reserve", "3"), {
+	createReceiptId: () => "rcpt_proof_reserve_hat",
+})(reserveCommand("cmd_proof_reserve_hat", "sku_hat", "3", "OL-PROOF-HAT"), {
 	principal,
 });
-const conflict = await reserve(reserveCommand("cmd_proof_conflict", "4"), {
-	principal,
-});
-const released = await createReleaseStock({
+const shirt = await createReserveStock({
 	store,
-	now: () => new Date("2026-09-25T16:02:00.000Z"),
-	createReceiptId: () => "rcpt_proof_release",
-})(
-	{
-		schema: "dinkuskit.inventory.command/v1",
-		commandId: "cmd_proof_release",
-		type: "stock.release",
-		context: { siteId: context.siteId, poolId: context.poolId },
-		payload: { reservationId: "rsv_proof_hat" },
-		references: [],
-	},
-	{ principal },
-);
-const read = createReadSkuLocationBalance({ store });
-const afterRelease = await read({
-	poolId: context.poolId,
-	locationId: context.locationId,
-	skuId: "sku_hat",
+	now: () => new Date("2026-09-25T16:01:01.000Z"),
+	createReservationId: () => "rsv_proof_shirt",
+	createReceiptId: () => "rcpt_proof_reserve_shirt",
+})(reserveCommand("cmd_proof_reserve_shirt", "sku_shirt", "2", "OL-PROOF-SHIRT"), {
+	principal,
 });
+const packed = await createPackAllStock({
+	store,
+	now: () => new Date("2026-09-25T16:05:00.000Z"),
+	createReceiptId: () => "rcpt_proof_pack_all",
+})(packAllCommand(), { principal });
+const afterPack = await balances(store);
 await store.close();
 
 const reopened = createLocalSqliteTestStore({ filePath });
-const replayed = await createReserveStock({
+const replayed = await createPackAllStock({
 	store: reopened,
-	now: () => new Date("2026-09-25T16:03:00.000Z"),
-	createReservationId: () => "must_not_mint",
+	now: () => new Date("2026-09-25T16:06:00.000Z"),
 	createReceiptId: () => "must_not_write",
-})(reserveCommand("cmd_proof_reserve", "3"), { principal });
-const afterReopen = await createReadSkuLocationBalance({ store: reopened })({
-	poolId: context.poolId,
-	locationId: context.locationId,
-	skuId: "sku_hat",
-});
+})(packAllCommand(), { principal });
+const afterReopen = await balances(reopened);
 await reopened.close();
 
 console.log(
@@ -139,23 +169,17 @@ console.log(
 			proof: "real-local-sqlite-file",
 			created: true,
 			closedAndReopened: true,
-			reserve: {
-				outcome: reserved.outcome,
-				reservationId: reserved.reservation?.reservationId,
-				status: reserved.reservation?.status,
-				quantity: reserved.reservation?.quantity,
+			reserve: { hat: hat.outcome, shirt: shirt.outcome },
+			packAll: {
+				outcome: packed.outcome,
+				ids: packed.reservations?.map((hold) => hold.reservationId),
 			},
-			conflict: { outcome: conflict.outcome, code: conflict.code },
-			release: {
-				outcome: released.outcome,
-				status: released.reservation?.status,
-			},
-			replayedOriginalReserve: {
+			replayedOriginalPackAll: {
 				outcome: replayed.outcome,
-				reservationId: replayed.reservation?.reservationId,
+				ids: replayed.reservations?.map((hold) => hold.reservationId),
 			},
-			balanceAfterRelease: afterRelease.balance,
-			balanceAfterReopen: afterReopen.balance,
+			balanceAfterPackAll: afterPack,
+			balanceAfterReopen: afterReopen,
 		},
 		null,
 		2,
