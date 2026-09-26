@@ -15,6 +15,7 @@ export const PACK_ALL_STOCK_TYPE = "stock.pack_all" as const;
 export const PACK_SOME_STOCK_TYPE = "stock.pack_some" as const;
 export const UNPACK_STOCK_TYPE = "stock.unpack" as const;
 export const DELIVER_STOCK_TYPE = "stock.deliver" as const;
+export const UNDO_DELIVER_STOCK_TYPE = "stock.undo_deliver" as const;
 export const RESERVATION_RECORD_SCHEMA =
 	"dinkuskit.inventory.reservation/v1" as const;
 
@@ -144,6 +145,13 @@ export type DeliverStockCommandV1 = ReservationCommandBase &
 		}>;
 	}>;
 
+export type UndoDeliverStockCommandV1 = ReservationCommandBase &
+	Readonly<{
+		type: typeof UNDO_DELIVER_STOCK_TYPE;
+		context: Readonly<{ siteId: string; poolId: string }>;
+		payload: Readonly<{ reservationId: string }>;
+	}>;
+
 export type StockReservationCommandV1 =
 	| ReserveStockCommandV1
 	| ReleaseStockCommandV1
@@ -151,7 +159,8 @@ export type StockReservationCommandV1 =
 	| PackAllStockCommandV1
 	| PackSomeStockCommandV1
 	| UnpackStockCommandV1
-	| DeliverStockCommandV1;
+	| DeliverStockCommandV1
+	| UndoDeliverStockCommandV1;
 
 export type StockReservationBalanceQuantities = Readonly<{
 	onHand: ExactQuantity;
@@ -205,12 +214,13 @@ export type StockReservationRejectionCode =
 	| "reservation_already_packed"
 	| "reservation_quantity_exceeds_hold"
 	| "reservation_not_packed"
-	| "reservation_already_delivered";
+	| "reservation_already_delivered"
+	| "reservation_not_delivered";
 
 export type StockReservationResult =
 	| Readonly<{
 			schema: typeof COMMAND_RESULT_SCHEMA;
-			outcome: "reserved" | "released" | "packed" | "packed_some" | "unpacked";
+			outcome: "reserved" | "released" | "packed" | "packed_some" | "unpacked" | "undelivered";
 			commandId: string;
 			reservation: ReservationRecord;
 			receipt: StockReservationReceiptV2;
@@ -589,6 +599,43 @@ export function normalizeDeliverStockCommand(
 	};
 }
 
+export function normalizeUndoDeliverStockCommand(
+	input: unknown,
+): UndoDeliverStockCommandV1 {
+	const command = record(input, "command");
+	exactKeys(command, "command", [
+		"schema",
+		"commandId",
+		"type",
+		"context",
+		"payload",
+		"references",
+	]);
+	if (command.schema !== COMMAND_SCHEMA) {
+		invalid(`schema must be ${COMMAND_SCHEMA}.`);
+	}
+	if (command.type !== UNDO_DELIVER_STOCK_TYPE) {
+		invalid(`type must be ${UNDO_DELIVER_STOCK_TYPE}.`);
+	}
+	const context = record(command.context, "context");
+	exactKeys(context, "context", ["siteId", "poolId"]);
+	const payload = record(command.payload, "payload");
+	exactKeys(payload, "payload", ["reservationId"]);
+	return {
+		schema: COMMAND_SCHEMA,
+		commandId: nonEmptyString(command.commandId, "commandId"),
+		type: UNDO_DELIVER_STOCK_TYPE,
+		context: {
+			siteId: nonEmptyString(context.siteId, "context.siteId"),
+			poolId: nonEmptyString(context.poolId, "context.poolId"),
+		},
+		payload: {
+			reservationId: nonEmptyString(payload.reservationId, "payload.reservationId"),
+		},
+		references: normalizeReferences(command.references),
+	};
+}
+
 export function normalizePackStockCommand(
 	input: unknown,
 ): PackStockCommandV1 {
@@ -654,8 +701,11 @@ export function normalizeStockReservationCommand(
 	if (command.type === DELIVER_STOCK_TYPE) {
 		return normalizeDeliverStockCommand(input);
 	}
+	if (command.type === UNDO_DELIVER_STOCK_TYPE) {
+		return normalizeUndoDeliverStockCommand(input);
+	}
 	invalid(
-		"type must be stock.reserve, stock.release, stock.pack, stock.pack_all, stock.pack_some, stock.unpack, or stock.deliver.",
+		"type must be stock.reserve, stock.release, stock.pack, stock.pack_all, stock.pack_some, stock.unpack, stock.deliver, or stock.undo_deliver.",
 	);
 }
 

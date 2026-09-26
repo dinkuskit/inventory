@@ -6,6 +6,7 @@ import test from "node:test";
 
 import {
 	createDeliverStock,
+	createUndoDeliverStock,
 	createPackAllStock,
 	createPackSomeStock,
 	createReadSkuLocationBalance,
@@ -182,6 +183,36 @@ test("deliver marks every named packed ticket Delivered without moving counts", 
 	assert.equal(hat.onHand.value, "7");
 	assert.equal(hat.reserved.value, "0");
 	assert.equal(hat.available.value, "7");
+});
+
+test("undo Delivered returns one ticket to Packed without moving counts and replays exactly", async (t) => {
+	const store = createLocalSqliteTestStore({
+		filePath: await databasePath(t, "undo-deliver"),
+	});
+	await seedOrder(store);
+	await reserveLine(store, "sku_hat", "3", "OL-1842-hat", "cmd_reserve_hat", "rsv_hat");
+	await packTickets(store, ["rsv_hat"]);
+	const delivered = await createDeliverStock({
+		store, now: () => new Date("2026-09-26T12:10:00.000Z"), createReceiptId: () => "rcpt_deliver",
+	})(deliverCommand(["rsv_hat"]), { principal });
+	assert.equal(delivered.outcome, "delivered");
+	const before = await readBalance(store, "sku_hat");
+	const undo = createUndoDeliverStock({
+		store, now: () => new Date("2026-09-26T12:11:00.000Z"), createReceiptId: () => "rcpt_undo_deliver",
+	});
+	const command = {
+		schema: "dinkuskit.inventory.command/v1", commandId: "cmd_undo_deliver", type: "stock.undo_deliver",
+		context: { siteId: "site_test", poolId: "pool_test" }, payload: { reservationId: "rsv_hat" }, references: [],
+	};
+	const first = await undo(command, { principal });
+	assert.equal(first.outcome, "undelivered");
+	assert.equal(first.reservation.status, "packed");
+	assert.equal(first.receipt.effects.length, 0);
+	assert.deepEqual(await readBalance(store, "sku_hat"), before);
+	assert.deepEqual(await undo(command, { principal }), first);
+	const again = await undo({ ...command, commandId: "cmd_undo_deliver_again" }, { principal });
+	assert.equal(again.outcome, "rejected");
+	assert.equal(again.code, "reservation_not_delivered");
 });
 
 test("deliver accepts one packed ticket", async (t) => {
