@@ -1,5 +1,51 @@
 {
-  "closeout": null,
+  "closeout": {
+    "closed_at": "2026-09-26T16:24:52+00:00",
+    "confirmed_by": "user",
+    "deferred_decisions": [],
+    "proof_refs": [
+      ".grilltrack/proof/cycle-24/"
+    ],
+    "reason": "Packed to Delivered kernel is verified. Bobby confirmed close.",
+    "reviews": [
+      {
+        "classifications": [],
+        "decision_id": "delivered-when-001",
+        "ref": ".grilltrack/proof/cycle-24/REVIEW.md",
+        "result": "clean",
+        "source_identity": "git:769492756f7520a33a9fd34b528b684acaa1b596"
+      },
+      {
+        "classifications": [],
+        "decision_id": "delivered-scope-002",
+        "ref": ".grilltrack/proof/cycle-24/REVIEW.md",
+        "result": "clean",
+        "source_identity": "git:769492756f7520a33a9fd34b528b684acaa1b596"
+      },
+      {
+        "classifications": [],
+        "decision_id": "delivered-which-ticket-003",
+        "ref": ".grilltrack/proof/cycle-24/REVIEW.md",
+        "result": "clean",
+        "source_identity": "git:769492756f7520a33a9fd34b528b684acaa1b596"
+      },
+      {
+        "classifications": [],
+        "decision_id": "delivered-command-004",
+        "ref": ".grilltrack/proof/cycle-24/REVIEW.md",
+        "result": "clean",
+        "source_identity": "git:769492756f7520a33a9fd34b528b684acaa1b596"
+      }
+    ],
+    "summary": "stock.deliver marks one or more packed tickets Delivered all-or-none. Status only. Schema v9. Real local SQLite and Wrangler --local proof passed. GUI, live Commerce, Woo, Katana, ShipTheory, revert-from-Delivered, checkout consume, and deploy remain later work.",
+    "superseded_decisions": [],
+    "verified_decisions": [
+      "delivered-when-001",
+      "delivered-scope-002",
+      "delivered-which-ticket-003",
+      "delivered-command-004"
+    ]
+  },
   "created_at": "2026-09-26T15:09:07+00:00",
   "current_focus": {
     "cadence": "sequential",
@@ -7,7 +53,7 @@
     "confirmed_at": "2026-09-26T15:36:56+00:00",
     "domain": "packing/delivered",
     "started_at": "2026-09-26T15:09:07+00:00",
-    "status": "inspected",
+    "status": "closed",
     "summary": "Build platform-neutral stock.deliver: Commerce names one or more packed tickets it already has. No quantity. No order number. All named tickets become Delivered, or none if any is missing, not shipped, partially packed, canceled, or already Delivered. A one-line order uses the same command with one ticket. Status only. On-hand, reserved, and available do not change. Exact command-ID retry returns the original result. Human or trigger later. GUI, live Commerce, Woo, Katana, ShipTheory, revert-from-Delivered, unpack-some, and deploy wait."
   },
   "decisions": [
@@ -71,13 +117,21 @@
       "rationale": "Bobby: after they pack, it should leave Packed when it gets marked Delivered. Marker can be a human or a trigger. Current Katana+ShipTheory trigger is the label-print webhook. Katana admin still lets a human Pack some/all and Deliver some/all. Carrier scan is not the event.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-24/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-09-26T16:24:38+00:00",
+          "source_identity": "git:769492756f7520a33a9fd34b528b684acaa1b596"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-24/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "git:769492756f7520a33a9fd34b528b684acaa1b596",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-26T15:48:19+00:00",
+      "updated_at": "2026-09-26T16:24:38+00:00",
       "verification_ref": "bin/verify-inventory full"
     },
     {
@@ -142,13 +196,21 @@
       "rationale": "Bobby: A. After pack, marking Delivered takes the whole packed ticket.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-24/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-09-26T16:24:38+00:00",
+          "source_identity": "git:769492756f7520a33a9fd34b528b684acaa1b596"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-24/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "git:769492756f7520a33a9fd34b528b684acaa1b596",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-26T15:48:19+00:00",
+      "updated_at": "2026-09-26T16:24:38+00:00",
       "verification_ref": "bin/verify-inventory full"
     },
     {
@@ -213,13 +275,21 @@
       "rationale": "Bobby: A. Katana has partially delivered; defer it from Inventory. Require orders to be fully packed for delivery until that feature exists.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-24/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-09-26T16:24:38+00:00",
+          "source_identity": "git:769492756f7520a33a9fd34b528b684acaa1b596"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-24/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "git:769492756f7520a33a9fd34b528b684acaa1b596",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-26T15:48:19+00:00",
+      "updated_at": "2026-09-26T16:24:38+00:00",
       "verification_ref": "bin/verify-inventory full"
     },
     {
@@ -284,13 +354,21 @@
       "rationale": "Bobby: B. Astra: Commerce supplies the packed ticket IDs; one command marks every supplied ticket Delivered, or none if any is ineligible. Inventory still does not receive or look up an order number.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-24/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-09-26T16:24:38+00:00",
+          "source_identity": "git:769492756f7520a33a9fd34b528b684acaa1b596"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-24/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "git:769492756f7520a33a9fd34b528b684acaa1b596",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-26T15:48:19+00:00",
+      "updated_at": "2026-09-26T16:24:38+00:00",
       "verification_ref": "bin/verify-inventory full"
     }
   ],
@@ -311,8 +389,8 @@
     "recorded_at": "2026-09-26T15:48:44+00:00"
   },
   "schema_version": "grilltrack/v0.1",
-  "status": "active",
+  "status": "closed",
   "title": "Dinkuskit Inventory packed hold becomes Delivered",
   "track_id": "gt-20260926150907-b6e31e",
-  "updated_at": "2026-09-26T15:48:44+00:00"
+  "updated_at": "2026-09-26T16:24:52+00:00"
 }
