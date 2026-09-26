@@ -161,17 +161,19 @@ Cloudflare Worker with a SQLite-backed Durable Object namespace and one object
 database per explicit pool. Workers.dev and preview URLs are disabled, no route
 is deployed, and its remote surface remains private and read-only: same-account
 SKU-location inspection and aggregate SKU stock reads.
-The source schema defines version 8 as the complete current real-database
-schema, including Not shipped / partially packed / packed reservation status on
-top of location, managed-SKU, stock-transfer, and reservation records plus the
-six stock dimensions. Fresh empty storage initializes directly at version 8.
-Exact committed version-7 storage renames live reservation `active` to
-`not_shipped`; exact version-6 storage first adds original quantity and
-partially packed status; exact version-5 storage allows packed status; exact
-version-4 storage adds reservation records then packed status; exact version-3
-storage upgrades through v4 to v8; exact version-2 storage moves through v3 to
-v8. Those paths preserve prior durable records, and the v2 path backfills
-legacy balanced SKU keys as stable managed identities.
+The source schema defines version 9 as the complete current real-database
+schema, including Not shipped / partially packed / packed / Delivered
+reservation status on top of location, managed-SKU, stock-transfer, and
+reservation records plus the six stock dimensions. Fresh empty storage
+initializes directly at version 9. Exact committed version-8 storage allows
+packed tickets to become Delivered; exact version-7 storage renames live
+reservation `active` to `not_shipped` then allows Delivered; exact version-6
+storage first adds original quantity and partially packed status; exact
+version-5 storage allows packed status; exact version-4 storage adds
+reservation records then packed status; exact version-3 storage upgrades
+through v4 to v9; exact version-2 storage moves through v3 to v9. Those paths
+preserve prior durable records, and the v2 path backfills legacy balanced SKU
+keys as stable managed identities.
 Incompatible shapes fail closed without a partial upgrade. Workerd runtime
 tests prove those transitions, but this is not a deployment or live-database
 claim. Inventory mutations are not remotely exposed, no
