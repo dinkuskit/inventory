@@ -1,0 +1,29 @@
+$ node --version
+v24.16.0
+
+$ npm --version
+11.13.0
+
+$ npm config get ignore-scripts
+false
+
+$ git rev-parse HEAD
+085a3413d0ea75da22cf8a2bf8577a6fd4f20c63
+
+$ npm ci
+[dependency deprecation warnings omitted; no private data]
+added 664 packages, and audited 665 packages in 17s
+found 5 vulnerabilities (1 moderate, 4 high)
+[npm audit details omitted here; they belong to the unchanged wrangler@4.127.0 / @cloudflare/vitest-plugin@1.1.1 pins, not emdash]
+
+$ npm install-scripts ls
+Unknown command: "install-scripts"
+[npm 11.13.0 on this proof host does not implement install-scripts]
+
+$ npm ls emdash --depth=0
+@dinkuskit/inventory@0.0.0 <local-worktree-redacted>
+└── emdash@0.41.0
+
+$ bin/verify-inventory full
+verify-inventory full passed in 8.33s
+[architecture clean; typecheck passed; 138 Node tests passed; 24 workerd tests passed; wrangler deploy --dry-run exited]
