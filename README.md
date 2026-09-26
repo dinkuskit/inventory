@@ -7,10 +7,16 @@ identity, explicit locations, immutable movement receipts, reservations, and
 operator-visible exceptions. Planned package: `@dinkuskit/inventory`, with a
 first-class `dinkus-inventory` CLI.
 
-Dinkuskit Inventory is one product with one ledger. Its first production job
-is retiring a commercial MRP subscription (Katana) for the first tenant
-business by December 2026; the same artifact is the kit product. The charter
-records how that works: [docs/CHARTER.md](docs/CHARTER.md).
+Dinkuskit Inventory is one product with one ledger. Its product contracts live
+in [docs/CHARTER.md](docs/CHARTER.md).
+
+## Kit direction
+
+The canonical [vision](https://github.com/dinkuskit/.github/blob/main/VISION.md)
+and [roadmap](https://github.com/dinkuskit/.github/blob/main/ROADMAP.md) put a
+human-operable EmDash store first. Commerce and Inventory are crucial launch
+pieces and launch side by side. This repository's contracts and status below
+describe its own scope; the roadmap is not a claim of release readiness.
 
 ## v1 boundary
 
@@ -36,11 +42,9 @@ records how that works: [docs/CHARTER.md](docs/CHARTER.md).
   user-supplied conforming provider selected in advanced settings. Dinkuskit
   Inventory is the only first-party v1 integration. Unmanaged products send no
   stock commands, and Commerce owns no fallback production ledger.
-- WooCommerce and Katana stay untouched until a separately approved manual
-  cutover. The operator disables the migrated products there, performs a
-  physical count, and records reviewed opening balances in Dinkuskit
-  Inventory before the EmDash storefront begins selling them. No legacy
-  adapter or shadow synchronization is in v1.
+- Opening a production stock ledger requires a separately approved physical
+  count and reviewed opening balances before the storefront sells against it.
+  No legacy adapter or shadow synchronization is in v1.
 - Out of scope for v1: manufacturing orders, recipes/BOM, materials/batches,
   purchasing, production scheduling, costing, forecasting — this is not an
   MRP.
