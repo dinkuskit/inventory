@@ -184,9 +184,9 @@ compatible version.
 
 The locked development toolchain requires Node `>=22.12.0`. Its dependency tree
 declares third-party lifecycle scripts, including install scripts for
-`esbuild` and `workerd`. On the proof host, npm 11.19 reports
-those scripts as not covered by `allowScripts` and does not approve them;
-another npm version or operator policy may execute them during `npm ci`. The
+`esbuild` and `workerd`. On the proof host, npm 11.13.0 does not implement `install-scripts` and did not
+print `allowScripts` coverage warnings; another npm version or operator policy
+may execute those scripts during `npm ci`. The
 repository adds no lifecycle approval or bypass. Accepting this
 development-only supply-chain boundary remains an explicit maintainer decision
 at merge.
