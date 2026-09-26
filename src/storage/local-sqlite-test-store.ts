@@ -42,7 +42,7 @@ import type {
 } from "./inventory-store.ts";
 
 const STORAGE_ROLE = "local-development-test-only";
-const SCHEMA_VERSION = "opening-balance-local/v10";
+const SCHEMA_VERSION = "opening-balance-local/v11";
 const EXPECTED_TABLES = [
 	"inventory_balances",
 	"inventory_command_results",
@@ -1051,7 +1051,7 @@ export class LocalSqliteTestInventoryStore implements InventoryStore {
 				pool_id TEXT NOT NULL,
 				reservation_id TEXT NOT NULL,
 				order_line_key TEXT NOT NULL,
-				status TEXT NOT NULL CHECK (status IN ('not_shipped', 'partially_packed', 'canceled', 'packed')),
+				status TEXT NOT NULL CHECK (status IN ('not_shipped', 'partially_packed', 'canceled', 'packed', 'delivered')),
 				version INTEGER NOT NULL CHECK (version >= 1),
 				reservation_json TEXT NOT NULL,
 				PRIMARY KEY (pool_id, reservation_id)

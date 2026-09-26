@@ -1,30 +1,30 @@
 {
   "closeout": null,
-  "created_at": "2026-09-26T12:26:06+00:00",
+  "created_at": "2026-09-26T15:09:07+00:00",
   "current_focus": {
     "cadence": "sequential",
     "confirmed": true,
-    "confirmed_at": "2026-09-26T13:23:30+00:00",
-    "domain": "packing/unpack",
-    "started_at": "2026-09-26T12:26:06+00:00",
-    "status": "confirmed",
-    "summary": "Build platform-neutral stock.unpack: Commerce names one packed ticket. No quantity. Restore all packed bags onto the same Not shipped ticket. Packed 3 of 3 restores 3. Packed 1 of 3 restores that 1 beside leftover 2. On-hand and reserved both come back. Available stays the same. Original reserve still matches. Rename live ticket active to not_shipped. Revert-from-Delivered, unpack-some, GUI, live Commerce, Woo, Katana, ship, and deploy wait."
+    "confirmed_at": "2026-09-26T15:36:56+00:00",
+    "domain": "packing/delivered",
+    "started_at": "2026-09-26T15:09:07+00:00",
+    "status": "inspected",
+    "summary": "Build platform-neutral stock.deliver: Commerce names one or more packed tickets it already has. No quantity. No order number. All named tickets become Delivered, or none if any is missing, not shipped, partially packed, canceled, or already Delivered. A one-line order uses the same command with one ticket. Status only. On-hand, reserved, and available do not change. Exact command-ID retry returns the original result. Human or trigger later. GUI, live Commerce, Woo, Katana, ShipTheory, revert-from-Delivered, unpack-some, and deploy wait."
   },
   "decisions": [
     {
-      "baseline_ref": "git:67512943038fa3f443abead45a53862783d6e429",
+      "baseline_ref": "git:0846dd6a8cf318f1b5a4e57e56df9b2313045ba6",
       "candidate_refs": [],
-      "choice": "Back on hold for the same order. Packed was a mistake; they still need to fulfill that order. On-hand and reserved both come back. Available stays the same. Bags do not go back onto the shelf until the order is cancelled or refunded; that path is existing release, not unpack.",
+      "choice": "After pack, the ticket leaves Packed when it is marked Delivered. A human can mark it (Katana: Deliver all / Deliver some). A trigger can mark it (today: ShipTheory label-print webhook). Not carrier scan. Label print is one trigger, not the only path. Status only. Counts already dropped at pack. Available unchanged. Live Woo, Katana, and ShipTheory stay untouched this slice.",
       "context_ref": "docs/CHARTER.md",
-      "created_at": "2026-09-26T12:26:20+00:00",
+      "created_at": "2026-09-26T15:09:07+00:00",
       "deferred_reason": null,
       "delivery_ref": null,
       "dependencies": [],
-      "domain": "packing/unpack",
+      "domain": "packing/delivered",
       "history": [
         {
-          "at": "2026-09-26T12:40:10+00:00",
-          "choice": "Back on hold for the same order. Packed was a mistake; they still need to fulfill that order. On-hand and reserved both come back. Available stays the same. The order is not cancelled.",
+          "at": "2026-09-26T15:13:47+00:00",
+          "choice": "When the label prints. That ticket becomes Delivered. Status only. No stock change. On-hand and reserved already dropped at pack. Available stays the same. The packing list no longer shows it. Carrier scan is later.",
           "from": "proposed",
           "implementation_ref": null,
           "note": "user accepted the scoped decision",
@@ -37,8 +37,8 @@
           "verification_ref": null
         },
         {
-          "at": "2026-09-26T13:34:45+00:00",
-          "choice": "Back on hold for the same order. Packed was a mistake; they still need to fulfill that order. On-hand and reserved both come back. Available stays the same. Bags do not go back onto the shelf until the order is cancelled or refunded; that path is existing release, not unpack.",
+          "at": "2026-09-26T15:48:19+00:00",
+          "choice": "After pack, the ticket leaves Packed when it is marked Delivered. A human can mark it (Katana: Deliver all / Deliver some). A trigger can mark it (today: ShipTheory label-print webhook). Not carrier scan. Label print is one trigger, not the only path. Status only. Counts already dropped at pack. Available unchanged. Live Woo, Katana, and ShipTheory stay untouched this slice.",
           "from": "locked",
           "implementation_ref": null,
           "note": "bounded implementation recorded",
@@ -51,8 +51,8 @@
           "verification_ref": null
         },
         {
-          "at": "2026-09-26T13:34:45+00:00",
-          "choice": "Back on hold for the same order. Packed was a mistake; they still need to fulfill that order. On-hand and reserved both come back. Available stays the same. Bags do not go back onto the shelf until the order is cancelled or refunded; that path is existing release, not unpack.",
+          "at": "2026-09-26T15:48:19+00:00",
+          "choice": "After pack, the ticket leaves Packed when it is marked Delivered. A human can mark it (Katana: Deliver all / Deliver some). A trigger can mark it (today: ShipTheory label-print webhook). Not carrier scan. Label print is one trigger, not the only path. Status only. Counts already dropped at pack. Available unchanged. Live Woo, Katana, and ShipTheory stay untouched this slice.",
           "from": "implemented",
           "implementation_ref": "src/features/stock-reservation/",
           "note": "verification recorded in cumulative context",
@@ -65,404 +65,37 @@
           "verification_ref": null
         }
       ],
-      "id": "unpack-destination-001",
+      "id": "delivered-when-001",
       "implementation_ref": "src/features/stock-reservation/",
-      "question": "When they unpack a packed ticket, do those bags go back on hold for that same order, or back on the shelf for the next customer?",
-      "rationale": "Bobby: they go back on hold for the same order; they would not go back into inventory until the order has been marked cancelled or refunded.",
-      "repair_required": false,
-      "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": ".grilltrack/proof/cycle-23/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-09-26T13:36:42+00:00",
-          "source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6"
-        }
-      ],
-      "review_ref": ".grilltrack/proof/cycle-23/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6",
-      "status": "verified",
-      "superseded_by": null,
-      "updated_at": "2026-09-26T13:36:42+00:00",
-      "verification_ref": "bin/verify-inventory full"
-    },
-    {
-      "baseline_ref": "git:67512943038fa3f443abead45a53862783d6e429",
-      "candidate_refs": [],
-      "choice": "Same ticket. The leftover 2 stay reserved. The unpacked bag joins them on that ticket. Nothing goes to the shelf. Cancel or refund is still the only path back to available.",
-      "context_ref": "docs/CHARTER.md",
-      "created_at": "2026-09-26T12:40:10+00:00",
-      "deferred_reason": null,
-      "delivery_ref": null,
-      "dependencies": [
-        "unpack-destination-001"
-      ],
-      "domain": "packing/unpack",
-      "history": [
-        {
-          "at": "2026-09-26T12:43:47+00:00",
-          "choice": "Same ticket. The leftover 2 stay reserved. The unpacked bag joins them on that ticket. Nothing goes to the shelf. Cancel or refund is still the only path back to available.",
-          "from": "proposed",
-          "implementation_ref": null,
-          "note": "user accepted the scoped decision",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "locked",
-          "verification_ref": null
-        },
-        {
-          "at": "2026-09-26T13:34:45+00:00",
-          "choice": "Same ticket. The leftover 2 stay reserved. The unpacked bag joins them on that ticket. Nothing goes to the shelf. Cancel or refund is still the only path back to available.",
-          "from": "locked",
-          "implementation_ref": null,
-          "note": "bounded implementation recorded",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "implemented",
-          "verification_ref": null
-        },
-        {
-          "at": "2026-09-26T13:34:45+00:00",
-          "choice": "Same ticket. The leftover 2 stay reserved. The unpacked bag joins them on that ticket. Nothing goes to the shelf. Cancel or refund is still the only path back to available.",
-          "from": "implemented",
-          "implementation_ref": "src/features/stock-reservation/",
-          "note": "verification recorded in cumulative context",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "verified",
-          "verification_ref": null
-        }
-      ],
-      "id": "unpack-pack-some-leftover-002",
-      "implementation_ref": "src/features/stock-reservation/",
-      "question": "When they packed 1 of 3 and then unpack that packed bag, does it go back onto the same ticket with the leftover 2, or is unpack only for a fully packed ticket?",
-      "rationale": "Bobby: same ticket.",
-      "repair_required": false,
-      "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": ".grilltrack/proof/cycle-23/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-09-26T13:36:42+00:00",
-          "source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6"
-        }
-      ],
-      "review_ref": ".grilltrack/proof/cycle-23/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6",
-      "status": "verified",
-      "superseded_by": null,
-      "updated_at": "2026-09-26T13:36:42+00:00",
-      "verification_ref": "bin/verify-inventory full"
-    },
-    {
-      "baseline_ref": "git:67512943038fa3f443abead45a53862783d6e429",
-      "candidate_refs": [],
-      "choice": "Normal 3-bag hold. Partial exists only while packed bags are still packed. Unpacking the last packed bag restores a plain hold. Commerce is Processing again. Inventory is not shipped: a live hold, not packed. Nothing goes to the shelf.",
-      "context_ref": "docs/CHARTER.md",
-      "created_at": "2026-09-26T12:43:47+00:00",
-      "deferred_reason": null,
-      "delivery_ref": null,
-      "dependencies": [
-        "unpack-pack-some-leftover-002"
-      ],
-      "domain": "packing/unpack",
-      "history": [
-        {
-          "at": "2026-09-26T12:45:37+00:00",
-          "choice": "Normal 3-bag hold. Partial exists only while packed bags are still packed. Unpacking the last packed bag off a partial ticket restores a plain hold. Nothing goes to the shelf.",
-          "from": "proposed",
-          "implementation_ref": null,
-          "note": "user accepted the scoped decision",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "locked",
-          "verification_ref": null
-        },
-        {
-          "at": "2026-09-26T13:34:45+00:00",
-          "choice": "Normal 3-bag hold. Partial exists only while packed bags are still packed. Unpacking the last packed bag restores a plain hold. Commerce is Processing again. Inventory is not shipped: a live hold, not packed. Nothing goes to the shelf.",
-          "from": "locked",
-          "implementation_ref": null,
-          "note": "bounded implementation recorded",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "implemented",
-          "verification_ref": null
-        },
-        {
-          "at": "2026-09-26T13:34:45+00:00",
-          "choice": "Normal 3-bag hold. Partial exists only while packed bags are still packed. Unpacking the last packed bag restores a plain hold. Commerce is Processing again. Inventory is not shipped: a live hold, not packed. Nothing goes to the shelf.",
-          "from": "implemented",
-          "implementation_ref": "src/features/stock-reservation/",
-          "note": "verification recorded in cumulative context",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "verified",
-          "verification_ref": null
-        }
-      ],
-      "id": "unpack-restored-state-003",
-      "implementation_ref": "src/features/stock-reservation/",
-      "question": "After unpacking that packed bag back onto the leftover 2, is the ticket a normal 3-bag hold again, or still a partially packed ticket?",
-      "rationale": "Bobby: normal 3 bag; state would likely be processing in commerce and not shipped in inventory, or something like that.",
-      "repair_required": false,
-      "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": ".grilltrack/proof/cycle-23/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-09-26T13:36:42+00:00",
-          "source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6"
-        }
-      ],
-      "review_ref": ".grilltrack/proof/cycle-23/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6",
-      "status": "verified",
-      "superseded_by": null,
-      "updated_at": "2026-09-26T13:36:42+00:00",
-      "verification_ref": "bin/verify-inventory full"
-    },
-    {
-      "baseline_ref": "git:67512943038fa3f443abead45a53862783d6e429",
-      "candidate_refs": [],
-      "choice": "Call the live ticket Not shipped. Replace open hold and kernel active as the shop name. Unpack restores Not shipped on the same ticket. Commerce stays Processing. Inventory ticket states: not shipped, partially packed, packed, canceled. Delivered stays the deferred ship loop. Do not store Commerce order states on the ticket.",
-      "context_ref": "docs/CHARTER.md",
-      "created_at": "2026-09-26T12:45:46+00:00",
-      "deferred_reason": null,
-      "delivery_ref": null,
-      "dependencies": [
-        "unpack-restored-state-003"
-      ],
-      "domain": "packing/unpack",
-      "history": [
-        {
-          "at": "2026-09-26T13:11:49+00:00",
-          "choice": "Keep the existing open hold. Commerce is Processing. Inventory does not store order states. Not shipped is the shop meaning of a live unshipped hold. Do not add a parallel Commerce status name to the ticket.",
-          "from": "proposed",
-          "implementation_ref": null,
-          "note": "user accepted the scoped decision",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "locked",
-          "verification_ref": null
-        },
-        {
-          "at": "2026-09-26T13:34:45+00:00",
-          "choice": "Call the live ticket Not shipped. Replace open hold and kernel active as the shop name. Unpack restores Not shipped on the same ticket. Commerce stays Processing. Inventory ticket states: not shipped, partially packed, packed, canceled. Delivered stays the deferred ship loop. Do not store Commerce order states on the ticket.",
-          "from": "locked",
-          "implementation_ref": null,
-          "note": "bounded implementation recorded",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "implemented",
-          "verification_ref": null
-        },
-        {
-          "at": "2026-09-26T13:34:45+00:00",
-          "choice": "Call the live ticket Not shipped. Replace open hold and kernel active as the shop name. Unpack restores Not shipped on the same ticket. Commerce stays Processing. Inventory ticket states: not shipped, partially packed, packed, canceled. Delivered stays the deferred ship loop. Do not store Commerce order states on the ticket.",
-          "from": "implemented",
-          "implementation_ref": "src/features/stock-reservation/",
-          "note": "verification recorded in cumulative context",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "verified",
-          "verification_ref": null
-        }
-      ],
-      "id": "unpack-inventory-status-004",
-      "implementation_ref": "src/features/stock-reservation/",
-      "question": "After unpack, should Inventory keep calling that ticket an open hold, or add a not-shipped status?",
-      "rationale": "Bobby: yes.",
-      "repair_required": false,
-      "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": ".grilltrack/proof/cycle-23/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-09-26T13:36:42+00:00",
-          "source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6"
-        }
-      ],
-      "review_ref": ".grilltrack/proof/cycle-23/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6",
-      "status": "verified",
-      "superseded_by": null,
-      "updated_at": "2026-09-26T13:36:42+00:00",
-      "verification_ref": "bin/verify-inventory full"
-    },
-    {
-      "baseline_ref": "git:67512943038fa3f443abead45a53862783d6e429",
-      "candidate_refs": [],
-      "choice": "Inventory Packed is the Shiptheory print trigger. Label printed webhook: Inventory Packed to Delivered, status only, no stock change. Then Katana/Inventory webhooks Woo/Commerce Processing to Completed. Partially delivered deferred. Not this unpack slice.",
-      "context_ref": "docs/CHARTER.md",
-      "created_at": "2026-09-26T13:10:54+00:00",
-      "deferred_reason": "dinkuskit/ship owns the Packed print trigger, label webhook, Packed to Delivered status, and Woo Processing to Completed. Unpack only restores Packed to Not shipped. Counts already locked: Delivered does not move stock.",
-      "delivery_ref": null,
-      "dependencies": [
-        "unpack-restored-state-003"
-      ],
-      "domain": "packing/unpack",
-      "history": [
-        {
-          "at": "2026-09-26T13:10:54+00:00",
-          "choice": "Inventory Packed is the Shiptheory print trigger. Label printed webhook: Inventory Packed to Delivered, status only, no stock change. Then Katana/Inventory webhooks Woo/Commerce Processing to Completed. Partially delivered deferred. Not this unpack slice.",
-          "from": "proposed",
-          "implementation_ref": null,
-          "note": "dinkuskit/ship owns the Packed print trigger, label webhook, Packed to Delivered status, and Woo Processing to Completed. Unpack only restores Packed to Not shipped. Counts already locked: Delivered does not move stock.",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "deferred",
-          "verification_ref": null
-        }
-      ],
-      "id": "unpack-ship-loop-005",
-      "implementation_ref": null,
-      "question": "When does Inventory change Packed to Delivered?",
-      "rationale": "Bobby: Inventory marks Packed, that triggers Shiptheory to print. Label webhook Katana PACKED to DELIVERED, then Katana webhooks Woo processing to completed. Partially delivered stays deferred. Iron out on dinkuskit/ship.",
+      "question": "After they pack, when should that ticket leave Packed: when the label prints, or when the carrier scans it?",
+      "rationale": "Bobby: after they pack, it should leave Packed when it gets marked Delivered. Marker can be a human or a trigger. Current Katana+ShipTheory trigger is the label-print webhook. Katana admin still lets a human Pack some/all and Deliver some/all. Carrier scan is not the event.",
       "repair_required": false,
       "review_classifications": [],
       "review_history": [],
       "review_ref": null,
       "review_result": null,
       "review_source_identity": null,
-      "status": "deferred",
-      "superseded_by": null,
-      "updated_at": "2026-09-26T13:10:54+00:00",
-      "verification_ref": null
-    },
-    {
-      "baseline_ref": "git:67512943038fa3f443abead45a53862783d6e429",
-      "candidate_refs": [],
-      "choice": "Named unpack-some is allowed later. This first command restores all packed bags on that ticket onto the same Not shipped ticket. Packed 1 of 3 brings back that 1 beside the leftover 2. Packed all 3 brings back 3. Over-unpack waits with unpack-some.",
-      "context_ref": "docs/CHARTER.md",
-      "created_at": "2026-09-26T13:11:49+00:00",
-      "deferred_reason": null,
-      "delivery_ref": null,
-      "dependencies": [
-        "unpack-inventory-status-004"
-      ],
-      "domain": "packing/unpack",
-      "history": [
-        {
-          "at": "2026-09-26T13:14:47+00:00",
-          "choice": "All packed bags on that ticket. Unpack restores the packed amount onto the same Not shipped ticket. If they had packed 1 of 3, that 1 comes back. If they packed all 3, all 3 come back. No named unpack-some this slice. Over-unpack does not apply.",
-          "from": "proposed",
-          "implementation_ref": null,
-          "note": "user accepted the scoped decision",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "locked",
-          "verification_ref": null
-        },
-        {
-          "at": "2026-09-26T13:34:45+00:00",
-          "choice": "Named unpack-some is allowed later. This first command restores all packed bags on that ticket onto the same Not shipped ticket. Packed 1 of 3 brings back that 1 beside the leftover 2. Packed all 3 brings back 3. Over-unpack waits with unpack-some.",
-          "from": "locked",
-          "implementation_ref": null,
-          "note": "bounded implementation recorded",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "implemented",
-          "verification_ref": null
-        },
-        {
-          "at": "2026-09-26T13:34:45+00:00",
-          "choice": "Named unpack-some is allowed later. This first command restores all packed bags on that ticket onto the same Not shipped ticket. Packed 1 of 3 brings back that 1 beside the leftover 2. Packed all 3 brings back 3. Over-unpack waits with unpack-some.",
-          "from": "implemented",
-          "implementation_ref": "src/features/stock-reservation/",
-          "note": "verification recorded in cumulative context",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "verified",
-          "verification_ref": null
-        }
-      ],
-      "id": "unpack-quantity-006",
-      "implementation_ref": "src/features/stock-reservation/",
-      "question": "When they unpack a packed ticket, do all packed bags come back, or do they name a quantity?",
-      "rationale": "Bobby: name a quantity / unpack some should be allowed eventually; he thinks Katana allows this. Katana Pack some exists; revert undoes a whole fulfillment then they pack some again. Named unpack-some is the later grill.",
-      "repair_required": false,
-      "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": ".grilltrack/proof/cycle-23/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-09-26T13:36:43+00:00",
-          "source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6"
-        }
-      ],
-      "review_ref": ".grilltrack/proof/cycle-23/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-26T13:36:43+00:00",
+      "updated_at": "2026-09-26T15:48:19+00:00",
       "verification_ref": "bin/verify-inventory full"
     },
     {
-      "baseline_ref": "git:67512943038fa3f443abead45a53862783d6e429",
+      "baseline_ref": "git:0846dd6a8cf318f1b5a4e57e56df9b2313045ba6",
       "candidate_refs": [],
-      "choice": "No. Unpack only Packed or partially packed. Revert-from-Delivered waits with dinkuskit/ship. Not shipped has nothing packed to undo. Canceled rejects. The order is not cancelled. Nothing goes to the shelf.",
+      "choice": "Whole packed ticket. Deliver all of that one packed ticket. Ticket becomes Delivered. Deliver some waits: packed 1 of 3 with leftover 2 still reserved is not this slice. Human click and label-print webhook both call this same command later. GUI and live ShipTheory are not this slice. Status only. Counts already dropped at pack.",
       "context_ref": "docs/CHARTER.md",
-      "created_at": "2026-09-26T13:15:24+00:00",
+      "created_at": "2026-09-26T15:13:47+00:00",
       "deferred_reason": null,
       "delivery_ref": null,
       "dependencies": [
-        "unpack-quantity-006"
+        "delivered-when-001"
       ],
-      "domain": "packing/unpack",
+      "domain": "packing/delivered",
       "history": [
         {
-          "at": "2026-09-26T13:21:38+00:00",
-          "choice": "No. Unpack only Packed. Delivered is ship/void, not unpack. Not shipped has nothing packed to undo. Canceled rejects. The order is not cancelled. Nothing goes to the shelf.",
+          "at": "2026-09-26T15:19:23+00:00",
+          "choice": "Whole packed ticket. Deliver all of what is packed on that ticket. Ticket becomes Delivered. Packing list drops it. Deliver some / partially delivered waits. Human click and label-print webhook both call this same command later. GUI and live ShipTheory are not this slice.",
           "from": "proposed",
           "implementation_ref": null,
           "note": "user accepted the scoped decision",
@@ -475,8 +108,8 @@
           "verification_ref": null
         },
         {
-          "at": "2026-09-26T13:34:45+00:00",
-          "choice": "No. Unpack only Packed or partially packed. Revert-from-Delivered waits with dinkuskit/ship. Not shipped has nothing packed to undo. Canceled rejects. The order is not cancelled. Nothing goes to the shelf.",
+          "at": "2026-09-26T15:48:19+00:00",
+          "choice": "Whole packed ticket. Deliver all of that one packed ticket. Ticket becomes Delivered. Deliver some waits: packed 1 of 3 with leftover 2 still reserved is not this slice. Human click and label-print webhook both call this same command later. GUI and live ShipTheory are not this slice. Status only. Counts already dropped at pack.",
           "from": "locked",
           "implementation_ref": null,
           "note": "bounded implementation recorded",
@@ -489,8 +122,8 @@
           "verification_ref": null
         },
         {
-          "at": "2026-09-26T13:34:45+00:00",
-          "choice": "No. Unpack only Packed or partially packed. Revert-from-Delivered waits with dinkuskit/ship. Not shipped has nothing packed to undo. Canceled rejects. The order is not cancelled. Nothing goes to the shelf.",
+          "at": "2026-09-26T15:48:19+00:00",
+          "choice": "Whole packed ticket. Deliver all of that one packed ticket. Ticket becomes Delivered. Deliver some waits: packed 1 of 3 with leftover 2 still reserved is not this slice. Human click and label-print webhook both call this same command later. GUI and live ShipTheory are not this slice. Status only. Counts already dropped at pack.",
           "from": "implemented",
           "implementation_ref": "src/features/stock-reservation/",
           "note": "verification recorded in cumulative context",
@@ -503,45 +136,37 @@
           "verification_ref": null
         }
       ],
-      "id": "unpack-delivered-007",
+      "id": "delivered-scope-002",
       "implementation_ref": "src/features/stock-reservation/",
-      "question": "If the ticket is already Delivered (label printed), can they unpack?",
-      "rationale": "Bobby: yes to the Katana-shaped unpack. Revert from delivered is a can of worms he does not want to get into yet.",
+      "question": "After pack, does marking Delivered take the whole packed ticket off the packing list, or do they also need Deliver some this round (packed 1 of 3 ships, leftover 2 stay)?",
+      "rationale": "Bobby: A. After pack, marking Delivered takes the whole packed ticket.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": ".grilltrack/proof/cycle-23/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-09-26T13:36:43+00:00",
-          "source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6"
-        }
-      ],
-      "review_ref": ".grilltrack/proof/cycle-23/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6",
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-26T13:36:43+00:00",
+      "updated_at": "2026-09-26T15:48:19+00:00",
       "verification_ref": "bin/verify-inventory full"
     },
     {
-      "baseline_ref": "git:67512943038fa3f443abead45a53862783d6e429",
+      "baseline_ref": "git:0846dd6a8cf318f1b5a4e57e56df9b2313045ba6",
       "candidate_refs": [],
-      "choice": "One awaited stock.unpack names one ticket Commerce already has. No quantity field. Restore all packed bags on that ticket onto the same Not shipped ticket. Packed 3 of 3 restores 3. Packed 1 of 3 restores that 1 beside leftover 2. On-hand and reserved both come back by the packed amount. Available stays the same. Exact command-ID retry returns the original result. Missing, not-shipped, canceled, or delivered tickets reject. Unpack-some, unpack-all, GUI, CLI, live Commerce, Woo, Katana, ship, and deploy wait.",
+      "choice": "Only a fully Packed ticket. Orders must be fully packed before they can be marked Delivered. Not shipped, partially packed, canceled, and already Delivered reject. Leftover quantity on a partial ticket stays reserved until they pack the rest. Katana partially delivered waits until that feature is created.",
       "context_ref": "docs/CHARTER.md",
-      "created_at": "2026-09-26T13:21:38+00:00",
+      "created_at": "2026-09-26T15:19:23+00:00",
       "deferred_reason": null,
       "delivery_ref": null,
       "dependencies": [
-        "unpack-delivered-007"
+        "delivered-scope-002"
       ],
-      "domain": "packing/unpack",
+      "domain": "packing/delivered",
       "history": [
         {
-          "at": "2026-09-26T13:21:38+00:00",
-          "choice": "One awaited stock.unpack names one ticket Commerce already has. No quantity field. Restore all packed bags on that ticket onto the same Not shipped ticket. Packed 3 of 3 restores 3. Packed 1 of 3 restores that 1 beside leftover 2. On-hand and reserved both come back by the packed amount. Available stays the same. Exact command-ID retry returns the original result. Missing, not-shipped, canceled, or delivered tickets reject. Unpack-some, unpack-all, GUI, CLI, live Commerce, Woo, Katana, ship, and deploy wait.",
+          "at": "2026-09-26T15:24:54+00:00",
+          "choice": "Only a fully Packed ticket. Not shipped, partially packed, canceled, and already Delivered reject. Leftover 2 on a partial ticket stay reserved until they pack the rest. Deliver some waits.",
           "from": "proposed",
           "implementation_ref": null,
           "note": "user accepted the scoped decision",
@@ -554,8 +179,8 @@
           "verification_ref": null
         },
         {
-          "at": "2026-09-26T13:34:45+00:00",
-          "choice": "One awaited stock.unpack names one ticket Commerce already has. No quantity field. Restore all packed bags on that ticket onto the same Not shipped ticket. Packed 3 of 3 restores 3. Packed 1 of 3 restores that 1 beside leftover 2. On-hand and reserved both come back by the packed amount. Available stays the same. Exact command-ID retry returns the original result. Missing, not-shipped, canceled, or delivered tickets reject. Unpack-some, unpack-all, GUI, CLI, live Commerce, Woo, Katana, ship, and deploy wait.",
+          "at": "2026-09-26T15:48:19+00:00",
+          "choice": "Only a fully Packed ticket. Orders must be fully packed before they can be marked Delivered. Not shipped, partially packed, canceled, and already Delivered reject. Leftover quantity on a partial ticket stays reserved until they pack the rest. Katana partially delivered waits until that feature is created.",
           "from": "locked",
           "implementation_ref": null,
           "note": "bounded implementation recorded",
@@ -568,8 +193,8 @@
           "verification_ref": null
         },
         {
-          "at": "2026-09-26T13:34:45+00:00",
-          "choice": "One awaited stock.unpack names one ticket Commerce already has. No quantity field. Restore all packed bags on that ticket onto the same Not shipped ticket. Packed 3 of 3 restores 3. Packed 1 of 3 restores that 1 beside leftover 2. On-hand and reserved both come back by the packed amount. Available stays the same. Exact command-ID retry returns the original result. Missing, not-shipped, canceled, or delivered tickets reject. Unpack-some, unpack-all, GUI, CLI, live Commerce, Woo, Katana, ship, and deploy wait.",
+          "at": "2026-09-26T15:48:19+00:00",
+          "choice": "Only a fully Packed ticket. Orders must be fully packed before they can be marked Delivered. Not shipped, partially packed, canceled, and already Delivered reject. Leftover quantity on a partial ticket stays reserved until they pack the rest. Katana partially delivered waits until that feature is created.",
           "from": "implemented",
           "implementation_ref": "src/features/stock-reservation/",
           "note": "verification recorded in cumulative context",
@@ -582,41 +207,112 @@
           "verification_ref": null
         }
       ],
-      "id": "unpack-command-008",
+      "id": "delivered-which-ticket-003",
       "implementation_ref": "src/features/stock-reservation/",
-      "question": "What does one unpack command name and restore?",
-      "rationale": "Bobby: yes.",
+      "question": "Which tickets can be marked Delivered: only a fully Packed ticket, or also a partially packed ticket (1 packed, 2 still on hold)?",
+      "rationale": "Bobby: A. Katana has partially delivered; defer it from Inventory. Require orders to be fully packed for delivery until that feature exists.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [
-        {
-          "classifications": [],
-          "ref": ".grilltrack/proof/cycle-23/REVIEW.md",
-          "result": "clean",
-          "reviewed_at": "2026-09-26T13:36:43+00:00",
-          "source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6"
-        }
-      ],
-      "review_ref": ".grilltrack/proof/cycle-23/REVIEW.md",
-      "review_result": "clean",
-      "review_source_identity": "git:7face9d90a1b246358adc7987a9e73914308c5a6",
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-26T13:36:43+00:00",
+      "updated_at": "2026-09-26T15:48:19+00:00",
+      "verification_ref": "bin/verify-inventory full"
+    },
+    {
+      "baseline_ref": "git:0846dd6a8cf318f1b5a4e57e56df9b2313045ba6",
+      "candidate_refs": [],
+      "choice": "One awaited command names one or more packed tickets Commerce already has. No quantity. No order number. All named tickets become Delivered, or none if any is missing, not shipped, partially packed, canceled, or already Delivered. A one-line order uses the same command with one ticket. Status only. On-hand, reserved, and available do not change. Exact command-ID retry returns the original result. GUI, live Commerce, Woo, Katana, ShipTheory, revert-from-Delivered, and deploy wait.",
+      "context_ref": "docs/CHARTER.md",
+      "created_at": "2026-09-26T15:24:54+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "delivered-which-ticket-003"
+      ],
+      "domain": "packing/delivered",
+      "history": [
+        {
+          "at": "2026-09-26T15:36:00+00:00",
+          "choice": "One awaited command names one packed ticket Commerce already has. No quantity. That ticket becomes Delivered. Status only. On-hand, reserved, and available do not change. Exact command-ID retry returns the original result. Missing, not shipped, partially packed, canceled, or already Delivered reject. Deliver-all of several tickets, GUI, live Commerce, Woo, Katana, ShipTheory, and deploy wait.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-26T15:48:19+00:00",
+          "choice": "One awaited command names one or more packed tickets Commerce already has. No quantity. No order number. All named tickets become Delivered, or none if any is missing, not shipped, partially packed, canceled, or already Delivered. A one-line order uses the same command with one ticket. Status only. On-hand, reserved, and available do not change. Exact command-ID retry returns the original result. GUI, live Commerce, Woo, Katana, ShipTheory, revert-from-Delivered, and deploy wait.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-26T15:48:19+00:00",
+          "choice": "One awaited command names one or more packed tickets Commerce already has. No quantity. No order number. All named tickets become Delivered, or none if any is missing, not shipped, partially packed, canceled, or already Delivered. A one-line order uses the same command with one ticket. Status only. On-hand, reserved, and available do not change. Exact command-ID retry returns the original result. GUI, live Commerce, Woo, Katana, ShipTheory, revert-from-Delivered, and deploy wait.",
+          "from": "implemented",
+          "implementation_ref": "src/features/stock-reservation/",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "delivered-command-004",
+      "implementation_ref": "src/features/stock-reservation/",
+      "question": "What does one Delivered command name: one packed ticket, or several packed tickets at once?",
+      "rationale": "Bobby: B. Astra: Commerce supplies the packed ticket IDs; one command marks every supplied ticket Delivered, or none if any is ineligible. Inventory still does not receive or look up an order number.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-09-26T15:48:19+00:00",
       "verification_ref": "bin/verify-inventory full"
     }
   ],
   "last_activation": {
-    "at": "2026-09-26T12:26:06+00:00",
+    "at": "2026-09-26T15:09:07+00:00",
     "mechanism": "implicit"
   },
   "last_pause": null,
   "pause": null,
-  "predecessor_track_id": "dinkuskit-inventory-pack-some-v1",
-  "recommendation": null,
+  "predecessor_track_id": "gt-20260926122606-08be01",
+  "recommendation": {
+    "alternatives": [
+      "Inventory expiry: unpaid Hold cancels at 60 minutes through existing stock.release; Commerce owns the clock.",
+      "EmDash packing/delivery admin so a clerk can pack and mark Delivered without a webhook."
+    ],
+    "reason": "Packed to Delivered is kernel-complete: status only, all-or-none of packed tickets Commerce already has. Live labels, Woo, and Katana stay untouched. The unused write path that landed commands preserve is still reservation at checkout.",
+    "recommended": "Commerce consumes Inventory holds at checkout so a second customer cannot also buy the last reserved hats.",
+    "recorded_at": "2026-09-26T15:48:44+00:00"
+  },
   "schema_version": "grilltrack/v0.1",
   "status": "active",
-  "title": "Dinkuskit Inventory unpack a packed hold",
-  "track_id": "gt-20260926122606-08be01",
-  "updated_at": "2026-09-26T13:36:43+00:00"
+  "title": "Dinkuskit Inventory packed hold becomes Delivered",
+  "track_id": "gt-20260926150907-b6e31e",
+  "updated_at": "2026-09-26T15:48:44+00:00"
 }

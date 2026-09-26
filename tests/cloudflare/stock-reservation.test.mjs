@@ -6,6 +6,7 @@ import { createSetOpeningBalance } from "../../src/application/set-opening-balan
 import { createReadSkuLocationBalance } from "../../src/application/read-inventory.ts";
 import { initializeCloudflareInventorySchema } from "../../src/cloudflare/schema.ts";
 import {
+	createDeliverStock,
 	createPackAllStock,
 	createPackSomeStock,
 	createPackStock,
@@ -380,6 +381,37 @@ describe("stock reservation Cloudflare parity", () => {
 			);
 			expect(packed.outcome).toBe("packed_all");
 			expect(packed.reservations).toHaveLength(2);
+			const hatBefore = await createReadSkuLocationBalance({ store })({
+				poolId,
+				locationId: "location_north",
+				skuId: "sku_hat",
+			});
+			const delivered = await createDeliverStock({
+				store,
+				now: () => new Date("2026-09-26T12:10:00.000Z"),
+				createReceiptId: () => "rcpt_cf_deliver",
+			})(
+				{
+					schema: "dinkuskit.inventory.command/v1",
+					commandId: "cmd_cf_deliver",
+					type: "stock.deliver",
+					context: { siteId: "site_test", poolId },
+					payload: { reservationIds: ["rsv_cf_hat", "rsv_cf_shirt"] },
+					references: [],
+				},
+				{ principal },
+			);
+			expect(delivered.outcome).toBe("delivered");
+			expect(delivered.reservations.every((hold) => hold.status === "delivered")).toBe(
+				true,
+			);
+			const hatAfter = await createReadSkuLocationBalance({ store })({
+				poolId,
+				locationId: "location_north",
+				skuId: "sku_hat",
+			});
+			expect(hatAfter.balance.onHand.value).toBe(hatBefore.balance.onHand.value);
+			expect(hatAfter.balance.reserved.value).toBe(hatBefore.balance.reserved.value);
 		});
 	});
 

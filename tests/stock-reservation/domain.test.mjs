@@ -3,12 +3,14 @@ import test from "node:test";
 
 import {
 	InvalidStockReservationCommandError,
+	DELIVER_STOCK_TYPE,
 	PACK_ALL_STOCK_TYPE,
 	PACK_SOME_STOCK_TYPE,
 	PACK_STOCK_TYPE,
 	RESERVE_STOCK_TYPE,
 	RELEASE_STOCK_TYPE,
 	UNPACK_STOCK_TYPE,
+	normalizeDeliverStockCommand,
 	normalizePackAllStockCommand,
 	normalizePackSomeStockCommand,
 	normalizePackStockCommand,
@@ -116,6 +118,39 @@ test("pack all command trims ticket ids and requires one or more unique tickets"
 				type: PACK_ALL_STOCK_TYPE,
 				context: { siteId: "site_test", poolId: "pool_test" },
 				payload: { reservationIds: ["rsv_hat", "rsv_hat"] },
+				references: [],
+			}),
+		InvalidStockReservationCommandError,
+	);
+});
+
+test("deliver command trims ticket ids and requires one or more unique tickets", () => {
+	assert.deepEqual(
+		normalizeDeliverStockCommand({
+			schema: "dinkuskit.inventory.command/v1",
+			commandId: " cmd_deliver_001 ",
+			type: DELIVER_STOCK_TYPE,
+			context: { siteId: " site_test ", poolId: " pool_test " },
+			payload: { reservationIds: [" rsv_hat ", " rsv_shirt "] },
+			references: [],
+		}),
+		{
+			schema: "dinkuskit.inventory.command/v1",
+			commandId: "cmd_deliver_001",
+			type: "stock.deliver",
+			context: { siteId: "site_test", poolId: "pool_test" },
+			payload: { reservationIds: ["rsv_hat", "rsv_shirt"] },
+			references: [],
+		},
+	);
+	assert.throws(
+		() =>
+			normalizeDeliverStockCommand({
+				schema: "dinkuskit.inventory.command/v1",
+				commandId: "cmd_deliver_empty",
+				type: DELIVER_STOCK_TYPE,
+				context: { siteId: "site_test", poolId: "pool_test" },
+				payload: { reservationIds: [] },
 				references: [],
 			}),
 		InvalidStockReservationCommandError,

@@ -145,10 +145,12 @@ tickets in one shot, or none if any ticket is not an open hold.
 `stock.pack_some` packs a named quantity from one ticket. Same ticket shrinks;
 leftover stays reserved as partially packed; last bags or the full remaining
 quantity finish the ticket as packed. Asking for more than remaining packs
-none. `stock.unpack` names one ticket and restores all packed bags onto the
+none. `stock.unpack` names one ticket and restores all packed quantity onto the
 same Not shipped ticket; leftover already reserved stays reserved. Retrying the
 original reserve for that order line returns the same ticket and does not hold
-more stock. Inventory does not store an order number. Unpack-some,
+more stock. `stock.deliver` names one or more packed tickets Commerce already
+has. All become Delivered, or none if any is not fully packed. Status only;
+counts do not change. Inventory does not store an order number. Unpack-some,
 revert-from-Delivered, expiry, backorder, GUI, CLI, and live Commerce transport
 remain later slices.
 
