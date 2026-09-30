@@ -12,6 +12,8 @@ import {
 	InvalidCheckoutInventoryRequestError,
 	checkoutReleaseCommandId,
 	checkoutReserveCommandId,
+	digestCheckoutStockRequest,
+	normalizeStockRequest,
 	createCheckoutInventoryPort,
 	createReadSkuLocationBalance,
 	createReleaseCheckoutBasket,
@@ -509,6 +511,221 @@ test("a changed site cannot recover or mutate another site's hold", async (t) =>
 	assert.equal(otherRelease.code, "command_id_conflict");
 	assert.equal((await balances(store)).hat.reserved.value, "3");
 	assert.equal((await balances(store)).shirt.reserved.value, "2");
+});
+
+test("wrong-site release-first conflicts without persisting reserve in both directions", async (t) => {
+	const recoveryPrincipal = Object.freeze({
+		kind: "human",
+		id: "principal_recovery",
+		displayName: "Recovery Operator",
+		surface: "test",
+	});
+	for (const [releaseSite, foreignSite] of [
+		["site_beta", "site_alpha"],
+		["site_alpha", "site_beta"],
+	]) {
+		const filePath = await databasePath(
+			t,
+			`foreign-release-first-${releaseSite}`,
+		);
+		const store = createLocalSqliteTestStore({ filePath });
+		await seedBasket(store);
+		const deps = factories(store);
+		const reserve = createReserveCheckoutBasket(deps);
+		const release = createReleaseCheckoutBasket(deps);
+		const shared = stockRequest({ operationId: "op_shared_release_first" });
+		const control = stockRequest({ operationId: "op_current_hold" });
+		const rollbackAttempt = stockRequest({
+			operationId: "op_rollback_after_conflict",
+		});
+
+		const currentHold = await reserve(control, {
+			principal,
+			siteId: foreignSite,
+		});
+		assert.equal(currentHold.outcome, "reserved");
+		const holdBefore = await balances(store);
+		assert.equal(holdBefore.hat.reserved.value, "3");
+		assert.equal(holdBefore.shirt.reserved.value, "2");
+
+		const firstRelease = await release(shared, {
+			principal,
+			siteId: releaseSite,
+		});
+		assert.equal(firstRelease.outcome, "released");
+		const releaseBefore = await store.readCommand(
+			checkoutReleaseCommandId(shared.operationId),
+		);
+		assert.equal(releaseBefore.result.outcome, "released");
+		assert.equal(
+			releaseBefore.commandDigest,
+			await digestCheckoutStockRequest(normalizeStockRequest(shared), releaseSite),
+		);
+
+		let persistedForeignReserve = false;
+		const inner = store.runTransaction.bind(store);
+		store.runTransaction = async (poolId, operation) =>
+			inner(poolId, (transaction) => {
+				const storeRejection = transaction.storeRejection.bind(transaction);
+				transaction.storeRejection = (input) => {
+					persistedForeignReserve = true;
+					return storeRejection(input);
+				};
+				const storeResult = transaction.storeCommandResult.bind(transaction);
+				transaction.storeCommandResult = (input) => {
+					persistedForeignReserve = true;
+					return storeResult(input);
+				};
+				const commit = transaction.commitStockReservationBatch.bind(
+					transaction,
+				);
+				transaction.commitStockReservationBatch = (input) => {
+					persistedForeignReserve = true;
+					return commit(input);
+				};
+				return operation(transaction);
+			});
+
+		const foreignReserve = await reserve(shared, {
+			principal,
+			siteId: foreignSite,
+		});
+		assert.equal(foreignReserve.outcome, "rejected");
+		assert.equal(foreignReserve.code, "command_id_conflict");
+		assert.equal(persistedForeignReserve, false);
+		assert.equal(
+			await store.readCommand(checkoutReserveCommandId(shared.operationId)),
+			null,
+		);
+		assert.deepEqual(
+			await store.readCommand(checkoutReleaseCommandId(shared.operationId)),
+			releaseBefore,
+		);
+
+		const foreignAgain = await reserve(shared, {
+			principal,
+			siteId: foreignSite,
+		});
+		assert.deepEqual(foreignAgain, foreignReserve);
+		assert.equal(persistedForeignReserve, false);
+		store.runTransaction = inner;
+
+		const recoveredRelease = await release(shared, {
+			principal: recoveryPrincipal,
+			siteId: releaseSite,
+		});
+		assert.deepEqual(recoveredRelease, firstRelease);
+
+		const ownerReserve = await reserve(shared, {
+			principal: recoveryPrincipal,
+			siteId: releaseSite,
+		});
+		assert.equal(ownerReserve.outcome, "rejected");
+		assert.equal(ownerReserve.code, "checkout_released");
+		const storedOwnerReserve = await store.readCommand(
+			checkoutReserveCommandId(shared.operationId),
+		);
+		assert.equal(storedOwnerReserve.result.code, "checkout_released");
+		assert.equal(
+			storedOwnerReserve.commandDigest,
+			await digestCheckoutStockRequest(normalizeStockRequest(shared), releaseSite),
+		);
+		assert.deepEqual(
+			await reserve(shared, { principal, siteId: releaseSite }),
+			ownerReserve,
+		);
+		assert.deepEqual(
+			await store.readCommand(checkoutReleaseCommandId(shared.operationId)),
+			releaseBefore,
+		);
+
+		const counts = durableMutationCounts(
+			filePath,
+			checkoutReserveCommandId(shared.operationId),
+		);
+		assert.equal(counts.commandResults, 1);
+		assert.equal(counts.receipts, 0);
+		assert.equal(counts.openReservations, 2);
+
+		const afterConflict = await balances(store);
+		assert.equal(afterConflict.hat.reserved.value, "3");
+		assert.equal(afterConflict.shirt.reserved.value, "2");
+		assert.equal(afterConflict.hat.available.value, "7");
+
+		const rollbackInner = store.runTransaction.bind(store);
+		store.runTransaction = async (poolId, operation) =>
+			rollbackInner(poolId, (transaction) => {
+				const original =
+					transaction.commitStockReservationBatch.bind(transaction);
+				transaction.commitStockReservationBatch = (input) => {
+					original(input);
+					throw new Error("interrupted after batch write");
+				};
+				return operation(transaction);
+			});
+		await assert.rejects(
+			() => reserve(rollbackAttempt, { principal, siteId: foreignSite }),
+			/interrupted after batch write/u,
+		);
+		store.runTransaction = rollbackInner;
+		assert.equal(
+			await store.readCommand(
+				checkoutReserveCommandId(rollbackAttempt.operationId),
+			),
+			null,
+		);
+		assert.deepEqual(
+			await store.readCommand(checkoutReleaseCommandId(shared.operationId)),
+			releaseBefore,
+		);
+		assert.deepEqual(
+			await store.readCommand(checkoutReserveCommandId(shared.operationId)),
+			storedOwnerReserve,
+		);
+		assert.equal((await balances(store)).hat.reserved.value, "3");
+		await store.close();
+
+		const reopened = createLocalSqliteTestStore({ filePath });
+		const restartedReserve = createReserveCheckoutBasket(factories(reopened));
+		const restartedRelease = createReleaseCheckoutBasket(factories(reopened));
+		assert.deepEqual(
+			await reopened.readCommand(checkoutReleaseCommandId(shared.operationId)),
+			releaseBefore,
+		);
+		assert.deepEqual(
+			await reopened.readCommand(checkoutReserveCommandId(shared.operationId)),
+			storedOwnerReserve,
+		);
+		assert.equal(
+			await reopened.readCommand(
+				checkoutReserveCommandId(rollbackAttempt.operationId),
+			),
+			null,
+		);
+		assert.deepEqual(
+			await restartedRelease(shared, {
+				principal: recoveryPrincipal,
+				siteId: releaseSite,
+			}),
+			firstRelease,
+		);
+		assert.deepEqual(
+			await restartedReserve(shared, { principal, siteId: foreignSite }),
+			foreignReserve,
+		);
+		assert.deepEqual(
+			await restartedReserve(shared, {
+				principal: recoveryPrincipal,
+				siteId: releaseSite,
+			}),
+			ownerReserve,
+		);
+		const restartedHold = await balances(reopened);
+		assert.equal(restartedHold.hat.reserved.value, "3");
+		assert.equal(restartedHold.shirt.reserved.value, "2");
+		assert.equal(restartedHold.hat.available.value, "7");
+		await reopened.close();
+	}
 });
 
 test("colon-bearing operation and SKU IDs keep distinct holds", async (t) => {

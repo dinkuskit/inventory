@@ -212,6 +212,13 @@ function evaluateReserve(
 	const releaseCommandId = checkoutReleaseCommandId(request.operationId);
 	const releaseFence = transaction.getCommand(releaseCommandId);
 	if (releaseFence !== null) {
+		if (releaseFence.commandDigest !== commandDigest) {
+			return rejection(
+				reserveCommandId,
+				"command_id_conflict",
+				"The command ID is already bound to different contents.",
+			);
+		}
 		const existingReserve = replayOrConflict(
 			transaction,
 			reserveCommandId,

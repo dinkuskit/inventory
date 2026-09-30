@@ -5,9 +5,13 @@ import { describe, it } from "vitest";
 import { createSetOpeningBalance } from "../../src/application/set-opening-balance.ts";
 import { createReadSkuLocationBalance } from "../../src/application/read-inventory.ts";
 import {
+	checkoutReleaseCommandId,
+	checkoutReserveCommandId,
 	createCheckoutInventoryPort,
 	createReleaseCheckoutBasket,
 	createReserveCheckoutBasket,
+	digestCheckoutStockRequest,
+	normalizeStockRequest,
 } from "../../src/features/checkout-inventory/index.ts";
 import { createCloudflareSqliteInventoryStore } from "../../src/storage/cloudflare-sqlite-inventory-store.ts";
 import { createFixtureLocation } from "../helpers/location-fixture.mjs";
@@ -80,6 +84,41 @@ function deps(store, poolId, prefix, providerRef) {
 		createReservationId: () => `${prefix}_rsv_${++reservation}`,
 		createReceiptId: () => `${prefix}_rcpt_${++receipt}`,
 	};
+}
+
+function snapshotDurableCheckoutState(storage) {
+	return {
+		commands: storage.sql
+			.exec(
+				`SELECT command_id, command_digest, terminal_result_json
+				 FROM inventory_command_results
+				 ORDER BY command_id`,
+			)
+			.toArray(),
+		receipts: storage.sql
+			.exec(
+				`SELECT receipt_id, command_id, receipt_json
+				 FROM inventory_receipts
+				 ORDER BY receipt_id`,
+			)
+			.toArray(),
+		reservations: storage.sql
+			.exec(
+				`SELECT pool_id, reservation_id, order_line_key, status, version,
+				        reservation_json
+				 FROM inventory_reservations
+				 ORDER BY reservation_id`,
+			)
+			.toArray(),
+	};
+}
+
+function rowsForCommand(rows, commandId) {
+	return rows.filter((row) => String(row.command_id) === commandId);
+}
+
+function parsedJson(value) {
+	return JSON.parse(String(value));
 }
 
 describe("checkout inventory Cloudflare durable storage", () => {
@@ -213,6 +252,190 @@ describe("checkout inventory Cloudflare durable storage", () => {
 				).balance.reserved.value,
 			).toBe("0");
 		});
+	});
+
+	it("wrong-site release-first conflicts without persisting reserve in both directions", async ({
+		expect,
+	}) => {
+		const recoveryPrincipal = Object.freeze({
+			kind: "human",
+			id: "principal_recovery",
+			displayName: "Recovery Operator",
+			surface: "emdash",
+		});
+		for (const [releaseSite, foreignSite] of [
+			["site_beta", "site_alpha"],
+			["site_alpha", "site_beta"],
+		]) {
+			const poolId = `pool_checkout_cf_site_fence_${releaseSite}`;
+			const stub = env.INVENTORY_POOLS.getByName(poolId);
+			await runInDurableObject(stub, async (_instance, state) => {
+				const store = createCloudflareSqliteInventoryStore({
+					storage: state.storage,
+					poolId,
+				});
+				await seed(store, poolId);
+				const factory = deps(store, poolId, `cf_site_fence_${releaseSite}`);
+				const reserve = createReserveCheckoutBasket(factory);
+				const release = createReleaseCheckoutBasket(factory);
+				const shared = request(poolId, "op_shared_release_first");
+				const control = request(poolId, "op_current_hold");
+				const currentHold = await reserve(control, {
+					principal,
+					siteId: foreignSite,
+				});
+				expect(currentHold.outcome).toBe("reserved");
+
+				const firstRelease = await release(shared, {
+					principal,
+					siteId: releaseSite,
+				});
+				expect(firstRelease.outcome).toBe("released");
+				const controlReserveId = checkoutReserveCommandId(control.operationId);
+				const sharedReserveId = checkoutReserveCommandId(shared.operationId);
+				const sharedReleaseId = checkoutReleaseCommandId(shared.operationId);
+				const releaseBefore = await store.readCommand(sharedReleaseId);
+				expect(releaseBefore.result.outcome).toBe("released");
+				expect(releaseBefore.commandDigest).toBe(
+					await digestCheckoutStockRequest(
+						normalizeStockRequest(shared),
+						releaseSite,
+					),
+				);
+
+				const beforeForeign = snapshotDurableCheckoutState(state.storage);
+				expect(
+					beforeForeign.reservations.map((row) =>
+						parsedJson(row.reservation_json),
+					),
+				).toEqual(currentHold.reservations);
+				expect(
+					rowsForCommand(beforeForeign.receipts, controlReserveId).map((row) =>
+						parsedJson(row.receipt_json),
+					),
+				).toEqual([currentHold.receipt]);
+				expect(
+					rowsForCommand(beforeForeign.commands, sharedReleaseId).map((row) =>
+						parsedJson(row.terminal_result_json),
+					),
+				).toEqual([firstRelease]);
+				expect(rowsForCommand(beforeForeign.commands, sharedReserveId)).toEqual(
+					[],
+				);
+				expect(rowsForCommand(beforeForeign.receipts, sharedReserveId)).toEqual(
+					[],
+				);
+
+				const foreignReserve = await reserve(shared, {
+					principal,
+					siteId: foreignSite,
+				});
+				expect(foreignReserve.outcome).toBe("rejected");
+				expect(foreignReserve.code).toBe("command_id_conflict");
+				expect(await store.readCommand(sharedReserveId)).toBeNull();
+				expect(await store.readCommand(sharedReleaseId)).toEqual(releaseBefore);
+				const afterForeign = snapshotDurableCheckoutState(state.storage);
+				expect(afterForeign).toEqual(beforeForeign);
+				expect(rowsForCommand(afterForeign.receipts, sharedReserveId)).toEqual(
+					[],
+				);
+				expect(
+					await reserve(shared, { principal, siteId: foreignSite }),
+				).toEqual(foreignReserve);
+				expect(snapshotDurableCheckoutState(state.storage)).toEqual(
+					beforeForeign,
+				);
+
+				expect(
+					await release(shared, {
+						principal: recoveryPrincipal,
+						siteId: releaseSite,
+					}),
+				).toEqual(firstRelease);
+				expect(snapshotDurableCheckoutState(state.storage)).toEqual(
+					beforeForeign,
+				);
+
+				const ownerReserve = await reserve(shared, {
+					principal: recoveryPrincipal,
+					siteId: releaseSite,
+				});
+				expect(ownerReserve.outcome).toBe("rejected");
+				expect(ownerReserve.code).toBe("checkout_released");
+				const storedOwnerReserve = await store.readCommand(sharedReserveId);
+				expect(storedOwnerReserve.result.code).toBe("checkout_released");
+				expect(storedOwnerReserve.commandDigest).toBe(
+					await digestCheckoutStockRequest(
+						normalizeStockRequest(shared),
+						releaseSite,
+					),
+				);
+				expect(
+					await reserve(shared, { principal, siteId: releaseSite }),
+				).toEqual(ownerReserve);
+				expect(await store.readCommand(sharedReleaseId)).toEqual(releaseBefore);
+
+				const afterOwnerFence = snapshotDurableCheckoutState(state.storage);
+				expect(afterOwnerFence.receipts).toEqual(beforeForeign.receipts);
+				expect(afterOwnerFence.reservations).toEqual(beforeForeign.reservations);
+				expect(rowsForCommand(afterOwnerFence.receipts, sharedReserveId)).toEqual(
+					[],
+				);
+				expect(
+					rowsForCommand(afterOwnerFence.commands, sharedReleaseId),
+				).toEqual(rowsForCommand(beforeForeign.commands, sharedReleaseId));
+				expect(
+					rowsForCommand(afterOwnerFence.commands, sharedReserveId).map((row) =>
+						parsedJson(row.terminal_result_json),
+					),
+				).toEqual([ownerReserve]);
+
+				const read = createReadSkuLocationBalance({ store });
+				expect(
+					(
+						await read({
+							poolId,
+							locationId: "location_north",
+							skuId: "sku_hat",
+						})
+					).balance.reserved.value,
+				).toBe("3");
+
+				const restartedReserve = createReserveCheckoutBasket(
+					deps(store, poolId, `cf_site_fence_restart_${releaseSite}`),
+				);
+				const restartedRelease = createReleaseCheckoutBasket(
+					deps(store, poolId, `cf_site_fence_restart_${releaseSite}`),
+				);
+				expect(
+					await restartedRelease(shared, {
+						principal: recoveryPrincipal,
+						siteId: releaseSite,
+					}),
+				).toEqual(firstRelease);
+				expect(
+					await restartedReserve(shared, { principal, siteId: foreignSite }),
+				).toEqual(foreignReserve);
+				expect(
+					await restartedReserve(shared, {
+						principal: recoveryPrincipal,
+						siteId: releaseSite,
+					}),
+				).toEqual(ownerReserve);
+				expect(snapshotDurableCheckoutState(state.storage)).toEqual(
+					afterOwnerFence,
+				);
+				expect(
+					(
+						await read({
+							poolId,
+							locationId: "location_north",
+							skuId: "sku_hat",
+						})
+					).balance.reserved.value,
+				).toBe("3");
+			});
+		}
 	});
 
 	it("rejects a binding mismatch on first call and after factory restart, and isolates a second workerd pool", async ({

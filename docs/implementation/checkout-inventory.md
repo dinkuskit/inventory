@@ -24,6 +24,13 @@ terminal rejection with no holds.
 - Exact replay of the same operation, binding, contents, and site returns the
   original durable result. Changed binding, contents, or site reject. A
   different site sharing the pool cannot recover or mutate the original hold.
+  Command IDs stay globally unique; this adapter does not namespace them by
+  site.
+- A stored release fences reserve only after its `commandDigest` matches the
+  current site-bound digest. A mismatch returns a non-persisted
+  `command_id_conflict` and leaves the original release, any original reserve,
+  stock, and holds unchanged. The owning same-digest reserve after release
+  remains durably `checkout_released`.
 - One insufficient SKU rejects the whole basket and leaves no holds.
 - `allowBackorders: true` is an unsupported policy and fails closed.
 - Terminal release permanently fences the operation: release-before-reserve,
