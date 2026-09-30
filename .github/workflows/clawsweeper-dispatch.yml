@@ -22,7 +22,13 @@ permissions: {}
 
 jobs:
   bind:
-    if: vars.CLAWSWEEPER_SPARK_ENABLED == 'true'
+    if: >-
+      vars.CLAWSWEEPER_SPARK_ENABLED == 'true' &&
+      (github.event_name != 'issue_comment' ||
+       (github.event.issue.pull_request &&
+        github.event.comment.user.type != 'Bot' &&
+        contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) &&
+        contains(github.event.comment.body, '@clawsweeper')))
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
