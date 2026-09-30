@@ -559,3 +559,25 @@ that stops typing 4 on a 3-hat ticket is GUI, not this kernel.
   `plans/product/commerce-critical-path-20260713.md`
 - Decision ledger issue: saari-co/x-api#399
 - Business north star: saari-co/x-api `BUSINESS_NORTH_STAR.md`
+
+## hosted-default-001 through trial-access-003 — hosted onboarding (locked)
+
+DinkusKit operates the default hosted Inventory service. Users install one
+standard sandboxed EmDash Registry plugin and configure Inventory through EmDash,
+without configuring Cloudflare, deploying Workers or copying infrastructure
+credentials. Inventory remains the sole stock authority per pool.
+
+First use follows Install → Connect Inventory → sign in/create a DinkusKit
+account → name the first stock location → begin adding stock. DinkusKit
+provisions infrastructure automatically. Returning users explicitly select an
+existing operation owned by their authenticated account. Daily stock work stays
+inside EmDash.
+
+Initial access is a trial with no payment details required to connect or begin
+use. Duration, quotas, prices and conversion policy remain undecided. This lock
+does not promise unlimited or permanently free service.
+
+The current implementation is a bounded local onboarding slice. Real account
+provider integration, hosted deployment, Registry publication and stock admin
+screens are not claimed by its connection status. See
+[hosted onboarding](implementation/hosted-inventory-onboarding.md).

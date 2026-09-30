@@ -20,12 +20,14 @@ behavior-preserving migration cycles are confirmed.
 | `dinkus.stock-transfer` | Created transfer create/edit/cancel, dispatch, In-transit reopen, atomic whole receipt, contextual detail read, explicit Open/Done location-scoped list read, outgoing/expected/in-transit/on-hand effects, atomic replay/conflict, and immutable actor receipts | `src/features/stock-transfer/` | `src/features/stock-transfer/index.ts`; `src/index.ts` | `src/domain/exact-decimal.ts`; `src/domain/opening-balance.ts`; `src/storage/inventory-store.ts` | `tests/stock-transfer/`; `tests/stock-transfer/list-stock-transfers.test.mjs`; `tests/cloudflare/stock-transfer.test.mjs`; `tests/cloudflare/inventory-pool.test.mjs` | `bin/verify-inventory quick` | `bin/verify-inventory full` | transfer commands, record, line and line-stock context, compact list rows, list view/scope/result and opaque pagination, receipt, warning, detail read result, errors, normalization, digest, and execution/read factories | migrated feature |
 | `dinkus.stock-reservation` | Named order-line holds, fail-closed available checks, one live Not shipped hold per order/line, cancel-to-history release, full-hold pack consume at Packed, one-or-more pack-all consume, named-quantity pack-some with partially packed leftover, Katana-shaped unpack of all packed quantity on a ticket back to Not shipped, all-or-none Packed to Delivered and one-ticket Undo Delivered back to Packed, both with no stock-count change, reserved/available/on-hand effects, atomic replay/conflict, and immutable actor receipts | `src/features/stock-reservation/` | `src/features/stock-reservation/index.ts`; `src/index.ts` | `src/domain/exact-decimal.ts`; `src/domain/opening-balance.ts`; `src/storage/inventory-store.ts` | `tests/stock-reservation/`; `tests/cloudflare/stock-reservation.test.mjs`; `tests/workflows/stock-reservation-real-proof-contract.test.mjs`; `tools/stock-reservation-local-proof.ts`; `tools/stock-reservation-local-sqlite-proof.mjs`; `bin/prove-stock-reservation-real` | `bin/verify-inventory quick` | `bin/verify-inventory full` | reserve, release, pack, pack-all, pack-some, unpack, deliver, and undo-deliver commands, reservation record, receipt, rejection codes, normalization, digest, and execution factories | migrated feature |
 
+| `dinkus.hosted-onboarding` | Account-authorized site binding, owned-operation selection, frozen provisioning and replay-safe setup status; no stock ledger | `src/features/hosted-onboarding/` | `src/features/hosted-onboarding/index.ts` | zod validation; injected control-plane store and pool provisioner | `tests/hosted-onboarding/`; `tests/hosted-runtime/` | `bin/verify-inventory quick` | `bin/verify-inventory full` | connection input, authenticated principal, operation metadata, state results and factory | migrated feature |
+
 ## Toolchain pin
 
-- Exact `emdash@0.41.0` is the development scaffold pin with a lockfile. The
+- Exact `emdash@1.0.1` is the development scaffold pin with a lockfile. The
   kernel does not import EmDash; this is not a plugin runtime or
   minimum-compatible-version claim.
-- Live install proof: `proof/emdash-0.41.0-pin-20260926/`.
+- Prior scaffold install proof: `proof/emdash-0.41.0-pin-20260926/`. Current sandbox proof is recorded with hosted onboarding.
 
 ## Shared kernel and adapter ownership
 
@@ -54,3 +56,6 @@ behavior-preserving migration cycles are confirmed.
 
 The feature grain is an Inventory responsibility, not a demand that shared
 storage adapters be duplicated into every feature.
+
+- `src/cloudflare/account-connections.ts` is the account-scoped SQLite control plane; it stores connection metadata only. `src/cloudflare/hosted-worker.ts` verifies access tokens before routing to account and pool objects.
+- `plugins/emdash-inventory/` owns the standard sandboxed Block Kit admin plugin. Its non-routable service/publisher defaults remain deployment integration boundaries.

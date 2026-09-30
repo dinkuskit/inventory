@@ -354,3 +354,5 @@ export type {
 	StockReservationBatchCommit,
 	StockReservationCommit,
 } from "./storage/inventory-store.ts";
+
+export * from "./features/hosted-onboarding/index.ts";
