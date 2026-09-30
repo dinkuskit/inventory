@@ -1,0 +1,8 @@
+{
+	"name": "@dinkuskit/emdash-inventory",
+	"version": "0.0.0",
+	"type": "module",
+	"private": true,
+	"license": "MIT",
+	"exports": { ".": "./dist/index.mjs" }
+}

@@ -1,0 +1,15 @@
+✔ JWT resource boundary validates issuer, audience, signature, expiry, scope and site binding (22.501458ms)
+✔ first connect, concurrent duplicates and new retry IDs retain one operation (2.507042ms)
+✔ explicit reconnect attaches owned operation and never mints another pool (0.317958ms)
+✔ unknown provisioning keeps frozen operation/command and succeeds on retry (0.127416ms)
+✔ terminal rejection is explicit and cannot create replacement inventory (0.115459ms)
+✔ delayed unknown response cannot regress a ready concurrent result (0.1175ms)
+✔ ownership, pool, site and account fields are rejected from browser input (0.438958ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 104.199083

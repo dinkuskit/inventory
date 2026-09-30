@@ -1,0 +1,19 @@
+{
+	"$schema": "../../node_modules/@emdash-cms/plugin-cli/schemas/emdash-plugin.schema.json",
+	"slug": "dinkus-inventory",
+	"version": "0.0.0",
+	"license": "MIT",
+	"publisher": "inventory.example.invalid",
+	"name": "DinkusKit Inventory",
+	"description": "Connect and administer your DinkusKit Inventory operation inside EmDash.",
+	"author": { "name": "DinkusKit" },
+	"security": { "url": "https://github.com/dinkuskit/inventory/security/advisories" },
+	"repo": "https://github.com/dinkuskit/inventory",
+	"capabilities": ["network:request"],
+	"allowedHosts": ["inventory.dinkuskit.invalid", "accounts.dinkuskit.invalid"],
+	"admin": {
+		"pages": [{ "path": "/inventory", "label": "Inventory", "icon": "package" }],
+		"settingsSchema": { "connectionSession": { "type": "secret", "label": "Inventory session (managed automatically)" } }
+	},
+	"release": { "requires": { "env:emdash": "1.0.1" } }
+}

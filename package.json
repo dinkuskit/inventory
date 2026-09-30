@@ -14,7 +14,7 @@
   },
   "scripts": {
     "test": "npm run test:node && npm run test:cloudflare",
-		"test:node": "node --experimental-sqlite --experimental-strip-types --test tests/workflows/*.test.mjs tests/opening-balance/*.test.mjs tests/locations/*.test.mjs tests/inventory/*.test.mjs tests/managed-sku/*.test.mjs tests/stock-adjustment/*.test.mjs tests/stock-transfer/*.test.mjs tests/stock-reservation/*.test.mjs",
+    "test:node": "node --experimental-sqlite --experimental-strip-types --test tests/workflows/*.test.mjs tests/opening-balance/*.test.mjs tests/locations/*.test.mjs tests/inventory/*.test.mjs tests/managed-sku/*.test.mjs tests/stock-adjustment/*.test.mjs tests/stock-transfer/*.test.mjs tests/stock-reservation/*.test.mjs tests/hosted-onboarding/*.test.mjs",
     "test:cloudflare": "vitest run --config vitest.config.ts",
     "typecheck:cloudflare": "tsc --project tsconfig.cloudflare.json",
     "audit:features": "node scripts/check-architecture.mjs",
@@ -23,21 +23,32 @@
     "verify:opening-balance": "bin/verify-opening-balance",
     "verify:cloudflare-storage": "bin/verify-cloudflare-storage",
     "verify:location-registry": "bin/verify-location-registry",
-		"verify:aggregate-stock-read": "bin/verify-aggregate-stock-read",
-		"verify:managed-sku": "bin/verify-managed-sku",
-		"verify:stock-adjustment": "bin/verify-stock-adjustment",
-		"verify:stock-transfer": "bin/verify-stock-transfer",
-		"verify:stock-reservation": "bin/verify-stock-reservation",
+    "verify:aggregate-stock-read": "bin/verify-aggregate-stock-read",
+    "verify:managed-sku": "bin/verify-managed-sku",
+    "verify:stock-adjustment": "bin/verify-stock-adjustment",
+    "verify:stock-transfer": "bin/verify-stock-transfer",
+    "verify:stock-reservation": "bin/verify-stock-reservation",
     "proof:aggregate-stock-read:real": "bin/prove-aggregate-stock-read-real",
-		"proof:stock-adjustment:real": "bin/prove-stock-adjustment-real",
-		"proof:stock-reservation:real": "bin/prove-stock-reservation-real"
+    "proof:stock-adjustment:real": "bin/prove-stock-adjustment-real",
+    "proof:stock-reservation:real": "bin/prove-stock-reservation-real",
+    "test:hosted": "vitest run --config vitest.hosted.config.ts",
+    "build:plugin": "emdash-plugin build --dir plugins/emdash-inventory",
+    "bundle:plugin": "emdash-plugin bundle --dir plugins/emdash-inventory",
+    "typecheck:plugin": "tsc --project tsconfig.plugin.json"
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "1.1.1",
     "@cloudflare/workers-types": "5.20260828.1",
-    "emdash": "0.41.0",
+    "@emdash-cms/blocks": "1.0.1",
+    "@emdash-cms/plugin-cli": "0.13.1",
+    "@emdash-cms/sandbox-workerd": "0.9.1",
+    "emdash": "1.0.1",
     "typescript": "7.0.2",
     "vitest": "4.1.11",
     "wrangler": "4.127.0"
+  },
+  "dependencies": {
+    "jose": "6.2.12",
+    "zod": "4.5.4"
   }
 }

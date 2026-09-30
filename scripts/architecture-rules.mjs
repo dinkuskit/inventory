@@ -10,6 +10,7 @@ const FEATURE_IDS = [
 	"dinkus.stock-adjustment",
 	"dinkus.stock-transfer",
 	"dinkus.stock-reservation",
+	"dinkus.hosted-onboarding",
 ];
 
 const FEATURE_STRUCTURE = new Map([
@@ -20,6 +21,7 @@ const FEATURE_STRUCTURE = new Map([
 	["dinkus.stock-adjustment", "migrated feature"],
 	["dinkus.stock-transfer", "migrated feature"],
 	["dinkus.stock-reservation", "migrated feature"],
+	["dinkus.hosted-onboarding", "migrated feature"],
 ]);
 
 const FEATURE_SHARED_DEPENDENCIES = new Map([

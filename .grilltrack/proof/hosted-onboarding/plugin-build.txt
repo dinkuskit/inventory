@@ -1,0 +1,40 @@
+
+> @dinkuskit/inventory@0.0.0 build:plugin
+> emdash-plugin build --dir plugins/emdash-inventory
+
+◐ Building plugin...
+ℹ Manifest: <worktree>/plugins/emdash-inventory/emdash-plugin.jsonc
+ℹ Plugin entry: <worktree>/plugins/emdash-inventory/src/plugin.ts
+ℹ npm package: @dinkuskit/emdash-inventory
+◐ Building runtime entry...
+ℹ entry: plugins/emdash-inventory/src/plugin.ts
+ℹ target: node22.12.0
+ℹ Build start
+ℹ ../../../../../var/folders/gf/qz1h4gs951b_qssp_gxmfpr80000gn/T/emdash-build-RhHpw5/runtime/plugin.mjs  91.87 kB │ gzip: 25.69 kB
+ℹ 1 files, total: 91.87 kB
+✔ Build complete in 108ms
+ℹ entry: plugins/emdash-inventory/src/plugin.ts
+ℹ target: node22.12.0
+ℹ Build start
+ℹ ../../../../../var/folders/gf/qz1h4gs951b_qssp_gxmfpr80000gn/T/emdash-build-RhHpw5/runtime/plugin.d.mts  0.18 kB │ gzip: 0.14 kB
+ℹ 1 files, total: 0.18 kB
+✔ Build complete in 805ms
+✔ Built plugin.mjs
+◐ Probing plugin surface...
+ℹ entry: plugins/emdash-inventory/src/plugin.ts
+ℹ target: node22.12.0
+ℹ Build start
+ℹ ../../../../../var/folders/gf/qz1h4gs951b_qssp_gxmfpr80000gn/T/emdash-build-RhHpw5/plugin-probe/plugin.mjs  176.26 kB │ gzip: 38.98 kB
+ℹ 1 files, total: 176.26 kB
+✔ Build complete in 75ms
+ℹ   Hooks: (none)
+ℹ   Routes: admin
+✔ Wrote manifest.json
+◐ Generating descriptor module...
+✔ Wrote index.mjs
+✔ Plugin built: @inventory.example.invalid/dinkus-inventory@0.0.0
+
+ℹ Output:
+  <worktree>/plugins/emdash-inventory/dist/index.mjs
+  <worktree>/plugins/emdash-inventory/dist/plugin.mjs
+  <worktree>/plugins/emdash-inventory/dist/manifest.json
