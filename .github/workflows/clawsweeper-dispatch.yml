@@ -27,7 +27,8 @@ jobs:
       (github.event_name != 'issue_comment' ||
        (github.event.issue.pull_request &&
         github.event.comment.user.type != 'Bot' &&
-        contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) &&
+        (contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) ||
+         github.event.comment.user.id == github.event.issue.user.id) &&
         contains(github.event.comment.body, '@clawsweeper')))
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -66,8 +67,11 @@ jobs:
           if kind == 'issue_comment':
               comment = event['comment']
               if not event['issue'].get('pull_request') or comment['user']['type'] == 'Bot': skip()
-              if comment.get('author_association') not in {'OWNER', 'MEMBER', 'COLLABORATOR'}: skip()
-              if not re.search(r'^\s*@clawsweeper (?:re-)?review\s*$', comment.get('body', ''), re.I | re.M): skip()
+              body = comment.get('body', '')
+              if not isinstance(body, str) or len(body) > 65536: skip()
+              commands = [match.group(1).lower() for line in body.splitlines()
+                          if (match := re.fullmatch(r'\s*@clawsweeper\s+(review|re-review|re-run)\s*', line, re.I))]
+              if len(commands) != 1: skip()
           target = os.environ['TARGET_REPO']
           repo = get('repos/' + target)
           if str(repo['id']) != os.environ['TARGET_ID']: raise SystemExit('Repository identity changed')
@@ -75,6 +79,12 @@ jobs:
           if not re.fullmatch(r'[1-9][0-9]*', number): raise SystemExit('Invalid PR number')
           pull = get(f'repos/{target}/pulls/{number}')
           if pull['state'] != 'open' or pull['draft']: skip()
+          if kind == 'issue_comment':
+              maintainer = comment.get('author_association') in {'OWNER', 'MEMBER', 'COLLABORATOR'}
+              actor = comment['user'].get('login', '').lower()
+              author = pull.get('user', {}).get('login', '').lower()
+              author_rerun = bool(actor) and actor == author and commands[0] in {'re-review', 're-run'}
+              if not maintainer and not author_rerun: skip()
           if pull['base']['repo']['id'] != repo['id'] or pull['base']['ref'] != repo['default_branch']: skip()
           base = get(f"repos/{target}/git/ref/heads/{repo['default_branch']}")['object']['sha']
           head = pull['head']['sha']
