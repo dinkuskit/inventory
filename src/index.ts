@@ -356,3 +356,4 @@ export type {
 } from "./storage/inventory-store.ts";
 
 export * from "./features/hosted-onboarding/index.ts";
+export * from "./features/store-connect/index.ts";

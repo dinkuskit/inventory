@@ -1,0 +1,7 @@
+verify-inventory full passed in 12.99s
+Node tests: 163 passed
+Cloudflare/workerd kernel tests: 24 passed
+Hosted provisioning tests: 3 passed
+Plugin routes: admin, store-proof
+Plugin bundle SHA-256: 020859b4e25535b0e2cc57de31a3f9c0f96784103c6859f46030abf839e35b3f
+Recorded at: 2026-09-30T03:43:37.928894+00:00

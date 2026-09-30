@@ -1,0 +1,21 @@
+{
+  "source_identity": "sha256:21ab7b26476ab0f0c01d582f4c4163a9cae8939596be702c8aa82d0bf5269c9b",
+  "files": {
+    "FEATURE_MAP.md": "ef38b6514264013fd25f9e3de2d13934249ccb257dd1198448ea9ea72b604cec",
+    "docs/CHARTER.md": "421c6ee3287d3c7300e906e6a4e03a51471901b9f8a5d6ddc3a9dccd90f01187",
+    "docs/implementation/hosted-inventory-onboarding.md": "0006359b4307295e629fe573bd87d2b348c1e64ee0b4adc27d2958107ce4ef76",
+    "docs/implementation/store-connect.md": "6b5f5e1fbb4fc28f604bc0c18f5a0655be9e01414975328714f5c395f2d32549",
+    "package.json": "e55d8d83600c1f0db0c03bc87e16cd236039d836a0591fa591422183431942d6",
+    "plugins/emdash-inventory/src/plugin.ts": "8496d4a4aa385b8c61200b5c4161704f6fcf3749fca28e6eafba24597b1c6e8a",
+    "scripts/architecture-rules.mjs": "8189af61fd2108e99840955d890d968e22d9f8c7634195a166f39f1756a5eeb7",
+    "src/features/store-connect/index.ts": "0239b0abd5f14c0c583015e44c828208f648674363fe5d330f11b2dd6be52497",
+    "src/features/store-connect/protocol.ts": "238ceb2c1d9b722c1d783185ca385c03e946ab356a8b96b30d8131a7b49d18b7",
+    "src/index.ts": "75fcc5a6bbe80bbda42564dea4974941fa29805541733650b8fe63370bdd6c52",
+    "tests/store-connect/protocol.test.mjs": "f8fdbbe07ac52a17ab7265e947bd06d9e68171a3a35e8e638e071ccdcdff9fde",
+    "tests/store-connect/public-entry.test.mjs": "e0827ef83d18c5ccec1bd802e50aad13d7bc427e7ca3b3dea6d9d46e92329987",
+    "tools/hosted-onboarding-proof.mjs": "8991c9a377d3166ec4ecb756a140569ca86e6e2eb06e625ebfe4f22a4196d6ac",
+    "tools/hosted-onboarding-ui/main.jsx": "7cd480af139cc2c5121b9d0de60956e2761459b5a5afe81be92117ed64428c72",
+    "tools/run-hosted-onboarding-proof.mjs": "b3cf398e10daca58ef301f733583fa4a5486b75d71a2455f16d953374db7a8d8",
+    "tsconfig.plugin.json": "d4cbac7416be8844a09c442c7d7c07f55ce721061f996bdd62fa333b42c1e4bc"
+  }
+}

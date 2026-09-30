@@ -1,0 +1,1403 @@
+{
+  "emdash": "1.0.1",
+  "runner": "@emdash-cms/sandbox-workerd@0.9.1",
+  "identity": "SYNTHETIC website/account transport only — not live Better Auth or hosted ownership",
+  "service": "local workerd SQLite DOs",
+  "anonymousStatus": 401,
+  "csrfStatus": 403,
+  "editorStatus": 403,
+  "assertions": "store-control start, public proof, PKCE/origin/callback/challenge/expiry tamper, expired-challenge direct Connect restart, concurrent-start CAS publication, authoritative expires_at, replay, two merchants/two sites, originating admin, lost-response retry, frozen intent, reinstall, owned reconnect, foreign-account refusal",
+  "concurrentStart": {
+    "winnerId": "05261bc7-33cb-46ad-812a-fd5989166539",
+    "loserId": "13de1d4f-bfe9-4823-b03a-f1e9290a304b",
+    "published": 1
+  },
+  "firstReady": {
+    "blocks": [
+      {
+        "type": "header",
+        "text": "Inventory"
+      },
+      {
+        "type": "banner",
+        "title": "Inventory connected",
+        "description": "Your Inventory operation is ready."
+      },
+      {
+        "type": "section",
+        "text": "Stock location: Proof stock room"
+      },
+      {
+        "type": "context",
+        "text": "Stock administration stays inside EmDash. This setup slice provisions your location; receiving and adjustment screens follow separately."
+      },
+      {
+        "type": "actions",
+        "elements": [
+          {
+            "type": "button",
+            "action_id": "refresh",
+            "label": "Refresh Inventory"
+          }
+        ]
+      }
+    ]
+  },
+  "traces": [
+    {
+      "interaction": {
+        "type": "page_load",
+        "page": "/inventory"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "section",
+            "text": "Connect Inventory, then sign in or create your DinkusKit account and approve this site. Your stock stays in one Inventory operation."
+          },
+          {
+            "type": "context",
+            "text": "Start your Inventory trial. No payment details are needed to connect or begin use."
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "action_id": "connect",
+                "label": "Connect Inventory"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "block_action",
+        "action_id": "connect"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "section",
+            "text": "Sign in or create your DinkusKit account, then explicitly approve this site for Inventory."
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "link",
+                "label": "Approve this site",
+                "target": {
+                  "kind": "external",
+                  "url": "https://accounts.dinkuskit.invalid/account/connect?connection_id=6f7f4d65-5586-4860-baa5-6bebcf7628f6"
+                }
+              }
+            ]
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "action_id": "check_sign_in",
+                "label": "I’ve approved this site — continue"
+              }
+            ]
+          },
+          {
+            "type": "context",
+            "text": "Waiting for explicit merchant consent. Stock has not been provisioned yet. After approval you return to Inventory."
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "block_action",
+        "action_id": "check_sign_in"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "context",
+            "text": "Start your Inventory trial. No payment details are needed to connect or begin use."
+          },
+          {
+            "type": "form",
+            "block_id": "first-location",
+            "fields": [
+              {
+                "type": "text_input",
+                "action_id": "location_name",
+                "label": "Name your first stock location"
+              }
+            ],
+            "submit": {
+              "label": "Create Inventory",
+              "action_id": "create"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "form_submit",
+        "action_id": "create"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "banner",
+            "variant": "alert",
+            "title": "Connection could not be confirmed",
+            "description": "Account or Inventory service is unavailable. Reload or retry safely; your original connection is preserved."
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "action_id": "refresh",
+                "label": "Check status"
+              }
+            ]
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "action_id": "retry",
+                "label": "Retry connection"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "block_action",
+        "action_id": "retry"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "banner",
+            "title": "Inventory connected",
+            "description": "Your Inventory operation is ready."
+          },
+          {
+            "type": "section",
+            "text": "Stock location: Proof stock room"
+          },
+          {
+            "type": "context",
+            "text": "Stock administration stays inside EmDash. This setup slice provisions your location; receiving and adjustment screens follow separately."
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "action_id": "refresh",
+                "label": "Refresh Inventory"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "form_submit",
+        "action_id": "create"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "banner",
+            "variant": "alert",
+            "title": "Connection already started",
+            "description": "Use Retry to resolve your original connection before changing the setup."
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "page_load",
+        "page": "/inventory"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "banner",
+            "title": "Inventory connected",
+            "description": "Your Inventory operation is ready."
+          },
+          {
+            "type": "section",
+            "text": "Stock location: Proof stock room"
+          },
+          {
+            "type": "context",
+            "text": "Stock administration stays inside EmDash. This setup slice provisions your location; receiving and adjustment screens follow separately."
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "action_id": "refresh",
+                "label": "Refresh Inventory"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "block_action",
+        "action_id": "connect"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "section",
+            "text": "Sign in or create your DinkusKit account, then explicitly approve this site for Inventory."
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "link",
+                "label": "Approve this site",
+                "target": {
+                  "kind": "external",
+                  "url": "https://accounts.dinkuskit.invalid/account/connect?connection_id=bdf68cac-cc3d-4b35-83cf-cc200f733936"
+                }
+              }
+            ]
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "action_id": "check_sign_in",
+                "label": "I’ve approved this site — continue"
+              }
+            ]
+          },
+          {
+            "type": "context",
+            "text": "Waiting for explicit merchant consent. Stock has not been provisioned yet. After approval you return to Inventory."
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "block_action",
+        "action_id": "connect"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "section",
+            "text": "Sign in or create your DinkusKit account, then explicitly approve this site for Inventory."
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "link",
+                "label": "Approve this site",
+                "target": {
+                  "kind": "external",
+                  "url": "https://accounts.dinkuskit.invalid/account/connect?connection_id=bdf68cac-cc3d-4b35-83cf-cc200f733936"
+                }
+              }
+            ]
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "action_id": "check_sign_in",
+                "label": "I’ve approved this site — continue"
+              }
+            ]
+          },
+          {
+            "type": "context",
+            "text": "Waiting for explicit merchant consent. Stock has not been provisioned yet. After approval you return to Inventory."
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "block_action",
+        "action_id": "check_sign_in"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "banner",
+            "variant": "alert",
+            "title": "Connect already started",
+            "description": "Only the originating site administrator can continue this connection. Wait for it to finish or expire."
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "block_action",
+        "action_id": "connect"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "banner",
+            "variant": "alert",
+            "title": "Connect already started",
+            "description": "Only the originating site administrator can continue this connection. Wait for it to finish or expire."
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "block_action",
+        "action_id": "check_sign_in"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "context",
+            "text": "Start your Inventory trial. No payment details are needed to connect or begin use."
+          },
+          {
+            "type": "form",
+            "block_id": "first-location",
+            "fields": [
+              {
+                "type": "text_input",
+                "action_id": "location_name",
+                "label": "Name your first stock location"
+              }
+            ],
+            "submit": {
+              "label": "Create Inventory",
+              "action_id": "create"
+            }
+          },
+          {
+            "type": "form",
+            "block_id": "existing-operation",
+            "fields": [
+              {
+                "type": "select",
+                "action_id": "operation_id",
+                "label": "Connect an existing Inventory operation",
+                "options": [
+                  {
+                    "label": "Proof stock room (ready)",
+                    "value": "756ce699-f4de-4470-a49b-b0f06e4b059d"
+                  }
+                ]
+              }
+            ],
+            "submit": {
+              "label": "Connect selected operation",
+              "action_id": "reconnect"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "block_action",
+        "action_id": "connect"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "section",
+            "text": "Sign in or create your DinkusKit account, then explicitly approve this site for Inventory."
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "link",
+                "label": "Approve this site",
+                "target": {
+                  "kind": "external",
+                  "url": "https://accounts.dinkuskit.invalid/account/connect?connection_id=b51fd827-971f-4be9-b0bd-9f7cbac36905"
+                }
+              }
+            ]
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "action_id": "check_sign_in",
+                "label": "I’ve approved this site — continue"
+              }
+            ]
+          },
+          {
+            "type": "context",
+            "text": "Waiting for explicit merchant consent. Stock has not been provisioned yet. After approval you return to Inventory."
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "block_action",
+        "action_id": "check_sign_in"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "context",
+            "text": "Start your Inventory trial. No payment details are needed to connect or begin use."
+          },
+          {
+            "type": "form",
+            "block_id": "first-location",
+            "fields": [
+              {
+                "type": "text_input",
+                "action_id": "location_name",
+                "label": "Name your first stock location"
+              }
+            ],
+            "submit": {
+              "label": "Create Inventory",
+              "action_id": "create"
+            }
+          },
+          {
+            "type": "form",
+            "block_id": "existing-operation",
+            "fields": [
+              {
+                "type": "select",
+                "action_id": "operation_id",
+                "label": "Connect an existing Inventory operation",
+                "options": [
+                  {
+                    "label": "Proof stock room (ready)",
+                    "value": "756ce699-f4de-4470-a49b-b0f06e4b059d"
+                  }
+                ]
+              }
+            ],
+            "submit": {
+              "label": "Connect selected operation",
+              "action_id": "reconnect"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "form_submit",
+        "action_id": "reconnect"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "banner",
+            "title": "Inventory connected",
+            "description": "Your Inventory operation is ready."
+          },
+          {
+            "type": "section",
+            "text": "Stock location: Proof stock room"
+          },
+          {
+            "type": "context",
+            "text": "Stock administration stays inside EmDash. This setup slice provisions your location; receiving and adjustment screens follow separately."
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "action_id": "refresh",
+                "label": "Refresh Inventory"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "block_action",
+        "action_id": "connect"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "section",
+            "text": "Sign in or create your DinkusKit account, then explicitly approve this site for Inventory."
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "link",
+                "label": "Approve this site",
+                "target": {
+                  "kind": "external",
+                  "url": "https://accounts.dinkuskit.invalid/account/connect?connection_id=7adfb643-2507-4b8b-a0c2-83a6bfc83c5a"
+                }
+              }
+            ]
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "action_id": "check_sign_in",
+                "label": "I’ve approved this site — continue"
+              }
+            ]
+          },
+          {
+            "type": "context",
+            "text": "Waiting for explicit merchant consent. Stock has not been provisioned yet. After approval you return to Inventory."
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "block_action",
+        "action_id": "connect"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "section",
+            "text": "Sign in or create your DinkusKit account, then explicitly approve this site for Inventory."
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "link",
+                "label": "Approve this site",
+                "target": {
+                  "kind": "external",
+                  "url": "https://accounts.dinkuskit.invalid/account/connect?connection_id=de094bd2-caf7-47b7-a9f4-25a081ada289"
+                }
+              }
+            ]
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "action_id": "check_sign_in",
+                "label": "I’ve approved this site — continue"
+              }
+            ]
+          },
+          {
+            "type": "context",
+            "text": "Waiting for explicit merchant consent. Stock has not been provisioned yet. After approval you return to Inventory."
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "block_action",
+        "action_id": "check_sign_in"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "context",
+            "text": "Start your Inventory trial. No payment details are needed to connect or begin use."
+          },
+          {
+            "type": "form",
+            "block_id": "first-location",
+            "fields": [
+              {
+                "type": "text_input",
+                "action_id": "location_name",
+                "label": "Name your first stock location"
+              }
+            ],
+            "submit": {
+              "label": "Create Inventory",
+              "action_id": "create"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "form_submit",
+        "action_id": "reconnect"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "banner",
+            "variant": "alert",
+            "title": "Operation unavailable",
+            "description": "The selected operation is not owned by this account. Reload Inventory to select an owned operation or create a new one."
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "page_load",
+        "page": "/inventory"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "context",
+            "text": "Start your Inventory trial. No payment details are needed to connect or begin use."
+          },
+          {
+            "type": "form",
+            "block_id": "first-location",
+            "fields": [
+              {
+                "type": "text_input",
+                "action_id": "location_name",
+                "label": "Name your first stock location"
+              }
+            ],
+            "submit": {
+              "label": "Create Inventory",
+              "action_id": "create"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "block_action",
+        "action_id": "connect"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "section",
+            "text": "Sign in or create your DinkusKit account, then explicitly approve this site for Inventory."
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "link",
+                "label": "Approve this site",
+                "target": {
+                  "kind": "external",
+                  "url": "https://accounts.dinkuskit.invalid/account/connect?connection_id=3b3e5f2b-6931-4819-8c24-6e22fc58e395"
+                }
+              }
+            ]
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "action_id": "check_sign_in",
+                "label": "I’ve approved this site — continue"
+              }
+            ]
+          },
+          {
+            "type": "context",
+            "text": "Waiting for explicit merchant consent. Stock has not been provisioned yet. After approval you return to Inventory."
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "block_action",
+        "action_id": "connect"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "section",
+            "text": "Sign in or create your DinkusKit account, then explicitly approve this site for Inventory."
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "link",
+                "label": "Approve this site",
+                "target": {
+                  "kind": "external",
+                  "url": "https://accounts.dinkuskit.invalid/account/connect?connection_id=db96b5d4-436d-41c1-8736-6af0573c2eb2"
+                }
+              }
+            ]
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "action_id": "check_sign_in",
+                "label": "I’ve approved this site — continue"
+              }
+            ]
+          },
+          {
+            "type": "context",
+            "text": "Waiting for explicit merchant consent. Stock has not been provisioned yet. After approval you return to Inventory."
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "block_action",
+        "action_id": "connect"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "banner",
+            "variant": "alert",
+            "title": "Connection could not be confirmed",
+            "description": "Account or Inventory service is unavailable. Reload or retry safely; your original connection is preserved."
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "action_id": "refresh",
+                "label": "Check status"
+              }
+            ]
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "action_id": "retry",
+                "label": "Retry connection"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "block_action",
+        "action_id": "connect"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "section",
+            "text": "Sign in or create your DinkusKit account, then explicitly approve this site for Inventory."
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "link",
+                "label": "Approve this site",
+                "target": {
+                  "kind": "external",
+                  "url": "https://accounts.dinkuskit.invalid/account/connect?connection_id=05261bc7-33cb-46ad-812a-fd5989166539"
+                }
+              }
+            ]
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "action_id": "check_sign_in",
+                "label": "I’ve approved this site — continue"
+              }
+            ]
+          },
+          {
+            "type": "context",
+            "text": "Waiting for explicit merchant consent. Stock has not been provisioned yet. After approval you return to Inventory."
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "block_action",
+        "action_id": "connect"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "banner",
+            "variant": "alert",
+            "title": "Connection could not be confirmed",
+            "description": "Account or Inventory service is unavailable. Reload or retry safely; your original connection is preserved."
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "action_id": "refresh",
+                "label": "Check status"
+              }
+            ]
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "action_id": "retry",
+                "label": "Retry connection"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "block_action",
+        "action_id": "connect"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "section",
+            "text": "Sign in or create your DinkusKit account, then explicitly approve this site for Inventory."
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "link",
+                "label": "Approve this site",
+                "target": {
+                  "kind": "external",
+                  "url": "https://accounts.dinkuskit.invalid/account/connect?connection_id=05261bc7-33cb-46ad-812a-fd5989166539"
+                }
+              }
+            ]
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "action_id": "check_sign_in",
+                "label": "I’ve approved this site — continue"
+              }
+            ]
+          },
+          {
+            "type": "context",
+            "text": "Waiting for explicit merchant consent. Stock has not been provisioned yet. After approval you return to Inventory."
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "block_action",
+        "action_id": "connect"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "section",
+            "text": "Sign in or create your DinkusKit account, then explicitly approve this site for Inventory."
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "link",
+                "label": "Approve this site",
+                "target": {
+                  "kind": "external",
+                  "url": "https://accounts.dinkuskit.invalid/account/connect?connection_id=e0260b0a-0deb-4e64-be45-ce1125c3b730"
+                }
+              }
+            ]
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "action_id": "check_sign_in",
+                "label": "I’ve approved this site — continue"
+              }
+            ]
+          },
+          {
+            "type": "context",
+            "text": "Waiting for explicit merchant consent. Stock has not been provisioned yet. After approval you return to Inventory."
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "block_action",
+        "action_id": "check_sign_in"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "banner",
+            "variant": "alert",
+            "title": "Connection could not be confirmed",
+            "description": "Account or Inventory service is unavailable. Reload or retry safely; your original connection is preserved."
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "action_id": "refresh",
+                "label": "Check status"
+              }
+            ]
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "action_id": "retry",
+                "label": "Retry connection"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "interaction": {
+        "type": "block_action",
+        "action_id": "connect"
+      },
+      "response": {
+        "blocks": [
+          {
+            "type": "header",
+            "text": "Inventory"
+          },
+          {
+            "type": "banner",
+            "variant": "alert",
+            "title": "Connection could not be confirmed",
+            "description": "Account or Inventory service is unavailable. Reload or retry safely; your original connection is preserved."
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "action_id": "refresh",
+                "label": "Check status"
+              }
+            ]
+          },
+          {
+            "type": "actions",
+            "elements": [
+              {
+                "type": "button",
+                "action_id": "retry",
+                "label": "Retry connection"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "transportEvents": [
+    {
+      "path": "/api/store-connections",
+      "origin": "accounts.dinkuskit.invalid"
+    },
+    {
+      "path": "/api/store-connections/token",
+      "origin": "accounts.dinkuskit.invalid"
+    },
+    {
+      "path": "/v1/status",
+      "origin": "inventory.dinkuskit.invalid"
+    },
+    {
+      "path": "/v1/status",
+      "status": 200
+    },
+    {
+      "path": "/v1/operations",
+      "origin": "inventory.dinkuskit.invalid"
+    },
+    {
+      "path": "/v1/operations",
+      "status": 200
+    },
+    {
+      "path": "/v1/connect",
+      "origin": "inventory.dinkuskit.invalid"
+    },
+    {
+      "path": "/v1/connect",
+      "status": 200
+    },
+    {
+      "path": "/v1/connect",
+      "origin": "inventory.dinkuskit.invalid"
+    },
+    {
+      "path": "/v1/connect",
+      "status": 200
+    },
+    {
+      "path": "/v1/status",
+      "origin": "inventory.dinkuskit.invalid"
+    },
+    {
+      "path": "/v1/status",
+      "status": 200
+    },
+    {
+      "path": "/v1/locations",
+      "origin": "inventory.dinkuskit.invalid"
+    },
+    {
+      "path": "/v1/locations",
+      "status": 200
+    },
+    {
+      "path": "/v1/status",
+      "origin": "inventory.dinkuskit.invalid"
+    },
+    {
+      "path": "/v1/status",
+      "status": 200
+    },
+    {
+      "path": "/v1/locations",
+      "origin": "inventory.dinkuskit.invalid"
+    },
+    {
+      "path": "/v1/locations",
+      "status": 200
+    },
+    {
+      "path": "/api/store-connections",
+      "origin": "accounts.dinkuskit.invalid"
+    },
+    {
+      "path": "/api/store-connections/token",
+      "origin": "accounts.dinkuskit.invalid"
+    },
+    {
+      "path": "/v1/status",
+      "origin": "inventory.dinkuskit.invalid"
+    },
+    {
+      "path": "/v1/status",
+      "status": 200
+    },
+    {
+      "path": "/v1/operations",
+      "origin": "inventory.dinkuskit.invalid"
+    },
+    {
+      "path": "/v1/operations",
+      "status": 200
+    },
+    {
+      "path": "/api/store-connections",
+      "origin": "accounts.dinkuskit.invalid"
+    },
+    {
+      "path": "/api/store-connections/token",
+      "origin": "accounts.dinkuskit.invalid"
+    },
+    {
+      "path": "/v1/status",
+      "origin": "inventory.dinkuskit.invalid"
+    },
+    {
+      "path": "/v1/status",
+      "status": 200
+    },
+    {
+      "path": "/v1/operations",
+      "origin": "inventory.dinkuskit.invalid"
+    },
+    {
+      "path": "/v1/operations",
+      "status": 200
+    },
+    {
+      "path": "/v1/connect",
+      "origin": "inventory.dinkuskit.invalid"
+    },
+    {
+      "path": "/v1/connect",
+      "status": 200
+    },
+    {
+      "path": "/v1/status",
+      "origin": "inventory.dinkuskit.invalid"
+    },
+    {
+      "path": "/v1/status",
+      "status": 200
+    },
+    {
+      "path": "/v1/locations",
+      "origin": "inventory.dinkuskit.invalid"
+    },
+    {
+      "path": "/v1/locations",
+      "status": 200
+    },
+    {
+      "path": "/api/store-connections",
+      "origin": "accounts.dinkuskit.invalid"
+    },
+    {
+      "path": "/api/store-connections",
+      "origin": "accounts.dinkuskit.invalid"
+    },
+    {
+      "path": "/api/store-connections/token",
+      "origin": "accounts.dinkuskit.invalid"
+    },
+    {
+      "path": "/v1/status",
+      "origin": "inventory.dinkuskit.invalid"
+    },
+    {
+      "path": "/v1/status",
+      "status": 200
+    },
+    {
+      "path": "/v1/operations",
+      "origin": "inventory.dinkuskit.invalid"
+    },
+    {
+      "path": "/v1/operations",
+      "status": 200
+    },
+    {
+      "path": "/v1/connect",
+      "origin": "inventory.dinkuskit.invalid"
+    },
+    {
+      "path": "/v1/connect",
+      "status": 404
+    },
+    {
+      "path": "/v1/status",
+      "origin": "inventory.dinkuskit.invalid"
+    },
+    {
+      "path": "/v1/status",
+      "status": 200
+    },
+    {
+      "path": "/v1/operations",
+      "origin": "inventory.dinkuskit.invalid"
+    },
+    {
+      "path": "/v1/operations",
+      "status": 200
+    },
+    {
+      "path": "/api/store-connections",
+      "origin": "accounts.dinkuskit.invalid"
+    },
+    {
+      "path": "/api/store-connections",
+      "origin": "accounts.dinkuskit.invalid"
+    },
+    {
+      "path": "/api/store-connections",
+      "origin": "accounts.dinkuskit.invalid"
+    },
+    {
+      "path": "/api/store-connections",
+      "origin": "accounts.dinkuskit.invalid"
+    },
+    {
+      "path": "/api/store-connections",
+      "origin": "accounts.dinkuskit.invalid"
+    },
+    {
+      "path": "/api/store-connections",
+      "origin": "accounts.dinkuskit.invalid"
+    },
+    {
+      "path": "/api/store-connections/token",
+      "origin": "accounts.dinkuskit.invalid"
+    },
+    {
+      "path": "/api/store-connections",
+      "origin": "accounts.dinkuskit.invalid"
+    }
+  ]
+}

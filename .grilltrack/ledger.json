@@ -4,11 +4,11 @@
   "current_focus": {
     "cadence": "sequential",
     "confirmed": true,
-    "confirmed_at": "2026-09-30T01:02:01+00:00",
-    "domain": "Default hosting and first-run Inventory installation experience",
-    "started_at": "2026-09-30T00:56:01+00:00",
-    "status": "confirmed",
-    "summary": "The first implementation slice proves account connection, automatic provisioning, and explicit reconnect to an owned existing operation without creating duplicate inventory; stock administration stays inside EmDash. Preserve DinkusKit-hosted default service, standard sandboxed Registry plugin and trial access without payment details. Prove local service, database and exact pinned EmDash runtime using labeled synthetic identity fixtures where a real account service is unavailable; do not claim hosted identity, publication or deployment."
+    "confirmed_at": "2026-09-30T03:09:31+00:00",
+    "domain": "Registry store-control challenge and DinkusKit merchant consent",
+    "started_at": "2026-09-30T03:09:31+00:00",
+    "status": "inspected",
+    "summary": "Implement a Registry-compatible sandbox store-control challenge bound to authenticated site administration, configured site identity/origin, short-lived one-use transaction and explicit Better Auth merchant consent; resume and return to Inventory. Website owns accounts/grants/tokens. Verify sandbox/Block Kit/private permission, replay/tampering/callback/foreign account refusal and disclose simulated website dependencies. Commit/push/draft PR separately authorized; no merge/deploy/accounts/email/secrets."
   },
   "decisions": [
     {
@@ -221,26 +221,171 @@
       "superseded_by": null,
       "updated_at": "2026-09-30T01:37:30+00:00",
       "verification_ref": "file:.grilltrack/proof/hosted-onboarding/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:57aa9521fdfbddcbde0bf79a70708fdd8e771582",
+      "candidate_refs": [],
+      "choice": "The real sandboxed Inventory plugin binds a fresh expiring one-use store-control challenge to the host-attested site administrator, host site origin/identity, fixed callback and PKCE exchange. DinkusKit Better Auth owns separate merchant sessions, explicit consent, persistent site grants and service JWT issuance. No manual infrastructure setup or caller-provided ownership claim.",
+      "context_ref": "file:docs/implementation/hosted-inventory-onboarding.md",
+      "created_at": "2026-09-30T03:09:31+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "account-connect-002"
+      ],
+      "domain": "Registry store-control challenge and DinkusKit merchant consent",
+      "history": [
+        {
+          "at": "2026-09-30T03:09:31+00:00",
+          "choice": "The real sandboxed Inventory plugin binds a fresh expiring one-use store-control challenge to the host-attested site administrator, host site origin/identity, fixed callback and PKCE exchange. DinkusKit Better Auth owns separate merchant sessions, explicit consent, persistent site grants and service JWT issuance. No manual infrastructure setup or caller-provided ownership claim.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-30T03:22:14+00:00",
+          "choice": "The real sandboxed Inventory plugin binds a fresh expiring one-use store-control challenge to the host-attested site administrator, host site origin/identity, fixed callback and PKCE exchange. DinkusKit Better Auth owns separate merchant sessions, explicit consent, persistent site grants and service JWT issuance. No manual infrastructure setup or caller-provided ownership claim.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-30T03:22:23+00:00",
+          "choice": "The real sandboxed Inventory plugin binds a fresh expiring one-use store-control challenge to the host-attested site administrator, host site origin/identity, fixed callback and PKCE exchange. DinkusKit Better Auth owns separate merchant sessions, explicit consent, persistent site grants and service JWT issuance. No manual infrastructure setup or caller-provided ownership claim.",
+          "from": "implemented",
+          "implementation_ref": "file:src/features/store-connect/index.ts;file:plugins/emdash-inventory/src/plugin.ts;file:docs/implementation/store-connect.md;file:.grilltrack/work/store-connect/CONTRACT.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-30T03:28:36+00:00",
+          "choice": "The real sandboxed Inventory plugin binds a fresh expiring one-use store-control challenge to the host-attested site administrator, host site origin/identity, fixed callback and PKCE exchange. DinkusKit Better Auth owns separate merchant sessions, explicit consent, persistent site grants and service JWT issuance. No manual infrastructure setup or caller-provided ownership claim.",
+          "from": "verified",
+          "implementation_ref": "file:src/features/store-connect/index.ts;file:plugins/emdash-inventory/src/plugin.ts;file:docs/implementation/store-connect.md;file:.grilltrack/work/store-connect/CONTRACT.md",
+          "note": "adjudicated review requires a fix",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "needs_reverification",
+          "verification_ref": "file:.grilltrack/proof/store-connect/PROOF.md;cmd:bin/verify-inventory full;cmd:node tools/run-hosted-onboarding-proof.mjs"
+        },
+        {
+          "at": "2026-09-30T03:32:17+00:00",
+          "choice": "The real sandboxed Inventory plugin binds a fresh expiring one-use store-control challenge to the host-attested site administrator, host site origin/identity, fixed callback and PKCE exchange. DinkusKit Better Auth owns separate merchant sessions, explicit consent, persistent site grants and service JWT issuance. No manual infrastructure setup or caller-provided ownership claim.",
+          "from": "needs_reverification",
+          "implementation_ref": "file:src/features/store-connect/index.ts;file:plugins/emdash-inventory/src/plugin.ts;file:docs/implementation/store-connect.md;file:.grilltrack/work/store-connect/CONTRACT.md",
+          "note": "bounded implementation recorded",
+          "repair_required": true,
+          "review_classifications": [
+            "required_fix"
+          ],
+          "review_ref": "file:.grilltrack/work/store-connect/FIRST-PASS-REVIEW.md",
+          "review_result": "findings",
+          "review_source_identity": "sha256:83bd016bcc0db0f40b7bb174650db0be50b4ac4e51a397ab68b9d9dcdef92372",
+          "to": "implemented",
+          "verification_ref": "file:.grilltrack/proof/store-connect/PROOF.md;cmd:bin/verify-inventory full;cmd:node tools/run-hosted-onboarding-proof.mjs"
+        },
+        {
+          "at": "2026-09-30T03:32:26+00:00",
+          "choice": "The real sandboxed Inventory plugin binds a fresh expiring one-use store-control challenge to the host-attested site administrator, host site origin/identity, fixed callback and PKCE exchange. DinkusKit Better Auth owns separate merchant sessions, explicit consent, persistent site grants and service JWT issuance. No manual infrastructure setup or caller-provided ownership claim.",
+          "from": "implemented",
+          "implementation_ref": "file:src/features/store-connect/protocol.ts;file:src/features/store-connect/index.ts;file:plugins/emdash-inventory/src/plugin.ts;file:docs/implementation/store-connect.md;file:.grilltrack/work/store-connect/CONTRACT.md;file:tools/run-hosted-onboarding-proof.mjs",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": "file:.grilltrack/proof/store-connect/PROOF.md;cmd:bin/verify-inventory full;cmd:node tools/run-hosted-onboarding-proof.mjs"
+        }
+      ],
+      "id": "store-control-004",
+      "implementation_ref": "file:src/features/store-connect/protocol.ts;file:src/features/store-connect/index.ts;file:plugins/emdash-inventory/src/plugin.ts;file:docs/implementation/store-connect.md;file:.grilltrack/work/store-connect/CONTRACT.md;file:tools/run-hosted-onboarding-proof.mjs",
+      "question": "How does Registry Connect authorize an actual merchant site?",
+      "rationale": "User explicitly selected Better Auth and authorized Registry store-connection implementation and draft PR delivery; existing product boundaries remain.",
+      "repair_required": false,
+      "review_classifications": [
+        "human_gate"
+      ],
+      "review_history": [
+        {
+          "classifications": [
+            "required_fix"
+          ],
+          "ref": "file:.grilltrack/work/store-connect/FIRST-PASS-REVIEW.md",
+          "result": "findings",
+          "reviewed_at": "2026-09-30T03:28:36+00:00",
+          "source_identity": "sha256:83bd016bcc0db0f40b7bb174650db0be50b4ac4e51a397ab68b9d9dcdef92372"
+        },
+        {
+          "classifications": [
+            "human_gate"
+          ],
+          "ref": "file:.grilltrack/proof/store-connect/REVIEW.md",
+          "result": "findings",
+          "reviewed_at": "2026-09-30T03:44:10+00:00",
+          "source_identity": "sha256:21ab7b26476ab0f0c01d582f4c4163a9cae8939596be702c8aa82d0bf5269c9b"
+        }
+      ],
+      "review_ref": "file:.grilltrack/proof/store-connect/REVIEW.md",
+      "review_result": "findings",
+      "review_source_identity": "sha256:21ab7b26476ab0f0c01d582f4c4163a9cae8939596be702c8aa82d0bf5269c9b",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-09-30T03:44:10+00:00",
+      "verification_ref": "file:.grilltrack/proof/store-connect/PROOF.md;cmd:bin/verify-inventory full;cmd:node tools/run-hosted-onboarding-proof.mjs"
     }
   ],
   "last_activation": {
-    "at": "2026-09-30T00:56:01+00:00",
+    "at": "2026-09-30T03:09:31+00:00",
     "mechanism": "implicit"
   },
-  "last_pause": null,
-  "pause": {
+  "last_pause": {
     "artifact_refs": [
       "https://github.com/dinkuskit/inventory/pull/33"
     ],
     "next_safe_action": "Review draft PR 33, then scope and authorize the real account provider integration without claiming local fixtures prove the hosted product.",
     "paused_at": "2026-09-30T01:37:30+00:00",
-    "reason": "Bounded local setup slice verified and draft PR opened; formal review deferred. Real account identity, site grants, renewal, live hosting and Registry integration remain unproven."
+    "reason": "Bounded local setup slice verified and draft PR opened; formal review deferred. Real account identity, site grants, renewal, live hosting and Registry integration remain unproven.",
+    "resumed_at": "2026-09-30T03:09:31+00:00"
   },
+  "pause": null,
   "predecessor_track_id": "gt-20260926165857-2cce99",
-  "recommendation": null,
+  "recommendation": {
+    "alternatives": [
+      "Agree lost-token recovery and site_id reinstall continuity",
+      "Live HTTPS origin and Registry install proof after website route adoption"
+    ],
+    "reason": "store-control-004 required fixes are locally verified. Website CONTRACT is present and agrees on identity claims but still fail-closes merchant-session /account/tokens and has not adopted /api/store-connections, public store-proof fetch, or start expires_at. Human confirmation is required before closeout. Final product tuple still needs deterministic CI + comprehensive Spark OpenClaw + native ClawSweeper.",
+    "recommended": "Website adopts plugin-reachable PKCE routes, public store-proof fetch, and start expires_at",
+    "recorded_at": "2026-09-30T03:32:26+00:00"
+  },
   "schema_version": "grilltrack/v0.1",
-  "status": "paused",
+  "status": "active",
   "title": "Hosted Inventory installation through EmDash",
   "track_id": "gt-20260930005601-551c1b",
-  "updated_at": "2026-09-30T01:37:30+00:00"
+  "updated_at": "2026-09-30T03:44:10+00:00"
 }

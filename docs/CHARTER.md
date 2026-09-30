@@ -581,3 +581,24 @@ The current implementation is a bounded local onboarding slice. Real account
 provider integration, hosted deployment, Registry publication and stock admin
 screens are not claimed by its connection status. See
 [hosted onboarding](implementation/hosted-inventory-onboarding.md).
+
+## store-control-004 — Registry store-control challenge (locked)
+
+The sandboxed Inventory plugin starts Connect only for a host-attested
+`plugins:manage` site administrator. It derives canonical site origin from host
+site configuration, mints or reuses a plugin-owned `site_id`, freezes the
+initiating admin, and creates a fresh short-lived PKCE S256 challenge. A public
+proof receipt is published only after that private start succeeds. DinkusKit
+Better Auth owns merchant sessions, explicit site consent, persistent grants and
+service JWT issuance. The plugin polls a one-use website exchange and returns to
+the frozen Inventory callback. Shop owners do not configure Cloudflare, DNS, or
+infrastructure credentials. Caller-supplied site identity is rejected.
+
+The website half-contract is present and agrees on account key, JWT claims,
+and refusal of caller-supplied site identity. It has not adopted plugin-reachable
+`/api/store-connections` start/token routes, public store-proof fetch, or the
+proposed start `expires_at` field, and still fail-closes merchant-session
+`/account/tokens`. Live HTTPS origin on a deployed host, renewal, and
+lost-token recovery remain unagreed. Inventory fails closed on unexpected
+website responses and retries the original Inventory provisioning identity. See
+[store connection](implementation/store-connect.md).

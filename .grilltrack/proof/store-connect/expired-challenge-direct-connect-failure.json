@@ -1,0 +1,25 @@
+{
+  "case": "expired_challenge_direct_connect",
+  "observed_at": "2026-09-30T03:29:10+00:00",
+  "identity": "SYNTHETIC website/account transport only — not live Better Auth or hosted ownership",
+  "observed": [
+    {
+      "type": "header",
+      "text": "Inventory"
+    },
+    {
+      "type": "banner",
+      "title": "Connection could not be confirmed",
+      "description": "Account or Inventory service is unavailable. Reload or retry safely; your original connection is preserved."
+    },
+    {
+      "type": "actions"
+    },
+    {
+      "type": "actions"
+    }
+  ],
+  "expiredConnectionId": "106d9e53-59d9-4738-a663-ebe522dd412f",
+  "latestConnectionId": "b0686da5-ca7b-4c67-81bb-a250e53dd2b2",
+  "newChallenge": false
+}
