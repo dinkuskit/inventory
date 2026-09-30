@@ -348,14 +348,23 @@
           "result": "findings",
           "reviewed_at": "2026-09-30T03:44:10+00:00",
           "source_identity": "sha256:21ab7b26476ab0f0c01d582f4c4163a9cae8939596be702c8aa82d0bf5269c9b"
+        },
+        {
+          "classifications": [
+            "human_gate"
+          ],
+          "ref": "file:.grilltrack/proof/store-connect/REVIEW.md",
+          "result": "findings",
+          "reviewed_at": "2026-09-30T03:47:03+00:00",
+          "source_identity": "sha256:bca421b7cf0ff02a06520efb38ebbc1620b350bf801de0c3083cdab257ce9549"
         }
       ],
       "review_ref": "file:.grilltrack/proof/store-connect/REVIEW.md",
       "review_result": "findings",
-      "review_source_identity": "sha256:21ab7b26476ab0f0c01d582f4c4163a9cae8939596be702c8aa82d0bf5269c9b",
+      "review_source_identity": "sha256:bca421b7cf0ff02a06520efb38ebbc1620b350bf801de0c3083cdab257ce9549",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-30T03:44:10+00:00",
+      "updated_at": "2026-09-30T03:47:03+00:00",
       "verification_ref": "file:.grilltrack/proof/store-connect/PROOF.md;cmd:bin/verify-inventory full;cmd:node tools/run-hosted-onboarding-proof.mjs"
     }
   ],
@@ -376,16 +385,15 @@
   "predecessor_track_id": "gt-20260926165857-2cce99",
   "recommendation": {
     "alternatives": [
-      "Agree lost-token recovery and site_id reinstall continuity",
-      "Live HTTPS origin and Registry install proof after website route adoption"
+      "Agree renewal, lost-token recovery and operator-assisted reinstall continuity"
     ],
-    "reason": "store-control-004 required fixes are locally verified. Website CONTRACT is present and agrees on identity claims but still fail-closes merchant-session /account/tokens and has not adopted /api/store-connections, public store-proof fetch, or start expires_at. Human confirmation is required before closeout. Final product tuple still needs deterministic CI + comprehensive Spark OpenClaw + native ClawSweeper.",
-    "recommended": "Website adopts plugin-reachable PKCE routes, public store-proof fetch, and start expires_at",
-    "recorded_at": "2026-09-30T03:32:26+00:00"
+    "reason": "Website owner accepted the strict v1 routes, public receipt fetch, fixed callback and expires_at. Implementation and live HTTPS/Better Auth/Registry proof remain pending. Final tuple needs deterministic CI, comprehensive Spark OpenClaw and native ClawSweeper; no track closure or merge authorized.",
+    "recommended": "Prove the accepted website PKCE routes and persistent consent against the real plugin",
+    "recorded_at": "2026-09-30T03:47:22+00:00"
   },
   "schema_version": "grilltrack/v0.1",
   "status": "active",
   "title": "Hosted Inventory installation through EmDash",
   "track_id": "gt-20260930005601-551c1b",
-  "updated_at": "2026-09-30T03:44:10+00:00"
+  "updated_at": "2026-09-30T03:47:22+00:00"
 }

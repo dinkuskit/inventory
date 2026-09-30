@@ -1,10 +1,10 @@
 {
-  "source_identity": "sha256:21ab7b26476ab0f0c01d582f4c4163a9cae8939596be702c8aa82d0bf5269c9b",
+  "source_identity": "sha256:bca421b7cf0ff02a06520efb38ebbc1620b350bf801de0c3083cdab257ce9549",
   "files": {
     "FEATURE_MAP.md": "ef38b6514264013fd25f9e3de2d13934249ccb257dd1198448ea9ea72b604cec",
     "docs/CHARTER.md": "421c6ee3287d3c7300e906e6a4e03a51471901b9f8a5d6ddc3a9dccd90f01187",
     "docs/implementation/hosted-inventory-onboarding.md": "0006359b4307295e629fe573bd87d2b348c1e64ee0b4adc27d2958107ce4ef76",
-    "docs/implementation/store-connect.md": "6b5f5e1fbb4fc28f604bc0c18f5a0655be9e01414975328714f5c395f2d32549",
+    "docs/implementation/store-connect.md": "c266b7e95d94a839ca90d9aa256a71365d34b6d5f0f88113250349c1155116db",
     "package.json": "e55d8d83600c1f0db0c03bc87e16cd236039d836a0591fa591422183431942d6",
     "plugins/emdash-inventory/src/plugin.ts": "8496d4a4aa385b8c61200b5c4161704f6fcf3749fca28e6eafba24597b1c6e8a",
     "scripts/architecture-rules.mjs": "8189af61fd2108e99840955d890d968e22d9f8c7634195a166f39f1756a5eeb7",

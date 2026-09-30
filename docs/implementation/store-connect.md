@@ -34,12 +34,12 @@ an active challenge.
 ## Website proposal
 
 This repository does not own website routes. The published handoff is
-`.grilltrack/work/store-connect/CONTRACT.md`. The website contract agrees on
-account key, JWT claims, and refusal of caller-supplied site identity. It
-exposes merchant-session `POST /account/tokens` and still fail-closes that
-route. It has not adopted `/api/store-connections`, public `store-proof`
-fetch, or start `expires_at`. The plugin cannot use website cookies, so it
-keeps proposing those routes and does not call `/account/tokens`. Lost token
+`.grilltrack/work/store-connect/CONTRACT.md`. The website owner has accepted
+`/api/store-connections`, `/api/store-connections/token`, public `store-proof`
+fetch, the fixed callback and authoritative epoch-ms `expires_at` as the v1
+integration target. The strict response schemas in this feature are agreed.
+These routes are not yet an implemented website claim. The plugin cannot use
+website cookies and does not call merchant-session `/account/tokens`. Lost token
 success is not silently replaced; the plugin retries the original
 `connection_id` and verifier. If the website returns `already_redeemed`
 without the original token, Connect must restart.
