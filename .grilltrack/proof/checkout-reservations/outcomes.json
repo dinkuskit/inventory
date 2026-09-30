@@ -1,19 +1,26 @@
 {
-  "capturedAt": "2026-09-30T14:25:37Z",
+  "capturedAt": "2026-09-30T14:43:45Z",
   "node": "v22.23.1",
-  "baseSha": "1228ed5f0ff74b8e5a6e303a1fe54698b04de441",
+  "oldBaseSha": "1228ed5f0ff74b8e5a6e303a1fe54698b04de441",
+  "baseSha": "1942e347040ffa398bf9c80d5695815bc5e0b9f9",
+  "refreshedHead": "229728838388639307aa52dd2dd8bd8ffba2f981",
+  "originalHead": "220a8a1e475579aeaa615158d830082cee7ab470",
   "commerceSha": "1cb55c756ef746bcb042b9679dc43b57e67bcb0d",
   "fullGate": "PASS",
+  "realStorageProof": "not_rerun_test_only",
   "exits": {
     "checkoutInventoryNodeTests": 0,
     "verifyCheckoutInventory": 0,
     "commercePortProof": 0,
-    "proveCheckoutInventoryReal": 0,
+    "proveCheckoutInventoryReal": "not_rerun",
     "verifyInventoryFull": 0
   },
   "counts": {
-    "checkoutInventoryNodeTests": "20/20",
-    "fullNodeTests": "166/166",
-    "vitest": "5 files / 28 tests"
-  }
+    "checkoutInventoryNodeTests": "22/22",
+    "checkoutInventoryVitest": "1 file / 4 tests",
+    "fullNodeTests": "175/175",
+    "vitest": "5 files / 28 tests",
+    "hostedVitest": "1 file / 3 tests"
+  },
+  "formalReview": "not_recorded"
 }

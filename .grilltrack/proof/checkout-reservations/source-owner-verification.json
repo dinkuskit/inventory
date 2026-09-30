@@ -1,0 +1,62 @@
+{
+  "kind": "source-owner acceptance evidence",
+  "verified_at": "2026-09-30T14:47:06.061653+00:00",
+  "base_sha": "1942e347040ffa398bf9c80d5695815bc5e0b9f9",
+  "commerce_port_sha": "1cb55c756ef746bcb042b9679dc43b57e67bcb0d",
+  "runtime": "Node 22.23.1",
+  "canonical_gate": {
+    "command": "bin/verify-inventory full",
+    "exit_code": 0,
+    "node_tests": 175,
+    "cloudflare_tests": 28,
+    "hosted_tests": 3,
+    "plugin_typecheck": "passed",
+    "registry_plugin_bundle": "passed"
+  },
+  "real_storage_proof": {
+    "command": "bin/prove-checkout-inventory-real",
+    "exit_code": 0,
+    "local_sqlite_restart": true,
+    "rollback": true,
+    "two_process_scarce_stock": true,
+    "workerd_persist_restart_and_concurrency": true
+  },
+  "hosted_decisions_exactly_preserved": true,
+  "main_event_prefix_preserved": true,
+  "public_safety_scan": "passed",
+  "formal_review": "pending",
+  "source_files": {
+    "bin/prove-checkout-inventory-real": "65825be8e0e309d2f48357bbcf403abac87fdaa253b1f47ff45fee117c969aed",
+    "bin/verify-checkout-inventory": "f3029625d9433f0aba8f4f9d1a8ba2cd15038bef4bacfb78c86178b7f89d710d",
+    "scripts/architecture-rules.mjs": "e974a56da979c1667b3e01524e4d7d7572f0e9e8cb6be8a2af0e3ad6d19de01e",
+    "src/domain/inventory-read.ts": "47869d47dc7acc742b85520208a5069bfdfbf0e8c0e0d77186fa77f5493ca076",
+    "src/domain/location-registry.ts": "74ad527a1e938c32b4e62732578b0177da2ff3847417b4f114bf1c12faa81a39",
+    "src/features/checkout-inventory/domain.ts": "a011beea0b849ae72d91507e283df1ab24f57f4e7fde324ad3eb0e7d52d4db3f",
+    "src/features/checkout-inventory/execute.ts": "d12c2b476e426854b4b239126f41acc6ad3644942a00e214f0919f3dfcdcdf96",
+    "src/features/checkout-inventory/index.ts": "6b4eab971b4487b77961b84f3a7c68d36ee28d8eebd7b7a8e2d0127fece0bd7a",
+    "src/index.ts": "21bdebd9ac8b17986ac0f310be733df6f0a5792de07f198f8d553f9219f4be21",
+    "src/storage/cloudflare-sqlite-inventory-store.ts": "20d8f173d894dcaae641939a6084a105f98c2f816e853f59bee67c6889dcfcb1",
+    "src/storage/inventory-store.ts": "fa8bd7500aa5006a837b1764cfaeb0f54e05b1845f6e0b900d21fb13629bfbbc",
+    "src/storage/local-sqlite-test-store.ts": "cf2f6fee88244b25249c3376561111365c386a156900c3735c5f421872f54a55",
+    "tests/checkout-inventory/domain.test.mjs": "1dbdae4e90c63ecedf321b653ee79d241cb41ee0b9261719bf5860abcc5ca011",
+    "tests/checkout-inventory/public-entry.test.mjs": "7494257b007c8d21e13175da02f23064cebf38ebd1241b5cfbc02030498255f6",
+    "tests/checkout-inventory/reserve-release.test.mjs": "9675cfa8f9f96a2ff344ecd60a35b748b7955ec8911a390a5552698ddb0305b8",
+    "tests/cloudflare/checkout-inventory.test.mjs": "bd56afd973599910c0f89e1a40deacb3aa7d775ad4fabe9d32418ef642cf83ae",
+    "tests/workflows/checkout-inventory-real-proof-contract.test.mjs": "068624d093aa04a9cc2ada91f748aee9ae40df03f24c3718c61bf07538c3ebec",
+    "tools/checkout-inventory-commerce-port-proof.mjs": "dea12fb90680b8b9b75f8b19f1ecbdeaf1d094f873a0d321b9d66345a1d63e2c",
+    "tools/checkout-inventory-concurrency-proof.mjs": "7564c5873b2ce8f51fbd048cc1715368b28ae54cbf122f27fa18fc7850f2ccde",
+    "tools/checkout-inventory-local-proof.ts": "5dc5fb9a414d477bb4da3ce96dcbf0735b8be1d95997ad466021b024fa6b53bd",
+    "tools/checkout-inventory-local-sqlite-proof.mjs": "b46b75288d1be83502e8f4985830acd35e9d9db1966ff29f00e03930b07eb350",
+    "package.json": "b98b28ad69912b9602271eea6e8ed58bfaab60b350e1e4d8aa78c318c956ef63",
+    "package-lock.json": "24c65c6a28ba6414059f6fead3076b452bd63c321ca35f78f4708110131bf729",
+    "tsconfig.cloudflare.json": "67c64fa55cb262e6213e5e964f8ab577ec1c743137d3a7f1943df41fc15c19f2",
+    "wrangler.checkout-inventory-proof.jsonc": "02b3c459b6ce1809a3e086b11c59d9b8a9422685eddda039ec54eac114e5e080"
+  },
+  "sqlite_failure_regressions": {
+    "command": "npm run test:node (within bin/verify-inventory full)",
+    "postcommit_lost_reserve_response": "passed",
+    "postcommit_lost_release_response": "passed",
+    "original_durable_result_receipt_and_ids_after_restart": "passed",
+    "precommit_rollback": "passed"
+  }
+}

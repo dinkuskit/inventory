@@ -10,6 +10,8 @@ import { DatabaseSync } from "node:sqlite";
 
 import {
 	InvalidCheckoutInventoryRequestError,
+	checkoutReleaseCommandId,
+	checkoutReserveCommandId,
 	createCheckoutInventoryPort,
 	createReadSkuLocationBalance,
 	createReleaseCheckoutBasket,
@@ -126,6 +128,56 @@ async function balances(store) {
 	};
 }
 
+function wrapPostcommitLostResponse(store) {
+	const originalRunTransaction = store.runTransaction.bind(store);
+	let thrown = false;
+	let captured = null;
+	store.runTransaction = async (poolId, operation) => {
+		const value = await originalRunTransaction(poolId, operation);
+		if (!thrown) {
+			thrown = true;
+			captured = value;
+			throw new Error("lost service response after commit");
+		}
+		return value;
+	};
+	return {
+		get captured() {
+			return captured;
+		},
+	};
+}
+
+function durableMutationCounts(filePath, commandId) {
+	const database = new DatabaseSync(filePath);
+	try {
+		const count = (sql, ...params) =>
+			Number(database.prepare(sql).get(...params).n);
+		return {
+			commandResults: count(
+				"SELECT COUNT(*) AS n FROM inventory_command_results WHERE command_id = ?",
+				commandId,
+			),
+			receipts: count(
+				"SELECT COUNT(*) AS n FROM inventory_receipts WHERE command_id = ?",
+				commandId,
+			),
+			reservations: count("SELECT COUNT(*) AS n FROM inventory_reservations"),
+			openReservations: count(
+				"SELECT COUNT(*) AS n FROM inventory_reservations WHERE status IN ('not_shipped', 'partially_packed')",
+			),
+		};
+	} finally {
+		database.close();
+	}
+}
+
+const configuredBinding = Object.freeze({
+	providerRef: "configured.opaque-handle",
+	poolId: "pool_test",
+	defaultFulfillmentLocationId: "location_north",
+});
+
 test("reserve holds the whole basket and replays after SQLite restart", async (t) => {
 	const filePath = await databasePath(t, "restart");
 	const store = createLocalSqliteTestStore({ filePath });
@@ -167,7 +219,7 @@ test("one insufficient SKU rejects the basket and leaves no holds", async (t) =>
 	assert.equal((await balances(store)).shirt.available.value, "1");
 });
 
-test("duplicate reserve and release are idempotent and lost response recovers the original result", async (t) => {
+test("duplicate reserve and release replay the original result without a second mutation", async (t) => {
 	const store = createLocalSqliteTestStore({
 		filePath: await databasePath(t, "idempotent"),
 	});
@@ -193,6 +245,139 @@ test("duplicate reserve and release are idempotent and lost response recovers th
 	assert.equal((await balances(store)).hat.reserved.value, "0");
 	assert.equal((await balances(store)).shirt.reserved.value, "0");
 	assert.equal((await balances(store)).hat.available.value, "10");
+});
+
+test("lost reserve response after SQLite commit recovers the original durable hold", async (t) => {
+	const filePath = await databasePath(t, "lost-reserve");
+	const store = createLocalSqliteTestStore({ filePath });
+	await seedBasket(store);
+	const loss = wrapPostcommitLostResponse(store);
+	const request = stockRequest({
+		operationId: "op_lost_reserve",
+		binding: configuredBinding,
+	});
+	const port = createCheckoutInventoryPort({
+		...factories(store, { binding: configuredBinding }),
+		principal,
+		siteId: "site_test",
+	});
+	assert.equal(await port.reserve(request), "unknown");
+	assert.equal(loss.captured?.outcome, "reserved");
+	assert.equal(loss.captured.reservations.length, 2);
+	assert.equal((await balances(store)).hat.reserved.value, "3");
+	assert.equal((await balances(store)).shirt.reserved.value, "2");
+	assert.equal((await balances(store)).hat.available.value, "7");
+	assert.equal((await balances(store)).shirt.available.value, "4");
+	const reserveCommandId = checkoutReserveCommandId(request.operationId);
+	const stored = await store.readCommand(reserveCommandId);
+	assert.deepEqual(stored.result, loss.captured);
+	await store.close();
+	const afterLoss = durableMutationCounts(filePath, reserveCommandId);
+	assert.deepEqual(afterLoss, {
+		commandResults: 1,
+		receipts: 1,
+		reservations: 2,
+		openReservations: 2,
+	});
+
+	const reopened = createLocalSqliteTestStore({ filePath });
+	const replayPort = createCheckoutInventoryPort({
+		...factories(reopened, { binding: configuredBinding }),
+		principal,
+		siteId: "site_test",
+	});
+	assert.equal(await replayPort.reserve(request), "reserved");
+	const replayed = await createReserveCheckoutBasket(
+		factories(reopened, { binding: configuredBinding }),
+	)(request, { principal, siteId: "site_test" });
+	assert.deepEqual(replayed, loss.captured);
+	assert.deepEqual(await reopened.readCommand(reserveCommandId), stored);
+	assert.equal(replayed.receipt.receiptId, loss.captured.receipt.receiptId);
+	assert.deepEqual(
+		replayed.reservations.map((hold) => hold.reservationId),
+		loss.captured.reservations.map((hold) => hold.reservationId),
+	);
+	assert.equal((await balances(reopened)).hat.reserved.value, "3");
+	assert.equal((await balances(reopened)).shirt.reserved.value, "2");
+	await reopened.close();
+	assert.deepEqual(durableMutationCounts(filePath, reserveCommandId), afterLoss);
+});
+
+test("lost release response after SQLite commit recovers the original fence", async (t) => {
+	const filePath = await databasePath(t, "lost-release");
+	const store = createLocalSqliteTestStore({ filePath });
+	await seedBasket(store);
+	const request = stockRequest({
+		operationId: "op_lost_release",
+		binding: configuredBinding,
+	});
+	const liveDeps = factories(store, { binding: configuredBinding });
+	const held = await createReserveCheckoutBasket(liveDeps)(request, {
+		principal,
+		siteId: "site_test",
+	});
+	assert.equal(held.outcome, "reserved");
+	const loss = wrapPostcommitLostResponse(store);
+	const port = createCheckoutInventoryPort({
+		...liveDeps,
+		principal,
+		siteId: "site_test",
+	});
+	assert.equal(await port.release(request), "unknown");
+	assert.equal(loss.captured?.outcome, "released");
+	assert.equal(loss.captured.reservations.length, 2);
+	assert.equal((await balances(store)).hat.reserved.value, "0");
+	assert.equal((await balances(store)).shirt.reserved.value, "0");
+	assert.equal((await balances(store)).hat.available.value, "10");
+	const delayed = await createReserveCheckoutBasket(liveDeps)(request, {
+		principal,
+		siteId: "site_test",
+	});
+	assert.equal(delayed.outcome, "rejected");
+	assert.equal(delayed.code, "checkout_released");
+	assert.equal((await balances(store)).hat.reserved.value, "0");
+	const releaseCommandId = checkoutReleaseCommandId(request.operationId);
+	const stored = await store.readCommand(releaseCommandId);
+	assert.deepEqual(stored.result, loss.captured);
+	await store.close();
+	const afterLoss = durableMutationCounts(filePath, releaseCommandId);
+	assert.deepEqual(afterLoss, {
+		commandResults: 1,
+		receipts: 1,
+		reservations: 2,
+		openReservations: 0,
+	});
+
+	const reopened = createLocalSqliteTestStore({ filePath });
+	const replayPort = createCheckoutInventoryPort({
+		...factories(reopened, { binding: configuredBinding }),
+		principal,
+		siteId: "site_test",
+	});
+	assert.equal(await replayPort.release(request), "released");
+	const replayed = await createReleaseCheckoutBasket(
+		factories(reopened, { binding: configuredBinding }),
+	)(request, { principal, siteId: "site_test" });
+	assert.deepEqual(replayed, loss.captured);
+	assert.deepEqual(await reopened.readCommand(releaseCommandId), stored);
+	assert.equal(replayed.receipt.receiptId, loss.captured.receipt.receiptId);
+	assert.deepEqual(
+		replayed.reservations.map((hold) => hold.reservationId),
+		loss.captured.reservations.map((hold) => hold.reservationId),
+	);
+	assert.equal((await balances(reopened)).hat.reserved.value, "0");
+	assert.equal((await balances(reopened)).shirt.reserved.value, "0");
+	assert.equal((await balances(reopened)).hat.available.value, "10");
+	const later = await createReserveCheckoutBasket(
+		factories(reopened, { binding: configuredBinding }),
+	)(request, { principal, siteId: "site_test" });
+	assert.equal(later.outcome, "rejected");
+	assert.equal(later.code, "checkout_released");
+	await reopened.close();
+	assert.deepEqual(
+		durableMutationCounts(filePath, releaseCommandId),
+		afterLoss,
+	);
 });
 
 test("release-before-reserve and later reserve replay cannot reacquire", async (t) => {
@@ -563,7 +748,7 @@ test("named-hold release still allows a new named hold outside checkout operatio
 	assert.equal(again.reservation.reservationId, "rsv_named_hat_2");
 });
 
-test("transaction interruption rolls back every basket hold", async (t) => {
+test("precommit transaction interruption rolls back every basket hold", async (t) => {
 	const filePath = await databasePath(t, "rollback");
 	const store = createLocalSqliteTestStore({ filePath });
 	await seedBasket(store);
