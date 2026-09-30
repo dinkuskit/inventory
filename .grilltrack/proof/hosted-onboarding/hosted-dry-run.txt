@@ -1,0 +1,10 @@
+
+ ⛅️ wrangler 4.127.0 (update available 4.144.0)
+───────────────────────────────────────────────
+Total Upload: 862.79 KiB / gzip: 137.35 KiB
+Your Worker has access to the following bindings:
+Binding                                        Resource            
+env.INVENTORY_POOLS (InventoryPool)            Durable Object      
+env.INVENTORY_ACCOUNTS (InventoryAccount)      Durable Object      
+
+--dry-run: exiting now.

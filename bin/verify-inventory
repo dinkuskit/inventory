@@ -10,6 +10,7 @@ const quick = [
 	[process.execPath, ["--test", "tests/workflows/repository-architecture.test.mjs"]],
 	[process.execPath, ["scripts/check-architecture.mjs"]],
 	[npm, ["run", "typecheck:cloudflare"]],
+	[npm, ["run", "typecheck:plugin"]],
 	[npm, ["run", "test:node"]],
 ];
 const scopes = {
@@ -17,6 +18,8 @@ const scopes = {
 	full: [
 		...quick,
 		[resolve(root, "bin/verify-cloudflare-storage"), []],
+		[npm, ["run", "test:hosted"]],
+		[npm, ["run", "bundle:plugin"]],
 	],
 };
 

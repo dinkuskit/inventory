@@ -23,14 +23,24 @@ const publicJwk = { ...await exportJWK(keys.publicKey), alg: "ES256" };
 const compiled = await build({ entryPoints: [resolve(root, "tools/hosted-onboarding-proof-worker.ts")], bundle: true, format: "esm", platform: "browser", external: ["cloudflare:workers"], write: false });
 const service = new Miniflare(convertV4MiniflareOptions({ modules: true, script: compiled.outputFiles[0].text, compatibilityDate: "2026-08-28", bindings: { PROOF_JWKS: JSON.stringify({ keys: [publicJwk] }) }, durableObjects: { INVENTORY_POOLS: { className: "InventoryPool", useSQLite: true }, INVENTORY_ACCOUNTS: { className: "InventoryAccount", useSQLite: true } } }));
 const grants = new Map();
+// The host's SSRF guard still validates every address and allowed host. Reserved
+// proof names get synthetic public DNS answers; transport remains entirely local.
+const originalFetch = globalThis.fetch;
+globalThis.fetch = async (url, init) => {
+	const target = new URL(typeof url === "string" ? url : url instanceof URL ? url.href : url.url);
+	if (target.hostname === "cloudflare-dns.com" && ["inventory.dinkuskit.invalid", "accounts.dinkuskit.invalid"].includes(target.searchParams.get("name"))) {
+		return Response.json({ Status: 0, Answer: target.searchParams.get("type") === "A" ? [{ type: 1, data: "93.184.216.34" }] : [] });
+	}
+	return originalFetch(url, init);
+};
 let fixtureAccount = "proof-account-one";
 let loseConnectResponse = false;
 let accountUnavailable = false;
-let pollFailure = null;
 const transportEvents = [];
 async function transport(url, init) {
 	const request = new Request(url, init);
 	const target = new URL(request.url);
+	transportEvents.push({ path: target.pathname, origin: target.hostname });
 	if (target.origin === "https://inventory.dinkuskit.invalid") {
 		const response = await service.dispatchFetch(request.url, { method: request.method, headers: request.headers, body: request.method === "POST" ? await request.text() : undefined });
 		transportEvents.push({ path: target.pathname, status: response.status });
@@ -46,7 +56,6 @@ async function transport(url, init) {
 		return Response.json({ device_code: deviceCode, user_code: userCode, verification_uri: "https://accounts.dinkuskit.invalid/activate", expires_in: 600, interval: 1 });
 	}
 	if (target.pathname === "/oauth/token") {
-		if (pollFailure) { const error = pollFailure; pollFailure = null; return Response.json({ error }, { status: 400 }); }
 		const grant = grants.get(form.get("device_code"));
 		if (!grant) return Response.json({ error: "invalid_grant" }, { status: 400 });
 		if (!grant.approved) return Response.json({ error: "authorization_pending" }, { status: 400 });
@@ -83,7 +92,8 @@ const action = action_id => invoke({ type: "block_action", action_id });
 const submit = (action_id, values) => invoke({ type: "form_submit", action_id, values });
 async function reinstall() {
 	// Disposable in-memory test site only: model plugin state lost on reinstall.
-	await runtime.db.deleteFrom("_emdash_plugin_data").where("plugin_id", "=", manifest.id).execute();
+	await runtime.db.deleteFrom("_plugin_storage").where("plugin_id", "=", manifest.id).execute();
+	await runtime.db.deleteFrom("options").where("name", "=", `plugin:${manifest.id}:settings:connectionSession`).execute();
 }
 async function signIn() {
 	const started = await action("connect"); assert.match(JSON.stringify(started), /enter code/, "Device grant starts inside sandbox"); approve();
@@ -113,7 +123,8 @@ async function automatedProof() {
 	await reinstall(); fixtureAccount = "proof-account-two";
 	assert.doesNotMatch(JSON.stringify(await signIn()), /existing-operation/);
 	const unauthorized = await submit("reconnect", { operation_id: operationId });
-	assert.doesNotMatch(JSON.stringify(unauthorized), /Inventory connected/);
+	assert.match(JSON.stringify(unauthorized), /Operation unavailable/);
+	assert.match(JSON.stringify(await load()), /Name your first stock location/);
 	await reinstall(); fixtureAccount = "proof-account-one"; accountUnavailable = true;
 	assert.match(JSON.stringify(await action("connect")), /could not be confirmed/);
 	accountUnavailable = false;
@@ -121,7 +132,7 @@ async function automatedProof() {
 	await writeFile(resolve(run, "sandbox-flow.json"), JSON.stringify({ emdash: "1.0.1", runner: "@emdash-cms/sandbox-workerd@0.9.1", identity: "synthetic OAuth fixture only", service: "local workerd SQLite DOs", anonymousStatus: 401, csrfStatus: 403, assertions: "first connection, lost-response retry, frozen intent, reinstall selection, owned reconnect, foreign-account refusal, account service failure", firstReady, traces, transportEvents }, null, 2));
 	console.log("PASS: EmDash 1.0.1 private route dispatch, real sandbox bundle, local DO provisioning, retry/reinstall/reconnect and authorization boundaries.");
 }
-async function cleanup() { await runtime.shutdown(); await runner.terminateAll(); await service.dispose(); await runtime.db.destroy(); }
+async function cleanup() { globalThis.fetch = originalFetch; await runtime.shutdown(); await runner.terminateAll(); await service.dispose(); await runtime.db.destroy(); }
 try {
 	await automatedProof();
 	if (!process.argv.includes("--serve")) { await cleanup(); process.exit(0); }

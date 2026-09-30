@@ -1,0 +1,285 @@
+✔ accepts public feature entries and declared feature dependencies (1.257542ms)
+✔ rejects deep feature imports and undeclared feature dependencies (0.143416ms)
+✔ the feature map and committed repository satisfy the architecture contract (26.467458ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 71.364334
+inventory_architecture=clean
+
+> @dinkuskit/inventory@0.0.0 typecheck:cloudflare
+> tsc --project tsconfig.cloudflare.json
+
+
+> @dinkuskit/inventory@0.0.0 typecheck:plugin
+> tsc --project tsconfig.plugin.json
+
+
+> @dinkuskit/inventory@0.0.0 test:node
+> node --experimental-sqlite --experimental-strip-types --test tests/workflows/*.test.mjs tests/opening-balance/*.test.mjs tests/locations/*.test.mjs tests/inventory/*.test.mjs tests/managed-sku/*.test.mjs tests/stock-adjustment/*.test.mjs tests/stock-transfer/*.test.mjs tests/stock-reservation/*.test.mjs tests/hosted-onboarding/*.test.mjs
+
+✔ JWT resource boundary validates issuer, audience, signature, expiry, scope and site binding (88.254167ms)
+✔ first connect, concurrent duplicates and new retry IDs retain one operation (3.917ms)
+✔ explicit reconnect attaches owned operation and never mints another pool (0.57875ms)
+✔ unknown provisioning keeps frozen operation/command and succeeds on retry (0.232583ms)
+✔ terminal rejection is explicit and cannot create replacement inventory (0.184833ms)
+✔ delayed unknown response cannot regress a ready concurrent result (0.186125ms)
+✔ ownership, pool, site and account fields are rejected from browser input (0.734875ms)
+✔ reads one location or all active locations from durable SQLite (101.641584ms)
+✔ normalizes only an explicit location or all-locations scope (0.704708ms)
+✔ sums signed exact decimals, derives available, and fails closed on mixed units (0.467834ms)
+✔ creates one durable location and exactly replays the terminal result (57.762666ms)
+✔ reserves each location name across active and archived records (92.136541ms)
+✔ renames, archives, and restores one permanent location with immutable receipts (65.600791ms)
+✔ blocks archive for every physical, order, and transfer quantity and durably replays the blockers (67.59425ms)
+✔ rolls back location and command state when receipt persistence fails (72.95525ms)
+✔ keeps command IDs unique across stock and location commands (36.753167ms)
+✔ rejects malformed names and missing target locations before storage (39.767667ms)
+✔ the package root and managed-SKU feature entry expose the same runtime contract (0.534042ms)
+✔ new registration mints a hidden identity and stores setup audit without a stock receipt (77.921417ms)
+✔ existing visible SKU atomically returns its original record for Commerce review (58.054625ms)
+✔ stock APIs resolve only the permanent Inventory identity (69.893334ms)
+✔ preserves command identity and rejects unsupported registration contents (46.107417ms)
+✔ rolls back the new command when a generated Inventory identity collides (32.403084ms)
+✔ uses registered hidden identity for logical zero and opening admission (105.533459ms)
+✔ blocks opening preview before registration and rejects a mismatched unit (43.945292ms)
+✔ confirmed opening balance durably rejects an archived location (128.828042ms)
+✔ previews the exact normalized effect for five minutes without mutating stock (57.9955ms)
+✔ requires the editable reason before issuing a preview (34.161459ms)
+✔ binds the edited reason into confirmation (75.891459ms)
+✔ confirms immediately and commits the balance and immutable receipt together (42.812417ms)
+✔ persists an unconfirmed preview across database close and reopen (59.734125ms)
+✔ rejects an unconfirmed preview at the exact five-minute boundary (44.613791ms)
+✔ returns the exact original terminal result when a confirmed request retries after expiry (63.67825ms)
+✔ rejects a changed action without consuming the confirmation (29.034167ms)
+✔ rejects another principal without consuming the confirmation (20.394583ms)
+✔ binds a consumed confirmation to exactly one command ID (16.328583ms)
+✔ rolls back confirmation consumption when atomic receipt persistence fails (17.25425ms)
+✔ stores and replays a business rejection after a valid confirmation (12.816708ms)
+✔ reads only one explicit SKU-location balance with explicit not-found (105.43025ms)
+✔ reads one committed mutation by receipt ID or command ID after reopen (26.337375ms)
+✔ reads a stable rejection by command ID and never invents a receipt (45.906ms)
+✔ returns explicit not-found and rejects ambiguous or blank lookups (26.459292ms)
+✔ binds confirmation to stable user identity and freezes the commit-time name (44.730083ms)
+✔ requires a human display name without inventing one for system receipts (87.48125ms)
+✔ reads one location or all locations from the same durable receipt ledger (81.282292ms)
+✔ rejects missing, ambiguous, and unbounded history scope (50.173125ms)
+✔ keeps the local SQLite test adapter out of the platform-neutral root API (0.768333ms)
+✔ exposes the exact editable opening-balance reason default (0.145208ms)
+✔ durably rejects an unknown opening-balance location without stock or receipt (97.471125ms)
+✔ durably rejects an archived opening-balance location after restoration (51.0955ms)
+✔ commits one opening balance with its immutable receipt and no other location (74.605542ms)
+✔ returns the byte-stable original result for normalized replay after reopen (44.748375ms)
+✔ rejects changed content under one command ID while preserving the original (73.899083ms)
+✔ stores a second-opening rejection and replays it after reopen (44.131209ms)
+✔ serializes competing command IDs so only one opening balance commits (33.22225ms)
+✔ rolls back balance and command state when receipt persistence fails (67.919041ms)
+✔ rejects malformed context and quantities before storage (46.734375ms)
+✔ requires a final human-readable reason and freezes an edited value (37.24775ms)
+✔ refuses in-memory and production-mode local storage (1.306333ms)
+✔ refuses unrelated and incompatible SQLite files without claiming them (7.708709ms)
+✔ normalizes a non-zero signed delta, one typed reason, and observed version (1.631916ms)
+✔ uses exact signed decimal arithmetic beyond binary floating-point range (0.324083ms)
+✔ rejects zero, a blank reason, and a reason category (0.530791ms)
+✔ requires exactly the command SKU-location and one positive observed version (0.283ms)
+✔ previews and commits an allowed oversell with exact quantities and actor receipt (91.708542ms)
+✔ returns the original durable terminal result on retry and conflicts changed content (93.198ms)
+✔ durably rejects a stale preview after another adjustment commits (65.121042ms)
+✔ expires after five minutes and binds confirmation to the signed-in principal (83.549208ms)
+✔ rolls back balance, receipt, result, and confirmation binding on commit failure (35.999958ms)
+✔ preview reports location, registration, and opening-history failures in order (40.228708ms)
+✔ direct command durably requires opening history without creating a receipt (47.039667ms)
+✔ direct commands durably reject archived locations and unit mismatches (70.679417ms)
+✔ the package root composes the stock-adjustment public entry (0.535792ms)
+✔ deliver marks every named packed ticket Delivered without moving counts (142.0405ms)
+✔ undo Delivered returns one ticket to Packed without moving counts and replays exactly (78.871ms)
+✔ deliver accepts one packed ticket (89.436209ms)
+✔ deliver replay returns the original delivered result (63.062625ms)
+✔ deliver stops when one ticket is not fully packed and leaves the rest Packed (93.035208ms)
+✔ deliver rejects not shipped, partially packed, canceled, missing, and already Delivered tickets (86.8975ms)
+✔ reserve command trims identity fields and requires a positive quantity (1.739ms)
+✔ order-line keys stay distinct when kind or id contains a separator (5.227042ms)
+✔ pack all command trims ticket ids and requires one or more unique tickets (0.416958ms)
+✔ deliver command trims ticket ids and requires one or more unique tickets (0.19675ms)
+✔ pack some command trims the ticket and requires a positive quantity (2.4395ms)
+✔ unpack command trims the reservation id (0.222ms)
+✔ pack command trims the reservation id (0.162209ms)
+✔ release command trims the reservation id (0.342042ms)
+✔ pack all consumes every named hold in one shot (125.486333ms)
+✔ pack all accepts one ticket (59.061041ms)
+✔ pack all replay returns the original packed result (73.790834ms)
+✔ pack all stops when one ticket is not active and leaves the rest reserved (63.959625ms)
+✔ pack some of a hold leaves the leftover reserved on the same ticket (83.077833ms)
+✔ packing the last remaining bags finishes the ticket as packed (91.929709ms)
+✔ packing the full remaining quantity skips partial and packs (64.706625ms)
+✔ asking for more hats than the ticket has packs none (73.52575ms)
+✔ pack some replay returns the original result (59.608833ms)
+✔ reissuing the original reserve after a partial pack returns the same ticket (27.128167ms)
+✔ one-hold pack can finish a partially packed ticket (21.913834ms)
+✔ pack consumes the full hold and leaves available unchanged (118.143125ms)
+✔ pack replay returns the original packed result (55.795792ms)
+✔ pack rejects canceled and already packed holds (70.868958ms)
+✔ pack rejects an already packed hold (74.045042ms)
+✔ the package root composes the stock-reservation public entry (0.610625ms)
+✔ reserve holds available stock and release returns it (69.1165ms)
+✔ reserve fails closed when available is short (37.41225ms)
+✔ the same order line returns the original hold or conflicts (16.449625ms)
+✔ a canceled order line can be reserved again with a new id (77.3175ms)
+✔ distinct order lines with a separator keep separate holds (67.569583ms)
+✔ outgoing transfer commitments reduce reservable stock (72.960083ms)
+✔ unpack restores a packed ticket to not shipped on the same ticket (78.727083ms)
+✔ unpack of pack-some remainder joins leftover on the same not-shipped ticket (72.462167ms)
+✔ unpack replay returns the original unpacked result (66.601917ms)
+✔ unpack rejects not-shipped and canceled tickets (79.79825ms)
+✔ persists a zero Created draft, edits planning stock, replays, and cancels atomically (85.318333ms)
+✔ allows negative availability with an exact transfer warning and canonical history (102.28125ms)
+✔ atomically replaces a multi-SKU destination and preserves commitments through an adjustment (116.755583ms)
+✔ durably rejects unsafe transfer inputs and rolls back injected persistence failure (26.28075ms)
+✔ normalizes a Created transfer with an editable reference and exact lines (34.82525ms)
+✔ normalizes full Created updates and version-bound cancellation (0.401709ms)
+✔ normalizes version-bound dispatch, receive, and optional-reason reopen commands (0.546458ms)
+✔ rejects ambiguous, duplicate, negative, and invalid-date transfer contents (0.254167ms)
+✔ dispatches despite order-priority oversell and exactly reopens with immutable audit (98.239ms)
+✔ movable stock excludes this transfer while retaining other outgoing commitments (26.578167ms)
+✔ durably rejects zero, wrong-state, stale, and changed-content transitions (25.966292ms)
+✔ rolls back every dispatch effect when durable persistence fails (15.650042ms)
+✔ normalizes one exact list query and enforces the bounded opaque contract (2.62075ms)
+✔ lists compact Open and Done rows by selected location and active endpoint (88.489167ms)
+✔ paginates equal dates without repeats, binds cursors, isolates pools, and reopens durably (44.473417ms)
+✔ enforces the default and maximum page sizes against durable rows (72.986583ms)
+✔ fails closed on status drift, impossible lifecycle dates, and paged terminal corruption (10.92775ms)
+✔ the package root composes the stock-transfer public entry (0.54825ms)
+✔ receives every line atomically with automatic actor/time and durable destination history (115.539083ms)
+✔ durably rejects missing, wrong-state, stale, repeated, and changed-content receipt (36.951458ms)
+✔ rolls back the transfer, every line, receipt, and terminal result on receive failure (21.573167ms)
+✔ receives a frozen shipment after its now-empty origin is archived (12.267125ms)
+✔ real aggregate-stock proof stays local and exercises both durable runtimes (16.041417ms)
+✔ recognizes one exact command line inside a longer comment (0.798708ms)
+✔ accepts a maintainer review request and binds the live PR tuple (0.82425ms)
+✔ lets the exact PR author request a fresh read-only re-review (0.755208ms)
+✔ does not let an untrusted contributor start review or rerun another PR (0.154417ms)
+✔ ignores bots, non-PR comments, wrong repositories, and edited comments (0.114917ms)
+✔ fails closed when the live PR is closed, moved, or malformed (0.107875ms)
+✔ declares one private SQLite Durable Object deployment without tenant configuration (6.187125ms)
+✔ keeps the remote probe local-only and free of tenant defaults (2.698209ms)
+✔ keeps Cloudflare runtime code out of the platform-neutral root API (1.613875ms)
+✔ accepts public feature entries and declared feature dependencies (2.814416ms)
+✔ rejects deep feature imports and undeclared feature dependencies (0.67975ms)
+✔ the feature map and committed repository satisfy the architecture contract (105.110875ms)
+✔ real stock-adjustment proof stays local and reopens durable state (8.27975ms)
+✔ real stock-reservation proof stays local and reopens durable state (10.781041ms)
+✔ declares the exact EmDash toolchain and its Node floor (0.752708ms)
+✔ keeps lifecycle-bearing dependencies visible for maintainer review (0.131333ms)
+ℹ tests 152
+ℹ suites 0
+ℹ pass 152
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 994.734333
+
+> @dinkuskit/inventory@0.0.0 typecheck:cloudflare
+> tsc --project tsconfig.cloudflare.json
+
+✔ declares one private SQLite Durable Object deployment without tenant configuration (2.744125ms)
+✔ keeps the remote probe local-only and free of tenant defaults (0.685458ms)
+✔ keeps Cloudflare runtime code out of the platform-neutral root API (0.63125ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 48.200542
+
+> @dinkuskit/inventory@0.0.0 test:cloudflare
+> vitest run --config vitest.config.ts
+
+
+ RUN  v4.1.11 <worktree>
+
+
+ Test Files  4 passed (4)
+      Tests  24 passed (24)
+   Start at  21:31:38
+   Duration  1.75s (transform 106ms, setup 0ms, import 273ms, tests 138ms, environment 0ms)
+
+
+ ⛅️ wrangler 4.127.0 (update available 4.144.0)
+───────────────────────────────────────────────
+Total Upload: 86.84 KiB / gzip: 14.28 KiB
+Your Worker has access to the following bindings:
+Binding                                  Resource            
+env.INVENTORY_POOLS (InventoryPool)      Durable Object      
+
+--dry-run: exiting now.
+
+> @dinkuskit/inventory@0.0.0 test:hosted
+> vitest run --config vitest.hosted.config.ts
+
+
+ RUN  v4.1.11 <worktree>
+
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  21:31:42
+   Duration  1.71s (transform 339ms, setup 0ms, import 854ms, tests 43ms, environment 0ms)
+
+
+> @dinkuskit/inventory@0.0.0 bundle:plugin
+> emdash-plugin bundle --dir plugins/emdash-inventory
+
+◐ Bundling plugin...
+◐ Building plugin...
+ℹ Manifest: <worktree>/plugins/emdash-inventory/emdash-plugin.jsonc
+ℹ Plugin entry: <worktree>/plugins/emdash-inventory/src/plugin.ts
+ℹ npm package: @dinkuskit/emdash-inventory
+◐ Building runtime entry...
+ℹ entry: plugins/emdash-inventory/src/plugin.ts
+ℹ target: node22.12.0
+ℹ Build start
+ℹ ../../../../../var/folders/gf/qz1h4gs951b_qssp_gxmfpr80000gn/T/emdash-build-S6Xfj0/runtime/plugin.mjs  92.72 kB │ gzip: 25.98 kB
+ℹ 1 files, total: 92.72 kB
+✔ Build complete in 114ms
+ℹ entry: plugins/emdash-inventory/src/plugin.ts
+ℹ target: node22.12.0
+ℹ Build start
+ℹ ../../../../../var/folders/gf/qz1h4gs951b_qssp_gxmfpr80000gn/T/emdash-build-S6Xfj0/runtime/plugin.d.mts  0.18 kB │ gzip: 0.14 kB
+ℹ 1 files, total: 0.18 kB
+✔ Build complete in 862ms
+✔ Built plugin.mjs
+◐ Probing plugin surface...
+ℹ entry: plugins/emdash-inventory/src/plugin.ts
+ℹ target: node22.12.0
+ℹ Build start
+ℹ ../../../../../var/folders/gf/qz1h4gs951b_qssp_gxmfpr80000gn/T/emdash-build-S6Xfj0/plugin-probe/plugin.mjs  177.44 kB │ gzip: 39.32 kB
+ℹ 1 files, total: 177.44 kB
+✔ Build complete in 77ms
+ℹ   Hooks: (none)
+ℹ   Routes: admin
+✔ Wrote manifest.json
+◐ Generating descriptor module...
+✔ Wrote index.mjs
+✔ Plugin built: @inventory.example.invalid/dinkus-inventory@0.0.0
+✔ Plugin: @inventory.example.invalid/dinkus-inventory@0.0.0
+ℹ   Capabilities: network:request
+◐ Validating bundle...
+◐ Collecting assets...
+ℹ Bundle size: 91.4 KB across 2 files
+✔ Validation passed
+◐ Creating tarball...
+✔ Created dinkus-inventory-0.0.0.tar.gz (25.8KB)
+ℹ   SHA-256: 01fba9e0d9f7acacdf4c0373123619fd43aa552f42b7b77ed0aa5ad30fdafd33
+ℹ   Path: <worktree>/plugins/emdash-inventory/dist/dinkus-inventory-0.0.0.tar.gz
+
+ℹ Publish this plugin from its source directory:
+  emdash-plugin publish
+  Publish rebuilds the bundle and uploads it to your PDS.
+verify-inventory full passed in 8.97s

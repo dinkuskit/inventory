@@ -10,4 +10,3 @@
       Tests  3 passed (3)
    Start at  21:19:39
    Duration  1.53s (transform 301ms, setup 0ms, import 780ms, tests 38ms, environment 0ms)
-

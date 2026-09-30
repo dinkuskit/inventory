@@ -20,6 +20,10 @@ const sessionSchema = z.discriminatedUnion("phase", [
 	z.object({ phase: z.literal("token"), token: z.string(), expiresAt: z.number() }),
 ]);
 type Session = z.infer<typeof sessionSchema>;
+class InventoryApiError extends Error {
+	code: string;
+	constructor(code: string) { super("Inventory request rejected"); this.code = code; }
+}
 const interactionSchema = z.union([
 	z.object({ type: z.literal("page_load"), page: z.literal("/inventory") }),
 	z.object({ type: z.literal("block_action"), action_id: z.enum(["connect", "check_sign_in", "retry", "refresh"]), block_id: z.string().optional(), value: z.unknown().optional() }),
@@ -59,6 +63,8 @@ async function api(ctx: PluginContext, token: string, path: string, input?: unkn
 	});
 	if (!response.ok) {
 		if (response.status === 401) throw new Error("sign_in_required");
+		const rejected = z.object({ error: z.enum(["operation_not_found", "request_id_conflict", "site_already_connected"]) }).safeParse(body);
+		if (rejected.success && [404, 409].includes(response.status)) throw new InventoryApiError(rejected.data.error);
 		throw new Error("Inventory request unavailable");
 	}
 	return body;
@@ -128,6 +134,7 @@ const plugin: SandboxedPlugin = { routes: { admin: {
 	handler: async (routeCtx, ctx): Promise<BlockResponse> => {
 		const parsed = interactionSchema.safeParse(routeCtx.input);
 		if (!parsed.success) return notice("Invalid Inventory action", "Reload Inventory and try again.");
+		let activeRequestId: string | null = null;
 		try {
 			const interaction = parsed.data;
 			if (interaction.type === "block_action" && interaction.action_id === "connect") await startSignIn(ctx);
@@ -149,10 +156,20 @@ const plugin: SandboxedPlugin = { routes: { admin: {
 					await ctx.kv.compareAndSet("state:connection-intent", null, { type: "reconnect", requestId: crypto.randomUUID(), operationId: result.operation.operationId });
 					intent = await ctx.kv.get("state:connection-intent");
 				}
-				await api(ctx, stored.session.token, "/v1/connect", intentSchema.parse(intent));
+				const frozen = intentSchema.parse(intent);
+				activeRequestId = frozen.requestId;
+				await api(ctx, stored.session.token, "/v1/connect", frozen);
 			}
 			return await render(ctx);
 		} catch (error) {
+			if (error instanceof InventoryApiError) {
+				if (error.code === "operation_not_found") {
+					const saved = await ctx.kv.getVersioned<unknown>("state:connection-intent");
+					if (saved && intentSchema.parse(saved.value).requestId === activeRequestId) await ctx.kv.compareAndDelete("state:connection-intent", saved.revision);
+					return notice("Operation unavailable", "The selected operation is not owned by this account. Reload Inventory to select an owned operation or create a new one.");
+				}
+				return notice("Connection request rejected", "This site already has a different connection or the original request was changed. Reload Inventory to inspect its current status.");
+			}
 			if (error instanceof Error && error.message === "sign_in_required") {
 				const stored = await readSession(ctx);
 				if (stored) await ctx.settings.compareAndDelete("connectionSession", stored.revision);

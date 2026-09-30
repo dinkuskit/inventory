@@ -49,6 +49,20 @@
           "review_source_identity": null,
           "to": "implemented",
           "verification_ref": null
+        },
+        {
+          "at": "2026-09-30T01:37:30+00:00",
+          "choice": "DinkusKit operates the default hosted Inventory service. Shop owners install the sandboxed EmDash Registry plugin and configure inventory through EmDash without configuring Cloudflare, deploying Workers, or copying infrastructure credentials. The Inventory service remains the sole stock authority per pool.",
+          "from": "implemented",
+          "implementation_ref": "file:src/cloudflare/hosted-worker.ts",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
         }
       ],
       "id": "hosted-default-001",
@@ -61,10 +75,10 @@
       "review_ref": null,
       "review_result": null,
       "review_source_identity": null,
-      "status": "implemented",
+      "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-30T01:24:50+00:00",
-      "verification_ref": null
+      "updated_at": "2026-09-30T01:37:30+00:00",
+      "verification_ref": "file:.grilltrack/proof/hosted-onboarding/PROOF.md"
     },
     {
       "baseline_ref": "git:1228ed5f0ff74b8e5a6e303a1fe54698b04de441",
@@ -106,6 +120,20 @@
           "review_source_identity": null,
           "to": "implemented",
           "verification_ref": null
+        },
+        {
+          "at": "2026-09-30T01:37:30+00:00",
+          "choice": "Yes. Install Inventory from the EmDash Registry, click Connect Inventory, sign in or create a DinkusKit account, name the first stock location, then start adding stock. DinkusKit provisions the infrastructure automatically. Returning users can connect an existing inventory operation. Daily inventory work remains inside EmDash.",
+          "from": "implemented",
+          "implementation_ref": "file:plugins/emdash-inventory/src/plugin.ts",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
         }
       ],
       "id": "account-connect-002",
@@ -118,10 +146,10 @@
       "review_ref": null,
       "review_result": null,
       "review_source_identity": null,
-      "status": "implemented",
+      "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-30T01:24:50+00:00",
-      "verification_ref": null
+      "updated_at": "2026-09-30T01:37:30+00:00",
+      "verification_ref": "file:.grilltrack/proof/hosted-onboarding/PROOF.md"
     },
     {
       "baseline_ref": "git:1228ed5f0ff74b8e5a6e303a1fe54698b04de441",
@@ -163,6 +191,20 @@
           "review_source_identity": null,
           "to": "implemented",
           "verification_ref": null
+        },
+        {
+          "at": "2026-09-30T01:37:30+00:00",
+          "choice": "Yes. Initial hosted Inventory access is a trial experience with no payment details required to connect and begin using Inventory. Trial duration, usage limits, pricing, and conversion policy remain undecided; this decision does not promise unlimited or permanently free service.",
+          "from": "implemented",
+          "implementation_ref": "file:plugins/emdash-inventory/src/plugin.ts",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
         }
       ],
       "id": "trial-access-003",
@@ -175,10 +217,10 @@
       "review_ref": null,
       "review_result": null,
       "review_source_identity": null,
-      "status": "implemented",
+      "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-30T01:24:50+00:00",
-      "verification_ref": null
+      "updated_at": "2026-09-30T01:37:30+00:00",
+      "verification_ref": "file:.grilltrack/proof/hosted-onboarding/PROOF.md"
     }
   ],
   "last_activation": {
@@ -186,12 +228,19 @@
     "mechanism": "implicit"
   },
   "last_pause": null,
-  "pause": null,
+  "pause": {
+    "artifact_refs": [
+      "https://github.com/dinkuskit/inventory/pull/33"
+    ],
+    "next_safe_action": "Review draft PR 33, then scope and authorize the real account provider integration without claiming local fixtures prove the hosted product.",
+    "paused_at": "2026-09-30T01:37:30+00:00",
+    "reason": "Bounded local setup slice verified and draft PR opened; formal review deferred. Real account identity, site grants, renewal, live hosting and Registry integration remain unproven."
+  },
   "predecessor_track_id": "gt-20260926165857-2cce99",
   "recommendation": null,
   "schema_version": "grilltrack/v0.1",
-  "status": "active",
+  "status": "paused",
   "title": "Hosted Inventory installation through EmDash",
   "track_id": "gt-20260930005601-551c1b",
-  "updated_at": "2026-09-30T01:24:50+00:00"
+  "updated_at": "2026-09-30T01:37:30+00:00"
 }
