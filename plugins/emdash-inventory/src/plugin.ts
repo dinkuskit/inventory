@@ -198,34 +198,52 @@ async function pollStoreConnect(ctx: PluginContext, adminId: string) {
 		throw new StoreConnectError("challenge_expired");
 	}
 	if (session.nextPoll > Date.now()) return;
-	const pollRevision = await saveSession(ctx, { ...session, nextPoll: Date.now() + session.interval }, stored.revision);
+	const pollRevision = await saveSession(ctx, { ...session, nextPoll: session.expiresAt }, stored.revision);
 	const reserved = await readSession(ctx);
 	if (!reserved || reserved.session.phase !== "challenge" || reserved.session.connectionId !== session.connectionId || reserved.session.initiatingAdminId !== session.initiatingAdminId) return;
 	const activeRevision = pollRevision ?? reserved.revision;
-	const { response, body } = await fetchJson(ctx, WEBSITE + "/api/store-connections/token", {
-		method: "POST", headers: { "Content-Type": "application/json" },
+	let terminal = false;
+	try {
+		const { response, body } = await fetchJson(ctx, WEBSITE + "/api/store-connections/token", {
+			method: "POST", headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ client_id: STORE_CONNECT_CLIENT_ID, connection_id: session.connectionId, code_verifier: session.codeVerifier }),
-	});
-	if (!response.ok) {
-		const pending = tokenPendingSchema.safeParse(body);
-		if (pending.success) return;
-		const failure = tokenFailureSchema.safeParse(body);
-		if (failure.success && failure.data.error === "slow_down") {
-			await saveSession(ctx, { ...session, interval: session.interval + 5000, nextPoll: Date.now() + session.interval + 5000 }, activeRevision);
-			return;
+		});
+		if (!response.ok) {
+			const pending = tokenPendingSchema.safeParse(body);
+			if (pending.success) {
+				await saveSession(ctx, { ...session, nextPoll: Date.now() + session.interval }, activeRevision);
+				return;
+			}
+			const failure = tokenFailureSchema.safeParse(body);
+			if (failure.success && failure.data.error === "slow_down") {
+				const nextInterval = session.interval + 5000;
+				await saveSession(ctx, { ...session, interval: nextInterval, nextPoll: Date.now() + nextInterval }, activeRevision);
+				return;
+			}
+			if (failure.success && ["access_denied", "expired_token", "invalid_grant", "already_redeemed", "proof_mismatch", "ownership_conflict"].includes(failure.data.error)) {
+				terminal = true;
+				await deleteProof(ctx, session.connectionId);
+				await clearSession(ctx, activeRevision);
+				if (failure.data.error === "already_redeemed") throw new StoreConnectError("unexpected_website_response");
+				return;
+			}
+			throw new StoreConnectError("unexpected_website_response");
 		}
-		if (failure.success && ["access_denied", "expired_token", "invalid_grant", "already_redeemed", "proof_mismatch", "ownership_conflict"].includes(failure.data.error)) {
-			await deleteProof(ctx, session.connectionId);
-			await clearSession(ctx, activeRevision);
-			if (failure.data.error === "already_redeemed") throw new StoreConnectError("unexpected_website_response");
-			return;
+		const token = tokenSuccessSchema.parse(body);
+		if (token.site_id !== session.siteId) throw new StoreConnectError("unexpected_website_response");
+		terminal = true;
+		await saveSession(ctx, { phase: "token", token: token.access_token, expiresAt: Date.now() + token.expires_in * 1000 }, activeRevision);
+		await deleteProof(ctx, session.connectionId);
+	} catch (error) {
+		if (!terminal) {
+			try {
+				await saveSession(ctx, { ...session, nextPoll: Date.now() + session.interval }, activeRevision);
+			} catch {
+				// Ignore CAS failure if session was replaced or cleared concurrently
+			}
 		}
-		throw new StoreConnectError("unexpected_website_response");
+		throw error;
 	}
-	const token = tokenSuccessSchema.parse(body);
-	if (token.site_id !== session.siteId) throw new StoreConnectError("unexpected_website_response");
-	await saveSession(ctx, { phase: "token", token: token.access_token, expiresAt: Date.now() + token.expires_in * 1000 }, activeRevision);
-	await deleteProof(ctx, session.connectionId);
 }
 
 async function render(ctx: PluginContext, adminId: string): Promise<BlockResponse> {
