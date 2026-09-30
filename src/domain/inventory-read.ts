@@ -8,12 +8,14 @@ import type { InventoryCommandResult } from "./location-registry.ts";
 import type { StockAdjustmentReceiptV2 } from "../features/stock-adjustment/index.ts";
 import type { StockTransferReceiptV2 } from "../features/stock-transfer/index.ts";
 import type { StockReservationReceiptV2 } from "../features/stock-reservation/index.ts";
+import type { CheckoutInventoryReceiptV2 } from "../features/checkout-inventory/index.ts";
 
 export type InventoryStockReceiptV2 =
 	| OpeningBalanceReceiptV2
 	| StockAdjustmentReceiptV2
 	| StockTransferReceiptV2
-	| StockReservationReceiptV2;
+	| StockReservationReceiptV2
+	| CheckoutInventoryReceiptV2;
 
 export const BALANCE_READ_RESULT_SCHEMA =
 	"dinkuskit.inventory.balance-read-result/v1" as const;

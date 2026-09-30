@@ -14,7 +14,7 @@
   },
   "scripts": {
     "test": "npm run test:node && npm run test:cloudflare",
-    "test:node": "node --experimental-sqlite --experimental-strip-types --test tests/workflows/*.test.mjs tests/opening-balance/*.test.mjs tests/locations/*.test.mjs tests/inventory/*.test.mjs tests/managed-sku/*.test.mjs tests/stock-adjustment/*.test.mjs tests/stock-transfer/*.test.mjs tests/stock-reservation/*.test.mjs tests/hosted-onboarding/*.test.mjs",
+    "test:node": "node --experimental-sqlite --experimental-strip-types --test tests/workflows/*.test.mjs tests/opening-balance/*.test.mjs tests/locations/*.test.mjs tests/inventory/*.test.mjs tests/managed-sku/*.test.mjs tests/stock-adjustment/*.test.mjs tests/stock-transfer/*.test.mjs tests/stock-reservation/*.test.mjs tests/checkout-inventory/*.test.mjs tests/hosted-onboarding/*.test.mjs",
     "test:cloudflare": "vitest run --config vitest.config.ts",
     "typecheck:cloudflare": "tsc --project tsconfig.cloudflare.json",
     "audit:features": "node scripts/check-architecture.mjs",
@@ -28,6 +28,7 @@
     "verify:stock-adjustment": "bin/verify-stock-adjustment",
     "verify:stock-transfer": "bin/verify-stock-transfer",
     "verify:stock-reservation": "bin/verify-stock-reservation",
+    "verify:checkout-inventory": "bin/verify-checkout-inventory",
     "proof:aggregate-stock-read:real": "bin/prove-aggregate-stock-read-real",
     "proof:stock-adjustment:real": "bin/prove-stock-adjustment-real",
     "proof:stock-reservation:real": "bin/prove-stock-reservation-real",

@@ -4,11 +4,11 @@
   "current_focus": {
     "cadence": "sequential",
     "confirmed": true,
-    "confirmed_at": "2026-09-30T01:02:01+00:00",
-    "domain": "Default hosting and first-run Inventory installation experience",
-    "started_at": "2026-09-30T00:56:01+00:00",
+    "confirmed_at": "2026-09-30T14:35:27+00:00",
+    "domain": "checkout-inventory-port",
+    "started_at": "2026-09-30T14:35:27+00:00",
     "status": "confirmed",
-    "summary": "The first implementation slice proves account connection, automatic provisioning, and explicit reconnect to an owned existing operation without creating duplicate inventory; stock administration stays inside EmDash. Preserve DinkusKit-hosted default service, standard sandboxed Registry plugin and trial access without payment details. Prove local service, database and exact pinned EmDash runtime using labeled synthetic identity fixtures where a real account service is unavailable; do not claim hosted identity, publication or deployment."
+    "summary": "Implement the accepted Inventory-only whole-basket CheckoutInventoryPort adapter using existing single-pool transaction machinery. Prove no partial basket, no oversell, durable response-loss/restart recovery, duplicate idempotency, terminal release races and binding conflicts. Do not alter Commerce/Payments, stock truth ownership or independent TTL policy."
   },
   "decisions": [
     {
@@ -221,20 +221,153 @@
       "superseded_by": null,
       "updated_at": "2026-09-30T01:37:30+00:00",
       "verification_ref": "file:.grilltrack/proof/hosted-onboarding/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:1228ed5f0ff74b8e5a6e303a1fe54698b04de441",
+      "candidate_refs": [],
+      "choice": "Reserve at Checkout: one explicit provider/pool/location, all basket lines atomically held or durable terminal rejection. Unknown outcomes fail closed and recover the original operation; release permanently fences delayed, concurrent and in-flight reserve. Paid stock remains reserved until fulfillment; no independent TTL release.",
+      "context_ref": "docs/CHARTER.md; Commerce CheckoutInventoryPort; bounded user route",
+      "created_at": "2026-09-30T14:35:27+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [],
+      "domain": "checkout-inventory-port",
+      "history": [
+        {
+          "at": "2026-09-30T14:35:27+00:00",
+          "choice": "Reserve at Checkout: one explicit provider/pool/location, all basket lines atomically held or durable terminal rejection. Unknown outcomes fail closed and recover the original operation; release permanently fences delayed, concurrent and in-flight reserve. Paid stock remains reserved until fulfillment; no independent TTL release.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-30T14:35:27+00:00",
+          "choice": "Reserve at Checkout: one explicit provider/pool/location, all basket lines atomically held or durable terminal rejection. Unknown outcomes fail closed and recover the original operation; release permanently fences delayed, concurrent and in-flight reserve. Paid stock remains reserved until fulfillment; no independent TTL release.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-30T14:35:27+00:00",
+          "choice": "Reserve at Checkout: one explicit provider/pool/location, all basket lines atomically held or durable terminal rejection. Unknown outcomes fail closed and recover the original operation; release permanently fences delayed, concurrent and in-flight reserve. Paid stock remains reserved until fulfillment; no independent TTL release.",
+          "from": "implemented",
+          "implementation_ref": "file:src/features/checkout-inventory/",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-30T16:00:29+00:00",
+          "choice": "Reserve at Checkout: one explicit provider/pool/location, all basket lines atomically held or durable terminal rejection. Unknown outcomes fail closed and recover the original operation; release permanently fences delayed, concurrent and in-flight reserve. Paid stock remains reserved until fulfillment; no independent TTL release.",
+          "from": "verified",
+          "implementation_ref": "file:src/features/checkout-inventory/",
+          "note": "adjudicated review requires a fix",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "needs_reverification",
+          "verification_ref": ".grilltrack/proof/checkout-reservations/PROOF.md"
+        },
+        {
+          "at": "2026-09-30T16:01:31+00:00",
+          "choice": "Reserve at Checkout: one explicit provider/pool/location, all basket lines atomically held or durable terminal rejection. Unknown outcomes fail closed and recover the original operation; release permanently fences delayed, concurrent and in-flight reserve. Paid stock remains reserved until fulfillment; no independent TTL release.",
+          "from": "needs_reverification",
+          "implementation_ref": "file:src/features/checkout-inventory/",
+          "note": "bounded implementation recorded",
+          "repair_required": true,
+          "review_classifications": [
+            "required_fix"
+          ],
+          "review_ref": ".grilltrack/proof/checkout-reservations/accepted-p1-finding.md",
+          "review_result": "findings",
+          "review_source_identity": "git:dc91bf628d0c25340c18fe3a83757275ee0ac19f",
+          "to": "implemented",
+          "verification_ref": ".grilltrack/proof/checkout-reservations/PROOF.md"
+        },
+        {
+          "at": "2026-09-30T16:04:48+00:00",
+          "choice": "Reserve at Checkout: one explicit provider/pool/location, all basket lines atomically held or durable terminal rejection. Unknown outcomes fail closed and recover the original operation; release permanently fences delayed, concurrent and in-flight reserve. Paid stock remains reserved until fulfillment; no independent TTL release.",
+          "from": "implemented",
+          "implementation_ref": "file:src/features/checkout-inventory/execute.ts",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": ".grilltrack/proof/checkout-reservations/PROOF.md"
+        }
+      ],
+      "id": "checkout-basket-001",
+      "implementation_ref": "file:src/features/checkout-inventory/execute.ts",
+      "question": "What Inventory adapter contract is accepted for Checkout?",
+      "rationale": "Explicit bounded implementation route confirms these settled semantics.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [
+            "required_fix"
+          ],
+          "ref": ".grilltrack/proof/checkout-reservations/accepted-p1-finding.md",
+          "result": "findings",
+          "reviewed_at": "2026-09-30T16:00:29+00:00",
+          "source_identity": "git:dc91bf628d0c25340c18fe3a83757275ee0ac19f"
+        }
+      ],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-09-30T16:04:48+00:00",
+      "verification_ref": ".grilltrack/proof/checkout-reservations/PROOF.md"
     }
   ],
   "last_activation": {
-    "at": "2026-09-30T00:56:01+00:00",
+    "at": "2026-09-30T16:14:39+00:00",
     "mechanism": "implicit"
   },
-  "last_pause": null,
+  "last_pause": {
+    "artifact_refs": [
+      ".grilltrack/proof/checkout-reservations/PROOF.md",
+      ".grilltrack/proof/checkout-reservations/accepted-p1-finding.md"
+    ],
+    "next_safe_action": "Assigned formal reviewer reviews the uncommitted repaired source; parent independently verifies and publishes the normal fix to PR 36. Do not fabricate clean review or dispatch from this repair.",
+    "paused_at": "2026-09-30T16:04:48+00:00",
+    "reason": "Required release-fence identity repair verified locally; assigned formal reviewer will review the changed source. No clean formal review recorded. Merge, push, and deploy remain separately gated.",
+    "resumed_at": "2026-09-30T16:14:39+00:00"
+  },
   "pause": {
     "artifact_refs": [
-      "https://github.com/dinkuskit/inventory/pull/33"
+      ".grilltrack/proof/checkout-reservations/PROOF.md",
+      ".grilltrack/proof/checkout-reservations/accepted-p1-finding.md"
     ],
-    "next_safe_action": "Review draft PR 33, then scope and authorize the real account provider integration without claiming local fixtures prove the hosted product.",
-    "paused_at": "2026-09-30T01:37:30+00:00",
-    "reason": "Bounded local setup slice verified and draft PR opened; formal review deferred. Real account identity, site grants, renewal, live hosting and Registry integration remain unproven."
+    "next_safe_action": "Publish the verified focused fix to PR 36, then coordinator routes the immutable repaired head and curated proof to a separate Dinkus formal review. Preserve rail ownership; merge and deployment require explicit human approval.",
+    "paused_at": "2026-09-30T16:14:40+00:00",
+    "reason": "Required release-fence identity repair independently verified. Normal fix publication to existing PR 36 is authorized; formal review, merge, and deployment are not claimed complete."
   },
   "predecessor_track_id": "gt-20260926165857-2cce99",
   "recommendation": null,
@@ -242,5 +375,5 @@
   "status": "paused",
   "title": "Hosted Inventory installation through EmDash",
   "track_id": "gt-20260930005601-551c1b",
-  "updated_at": "2026-09-30T01:37:30+00:00"
+  "updated_at": "2026-09-30T16:14:40+00:00"
 }

@@ -924,6 +924,21 @@ class SqliteInventoryTransaction implements InventoryTransaction {
 			if (entry.reservation.poolId !== this.#poolId) {
 				throw new Error("A transaction cannot cross inventory pools.");
 			}
+			if (entry.previous === null) {
+				this.#database.prepare(
+					`INSERT INTO inventory_reservations
+					   (pool_id, reservation_id, order_line_key, status, version, reservation_json)
+					 VALUES (?, ?, ?, ?, ?, ?)`,
+				).run(
+					entry.reservation.poolId,
+					entry.reservation.reservationId,
+					entry.orderLineKey,
+					entry.reservation.status,
+					Number(entry.reservation.version),
+					JSON.stringify(entry.reservation),
+				);
+				continue;
+			}
 			const updated = this.#database.prepare(
 				`UPDATE inventory_reservations
 				 SET status = ?, version = ?, reservation_json = ?

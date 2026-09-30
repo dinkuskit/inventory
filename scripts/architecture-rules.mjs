@@ -10,6 +10,7 @@ const FEATURE_IDS = [
 	"dinkus.stock-adjustment",
 	"dinkus.stock-transfer",
 	"dinkus.stock-reservation",
+	"dinkus.checkout-inventory",
 	"dinkus.hosted-onboarding",
 ];
 
@@ -21,6 +22,7 @@ const FEATURE_STRUCTURE = new Map([
 	["dinkus.stock-adjustment", "migrated feature"],
 	["dinkus.stock-transfer", "migrated feature"],
 	["dinkus.stock-reservation", "migrated feature"],
+	["dinkus.checkout-inventory", "migrated feature"],
 	["dinkus.hosted-onboarding", "migrated feature"],
 ]);
 
@@ -56,6 +58,15 @@ const FEATURE_SHARED_DEPENDENCIES = new Map([
 			"src/storage/inventory-store.ts",
 		]),
 	],
+	[
+		"checkout-inventory",
+		new Set([
+			"src/domain/exact-decimal.ts",
+			"src/domain/opening-balance.ts",
+			"src/storage/inventory-store.ts",
+			"src/features/stock-reservation/index.ts",
+		]),
+	],
 ]);
 
 const REQUIRED_FILES = [
@@ -79,6 +90,9 @@ const REQUIRED_FILES = [
 	"src/features/stock-reservation/domain.ts",
 	"src/features/stock-reservation/execute.ts",
 	"src/features/stock-reservation/index.ts",
+	"src/features/checkout-inventory/domain.ts",
+	"src/features/checkout-inventory/execute.ts",
+	"src/features/checkout-inventory/index.ts",
 	"tests/managed-sku/public-entry.test.mjs",
 	"tests/stock-adjustment/domain.test.mjs",
 	"tests/stock-adjustment/preview-confirm-stock-adjustment.test.mjs",
@@ -101,6 +115,14 @@ const REQUIRED_FILES = [
 	"tests/cloudflare/stock-reservation.test.mjs",
 	"bin/verify-stock-reservation",
 	"skills/stock-reservation-verification/SKILL.md",
+	"tests/checkout-inventory/domain.test.mjs",
+	"tests/checkout-inventory/public-entry.test.mjs",
+	"tests/checkout-inventory/reserve-release.test.mjs",
+	"tests/cloudflare/checkout-inventory.test.mjs",
+	"bin/verify-checkout-inventory",
+	"skills/checkout-inventory-verification/SKILL.md",
+	"tools/checkout-inventory-local-proof.ts",
+	"wrangler.checkout-inventory-proof.jsonc",
 	"tests/workflows/repository-architecture.test.mjs",
 	".github/workflows/repo-contract.yml",
 ];
@@ -313,6 +335,9 @@ export async function auditInventoryArchitecture(rootInput) {
 	}
 	if (!rootEntry.includes('from "./features/stock-transfer/index.ts"')) {
 		findings.push("src/index.ts must compose the stock-transfer public entry");
+	}
+	if (!rootEntry.includes('from "./features/checkout-inventory/index.ts"')) {
+		findings.push("src/index.ts must compose the checkout-inventory public entry");
 	}
 	return findings;
 }

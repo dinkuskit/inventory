@@ -1,0 +1,8 @@
+{
+  "proof": "real-local-wrangler-durable-object",
+  "phase": "race",
+  "remote": false,
+  "outcomes": ["rejected", "reserved"],
+  "fence": "released",
+  "afterFence": "rejected"
+}

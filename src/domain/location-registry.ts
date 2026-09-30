@@ -22,6 +22,10 @@ import type {
 	StockReservationReceiptV2,
 	StockReservationResult,
 } from "../features/stock-reservation/index.ts";
+import type {
+	CheckoutInventoryReceiptV2,
+	CheckoutInventoryResult,
+} from "../features/checkout-inventory/index.ts";
 
 export const CREATE_LOCATION_TYPE = "location.create" as const;
 export const RENAME_LOCATION_TYPE = "location.rename" as const;
@@ -159,13 +163,15 @@ export type InventoryCommandResult =
 	| RegisterManagedSkuResult
 	| StockAdjustmentResult
 	| StockTransferResult
-	| StockReservationResult;
+	| StockReservationResult
+	| CheckoutInventoryResult;
 export type InventoryReceiptV2 =
 	| OpeningBalanceReceiptV2
 	| LocationReceiptV2
 	| StockAdjustmentReceiptV2
 	| StockTransferReceiptV2
-	| StockReservationReceiptV2;
+	| StockReservationReceiptV2
+	| CheckoutInventoryReceiptV2;
 
 export type ListLocationsInput = Readonly<{
 	poolId: string;
