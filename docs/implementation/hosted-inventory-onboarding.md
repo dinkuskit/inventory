@@ -27,8 +27,8 @@ screens are outside this setup slice.
 
 ## Integration boundary
 
-The website half-contract is present at the Better Auth counterpart
-`.grilltrack/work/better-auth/CONTRACT.md`. It agrees on account key, JWT
+The website half-contract is the committed Store Connect handoff in
+[store-connect](store-connect.md). It agrees on account key, JWT
 claims, and refusal of caller-supplied site identity. It still fail-closes
 merchant-session `POST /account/tokens` and has not adopted the plugin
 back-channel (`POST /api/store-connections`, `POST /api/store-connections/token`,

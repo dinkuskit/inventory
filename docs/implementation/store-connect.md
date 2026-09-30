@@ -33,11 +33,12 @@ an active challenge.
 
 ## Website proposal
 
-This repository does not own website routes. The published handoff is
-`.grilltrack/work/store-connect/CONTRACT.md`. The website owner has accepted
-`/api/store-connections`, `/api/store-connections/token`, public `store-proof`
-fetch, the fixed callback and authoritative epoch-ms `expires_at` as the v1
-integration target. The strict response schemas in this feature are agreed.
+This repository does not own website routes. The published plugin handoff is
+this file plus the strict schemas in `src/features/store-connect/`. The website
+owner has accepted `/api/store-connections`, `/api/store-connections/token`,
+public `store-proof` fetch, the fixed callback and authoritative epoch-ms
+`expires_at` as the v1 integration target. Those schemas are the auditable
+contract; website implementation remains pending.
 These routes are not yet an implemented website claim. The plugin cannot use
 website cookies and does not call merchant-session `/account/tokens`. Lost token
 success is not silently replaced; the plugin retries the original

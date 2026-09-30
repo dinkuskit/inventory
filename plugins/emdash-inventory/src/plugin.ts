@@ -14,6 +14,7 @@ import {
 	canonicalizeSiteOrigin,
 	createPkcePair,
 	createProofReceipt,
+	interpretStoredConnectionSession,
 	proofReceiptSchema,
 	publicProofFor,
 	requireBoundAdministrator,
@@ -21,7 +22,6 @@ import {
 	resumeActiveChallenge,
 	startRequestSchema,
 	startResponseSchema,
-	storeConnectSessionSchema,
 	tokenFailureSchema,
 	tokenPendingSchema,
 	tokenSuccessSchema,
@@ -74,7 +74,13 @@ function siteOrigin(ctx: PluginContext): string {
 async function readSession(ctx: PluginContext) {
 	const stored = await ctx.settings.getVersioned<string>("connectionSession");
 	if (!stored) return null;
-	return { session: storeConnectSessionSchema.parse(JSON.parse(stored.value)), revision: stored.revision };
+	const interpreted = interpretStoredConnectionSession(JSON.parse(stored.value));
+	if (interpreted.kind === "current") return { session: interpreted.session, revision: stored.revision };
+	if (interpreted.kind === "legacy-device") {
+		if (!await clearSession(ctx, stored.revision)) throw new Error("Session changed; reload Inventory");
+		return null;
+	}
+	throw new Error("Session changed; reload Inventory");
 }
 async function saveSession(ctx: PluginContext, session: Session, revision: string | null) {
 	const result = await ctx.settings.compareAndSet("connectionSession", revision, JSON.stringify(session));

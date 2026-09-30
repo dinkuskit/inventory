@@ -216,6 +216,30 @@ export const tokenSessionSchema = z.object({
 export const storeConnectSessionSchema = z.discriminatedUnion("phase", [challengeSessionSchema, tokenSessionSchema]);
 export type StoreConnectSession = z.infer<typeof storeConnectSessionSchema>;
 
+// Current-main OAuth device sign-in shape. Store Connect does not resume it;
+// the plugin must clear it before parsing the challenge/token union.
+export const legacyDeviceSessionSchema = z.object({
+	phase: z.literal("device"),
+	deviceCode: z.string(),
+	userCode: z.string(),
+	verificationUri: z.string().url(),
+	expiresAt: z.number(),
+	interval: z.number(),
+	nextPoll: z.number(),
+});
+
+export type StoredConnectionSession =
+	| { kind: "current"; session: StoreConnectSession }
+	| { kind: "legacy-device" }
+	| { kind: "invalid" };
+
+export function interpretStoredConnectionSession(raw: unknown): StoredConnectionSession {
+	const current = storeConnectSessionSchema.safeParse(raw);
+	if (current.success) return { kind: "current", session: current.data };
+	if (legacyDeviceSessionSchema.safeParse(raw).success) return { kind: "legacy-device" };
+	return { kind: "invalid" };
+}
+
 export function resumeActiveChallenge(session: StoreConnectSession | null, adminId: string, now: number): StoreConnectSession | null {
 	if (!session || session.phase !== "challenge" || session.expiresAt <= now) return null;
 	requireOriginatingAdministrator(session.initiatingAdminId, adminId);

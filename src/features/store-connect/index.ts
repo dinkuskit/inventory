@@ -14,6 +14,8 @@ export {
 	challengeSessionSchema,
 	createPkcePair,
 	createProofReceipt,
+	interpretStoredConnectionSession,
+	legacyDeviceSessionSchema,
 	pkceMatches,
 	proofReceiptSchema,
 	proofReceiptUrl,
@@ -33,6 +35,7 @@ export {
 } from "./protocol.ts";
 export type {
 	ProofReceipt,
+	StoredConnectionSession,
 	StoreConnectSession,
 	StoreConnectStartRequest,
 	StoreConnectStartResponse,
