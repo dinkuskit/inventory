@@ -91,6 +91,8 @@ jobs:
           if any(not re.fullmatch(r'[0-9a-f]{40}', sha) for sha in (base, head)): raise SystemExit('Invalid source tuple')
           if base != pull['base']['sha']: raise SystemExit('Base moved during admission')
           publish = 'true' if kind != 'workflow_dispatch' else os.environ['MANUAL_PUBLISH']
+          # Author-only reruns refresh evidence without publication authority.
+          if kind == 'issue_comment' and not maintainer: publish = 'false'
           if publish not in {'true', 'false'}: raise SystemExit('Invalid publication mode')
           with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
               out.write(f'requested=true\npr_number={number}\nbase_sha={base}\nhead_sha={head}\npublish={publish}\n')
