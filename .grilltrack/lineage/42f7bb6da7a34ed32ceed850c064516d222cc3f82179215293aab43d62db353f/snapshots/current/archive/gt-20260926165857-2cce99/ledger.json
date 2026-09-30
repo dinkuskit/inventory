@@ -1,0 +1,301 @@
+{
+  "closeout": {
+    "closed_at": "2026-09-26T19:18:41+00:00",
+    "confirmed_by": "user",
+    "deferred_decisions": [],
+    "proof_refs": [
+      ".grilltrack/proof/cycle-25/"
+    ],
+    "reason": "Undo Delivered kernel is merged and verified. Bobby confirmed close.",
+    "reviews": [
+      {
+        "classifications": [],
+        "decision_id": "undo-delivered-scope-001",
+        "ref": ".grilltrack/proof/cycle-25/REVIEW.md",
+        "result": "clean",
+        "source_identity": "git:1563ac30f9f6c564498dccc4ab016b33649ef92b"
+      },
+      {
+        "classifications": [],
+        "decision_id": "undo-delivered-counts-002",
+        "ref": ".grilltrack/proof/cycle-25/REVIEW.md",
+        "result": "clean",
+        "source_identity": "git:1563ac30f9f6c564498dccc4ab016b33649ef92b"
+      },
+      {
+        "classifications": [],
+        "decision_id": "undo-delivered-command-003",
+        "ref": ".grilltrack/proof/cycle-25/REVIEW.md",
+        "result": "clean",
+        "source_identity": "git:1563ac30f9f6c564498dccc4ab016b33649ef92b"
+      }
+    ],
+    "summary": "stock.undo_deliver returns one Delivered ticket to Packed, status-only, with durable replay and rejection. PR #30 merged at 1563ac30f9f6c564498dccc4ab016b33649ef92b.",
+    "superseded_decisions": [],
+    "verified_decisions": [
+      "undo-delivered-scope-001",
+      "undo-delivered-counts-002",
+      "undo-delivered-command-003"
+    ]
+  },
+  "created_at": "2026-09-26T16:58:57+00:00",
+  "current_focus": {
+    "cadence": "sequential",
+    "confirmed": true,
+    "confirmed_at": "2026-09-26T17:37:47+00:00",
+    "domain": "packing/revert-from-delivered",
+    "started_at": "2026-09-26T16:58:57+00:00",
+    "status": "closed",
+    "summary": "Build platform-neutral stock.undo_deliver: Commerce names one Delivered ticket it already has, never an order number. The whole ticket returns to Packed. One ticket per command. Status only: on-hand, reserved, and available do not change. Partial deliveries, partial packs, bulk undo, GUI, live Commerce, Woo, Katana, ShipTheory, and deploy wait. Exact command-ID retry returns the original result. Verify the durable transition, eligibility rejection, unchanged balances, and retry behavior."
+  },
+  "decisions": [
+    {
+      "baseline_ref": null,
+      "candidate_refs": [],
+      "choice": "Undo returns the whole Delivered ticket to Packed. Partial deliveries and partial packs are deferred until after a usable product exists.",
+      "context_ref": "docs/CHARTER.md; predecessor gt-20260926150907-b6e31e",
+      "created_at": "2026-09-26T17:23:24+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [],
+      "domain": "packing/revert-from-delivered",
+      "history": [
+        {
+          "at": "2026-09-26T17:23:24+00:00",
+          "choice": "Undo returns the whole Delivered ticket to Packed. Partial deliveries and partial packs are deferred until after a usable product exists.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-26T17:47:01+00:00",
+          "choice": "Undo returns the whole Delivered ticket to Packed. Partial deliveries and partial packs are deferred until after a usable product exists.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-26T17:47:01+00:00",
+          "choice": "Undo returns the whole Delivered ticket to Packed. Partial deliveries and partial packs are deferred until after a usable product exists.",
+          "from": "implemented",
+          "implementation_ref": "src/features/stock-reservation/",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "undo-delivered-scope-001",
+      "implementation_ref": "src/features/stock-reservation/",
+      "question": "Does undo put the whole packed ticket back on Packed, or can they undo one line of a multi-line order (hats Delivered, shirts stay Delivered)?",
+      "rationale": "Bobby chose whole-ticket undo and explicitly deferred partial deliveries and partial packs until the product is usable.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-25/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-09-26T19:18:33+00:00",
+          "source_identity": "git:1563ac30f9f6c564498dccc4ab016b33649ef92b"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-25/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "git:1563ac30f9f6c564498dccc4ab016b33649ef92b",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-09-26T19:18:33+00:00",
+      "verification_ref": "bin/verify-inventory full (Node 22.23.1)"
+    },
+    {
+      "baseline_ref": null,
+      "candidate_refs": [],
+      "choice": "Undo changes the ticket status from Delivered back to Packed only. On-hand, reserved, and available do not change.",
+      "context_ref": "docs/CHARTER.md; predecessor gt-20260926150907-b6e31e",
+      "created_at": "2026-09-26T17:24:07+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "undo-delivered-scope-001"
+      ],
+      "domain": "packing/revert-from-delivered",
+      "history": [
+        {
+          "at": "2026-09-26T17:24:07+00:00",
+          "choice": "Undo changes the ticket status from Delivered back to Packed only. On-hand, reserved, and available do not change.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-26T17:47:01+00:00",
+          "choice": "Undo changes the ticket status from Delivered back to Packed only. On-hand, reserved, and available do not change.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-26T17:47:01+00:00",
+          "choice": "Undo changes the ticket status from Delivered back to Packed only. On-hand, reserved, and available do not change.",
+          "from": "implemented",
+          "implementation_ref": "src/features/stock-reservation/",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "undo-delivered-counts-002",
+      "implementation_ref": "src/features/stock-reservation/",
+      "question": "Should undo only move that ticket\u2019s status from Delivered back to Packed\u2014no stock-count change, since counts already dropped at pack?",
+      "rationale": "Bobby confirmed the status-only outcome; counts already changed at pack.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-25/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-09-26T19:18:33+00:00",
+          "source_identity": "git:1563ac30f9f6c564498dccc4ab016b33649ef92b"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-25/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "git:1563ac30f9f6c564498dccc4ab016b33649ef92b",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-09-26T19:18:33+00:00",
+      "verification_ref": "bin/verify-inventory full (Node 22.23.1)"
+    },
+    {
+      "baseline_ref": null,
+      "candidate_refs": [],
+      "choice": "One undo command names one Delivered ticket and returns it to Packed. Bulk selection and bulk undo are deferred.",
+      "context_ref": "docs/CHARTER.md; predecessor gt-20260926150907-b6e31e; user-supplied Katana screenshot",
+      "created_at": "2026-09-26T17:37:00+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "undo-delivered-counts-002"
+      ],
+      "domain": "packing/revert-from-delivered",
+      "history": [
+        {
+          "at": "2026-09-26T17:37:00+00:00",
+          "choice": "One undo command names one Delivered ticket and returns it to Packed. Bulk selection and bulk undo are deferred.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-26T17:47:01+00:00",
+          "choice": "One undo command names one Delivered ticket and returns it to Packed. Bulk selection and bulk undo are deferred.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-26T17:47:02+00:00",
+          "choice": "One undo command names one Delivered ticket and returns it to Packed. Bulk selection and bulk undo are deferred.",
+          "from": "implemented",
+          "implementation_ref": "src/features/stock-reservation/",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "undo-delivered-command-003",
+      "implementation_ref": "src/features/stock-reservation/",
+      "question": "If several tickets were marked Delivered by mistake, should one undo command restore all named tickets to Packed all-or-none, or undo only one ticket per command?",
+      "rationale": "Bobby prefers Katana\u2019s model: orders can be selected in bulk for delete, export, or print, but reverting Delivered requires opening the individual sales order and using its revert action. Inventory still names a ticket, not a Commerce order number.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": ".grilltrack/proof/cycle-25/REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-09-26T19:18:34+00:00",
+          "source_identity": "git:1563ac30f9f6c564498dccc4ab016b33649ef92b"
+        }
+      ],
+      "review_ref": ".grilltrack/proof/cycle-25/REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "git:1563ac30f9f6c564498dccc4ab016b33649ef92b",
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-09-26T19:18:34+00:00",
+      "verification_ref": "bin/verify-inventory full (Node 22.23.1)"
+    }
+  ],
+  "last_activation": {
+    "at": "2026-09-26T16:58:57+00:00",
+    "mechanism": "implicit"
+  },
+  "last_pause": null,
+  "pause": null,
+  "predecessor_track_id": "gt-20260926150907-b6e31e",
+  "recommendation": null,
+  "schema_version": "grilltrack/v0.1",
+  "status": "closed",
+  "title": "Dinkuskit Inventory undo Delivered back to Packed",
+  "track_id": "gt-20260926165857-2cce99",
+  "updated_at": "2026-09-26T19:18:41+00:00"
+}

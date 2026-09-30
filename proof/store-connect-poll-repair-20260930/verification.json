@@ -1,0 +1,37 @@
+{
+  "recorded_at": "2026-09-30T19:36:09.477835+00:00",
+  "base": "83a500e09172474dabf4de9cabc76029f7040a99",
+  "incoming_base": "57aa9521fdfbddcbde0bf79a70708fdd8e771582",
+  "incoming_head": "c06386a9c86f8a2c29b976539c238322b13f866b",
+  "source_sha256": {
+    "plugins/emdash-inventory/src/plugin.ts": "8755224ae522e3ad02bb6b667ef309a0f4cb6714c9899acf92d451fcc9baaccc",
+    "tests/store-connect/poll-cas-reread.test.mjs": "5fccaaa888c4f85e230bdf6185367c342a84c6f1eae520b6a72c4935727be8c4",
+    "src/features/store-connect/index.ts": "0239b0abd5f14c0c583015e44c828208f648674363fe5d330f11b2dd6be52497",
+    "src/features/store-connect/protocol.ts": "238ceb2c1d9b722c1d783185ca385c03e946ab356a8b96b30d8131a7b49d18b7",
+    "package.json": "9efd3c078100cd640888831cba9ed35bbc5fc7fd40df48276668c354b7b18229"
+  },
+  "checks": {
+    "verify-inventory-full": {
+      "exit_code": 0,
+      "raw_receipt_sha256": "41ce034660cc2b2258fc16d2d264927e04b279362497f0b1661bad6bf3ce1593"
+    },
+    "hosted-onboarding-proof": {
+      "exit_code": 0,
+      "raw_receipt_sha256": "1b92b61c59c0525417ab46cb022b8d5ac790aa1cc098dbe53ec99e70db9c5505"
+    }
+  },
+  "node_tests": {
+    "pass": 189,
+    "fail": 0
+  },
+  "cloudflare_tests": {
+    "pass": 29,
+    "fail": 0
+  },
+  "hosted_tests": {
+    "pass": 3,
+    "fail": 0
+  },
+  "dispatcher": "EmDash1.0.1 actual dispatcher/workerd, website simulation",
+  "formal_review": "pending"
+}

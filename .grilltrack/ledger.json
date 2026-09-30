@@ -1,85 +1,8 @@
 {
   "closeout": null,
-  "created_at": "2026-09-30T00:56:01+00:00",
-  "current_focus": {
-    "cadence": "sequential",
-    "confirmed": true,
-    "confirmed_at": "2026-09-30T14:35:27+00:00",
-    "domain": "checkout-inventory-port",
-    "started_at": "2026-09-30T14:35:27+00:00",
-    "status": "confirmed",
-    "summary": "Implement the accepted Inventory-only whole-basket CheckoutInventoryPort adapter using existing single-pool transaction machinery. Prove no partial basket, no oversell, durable response-loss/restart recovery, duplicate idempotency, terminal release races and binding conflicts. Do not alter Commerce/Payments, stock truth ownership or independent TTL policy."
-  },
+  "created_at": "2026-09-30T16:14:40+00:00",
+  "current_focus": null,
   "decisions": [
-    {
-      "baseline_ref": "git:1228ed5f0ff74b8e5a6e303a1fe54698b04de441",
-      "candidate_refs": [],
-      "choice": "DinkusKit operates the default hosted Inventory service. Shop owners install the sandboxed EmDash Registry plugin and configure inventory through EmDash without configuring Cloudflare, deploying Workers, or copying infrastructure credentials. The Inventory service remains the sole stock authority per pool.",
-      "context_ref": "file:docs/CHARTER.md#architecture-002;file:docs/CHARTER.md#emdash-plugin-distribution-016",
-      "created_at": "2026-09-30T00:56:01+00:00",
-      "deferred_reason": null,
-      "delivery_ref": null,
-      "dependencies": [],
-      "domain": "Default hosting and first-run Inventory installation experience",
-      "history": [
-        {
-          "at": "2026-09-30T00:56:01+00:00",
-          "choice": "DinkusKit operates the default hosted Inventory service. Shop owners install the sandboxed EmDash Registry plugin and configure inventory through EmDash without configuring Cloudflare, deploying Workers, or copying infrastructure credentials. The Inventory service remains the sole stock authority per pool.",
-          "from": "proposed",
-          "implementation_ref": null,
-          "note": "user accepted the scoped decision",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "locked",
-          "verification_ref": null
-        },
-        {
-          "at": "2026-09-30T01:24:50+00:00",
-          "choice": "DinkusKit operates the default hosted Inventory service. Shop owners install the sandboxed EmDash Registry plugin and configure inventory through EmDash without configuring Cloudflare, deploying Workers, or copying infrastructure credentials. The Inventory service remains the sole stock authority per pool.",
-          "from": "locked",
-          "implementation_ref": null,
-          "note": "bounded implementation recorded",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "implemented",
-          "verification_ref": null
-        },
-        {
-          "at": "2026-09-30T01:37:30+00:00",
-          "choice": "DinkusKit operates the default hosted Inventory service. Shop owners install the sandboxed EmDash Registry plugin and configure inventory through EmDash without configuring Cloudflare, deploying Workers, or copying infrastructure credentials. The Inventory service remains the sole stock authority per pool.",
-          "from": "implemented",
-          "implementation_ref": "file:src/cloudflare/hosted-worker.ts",
-          "note": "verification recorded in cumulative context",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "verified",
-          "verification_ref": null
-        }
-      ],
-      "id": "hosted-default-001",
-      "implementation_ref": "file:src/cloudflare/hosted-worker.ts",
-      "question": "Who operates the default inventory service for registry plugin users?",
-      "rationale": "The product requires a low-friction installation. The user explicitly accepted DinkusKit-hosted inventory as the default.",
-      "repair_required": false,
-      "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
-      "status": "verified",
-      "superseded_by": null,
-      "updated_at": "2026-09-30T01:37:30+00:00",
-      "verification_ref": "file:.grilltrack/proof/hosted-onboarding/PROOF.md"
-    },
     {
       "baseline_ref": "git:1228ed5f0ff74b8e5a6e303a1fe54698b04de441",
       "candidate_refs": [],
@@ -134,68 +57,18 @@
           "review_source_identity": null,
           "to": "verified",
           "verification_ref": null
-        }
-      ],
-      "id": "account-connect-002",
-      "implementation_ref": "file:plugins/emdash-inventory/src/plugin.ts",
-      "question": "Does the default hosted installation use an explicit DinkusKit account connection?",
-      "rationale": "The user explicitly agreed to the recommended one-time DinkusKit sign-in and setup flow. The account provides continuity across stores and site reinstalls and an identity for future billing; pricing and payment requirements are not decided by this choice.",
-      "repair_required": false,
-      "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
-      "status": "verified",
-      "superseded_by": null,
-      "updated_at": "2026-09-30T01:37:30+00:00",
-      "verification_ref": "file:.grilltrack/proof/hosted-onboarding/PROOF.md"
-    },
-    {
-      "baseline_ref": "git:1228ed5f0ff74b8e5a6e303a1fe54698b04de441",
-      "candidate_refs": [],
-      "choice": "Yes. Initial hosted Inventory access is a trial experience with no payment details required to connect and begin using Inventory. Trial duration, usage limits, pricing, and conversion policy remain undecided; this decision does not promise unlimited or permanently free service.",
-      "context_ref": null,
-      "created_at": "2026-09-30T00:58:31+00:00",
-      "deferred_reason": null,
-      "delivery_ref": null,
-      "dependencies": [
-        "account-connect-002"
-      ],
-      "domain": "Default hosting and first-run Inventory installation experience",
-      "history": [
-        {
-          "at": "2026-09-30T00:58:31+00:00",
-          "choice": "Yes. Initial hosted Inventory access is a trial experience with no payment details required to connect and begin using Inventory. Trial duration, usage limits, pricing, and conversion policy remain undecided; this decision does not promise unlimited or permanently free service.",
-          "from": "proposed",
-          "implementation_ref": null,
-          "note": "user accepted the scoped decision",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "locked",
-          "verification_ref": null
         },
         {
-          "at": "2026-09-30T01:24:50+00:00",
-          "choice": "Yes. Initial hosted Inventory access is a trial experience with no payment details required to connect and begin using Inventory. Trial duration, usage limits, pricing, and conversion policy remain undecided; this decision does not promise unlimited or permanently free service.",
-          "from": "locked",
-          "implementation_ref": null,
-          "note": "bounded implementation recorded",
-          "repair_required": false,
-          "review_classifications": [],
-          "review_ref": null,
-          "review_result": null,
-          "review_source_identity": null,
-          "to": "implemented",
-          "verification_ref": null
+          "at": "2026-09-30T16:14:40+00:00",
+          "from": "verified",
+          "note": "fork composition invalidates prior current proof",
+          "source_snapshot_ref": ".grilltrack/lineage/42f7bb6da7a34ed32ceed850c064516d222cc3f82179215293aab43d62db353f",
+          "to": "needs_reverification"
         },
         {
-          "at": "2026-09-30T01:37:30+00:00",
-          "choice": "Yes. Initial hosted Inventory access is a trial experience with no payment details required to connect and begin using Inventory. Trial duration, usage limits, pricing, and conversion policy remain undecided; this decision does not promise unlimited or permanently free service.",
-          "from": "implemented",
+          "at": "2026-09-30T19:28:11+00:00",
+          "choice": "Yes. Install Inventory from the EmDash Registry, click Connect Inventory, sign in or create a DinkusKit account, name the first stock location, then start adding stock. DinkusKit provisions the infrastructure automatically. Returning users can connect an existing inventory operation. Daily inventory work remains inside EmDash.",
+          "from": "needs_reverification",
           "implementation_ref": "file:plugins/emdash-inventory/src/plugin.ts",
           "note": "verification recorded in cumulative context",
           "repair_required": false,
@@ -207,10 +80,27 @@
           "verification_ref": null
         }
       ],
-      "id": "trial-access-003",
+      "id": "account-connect-002",
       "implementation_ref": "file:plugins/emdash-inventory/src/plugin.ts",
-      "question": "Can new users connect and try hosted Inventory without entering payment details?",
-      "rationale": "The user wants to launch a low-friction trial experience and explore trial limits and pricing after gaining users.",
+      "question": "Does the default hosted installation use an explicit DinkusKit account connection?",
+      "rationale": "The user explicitly agreed to the recommended one-time DinkusKit sign-in and setup flow. The account provides continuity across stores and site reinstalls and an identity for future billing; pricing and payment requirements are not decided by this choice.",
+      "reconciliation_sources": [
+        {
+          "role": "base",
+          "source_identity": "git:57aa9521fdfbddcbde0bf79a70708fdd8e771582",
+          "track_id": "gt-20260930005601-551c1b"
+        },
+        {
+          "role": "current",
+          "source_identity": "git:83a500e09172474dabf4de9cabc76029f7040a99",
+          "track_id": "gt-20260930005601-551c1b"
+        },
+        {
+          "role": "incoming",
+          "source_identity": "git:c06386a9c86f8a2c29b976539c238322b13f866b",
+          "track_id": "gt-20260930005601-551c1b"
+        }
+      ],
       "repair_required": false,
       "review_classifications": [],
       "review_history": [],
@@ -219,8 +109,8 @@
       "review_source_identity": null,
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-30T01:37:30+00:00",
-      "verification_ref": "file:.grilltrack/proof/hosted-onboarding/PROOF.md"
+      "updated_at": "2026-09-30T19:28:11+00:00",
+      "verification_ref": "runs/store-connect-repair-runs/20260930/PROOF.md"
     },
     {
       "baseline_ref": "git:1228ed5f0ff74b8e5a6e303a1fe54698b04de441",
@@ -318,12 +208,40 @@
           "review_source_identity": null,
           "to": "verified",
           "verification_ref": ".grilltrack/proof/checkout-reservations/PROOF.md"
+        },
+        {
+          "at": "2026-09-30T16:14:40+00:00",
+          "from": "verified",
+          "note": "fork composition invalidates prior current proof",
+          "source_snapshot_ref": ".grilltrack/lineage/42f7bb6da7a34ed32ceed850c064516d222cc3f82179215293aab43d62db353f",
+          "to": "needs_reverification"
+        },
+        {
+          "at": "2026-09-30T19:28:14+00:00",
+          "choice": "Reserve at Checkout: one explicit provider/pool/location, all basket lines atomically held or durable terminal rejection. Unknown outcomes fail closed and recover the original operation; release permanently fences delayed, concurrent and in-flight reserve. Paid stock remains reserved until fulfillment; no independent TTL release.",
+          "from": "needs_reverification",
+          "implementation_ref": "file:src/features/checkout-inventory/execute.ts",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
         }
       ],
       "id": "checkout-basket-001",
       "implementation_ref": "file:src/features/checkout-inventory/execute.ts",
       "question": "What Inventory adapter contract is accepted for Checkout?",
       "rationale": "Explicit bounded implementation route confirms these settled semantics.",
+      "reconciliation_sources": [
+        {
+          "role": "current",
+          "source_identity": "git:83a500e09172474dabf4de9cabc76029f7040a99",
+          "track_id": "gt-20260930005601-551c1b"
+        }
+      ],
       "repair_required": false,
       "review_classifications": [],
       "review_history": [
@@ -342,38 +260,416 @@
       "review_source_identity": null,
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-30T16:04:48+00:00",
-      "verification_ref": ".grilltrack/proof/checkout-reservations/PROOF.md"
+      "updated_at": "2026-09-30T19:28:14+00:00",
+      "verification_ref": "runs/store-connect-repair-runs/20260930/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:1228ed5f0ff74b8e5a6e303a1fe54698b04de441",
+      "candidate_refs": [],
+      "choice": "DinkusKit operates the default hosted Inventory service. Shop owners install the sandboxed EmDash Registry plugin and configure inventory through EmDash without configuring Cloudflare, deploying Workers, or copying infrastructure credentials. The Inventory service remains the sole stock authority per pool.",
+      "context_ref": "file:docs/CHARTER.md#architecture-002;file:docs/CHARTER.md#emdash-plugin-distribution-016",
+      "created_at": "2026-09-30T00:56:01+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [],
+      "domain": "Default hosting and first-run Inventory installation experience",
+      "history": [
+        {
+          "at": "2026-09-30T00:56:01+00:00",
+          "choice": "DinkusKit operates the default hosted Inventory service. Shop owners install the sandboxed EmDash Registry plugin and configure inventory through EmDash without configuring Cloudflare, deploying Workers, or copying infrastructure credentials. The Inventory service remains the sole stock authority per pool.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-30T01:24:50+00:00",
+          "choice": "DinkusKit operates the default hosted Inventory service. Shop owners install the sandboxed EmDash Registry plugin and configure inventory through EmDash without configuring Cloudflare, deploying Workers, or copying infrastructure credentials. The Inventory service remains the sole stock authority per pool.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-30T01:37:30+00:00",
+          "choice": "DinkusKit operates the default hosted Inventory service. Shop owners install the sandboxed EmDash Registry plugin and configure inventory through EmDash without configuring Cloudflare, deploying Workers, or copying infrastructure credentials. The Inventory service remains the sole stock authority per pool.",
+          "from": "implemented",
+          "implementation_ref": "file:src/cloudflare/hosted-worker.ts",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-30T16:14:40+00:00",
+          "from": "verified",
+          "note": "fork composition invalidates prior current proof",
+          "source_snapshot_ref": ".grilltrack/lineage/42f7bb6da7a34ed32ceed850c064516d222cc3f82179215293aab43d62db353f",
+          "to": "needs_reverification"
+        },
+        {
+          "at": "2026-09-30T19:28:14+00:00",
+          "choice": "DinkusKit operates the default hosted Inventory service. Shop owners install the sandboxed EmDash Registry plugin and configure inventory through EmDash without configuring Cloudflare, deploying Workers, or copying infrastructure credentials. The Inventory service remains the sole stock authority per pool.",
+          "from": "needs_reverification",
+          "implementation_ref": "file:src/cloudflare/hosted-worker.ts",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "hosted-default-001",
+      "implementation_ref": "file:src/cloudflare/hosted-worker.ts",
+      "question": "Who operates the default inventory service for registry plugin users?",
+      "rationale": "The product requires a low-friction installation. The user explicitly accepted DinkusKit-hosted inventory as the default.",
+      "reconciliation_sources": [
+        {
+          "role": "base",
+          "source_identity": "git:57aa9521fdfbddcbde0bf79a70708fdd8e771582",
+          "track_id": "gt-20260930005601-551c1b"
+        },
+        {
+          "role": "current",
+          "source_identity": "git:83a500e09172474dabf4de9cabc76029f7040a99",
+          "track_id": "gt-20260930005601-551c1b"
+        },
+        {
+          "role": "incoming",
+          "source_identity": "git:c06386a9c86f8a2c29b976539c238322b13f866b",
+          "track_id": "gt-20260930005601-551c1b"
+        }
+      ],
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-09-30T19:28:14+00:00",
+      "verification_ref": "runs/store-connect-repair-runs/20260930/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:57aa9521fdfbddcbde0bf79a70708fdd8e771582",
+      "candidate_refs": [],
+      "choice": "The real sandboxed Inventory plugin binds a fresh expiring one-use store-control challenge to the host-attested site administrator, host site origin/identity, fixed callback and PKCE exchange. DinkusKit Better Auth owns separate merchant sessions, explicit consent, persistent site grants and service JWT issuance. No manual infrastructure setup or caller-provided ownership claim.",
+      "context_ref": "file:docs/implementation/hosted-inventory-onboarding.md",
+      "created_at": "2026-09-30T03:09:31+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "account-connect-002"
+      ],
+      "domain": "Registry store-control challenge and DinkusKit merchant consent",
+      "history": [
+        {
+          "at": "2026-09-30T03:09:31+00:00",
+          "choice": "The real sandboxed Inventory plugin binds a fresh expiring one-use store-control challenge to the host-attested site administrator, host site origin/identity, fixed callback and PKCE exchange. DinkusKit Better Auth owns separate merchant sessions, explicit consent, persistent site grants and service JWT issuance. No manual infrastructure setup or caller-provided ownership claim.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-30T03:22:14+00:00",
+          "choice": "The real sandboxed Inventory plugin binds a fresh expiring one-use store-control challenge to the host-attested site administrator, host site origin/identity, fixed callback and PKCE exchange. DinkusKit Better Auth owns separate merchant sessions, explicit consent, persistent site grants and service JWT issuance. No manual infrastructure setup or caller-provided ownership claim.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-30T03:22:23+00:00",
+          "choice": "The real sandboxed Inventory plugin binds a fresh expiring one-use store-control challenge to the host-attested site administrator, host site origin/identity, fixed callback and PKCE exchange. DinkusKit Better Auth owns separate merchant sessions, explicit consent, persistent site grants and service JWT issuance. No manual infrastructure setup or caller-provided ownership claim.",
+          "from": "implemented",
+          "implementation_ref": "file:src/features/store-connect/index.ts;file:plugins/emdash-inventory/src/plugin.ts;file:docs/implementation/store-connect.md;file:.grilltrack/work/store-connect/CONTRACT.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-30T03:28:36+00:00",
+          "choice": "The real sandboxed Inventory plugin binds a fresh expiring one-use store-control challenge to the host-attested site administrator, host site origin/identity, fixed callback and PKCE exchange. DinkusKit Better Auth owns separate merchant sessions, explicit consent, persistent site grants and service JWT issuance. No manual infrastructure setup or caller-provided ownership claim.",
+          "from": "verified",
+          "implementation_ref": "file:src/features/store-connect/index.ts;file:plugins/emdash-inventory/src/plugin.ts;file:docs/implementation/store-connect.md;file:.grilltrack/work/store-connect/CONTRACT.md",
+          "note": "adjudicated review requires a fix",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "needs_reverification",
+          "verification_ref": "file:.grilltrack/proof/store-connect/PROOF.md;cmd:bin/verify-inventory full;cmd:node tools/run-hosted-onboarding-proof.mjs"
+        },
+        {
+          "at": "2026-09-30T03:32:17+00:00",
+          "choice": "The real sandboxed Inventory plugin binds a fresh expiring one-use store-control challenge to the host-attested site administrator, host site origin/identity, fixed callback and PKCE exchange. DinkusKit Better Auth owns separate merchant sessions, explicit consent, persistent site grants and service JWT issuance. No manual infrastructure setup or caller-provided ownership claim.",
+          "from": "needs_reverification",
+          "implementation_ref": "file:src/features/store-connect/index.ts;file:plugins/emdash-inventory/src/plugin.ts;file:docs/implementation/store-connect.md;file:.grilltrack/work/store-connect/CONTRACT.md",
+          "note": "bounded implementation recorded",
+          "repair_required": true,
+          "review_classifications": [
+            "required_fix"
+          ],
+          "review_ref": "file:.grilltrack/work/store-connect/FIRST-PASS-REVIEW.md",
+          "review_result": "findings",
+          "review_source_identity": "sha256:83bd016bcc0db0f40b7bb174650db0be50b4ac4e51a397ab68b9d9dcdef92372",
+          "to": "implemented",
+          "verification_ref": "file:.grilltrack/proof/store-connect/PROOF.md;cmd:bin/verify-inventory full;cmd:node tools/run-hosted-onboarding-proof.mjs"
+        },
+        {
+          "at": "2026-09-30T03:32:26+00:00",
+          "choice": "The real sandboxed Inventory plugin binds a fresh expiring one-use store-control challenge to the host-attested site administrator, host site origin/identity, fixed callback and PKCE exchange. DinkusKit Better Auth owns separate merchant sessions, explicit consent, persistent site grants and service JWT issuance. No manual infrastructure setup or caller-provided ownership claim.",
+          "from": "implemented",
+          "implementation_ref": "file:src/features/store-connect/protocol.ts;file:src/features/store-connect/index.ts;file:plugins/emdash-inventory/src/plugin.ts;file:docs/implementation/store-connect.md;file:.grilltrack/work/store-connect/CONTRACT.md;file:tools/run-hosted-onboarding-proof.mjs",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": "file:.grilltrack/proof/store-connect/PROOF.md;cmd:bin/verify-inventory full;cmd:node tools/run-hosted-onboarding-proof.mjs"
+        },
+        {
+          "at": "2026-09-30T16:14:40+00:00",
+          "from": "verified",
+          "note": "fork composition invalidates prior current proof",
+          "source_snapshot_ref": ".grilltrack/lineage/42f7bb6da7a34ed32ceed850c064516d222cc3f82179215293aab43d62db353f",
+          "to": "needs_reverification"
+        },
+        {
+          "at": "2026-09-30T19:28:14+00:00",
+          "choice": "The real sandboxed Inventory plugin binds a fresh expiring one-use store-control challenge to the host-attested site administrator, host site origin/identity, fixed callback and PKCE exchange. DinkusKit Better Auth owns separate merchant sessions, explicit consent, persistent site grants and service JWT issuance. No manual infrastructure setup or caller-provided ownership claim.",
+          "from": "needs_reverification",
+          "implementation_ref": "file:src/features/store-connect/protocol.ts;file:src/features/store-connect/index.ts;file:plugins/emdash-inventory/src/plugin.ts;file:docs/implementation/store-connect.md;file:.grilltrack/work/store-connect/CONTRACT.md;file:tools/run-hosted-onboarding-proof.mjs",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "store-control-004",
+      "implementation_ref": "file:src/features/store-connect/protocol.ts;file:src/features/store-connect/index.ts;file:plugins/emdash-inventory/src/plugin.ts;file:docs/implementation/store-connect.md;file:.grilltrack/work/store-connect/CONTRACT.md;file:tools/run-hosted-onboarding-proof.mjs",
+      "question": "How does Registry Connect authorize an actual merchant site?",
+      "rationale": "User explicitly selected Better Auth and authorized Registry store-connection implementation and draft PR delivery; existing product boundaries remain.",
+      "reconciliation_sources": [
+        {
+          "role": "incoming",
+          "source_identity": "git:c06386a9c86f8a2c29b976539c238322b13f866b",
+          "track_id": "gt-20260930005601-551c1b"
+        }
+      ],
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [
+        {
+          "classifications": [
+            "required_fix"
+          ],
+          "ref": "file:.grilltrack/work/store-connect/FIRST-PASS-REVIEW.md",
+          "result": "findings",
+          "reviewed_at": "2026-09-30T03:28:36+00:00",
+          "source_identity": "sha256:83bd016bcc0db0f40b7bb174650db0be50b4ac4e51a397ab68b9d9dcdef92372"
+        },
+        {
+          "classifications": [
+            "human_gate"
+          ],
+          "ref": "file:.grilltrack/proof/store-connect/REVIEW.md",
+          "result": "findings",
+          "reviewed_at": "2026-09-30T03:44:10+00:00",
+          "source_identity": "sha256:21ab7b26476ab0f0c01d582f4c4163a9cae8939596be702c8aa82d0bf5269c9b"
+        },
+        {
+          "classifications": [
+            "human_gate"
+          ],
+          "ref": "file:.grilltrack/proof/store-connect/REVIEW.md",
+          "result": "findings",
+          "reviewed_at": "2026-09-30T03:47:03+00:00",
+          "source_identity": "sha256:bca421b7cf0ff02a06520efb38ebbc1620b350bf801de0c3083cdab257ce9549"
+        }
+      ],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-09-30T19:28:14+00:00",
+      "verification_ref": "runs/store-connect-repair-runs/20260930/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:1228ed5f0ff74b8e5a6e303a1fe54698b04de441",
+      "candidate_refs": [],
+      "choice": "Yes. Initial hosted Inventory access is a trial experience with no payment details required to connect and begin using Inventory. Trial duration, usage limits, pricing, and conversion policy remain undecided; this decision does not promise unlimited or permanently free service.",
+      "context_ref": null,
+      "created_at": "2026-09-30T00:58:31+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "account-connect-002"
+      ],
+      "domain": "Default hosting and first-run Inventory installation experience",
+      "history": [
+        {
+          "at": "2026-09-30T00:58:31+00:00",
+          "choice": "Yes. Initial hosted Inventory access is a trial experience with no payment details required to connect and begin using Inventory. Trial duration, usage limits, pricing, and conversion policy remain undecided; this decision does not promise unlimited or permanently free service.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-30T01:24:50+00:00",
+          "choice": "Yes. Initial hosted Inventory access is a trial experience with no payment details required to connect and begin using Inventory. Trial duration, usage limits, pricing, and conversion policy remain undecided; this decision does not promise unlimited or permanently free service.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-30T01:37:30+00:00",
+          "choice": "Yes. Initial hosted Inventory access is a trial experience with no payment details required to connect and begin using Inventory. Trial duration, usage limits, pricing, and conversion policy remain undecided; this decision does not promise unlimited or permanently free service.",
+          "from": "implemented",
+          "implementation_ref": "file:plugins/emdash-inventory/src/plugin.ts",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-09-30T16:14:40+00:00",
+          "from": "verified",
+          "note": "fork composition invalidates prior current proof",
+          "source_snapshot_ref": ".grilltrack/lineage/42f7bb6da7a34ed32ceed850c064516d222cc3f82179215293aab43d62db353f",
+          "to": "needs_reverification"
+        },
+        {
+          "at": "2026-09-30T19:28:14+00:00",
+          "choice": "Yes. Initial hosted Inventory access is a trial experience with no payment details required to connect and begin using Inventory. Trial duration, usage limits, pricing, and conversion policy remain undecided; this decision does not promise unlimited or permanently free service.",
+          "from": "needs_reverification",
+          "implementation_ref": "file:plugins/emdash-inventory/src/plugin.ts",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "trial-access-003",
+      "implementation_ref": "file:plugins/emdash-inventory/src/plugin.ts",
+      "question": "Can new users connect and try hosted Inventory without entering payment details?",
+      "rationale": "The user wants to launch a low-friction trial experience and explore trial limits and pricing after gaining users.",
+      "reconciliation_sources": [
+        {
+          "role": "base",
+          "source_identity": "git:57aa9521fdfbddcbde0bf79a70708fdd8e771582",
+          "track_id": "gt-20260930005601-551c1b"
+        },
+        {
+          "role": "current",
+          "source_identity": "git:83a500e09172474dabf4de9cabc76029f7040a99",
+          "track_id": "gt-20260930005601-551c1b"
+        },
+        {
+          "role": "incoming",
+          "source_identity": "git:c06386a9c86f8a2c29b976539c238322b13f866b",
+          "track_id": "gt-20260930005601-551c1b"
+        }
+      ],
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-09-30T19:28:14+00:00",
+      "verification_ref": "runs/store-connect-repair-runs/20260930/PROOF.md"
     }
   ],
   "last_activation": {
-    "at": "2026-09-30T16:14:39+00:00",
+    "at": "2026-09-30T16:14:40+00:00",
     "mechanism": "implicit"
   },
-  "last_pause": {
-    "artifact_refs": [
-      ".grilltrack/proof/checkout-reservations/PROOF.md",
-      ".grilltrack/proof/checkout-reservations/accepted-p1-finding.md"
-    ],
-    "next_safe_action": "Assigned formal reviewer reviews the uncommitted repaired source; parent independently verifies and publishes the normal fix to PR 36. Do not fabricate clean review or dispatch from this repair.",
-    "paused_at": "2026-09-30T16:04:48+00:00",
-    "reason": "Required release-fence identity repair verified locally; assigned formal reviewer will review the changed source. No clean formal review recorded. Merge, push, and deploy remain separately gated.",
-    "resumed_at": "2026-09-30T16:14:39+00:00"
-  },
-  "pause": {
-    "artifact_refs": [
-      ".grilltrack/proof/checkout-reservations/PROOF.md",
-      ".grilltrack/proof/checkout-reservations/accepted-p1-finding.md"
-    ],
-    "next_safe_action": "Publish the verified focused fix to PR 36, then coordinator routes the immutable repaired head and curated proof to a separate Dinkus formal review. Preserve rail ownership; merge and deployment require explicit human approval.",
-    "paused_at": "2026-09-30T16:14:40+00:00",
-    "reason": "Required release-fence identity repair independently verified. Normal fix publication to existing PR 36 is authorized; formal review, merge, and deployment are not claimed complete."
-  },
-  "predecessor_track_id": "gt-20260926165857-2cce99",
+  "last_pause": null,
+  "pause": null,
   "recommendation": null,
+  "reconciliation": {
+    "plan_id": "42f7bb6da7a34ed32ceed850c064516d222cc3f82179215293aab43d62db353f",
+    "refs": {
+      "base": "57aa9521fdfbddcbde0bf79a70708fdd8e771582",
+      "current": "83a500e09172474dabf4de9cabc76029f7040a99",
+      "incoming": "c06386a9c86f8a2c29b976539c238322b13f866b"
+    },
+    "snapshot_ref": ".grilltrack/lineage/42f7bb6da7a34ed32ceed850c064516d222cc3f82179215293aab43d62db353f"
+  },
   "schema_version": "grilltrack/v0.1",
-  "status": "paused",
-  "title": "Hosted Inventory installation through EmDash",
-  "track_id": "gt-20260930005601-551c1b",
-  "updated_at": "2026-09-30T16:14:40+00:00"
+  "status": "active",
+  "title": "Inventory store-connect polling repair and current-main integration",
+  "track_id": "gt-join-42f7bb6da7a34ed32ceed850c064516d",
+  "updated_at": "2026-09-30T19:28:14+00:00"
 }
