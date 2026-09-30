@@ -1,0 +1,4 @@
+[datetime migration] 0 noncanonical values (0 naive) using UTC
+EmDash: Loaded sandboxed plugin dinkus-inventory:0.0.0 with capabilities: [network:request]
+PASS: EmDash 1.0.1 private route dispatch, real sandbox bundle, local DO provisioning, retry/reinstall/reconnect and authorization boundaries.
+Visible fixture: http://127.0.0.1:4329 — actual BlockRenderer and sandbox dispatcher; synthetic sign-in, local service.

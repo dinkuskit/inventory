@@ -1,0 +1,17 @@
+Browser tab: 1, Title: "Inventory local proof", URL: "http://127.0.0.1:4329/".
+1 AXWebArea Inventory local proof, URL: 127.0.0.1:4329/
+	2 container
+		3 text EmDash 1.0.1
+		4 text Sandboxed plugin proof
+		5 text Inventory
+		6 text LOCAL PROOF • Synthetic identity • Local SQLite Durable Objects
+		7 text This harness uses EmDash’s actual Block Kit renderer, private route dispatcher and workerd sandbox. It is not a Registry install or real account login.
+		8 container
+			9 heading Inventory, Value: 2
+				10 text Inventory
+			11 image
+			12 text Inventory connected Your Inventory operation is ready. Stock location: Proof stock room Stock administration stays inside EmDash. This setup slice provisions your location; receiving and adjustment screens follow separately.
+			13 button Refresh Inventory
+		14 button Proof fixture: approve synthetic account
+
+The focused UI element is 1 AXWebArea Inventory local proof, URL: 127.0.0.1:4329/

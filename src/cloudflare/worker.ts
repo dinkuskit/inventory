@@ -1,4 +1,6 @@
 import { DurableObject, WorkerEntrypoint } from "cloudflare:workers";
+import { createExecuteLocationCommand, createListLocations } from "../application/location-registry.ts";
+import type { AccountPrincipal, Operation, ProvisionResult } from "../features/hosted-onboarding/index.ts";
 
 import {
 	createReadSkuLocationBalance,
@@ -41,6 +43,19 @@ export class InventoryPool extends DurableObject<InventoryWorkerEnv> {
 
 	async schemaStatus(): Promise<CloudflareInventorySchemaStatus> {
 		return readCloudflareInventorySchemaStatus(this.ctx.storage);
+	}
+
+	/** Internal service RPC; public callers must pass the hosted authorization boundary. */
+	async provisionFirstLocation(operation: Operation, principal: AccountPrincipal): Promise<ProvisionResult> {
+		const store = createCloudflareSqliteInventoryStore({ storage: this.ctx.storage, poolId: operation.poolId });
+		const execute = createExecuteLocationCommand({ store, now: () => new Date(), createLocationId: () => `location_${operation.operationId}`, createReceiptId: () => crypto.randomUUID() });
+		const result = await execute({ schema: "dinkuskit.inventory.command/v1", type: "location.create", commandId: operation.commandId, context: { poolId: operation.poolId, siteId: operation.originSiteId }, payload: { name: operation.locationName }, references: [] }, { principal: { kind: "human", id: principal.accountId, displayName: "DinkusKit account administrator", surface: "emdash" } });
+		return result.outcome === "committed" ? { outcome: "committed", locationId: result.receipt.effect.after.locationId } : { outcome: "rejected", code: result.code };
+	}
+
+	async listLocations(poolId: string) {
+		const store = createCloudflareSqliteInventoryStore({ storage: this.ctx.storage, poolId });
+		return createListLocations({ store })({ poolId, status: "active" });
 	}
 
 	async readSkuLocationBalance(

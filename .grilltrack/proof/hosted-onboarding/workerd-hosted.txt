@@ -1,0 +1,12 @@
+
+> @dinkuskit/inventory@0.0.0 test:hosted
+> vitest run --config vitest.hosted.config.ts
+
+
+ RUN  v4.1.11 <worktree>
+
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  21:19:39
+   Duration  1.53s (transform 301ms, setup 0ms, import 780ms, tests 38ms, environment 0ms)
