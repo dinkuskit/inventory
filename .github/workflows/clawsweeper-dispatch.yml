@@ -84,7 +84,7 @@ jobs:
     needs: bind
     if: needs.bind.outputs.requested == 'true'
     permissions: {}
-    uses: dinkuskit/clawsweeper/.github/workflows/dinkuskit-native-canary.yml@ac025ed62c669183f18dfbf90e2cfb0cb1d33c10
+    uses: dinkuskit/clawsweeper/.github/workflows/dinkuskit-native-canary.yml@d01c55c5faf57b09d08de55fe55581cdfa3f8352
     with:
       target_repository: inventory
       target_repository_id: '1307843786'
