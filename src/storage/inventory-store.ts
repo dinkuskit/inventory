@@ -107,7 +107,7 @@ export type StockReservationBatchCommit = Readonly<{
 	commandId: string;
 	commandDigest: string;
 	reservations: readonly Readonly<{
-		previous: ReservationRecord;
+		previous: ReservationRecord | null;
 		reservation: ReservationRecord;
 		orderLineKey: string;
 	}>[];
@@ -115,8 +115,8 @@ export type StockReservationBatchCommit = Readonly<{
 		previous: BalanceRecord;
 		balance: BalanceRecord;
 	}>[];
-	receipt: StockReservationReceiptV2;
-	result: StockReservationResult;
+	receipt: InventoryReceiptV2;
+	result: InventoryCommandResult;
 }>;
 
 export type StoredOpeningBalanceConfirmation = Readonly<{

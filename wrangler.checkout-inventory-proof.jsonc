@@ -1,0 +1,22 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "dinkuskit-inventory-checkout-inventory-proof",
+	"main": "tools/checkout-inventory-local-proof.ts",
+	"compatibility_date": "2026-08-28",
+	"workers_dev": false,
+	"preview_urls": false,
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "CHECKOUT_INVENTORY_PROOF_POOLS",
+				"class_name": "CheckoutInventoryProofPool"
+			}
+		]
+	},
+	"exports": {
+		"CheckoutInventoryProofPool": {
+			"type": "durable-object",
+			"storage": "sqlite"
+		}
+	}
+}

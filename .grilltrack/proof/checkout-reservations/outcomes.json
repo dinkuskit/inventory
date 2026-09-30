@@ -1,0 +1,19 @@
+{
+  "capturedAt": "2026-09-30T14:25:37Z",
+  "node": "v22.23.1",
+  "baseSha": "1228ed5f0ff74b8e5a6e303a1fe54698b04de441",
+  "commerceSha": "1cb55c756ef746bcb042b9679dc43b57e67bcb0d",
+  "fullGate": "PASS",
+  "exits": {
+    "checkoutInventoryNodeTests": 0,
+    "verifyCheckoutInventory": 0,
+    "commercePortProof": 0,
+    "proveCheckoutInventoryReal": 0,
+    "verifyInventoryFull": 0
+  },
+  "counts": {
+    "checkoutInventoryNodeTests": "20/20",
+    "fullNodeTests": "166/166",
+    "vitest": "5 files / 28 tests"
+  }
+}

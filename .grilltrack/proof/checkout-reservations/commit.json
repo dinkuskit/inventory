@@ -1,0 +1,21 @@
+{
+  "proof": "real-local-wrangler-durable-object",
+  "phase": "commit",
+  "remote": false,
+  "held": "reserved",
+  "replay": "reserved",
+  "sameResult": true,
+  "short": "rejected",
+  "durable": {
+    "balances": {
+      "hat": {
+        "reserved": { "value": "3", "unit": "each" },
+        "available": { "value": "7", "unit": "each" }
+      },
+      "shirt": {
+        "reserved": { "value": "2", "unit": "each" },
+        "available": { "value": "4", "unit": "each" }
+      }
+    }
+  }
+}

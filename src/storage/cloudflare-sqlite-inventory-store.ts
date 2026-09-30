@@ -935,6 +935,20 @@ class CloudflareSqliteInventoryTransaction implements InventoryTransaction {
 			if (entry.reservation.poolId !== this.#poolId) {
 				throw new Error("A transaction cannot cross inventory pools.");
 			}
+			if (entry.previous === null) {
+				this.#storage.sql.exec(
+					`INSERT INTO inventory_reservations
+					   (pool_id, reservation_id, order_line_key, status, version, reservation_json)
+					 VALUES (?, ?, ?, ?, ?, ?)`,
+					entry.reservation.poolId,
+					entry.reservation.reservationId,
+					entry.orderLineKey,
+					entry.reservation.status,
+					Number(entry.reservation.version),
+					JSON.stringify(entry.reservation),
+				).toArray();
+				continue;
+			}
 			const updated = this.#storage.sql.exec<SqlRow>(
 				`UPDATE inventory_reservations
 				 SET status = ?, version = ?, reservation_json = ?
