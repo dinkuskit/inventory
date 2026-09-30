@@ -215,8 +215,8 @@ inventory_architecture=clean
 ───────────────────────────────────────────────
 Total Upload: 86.84 KiB / gzip: 14.28 KiB
 Your Worker has access to the following bindings:
-Binding                                  Resource            
-env.INVENTORY_POOLS (InventoryPool)      Durable Object      
+Binding                                  Resource
+env.INVENTORY_POOLS (InventoryPool)      Durable Object
 
 --dry-run: exiting now.
 
