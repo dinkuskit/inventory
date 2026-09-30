@@ -15,6 +15,7 @@
 		"tools/cloudflare-remote-probe.ts",
 		"tools/aggregate-stock-read-local-probe.ts",
 		"tools/stock-adjustment-local-proof.ts",
-		"tools/stock-reservation-local-proof.ts"
+		"tools/stock-reservation-local-proof.ts",
+		"tools/checkout-inventory-local-proof.ts"
 	]
 }

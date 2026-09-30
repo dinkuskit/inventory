@@ -545,13 +545,42 @@ returns reserved stock to available; the same order/line may reserve again under
 a new reservation ID. Packing, expiry, backorder, GUI, CLI, and live Commerce
 transport remain deferred.
 
+## checkout-basket-001 — whole-basket CheckoutInventoryPort adapter (locked)
+
+Inventory owns a first-party whole-basket adapter for Commerce's current
+public `CheckoutInventoryPort`. Reserve happens only at Checkout. Kernel
+factories require one explicit provider/pool/location binding from trusted
+configuration; `providerRef` is that configured opaque handle and is not
+assumed to be a hardcoded canonical string. Request binding is validated
+against the frozen factory binding before any mutation. A mismatch is rejected
+on the first call, on replay, and after factory restart. The factory uses the
+configured pool; it does not route from an unvalidated request `providerRef`.
+The entire basket is held in one serialized pool transaction, or the operation
+is a durable terminal rejection with no holds.
+
+Operation identity includes `operationId`, binding, basket contents, and the
+stable EmDash `siteId`. Exact replay of that identity returns the original
+result. A different site sharing the pool cannot recover or mutate the original
+hold. Principal may change for authorized recovery of the same site-bound
+operation. Terminal release permanently fences the operation and fails closed
+when reservation rows are missing or ambiguous instead of reporting released
+while a live hold could remain. Paid stock stays reserved until existing
+fulfillment machinery. There is no independent TTL release. Schema versions and
+ordinary named-hold reservation semantics are unchanged.
+
+This lock is the Inventory adapter contract only. Live Commerce/Payments
+transport and integration, Worker HTTP, GUI, CLI, onboarding, store-connect,
+Otta adapters, cross-pool fanout, backorder fulfillment, independent expiry,
+and deploy remain deferred.
+
 ## Next focused grill
 
-Select the next Inventory-owned slice after Packed to Delivered. Unpack-some,
-unpack-all, expiry, backorder, GUI, CLI, Commerce/Blocks
-integration, service authentication, deployment, and production mutation remain
-deferred until separately grilled and approved. The packing-screen cap/flash
-that stops typing 4 on a 3-hat ticket is GUI, not this kernel.
+Select the next Inventory-owned slice after the accepted whole-basket Checkout
+adapter. Unpack-some, unpack-all, expiry, backorder, GUI, CLI, live
+Commerce/Blocks transport and integration, service authentication, deployment,
+and production mutation remain deferred until separately grilled and approved.
+The packing-screen cap/flash that stops typing 4 on a 3-hat ticket is GUI, not
+this kernel.
 
 ## Cross-references
 

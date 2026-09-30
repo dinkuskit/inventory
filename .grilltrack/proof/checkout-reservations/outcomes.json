@@ -1,0 +1,33 @@
+{
+  "capturedAt": "2026-09-30T16:11:12Z",
+  "node": "v22.23.1",
+  "reviewedSha": "dc91bf628d0c25340c18fe3a83757275ee0ac19f",
+  "baseSha": "3397d7237e8e07e2b64c608dad8704ec4bbd84bf",
+  "workingTree": "repair source bound by source-owner-verification.json file hashes; published commit identified by PR 36",
+  "commerceSha": "1cb55c756ef746bcb042b9679dc43b57e67bcb0d",
+  "fullGate": "PASS",
+  "realStorageProof": "not_rerun_focused_and_full_gates",
+  "exits": {
+    "checkoutInventoryNodeTests": 0,
+    "verifyCheckoutInventory": 0,
+    "commercePortProof": 0,
+    "proveCheckoutInventoryReal": "not_rerun",
+    "verifyInventoryFull": 0
+  },
+  "counts": {
+    "checkoutInventoryNodeTests": "23/23",
+    "checkoutInventoryVitest": "1 file / 5 tests",
+    "fullNodeTests": "176/176",
+    "vitest": "5 files / 29 tests",
+    "hostedVitest": "1 file / 3 tests"
+  },
+  "siteFence": {
+    "wrongSiteReleaseFirstBothDirections": "command_id_conflict_not_persisted",
+    "ownerSameDigestAfterRelease": "checkout_released",
+    "originalReleasePreserved": true,
+    "currentHoldProtected": true,
+    "workerdDurableSqliteRows": "commands_results_receipts_holds_unchanged_except_owner_fence_result"
+  },
+  "formalReview": "required_fix recorded; repaired-source formal review is the coordinator's separate Dinkus review, not recorded here",
+  "independentSourceOwner": "final canonical gate and Commerce assignability passed"
+}

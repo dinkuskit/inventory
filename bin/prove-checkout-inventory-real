@@ -1,0 +1,125 @@
+#!/usr/bin/env sh
+set -eu
+
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+repo_root=$(dirname -- "$script_dir")
+cd "$repo_root"
+
+proof_temp=$(mktemp -d)
+proof_pid=""
+cleanup() {
+	if [ -n "$proof_pid" ]; then
+		kill "$proof_pid" 2>/dev/null || true
+		wait "$proof_pid" 2>/dev/null || true
+	fi
+	rm -rf -- "$proof_temp"
+}
+trap cleanup EXIT HUP INT TERM
+
+echo '$ node tools/checkout-inventory-local-sqlite-proof.mjs <temporary-sqlite-file>'
+node --experimental-sqlite --experimental-strip-types \
+	tools/checkout-inventory-local-sqlite-proof.mjs \
+	"$proof_temp/inventory.sqlite"
+
+echo '$ node tools/checkout-inventory-concurrency-proof.mjs seed + two worker processes'
+node --experimental-sqlite --experimental-strip-types \
+	tools/checkout-inventory-concurrency-proof.mjs \
+	"$proof_temp/race.sqlite" seed seed >"$proof_temp/seed.json"
+
+left_log="$proof_temp/left.json"
+right_log="$proof_temp/right.json"
+node --experimental-sqlite --experimental-strip-types \
+	tools/checkout-inventory-concurrency-proof.mjs \
+	"$proof_temp/race.sqlite" op_proc_left >"$left_log" &
+left_pid=$!
+node --experimental-sqlite --experimental-strip-types \
+	tools/checkout-inventory-concurrency-proof.mjs \
+	"$proof_temp/race.sqlite" op_proc_right >"$right_log" &
+right_pid=$!
+wait "$left_pid"
+wait "$right_pid"
+LEFT_LOG="$left_log" RIGHT_LOG="$right_log" node --input-type=module - <<'EOF'
+import { readFileSync } from "node:fs";
+const left = JSON.parse(readFileSync(process.env.LEFT_LOG, "utf8"));
+const right = JSON.parse(readFileSync(process.env.RIGHT_LOG, "utf8"));
+const outcomes = [left.outcome, right.outcome].sort();
+if (JSON.stringify(outcomes) !== JSON.stringify(["rejected", "reserved"])) {
+	throw new Error(`expected one reserved and one rejected, got ${JSON.stringify(outcomes)}`);
+}
+EOF
+
+echo '$ node tools/checkout-inventory-commerce-port-proof.mjs'
+node tools/checkout-inventory-commerce-port-proof.mjs
+
+proof_port=${DINKUSKIT_INVENTORY_CHECKOUT_PROOF_PORT:-18791}
+proof_pid=""
+start_runtime() {
+	npm exec -- wrangler dev \
+		--local \
+		--persist-to "$proof_temp/cloudflare-state" \
+		--ip 127.0.0.1 \
+		--port "$proof_port" \
+		--log-level error \
+		-c wrangler.checkout-inventory-proof.jsonc \
+		>"$proof_temp/wrangler.log" 2>&1 &
+	proof_pid=$!
+}
+stop_runtime() {
+	kill "$proof_pid"
+	wait "$proof_pid" 2>/dev/null || true
+	proof_pid=""
+}
+request_action() {
+	action=$1
+	output=$2
+	attempt=0
+	while [ "$attempt" -lt 100 ]; do
+		if curl --fail --silent \
+			--request POST \
+			--header 'content-type: application/json' \
+			--data "{\"action\":\"$action\"}" \
+			--output "$output" \
+			"http://127.0.0.1:$proof_port/"; then
+			return 0
+		fi
+		if ! kill -0 "$proof_pid" 2>/dev/null; then
+			echo "Local Wrangler runtime exited before serving the proof request." >&2
+			sed -n '1,120p' "$proof_temp/wrangler.log" >&2
+			return 1
+		fi
+		attempt=$((attempt + 1))
+		sleep 0.1
+	done
+	echo "Timed out waiting for the local Wrangler runtime." >&2
+	return 1
+}
+
+echo '$ wrangler dev --local --persist-to <temporary-cloudflare-state> -c wrangler.checkout-inventory-proof.jsonc'
+start_runtime
+request_action commit "$proof_temp/commit.json"
+stop_runtime
+start_runtime
+request_action replay "$proof_temp/replay.json"
+request_action race "$proof_temp/race.json"
+stop_runtime
+COMMIT_JSON="$proof_temp/commit.json" REPLAY_JSON="$proof_temp/replay.json" RACE_JSON="$proof_temp/race.json" node --input-type=module - <<'EOF'
+import { readFileSync } from "node:fs";
+const commit = JSON.parse(readFileSync(process.env.COMMIT_JSON, "utf8"));
+const replay = JSON.parse(readFileSync(process.env.REPLAY_JSON, "utf8"));
+const race = JSON.parse(readFileSync(process.env.RACE_JSON, "utf8"));
+if (commit.held !== "reserved" || commit.replay !== "reserved" || commit.sameResult !== true) {
+	throw new Error(`commit proof failed: ${JSON.stringify(commit)}`);
+}
+if (commit.short !== "rejected") {
+	throw new Error(`partial basket was not rejected: ${JSON.stringify(commit)}`);
+}
+if (replay.replay !== "reserved" || replay.released !== "released" || replay.fenced !== "rejected") {
+	throw new Error(`restart/fence proof failed: ${JSON.stringify(replay)}`);
+}
+if (JSON.stringify(race.outcomes) !== JSON.stringify(["rejected", "reserved"])) {
+	throw new Error(`workerd concurrency proof failed: ${JSON.stringify(race)}`);
+}
+if (race.fence !== "released" || race.afterFence !== "rejected") {
+	throw new Error(`workerd release fence failed: ${JSON.stringify(race)}`);
+}
+EOF

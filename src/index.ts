@@ -184,6 +184,38 @@ export type {
 	StockReservationResult,
 } from "./features/stock-reservation/index.ts";
 export {
+	CHECKOUT_INVENTORY_FEATURE_ID,
+	CHECKOUT_OPERATION_LINE_KIND,
+	CHECKOUT_RELEASE_TYPE,
+	CHECKOUT_RESERVE_TYPE,
+	InvalidCheckoutInventoryRequestError,
+	checkoutOperationLine,
+	checkoutReleaseCommandId,
+	checkoutReserveCommandId,
+	createCheckoutInventoryPort,
+	createReleaseCheckoutBasket,
+	createReserveCheckoutBasket,
+	digestCheckoutStockRequest,
+	normalizeInventoryProviderBinding,
+	normalizeStockRequest,
+	sameInventoryProviderBinding,
+} from "./features/checkout-inventory/index.ts";
+export type {
+	CheckoutInventoryDependencies,
+	CheckoutInventoryExecution,
+	CheckoutInventoryPort,
+	CheckoutInventoryReceiptV2,
+	CheckoutInventoryRejectionCode,
+	CheckoutInventoryResult,
+	InventoryProviderBinding,
+	NormalizedStockRequest,
+	NormalizedStockRequirement,
+	ReleaseCheckoutBasket,
+	ReserveCheckoutBasket,
+	StockRequest,
+	StockRequirement,
+} from "./features/checkout-inventory/index.ts";
+export {
 	STOCK_ADJUSTMENT_CONFIRMATION_TTL_MS,
 	StockAdjustmentConfirmationError,
 	StockAdjustmentPreviewError,

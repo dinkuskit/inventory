@@ -1,0 +1,8 @@
+{
+  "proof": "real-local-wrangler-durable-object",
+  "phase": "replay_after_restart",
+  "remote": false,
+  "replay": "reserved",
+  "released": "released",
+  "fenced": "rejected"
+}
