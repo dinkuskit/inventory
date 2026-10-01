@@ -24,6 +24,9 @@ jobs:
   bind:
     if: >-
       vars.CLAWSWEEPER_SPARK_ENABLED == 'true' &&
+      (github.event_name != 'pull_request_target' ||
+       github.event.action != 'edited' ||
+       toJSON(github.event.changes) != '{}') &&
       (github.event_name != 'issue_comment' ||
        (github.event.issue.pull_request &&
         github.event.comment.user.type != 'Bot' &&
@@ -64,6 +67,8 @@ jobs:
               raise SystemExit(0)
           event = json.loads(Path(os.environ['GITHUB_EVENT_PATH']).read_text())
           kind = os.environ['GITHUB_EVENT_NAME']
+          if kind == 'pull_request_target' and event.get('action') == 'edited' and not event.get('changes'):
+              skip()
           if kind == 'issue_comment':
               comment = event['comment']
               if not event['issue'].get('pull_request') or comment['user']['type'] == 'Bot': skip()
@@ -97,10 +102,54 @@ jobs:
           with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
               out.write(f'requested=true\npr_number={number}\nbase_sha={base}\nhead_sha={head}\npublish={publish}\n')
           PYBIND
+      - name: Mint the pickup token
+        id: pickup-token
+        if: ${{ steps.live.outputs.requested == 'true' && vars.CLAWSWEEPER_APP_CLIENT_ID != '' && secrets.CLAWSWEEPER_APP_PRIVATE_KEY != '' }}
+        continue-on-error: true
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1
+        with:
+          client-id: ${{ vars.CLAWSWEEPER_APP_CLIENT_ID }}
+          private-key: ${{ secrets.CLAWSWEEPER_APP_PRIVATE_KEY }}
+          owner: dinkuskit
+          repositories: inventory
+          permission-issues: write
+          permission-pull-requests: write
+      - name: Post the pickup comment
+        if: ${{ steps.live.outputs.requested == 'true' && steps.pickup-token.outputs.token != '' }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ steps.pickup-token.outputs.token }}
+          TARGET_REPO: dinkuskit/inventory
+          PR_NUMBER: ${{ steps.live.outputs.pr_number }}
+          HEAD_SHA: ${{ steps.live.outputs.head_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then exit 0; fi
+          if ! [[ "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]]; then exit 0; fi
+          marker="<!-- clawsweeper-pickup item=${PR_NUMBER} -->"
+          body="👀 ClawSweeper picked this up and is waiting for a review slot.
+
+Head: \`${HEAD_SHA}\`.
+
+This is a progress receipt, not review clearance. The final review is published separately.
+
+${marker}"
+          payload="$(jq -n --arg body "$body" '{body:$body}')"
+          comments="$(gh api --paginate "repos/${TARGET_REPO}/issues/${PR_NUMBER}/comments?per_page=100" | jq -s 'add // []')"
+          existing="$(jq -r --arg marker "$marker" '[.[] | select((.body // "") | contains($marker))] | first | .id // empty' <<<"$comments")"
+          if [ -n "$existing" ]; then
+            gh api -X PATCH "repos/${TARGET_REPO}/issues/comments/${existing}" --input - <<<"$payload" >/dev/null
+          else
+            gh api -X POST "repos/${TARGET_REPO}/issues/${PR_NUMBER}/comments" --input - <<<"$payload" >/dev/null
+          fi
 
   review:
     needs: bind
     if: needs.bind.outputs.requested == 'true'
+    concurrency:
+      group: ${{ github.repository }}-clawsweeper-dispatch-${{ needs.bind.outputs.pr_number }}
+      cancel-in-progress: true
     permissions: {}
     uses: dinkuskit/clawsweeper/.github/workflows/dinkuskit-native-canary.yml@d01c55c5faf57b09d08de55fe55581cdfa3f8352
     with:
