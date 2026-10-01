@@ -1,0 +1,157 @@
+{
+  "composed_review": false,
+  "composed_verification": false,
+  "decision_ids": [
+    "account-connect-002",
+    "checkout-basket-001",
+    "hosted-default-001",
+    "store-control-004",
+    "trial-access-003"
+  ],
+  "decision_provenance": {
+    "account-connect-002": [
+      {
+        "role": "base",
+        "source_identity": "git:57aa9521fdfbddcbde0bf79a70708fdd8e771582",
+        "track_id": "gt-20260930005601-551c1b"
+      },
+      {
+        "role": "current",
+        "source_identity": "git:83a500e09172474dabf4de9cabc76029f7040a99",
+        "track_id": "gt-20260930005601-551c1b"
+      },
+      {
+        "role": "incoming",
+        "source_identity": "git:c06386a9c86f8a2c29b976539c238322b13f866b",
+        "track_id": "gt-20260930005601-551c1b"
+      }
+    ],
+    "checkout-basket-001": [
+      {
+        "role": "current",
+        "source_identity": "git:83a500e09172474dabf4de9cabc76029f7040a99",
+        "track_id": "gt-20260930005601-551c1b"
+      }
+    ],
+    "hosted-default-001": [
+      {
+        "role": "base",
+        "source_identity": "git:57aa9521fdfbddcbde0bf79a70708fdd8e771582",
+        "track_id": "gt-20260930005601-551c1b"
+      },
+      {
+        "role": "current",
+        "source_identity": "git:83a500e09172474dabf4de9cabc76029f7040a99",
+        "track_id": "gt-20260930005601-551c1b"
+      },
+      {
+        "role": "incoming",
+        "source_identity": "git:c06386a9c86f8a2c29b976539c238322b13f866b",
+        "track_id": "gt-20260930005601-551c1b"
+      }
+    ],
+    "store-control-004": [
+      {
+        "role": "incoming",
+        "source_identity": "git:c06386a9c86f8a2c29b976539c238322b13f866b",
+        "track_id": "gt-20260930005601-551c1b"
+      }
+    ],
+    "trial-access-003": [
+      {
+        "role": "base",
+        "source_identity": "git:57aa9521fdfbddcbde0bf79a70708fdd8e771582",
+        "track_id": "gt-20260930005601-551c1b"
+      },
+      {
+        "role": "current",
+        "source_identity": "git:83a500e09172474dabf4de9cabc76029f7040a99",
+        "track_id": "gt-20260930005601-551c1b"
+      },
+      {
+        "role": "incoming",
+        "source_identity": "git:c06386a9c86f8a2c29b976539c238322b13f866b",
+        "track_id": "gt-20260930005601-551c1b"
+      }
+    ]
+  },
+  "joined_track_id": "gt-join-42f7bb6da7a34ed32ceed850c064516d",
+  "needs_reverification": [
+    "account-connect-002",
+    "checkout-basket-001",
+    "hosted-default-001",
+    "store-control-004",
+    "trial-access-003"
+  ],
+  "plan_id": "42f7bb6da7a34ed32ceed850c064516d222cc3f82179215293aab43d62db353f",
+  "refs": {
+    "base": "57aa9521fdfbddcbde0bf79a70708fdd8e771582",
+    "current": "83a500e09172474dabf4de9cabc76029f7040a99",
+    "incoming": "c06386a9c86f8a2c29b976539c238322b13f866b"
+  },
+  "schema": "grilltrack/reconcile/v1",
+  "snapshot_ref": ".grilltrack/lineage/42f7bb6da7a34ed32ceed850c064516d222cc3f82179215293aab43d62db353f",
+  "snapshots": {
+    "base": {
+      "archive/dinkuskit-inventory-order-reservations-v1/events.jsonl": "19797f911189798ed0b6807811aea25c7ed2aa23f64326da7b9511ba0e667d14",
+      "archive/dinkuskit-inventory-order-reservations-v1/ledger.json": "be27099d481149dda352538edca069c2ea08cfc16c1809893651e352e43479af",
+      "archive/dinkuskit-inventory-pack-all-v1/events.jsonl": "140f54b9c9f922721eba54e3c7a36eba5c457e47457116e38611d34b5de48b75",
+      "archive/dinkuskit-inventory-pack-all-v1/ledger.json": "e0e8c17848c71e9a96ae8f2e972332f8563380b1e3167f940ddc93282c1eb26d",
+      "archive/dinkuskit-inventory-pack-some-v1/events.jsonl": "75a484371a57744eb3bae35cc31d915d6587560517513e5acc29234f9a25d37a",
+      "archive/dinkuskit-inventory-pack-some-v1/ledger.json": "230433dda92a573bf20ff7a5ba80afdb55e921ce08615403b8894e54654977dd",
+      "archive/dinkuskit-inventory-transfer-list-v1/events.jsonl": "8a22e0708d6f35eb243c1ce8411cda63fa8958dbd9ad0fb80edebf7cf9114fdf",
+      "archive/dinkuskit-inventory-transfer-list-v1/ledger.json": "24fc462baa6b4c96d3a421b4238f1d6a0d9977561fcb76408ab5be8192639ba3",
+      "archive/dinkuskit-inventory-v1/events.jsonl": "c9ce8eaf51033f70801f2960fe53796a528b6a0a2aa8d934a03a13896fa17790",
+      "archive/dinkuskit-inventory-v1/ledger.json": "b56404619e41fafdd3f113900c4aaf392780822bb46932be4ad9a0390814d50f",
+      "archive/gt-20260926122606-08be01/events.jsonl": "90894adb4f650ae647bdb8e37038d6a4ff39cc08187067376d5cc2f64503879b",
+      "archive/gt-20260926122606-08be01/ledger.json": "6f7769a48bd14603cdb737e6f451917ea728bfc21881669d9974724c386daf07",
+      "archive/gt-20260926150907-b6e31e/events.jsonl": "e963319bbb02a01f3359509f02751f9d5cb6a3dd0f63d29716ad2cc2e31db756",
+      "archive/gt-20260926150907-b6e31e/ledger.json": "b15f7863c8ff1b5a59821b1de1794cff16192fdd031e2746cbd8eed561d5f516",
+      "archive/gt-20260926165857-2cce99/events.jsonl": "fbb5427532a82f428f61383265680fcf5a8bac38fdd3eb6749a86f28c0be85da",
+      "archive/gt-20260926165857-2cce99/ledger.json": "750f019fb17ffc76fe44c3e7bb21f7bc40aece726c4d139fab22638957cd496d",
+      "events.jsonl": "7caf56860f9bffdfc5c93d14b252bbbe22a5cab8fbf1b282dc340e65bbecdef5",
+      "ledger.json": "23b55a12ebdaceda3413fcb0fc5c61a0b1edbeab6140d93942eb7c50dc0a1042"
+    },
+    "current": {
+      "archive/dinkuskit-inventory-order-reservations-v1/events.jsonl": "19797f911189798ed0b6807811aea25c7ed2aa23f64326da7b9511ba0e667d14",
+      "archive/dinkuskit-inventory-order-reservations-v1/ledger.json": "be27099d481149dda352538edca069c2ea08cfc16c1809893651e352e43479af",
+      "archive/dinkuskit-inventory-pack-all-v1/events.jsonl": "140f54b9c9f922721eba54e3c7a36eba5c457e47457116e38611d34b5de48b75",
+      "archive/dinkuskit-inventory-pack-all-v1/ledger.json": "e0e8c17848c71e9a96ae8f2e972332f8563380b1e3167f940ddc93282c1eb26d",
+      "archive/dinkuskit-inventory-pack-some-v1/events.jsonl": "75a484371a57744eb3bae35cc31d915d6587560517513e5acc29234f9a25d37a",
+      "archive/dinkuskit-inventory-pack-some-v1/ledger.json": "230433dda92a573bf20ff7a5ba80afdb55e921ce08615403b8894e54654977dd",
+      "archive/dinkuskit-inventory-transfer-list-v1/events.jsonl": "8a22e0708d6f35eb243c1ce8411cda63fa8958dbd9ad0fb80edebf7cf9114fdf",
+      "archive/dinkuskit-inventory-transfer-list-v1/ledger.json": "24fc462baa6b4c96d3a421b4238f1d6a0d9977561fcb76408ab5be8192639ba3",
+      "archive/dinkuskit-inventory-v1/events.jsonl": "c9ce8eaf51033f70801f2960fe53796a528b6a0a2aa8d934a03a13896fa17790",
+      "archive/dinkuskit-inventory-v1/ledger.json": "b56404619e41fafdd3f113900c4aaf392780822bb46932be4ad9a0390814d50f",
+      "archive/gt-20260926122606-08be01/events.jsonl": "90894adb4f650ae647bdb8e37038d6a4ff39cc08187067376d5cc2f64503879b",
+      "archive/gt-20260926122606-08be01/ledger.json": "6f7769a48bd14603cdb737e6f451917ea728bfc21881669d9974724c386daf07",
+      "archive/gt-20260926150907-b6e31e/events.jsonl": "e963319bbb02a01f3359509f02751f9d5cb6a3dd0f63d29716ad2cc2e31db756",
+      "archive/gt-20260926150907-b6e31e/ledger.json": "b15f7863c8ff1b5a59821b1de1794cff16192fdd031e2746cbd8eed561d5f516",
+      "archive/gt-20260926165857-2cce99/events.jsonl": "fbb5427532a82f428f61383265680fcf5a8bac38fdd3eb6749a86f28c0be85da",
+      "archive/gt-20260926165857-2cce99/ledger.json": "750f019fb17ffc76fe44c3e7bb21f7bc40aece726c4d139fab22638957cd496d",
+      "events.jsonl": "2144ca045d62d8087f04db9c209852d05e996eb5be775131245c5e78a857a3cc",
+      "ledger.json": "7ce86a1fabdaa1c41ed4c5badcc893ed290ba68c29d61e2560b1db16a554dce6"
+    },
+    "incoming": {
+      "archive/dinkuskit-inventory-order-reservations-v1/events.jsonl": "19797f911189798ed0b6807811aea25c7ed2aa23f64326da7b9511ba0e667d14",
+      "archive/dinkuskit-inventory-order-reservations-v1/ledger.json": "be27099d481149dda352538edca069c2ea08cfc16c1809893651e352e43479af",
+      "archive/dinkuskit-inventory-pack-all-v1/events.jsonl": "140f54b9c9f922721eba54e3c7a36eba5c457e47457116e38611d34b5de48b75",
+      "archive/dinkuskit-inventory-pack-all-v1/ledger.json": "e0e8c17848c71e9a96ae8f2e972332f8563380b1e3167f940ddc93282c1eb26d",
+      "archive/dinkuskit-inventory-pack-some-v1/events.jsonl": "75a484371a57744eb3bae35cc31d915d6587560517513e5acc29234f9a25d37a",
+      "archive/dinkuskit-inventory-pack-some-v1/ledger.json": "230433dda92a573bf20ff7a5ba80afdb55e921ce08615403b8894e54654977dd",
+      "archive/dinkuskit-inventory-transfer-list-v1/events.jsonl": "8a22e0708d6f35eb243c1ce8411cda63fa8958dbd9ad0fb80edebf7cf9114fdf",
+      "archive/dinkuskit-inventory-transfer-list-v1/ledger.json": "24fc462baa6b4c96d3a421b4238f1d6a0d9977561fcb76408ab5be8192639ba3",
+      "archive/dinkuskit-inventory-v1/events.jsonl": "c9ce8eaf51033f70801f2960fe53796a528b6a0a2aa8d934a03a13896fa17790",
+      "archive/dinkuskit-inventory-v1/ledger.json": "b56404619e41fafdd3f113900c4aaf392780822bb46932be4ad9a0390814d50f",
+      "archive/gt-20260926122606-08be01/events.jsonl": "90894adb4f650ae647bdb8e37038d6a4ff39cc08187067376d5cc2f64503879b",
+      "archive/gt-20260926122606-08be01/ledger.json": "6f7769a48bd14603cdb737e6f451917ea728bfc21881669d9974724c386daf07",
+      "archive/gt-20260926150907-b6e31e/events.jsonl": "e963319bbb02a01f3359509f02751f9d5cb6a3dd0f63d29716ad2cc2e31db756",
+      "archive/gt-20260926150907-b6e31e/ledger.json": "b15f7863c8ff1b5a59821b1de1794cff16192fdd031e2746cbd8eed561d5f516",
+      "archive/gt-20260926165857-2cce99/events.jsonl": "fbb5427532a82f428f61383265680fcf5a8bac38fdd3eb6749a86f28c0be85da",
+      "archive/gt-20260926165857-2cce99/ledger.json": "750f019fb17ffc76fe44c3e7bb21f7bc40aece726c4d139fab22638957cd496d",
+      "events.jsonl": "dde26f9c9448dffedc4961125307732ef30e181cd99dfd34947adb37b813ffe0",
+      "ledger.json": "df2c0cd4cb1f386e690d4ba676914b247e11e91838ebbc72c1f19f4681947712"
+    }
+  },
+  "title": "Inventory store-connect polling repair and current-main integration"
+}

@@ -1,0 +1,6 @@
+{
+  "command": "node --experimental-sqlite --experimental-strip-types --test tests/store-connect/poll-cas-reread.test.mjs",
+  "exit_code": 0,
+  "stdout": "✔ delayed poll CAS response does not delete newly connected session on expired_token (19.075125ms)\n✔ delayed poll CAS response does not overwrite newly connected session on slow_down (1.665334ms)\n✔ delayed SUCCESS response longer than polling interval retains token and permits only one exchange in flight (1.699458ms)\n✔ simultaneous same-CAS poll requests result in exactly one exchange and final token session (0.678916ms)\n✔ pending authorization response permits next poll after interval without wedging (0.590875ms)\n✔ unexpected fetch error restores nextPoll without wedging safe permitted polling (0.472125ms)\nℹ tests 6\nℹ suites 0\nℹ pass 6\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 130.068916\n",
+  "stderr": ""
+}
