@@ -82,6 +82,17 @@ async function readSession(ctx: PluginContext) {
 	}
 	throw new Error("Session changed; reload Inventory");
 }
+async function inspectSession(ctx: PluginContext): Promise<Session | null> {
+	const stored = await ctx.settings.getVersioned<string>("connectionSession");
+	if (!stored) return null;
+	try {
+		const interpreted = interpretStoredConnectionSession(JSON.parse(stored.value));
+		if (interpreted.kind === "current") return interpreted.session;
+		return null;
+	} catch {
+		return null;
+	}
+}
 async function saveSession(ctx: PluginContext, session: Session, revision: string | null) {
 	const result = await ctx.settings.compareAndSet("connectionSession", revision, JSON.stringify(session));
 	if (!result.applied) throw new Error("Session changed; reload Inventory");
@@ -93,7 +104,8 @@ async function clearSession(ctx: PluginContext, revision: string | null) {
 async function readProof(ctx: PluginContext, connectionId: string) {
 	const stored = await ctx.kv.get<unknown>(`state:store-proof:${connectionId}`);
 	if (!stored) return null;
-	return proofReceiptSchema.parse(stored);
+	const parsed = proofReceiptSchema.safeParse(stored);
+	return parsed.success ? parsed.data : null;
 }
 async function saveProof(ctx: PluginContext, receipt: ReturnType<typeof createProofReceipt>) {
 	await ctx.kv.compareAndSet(`state:store-proof:${receipt.connection_id}`, null, receipt);
@@ -364,7 +376,7 @@ const plugin: SandboxedPlugin = { routes: {
 				return pluginResponse({ status: 404, headers: { "content-type": "application/json" }, body: { kind: "text", value: JSON.stringify({ error: "not_found" }) } });
 			}
 			const receipt = await readProof(ctx, connectionId.data.connection_id);
-			const active = (await readSession(ctx))?.session;
+			const active = await inspectSession(ctx);
 			// Receipt creation precedes session CAS. Only the winning active transaction
 			// may publish, including while concurrent starts are still in progress.
 			const bound = receipt && active?.phase === "challenge"

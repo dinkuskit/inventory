@@ -1,0 +1,36 @@
+{
+  "recorded_at": "2026-10-01T00:21:36.582Z",
+  "base": "83a500e09172474dabf4de9cabc76029f7040a99",
+  "starting_head": "50335a359c92db064f6d3f1a95fba47f10f15a0a",
+  "source_sha256": {
+    "plugins/emdash-inventory/src/plugin.ts": "55c0eba7586d59c0210a6b78960b81d0c784c37803cd484fb55249f1bab1282f",
+    "tests/store-connect/legacy-device-session.test.mjs": "77aa451d5d363da30642a1b76af973217ce2ab1089e6403727b52a10507e1232",
+    "src/features/store-connect/index.ts": "89532e27e46673b436066785ad74587805acdedffc0247d79804359e98d942f3",
+    "src/features/store-connect/protocol.ts": "7dabdbfa0aa4e38e5b6ba2da41358387f2ee397dfe2aad45d66b59a531784fae",
+    "package.json": "9efd3c078100cd640888831cba9ed35bbc5fc7fd40df48276668c354b7b18229"
+  },
+  "checks": {
+    "verify-inventory-full": {
+      "exit_code": 0,
+      "raw_receipt_sha256": "092a6143d459f1123930405ab53691cc4b8ea99567ab7462a491c45f6b1e384e"
+    },
+    "hosted-onboarding-proof": {
+      "exit_code": 0,
+      "raw_receipt_sha256": "29de2d4e876cffb0c9d71d7c079c959baa85c25b6a372de34d7571b420e6d559"
+    }
+  },
+  "node_tests": {
+    "pass": 198,
+    "fail": 0
+  },
+  "cloudflare_tests": {
+    "pass": 29,
+    "fail": 0
+  },
+  "hosted_tests": {
+    "pass": 3,
+    "fail": 0
+  },
+  "dispatcher": "EmDash 1.0.1 actual dispatcher/workerd, website simulation",
+  "formal_review": "pending"
+}
