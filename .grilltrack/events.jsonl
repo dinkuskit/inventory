@@ -4,3 +4,9 @@
 {"action": "decision_verified", "at": "2026-09-30T19:28:14+00:00", "data": {"decision_id": "hosted-default-001"}, "event_id": "0f87c35f-fbbd-41f7-ab12-7fbfc11ec26e"}
 {"action": "decision_verified", "at": "2026-09-30T19:28:14+00:00", "data": {"decision_id": "store-control-004"}, "event_id": "f867b11e-f4be-47c2-a6e1-9fa6da6b3dbd"}
 {"action": "decision_verified", "at": "2026-09-30T19:28:14+00:00", "data": {"decision_id": "trial-access-003"}, "event_id": "efea24b5-0305-4949-8aa9-c340d3e580cd"}
+{"action": "focus_started", "at": "2026-10-01T03:52:17+00:00", "data": {"cadence": "sequential", "domain": "Installable EmDash Inventory stock administration proof"}, "event_id": "99842b1d-0695-48b3-996c-55c35d1eabe7"}
+{"action": "decision_proposed", "at": "2026-10-01T03:52:17+00:00", "data": {"decision_id": "emdash-stock-proof-005"}, "event_id": "12fbff38-6f35-4016-bb83-92e4f16db4ca"}
+{"action": "decision_locked", "at": "2026-10-01T03:52:17+00:00", "data": {"decision_id": "emdash-stock-proof-005"}, "event_id": "db23e7b0-b9b1-4516-b3c2-b042d83373be"}
+{"action": "shared_understanding_confirmed", "at": "2026-10-01T03:52:17+00:00", "data": {"summary": "Bobby explicitly confirmed and routed install, stock adjustment and persistence, and test merchant website Connect proofs. Implement Inventory service/plugin side locally with native ACP; preserve one canonical ledger, permission and tenant/site boundaries, exact retry, connection revocation denial, and restart persistence. Website sources remain with their owner; stop at merge gate."}, "event_id": "6c6d471b-252d-4b94-b37d-25791787c495"}
+{"action": "decision_implemented", "at": "2026-10-01T16:47:42+00:00", "data": {"decision_id": "emdash-stock-proof-005"}, "event_id": "18ddffb4-81ca-4543-b4d5-45cf14c1d894"}
+{"action": "decision_verified", "at": "2026-10-02T01:18:32+00:00", "data": {"decision_id": "emdash-stock-proof-005"}, "event_id": "c3f90173-1ad9-4a37-9187-22a3b045bbfd"}

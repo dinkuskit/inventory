@@ -1,7 +1,15 @@
 {
   "closeout": null,
   "created_at": "2026-09-30T16:14:40+00:00",
-  "current_focus": null,
+  "current_focus": {
+    "cadence": "sequential",
+    "confirmed": true,
+    "confirmed_at": "2026-10-01T03:52:17+00:00",
+    "domain": "Installable EmDash Inventory stock administration proof",
+    "started_at": "2026-10-01T03:52:17+00:00",
+    "status": "confirmed",
+    "summary": "Bobby explicitly confirmed and routed install, stock adjustment and persistence, and test merchant website Connect proofs. Implement Inventory service/plugin side locally with native ACP; preserve one canonical ledger, permission and tenant/site boundaries, exact retry, connection revocation denial, and restart persistence. Website sources remain with their owner; stop at merge gate."
+  },
   "decisions": [
     {
       "baseline_ref": "git:1228ed5f0ff74b8e5a6e303a1fe54698b04de441",
@@ -649,6 +657,78 @@
       "superseded_by": null,
       "updated_at": "2026-09-30T19:28:14+00:00",
       "verification_ref": "runs/store-connect-repair-runs/20260930/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:3e6ff39",
+      "candidate_refs": [],
+      "choice": "Install the standard sandboxed plugin through a clean real EmDash host; show synthetic SKU stock by explicit location; preview and confirm one permissioned reasoned adjustment through canonical Inventory; retain balance and immutable receipt across normal restart. Coordinate test-merchant Connect through DinkusKit website owner. No Registry publication, public deployment, real stock, billing, or Commerce Manage stock activation.",
+      "context_ref": "docs/CHARTER.md#emdash-plugin-distribution-016",
+      "created_at": "2026-10-01T03:52:17+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "account-connect-002",
+        "store-control-004"
+      ],
+      "domain": "Installable EmDash Inventory stock administration proof",
+      "history": [
+        {
+          "at": "2026-10-01T03:52:17+00:00",
+          "choice": "Install the standard sandboxed plugin through a clean real EmDash host; show synthetic SKU stock by explicit location; preview and confirm one permissioned reasoned adjustment through canonical Inventory; retain balance and immutable receipt across normal restart. Coordinate test-merchant Connect through DinkusKit website owner. No Registry publication, public deployment, real stock, billing, or Commerce Manage stock activation.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-10-01T16:47:42+00:00",
+          "choice": "Install the standard sandboxed plugin through a clean real EmDash host; show synthetic SKU stock by explicit location; preview and confirm one permissioned reasoned adjustment through canonical Inventory; retain balance and immutable receipt across normal restart. Coordinate test-merchant Connect through DinkusKit website owner. No Registry publication, public deployment, real stock, billing, or Commerce Manage stock activation.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-10-02T01:18:32+00:00",
+          "choice": "Install the standard sandboxed plugin through a clean real EmDash host; show synthetic SKU stock by explicit location; preview and confirm one permissioned reasoned adjustment through canonical Inventory; retain balance and immutable receipt across normal restart. Coordinate test-merchant Connect through DinkusKit website owner. No Registry publication, public deployment, real stock, billing, or Commerce Manage stock activation.",
+          "from": "implemented",
+          "implementation_ref": "file:plugins/emdash-inventory/src/plugin.ts;file:tools/emdash-host-observer.mjs;file:tools/emdash-proof-sandbox.mjs;file:tools/emdash-transport-fixture.mjs;file:tests/store-connect/plugin-site-identity.test.mjs",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "emdash-stock-proof-005",
+      "implementation_ref": "file:plugins/emdash-inventory/src/plugin.ts;file:tools/emdash-host-observer.mjs;file:tools/emdash-proof-sandbox.mjs;file:tools/emdash-transport-fixture.mjs;file:tests/store-connect/plugin-site-identity.test.mjs",
+      "question": "What is the next approved Inventory proof slice?",
+      "rationale": "",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-10-02T01:18:32+00:00",
+      "verification_ref": "proof/emdash-stock-admin-20260930/installed-flow.json"
     }
   ],
   "last_activation": {
@@ -671,5 +751,5 @@
   "status": "active",
   "title": "Inventory store-connect polling repair and current-main integration",
   "track_id": "gt-join-42f7bb6da7a34ed32ceed850c064516d",
-  "updated_at": "2026-09-30T19:28:14+00:00"
+  "updated_at": "2026-10-02T01:18:32+00:00"
 }

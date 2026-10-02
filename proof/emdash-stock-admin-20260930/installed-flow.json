@@ -1,0 +1,115 @@
+{
+  "qualification": "separate_local_test_variants_not_registry_or_hosted_availability",
+  "emdash": "1.0.1",
+  "node": "22.23.2_for_final_merchant_run",
+  "host_observer": {
+    "initialCause": "SsrfError dns_no_addresses before transport",
+    "observationalModuleRestored": true
+  },
+  "installed_stock": {
+    "tarballSha256": "e4f14e1f035842e323391c38ac0b51e49594281f855dd6df7dae3e3958ce0c65",
+    "siteBinding": "http://127.0.0.1:47631_before_fresh_UUID_fix",
+    "location": "Clean Central Depot",
+    "onHandBefore": "10 each v1",
+    "onHandAfterRestart": "7 each v2",
+    "delta": "-3 each",
+    "reason": "Three damaged units removed during synthetic installed-plugin proof",
+    "receiptId": "22b88f4d-280e-441b-8202-3d0d0a58b005",
+    "receiptSnapshotsIdentical": true,
+    "receiptSha256": "1544898464daf13675b6fec111b246022cbff3e971bef5249da52c35de7e163b",
+    "reseed": false,
+    "sessionRewrite": false
+  },
+  "test_merchant": {
+    "at": "2026-10-02T01:18:17.470165+00:00",
+    "qualification": "local_test_variant_not_registry_approval",
+    "merchantSignup": "normal_GUI_magic_link_verified_in_test_mailbox",
+    "explicitConsent": "visible_inventory_site_origin_127.0.0.1:47631",
+    "callback": "http://127.0.0.1:47631/_emdash/admin/plugins/dinkus-inventory/inventory",
+    "canonicalIssuer": "https://dinkuskit.com/account",
+    "audience": "inventory",
+    "scope": "inventory:admin",
+    "pool": {
+      "siteId": "77d9f7c5-bacb-49b3-9cda-7b37f52fbe6c",
+      "operationId": "4e95030b-c35a-45fc-8ff9-df1edc96d720",
+      "poolId": "pool_4e95030b-c35a-45fc-8ff9-df1edc96d720",
+      "locationId": "location_4e95030b-c35a-45fc-8ff9-df1edc96d720",
+      "status": "ready",
+      "authorization": "canonical_jwks_verified"
+    },
+    "restart": {
+      "hostPids": [
+        34383,
+        39513
+      ],
+      "sameWebsiteParent": true,
+      "samePoolAndSite": true,
+      "reseed": false,
+      "sessionRewrite": false
+    },
+    "installedReceipt": {
+      "beforeRedemption": {
+        "httpStatus": 200,
+        "cacheControl": "no-store",
+        "fieldCount": 10,
+        "receipt": {
+          "version": 1,
+          "connection_id": "edc47172-b88b-4c3d-a280-fb07198b484d",
+          "challenge": "3c917f4d-416f-4658-8cf8-ba9c7d936ff2",
+          "client_id": "dinkus-inventory-emdash",
+          "service": "inventory",
+          "site_id": "77d9f7c5-bacb-49b3-9cda-7b37f52fbe6c",
+          "site_origin": "http://127.0.0.1:47631",
+          "callback_uri": "http://127.0.0.1:47631/_emdash/admin/plugins/dinkus-inventory/inventory",
+          "code_challenge": "RSBGbM3lhPHPYC_oHYt-TEJHmbBzjQR9tHHWuiwtSf8",
+          "expires_at": 1790904522199
+        }
+      },
+      "afterRedemption": {
+        "httpStatus": 404
+      },
+      "normalRenewal": {
+        "sameSiteAndPool": true,
+        "explicitConsent": true,
+        "callbackUnchanged": true
+      }
+    },
+    "componentHead": "7502dc83424902c442da1eaaa5980fd250ff6aa8",
+    "sourceHashes": {
+      "tools/emdash-merchant-connect-proof.mjs": "312b5f33bbf61cb7d791deeae29c98232bb63000d4550e5c33e86560b464753a",
+      "tools/emdash-merchant-ipc-transport.mjs": "4ebd7321f44ceb337f81e4608bed10c3f5ac5f2ef0c9d5fae37c721c61c9f723",
+      "tools/emdash-merchant-inventory-worker.ts": "60526e6972ada84cf110d7163459dcb086a81b8fbfa533704dbe827556f4dbe5",
+      "tools/emdash-clean-install-host.mjs": "035eff9515f4a6aa9752ede0883dfbf1148f37bf949e99045f49d6c29ea2c83c",
+      "tools/emdash-clean-install-proof.mjs": "968996ef3a6c002f91e0e06c4ac0d06ade8caf363612a89fe1caf009c1124415",
+      "plugins/emdash-inventory/src/plugin.ts": "e7986b020088846b64473362012849fa151487089e08d41b8a2db91a03e6a5cd"
+    },
+    "screenshots": {
+      "merchant-signup.jpg": "ea3dba1fa4979ee936c304f63e76b537477641f0c594120a94cfbe4747480366",
+      "merchant-callback-scoped.jpg": "5f174280ff00746db331dda0568ec72df7f2dd7f653406c4e5ee75e4904b6782",
+      "merchant-connected-sites.jpg": "242c607a3327598dafc31573348fd2fe099f5d120ce4f931ffb909ba0b41e927",
+      "merchant-own-pool-after-restart.jpg": "b4882f32e049fe997d04582e2bca49bac26dcb72dc1366b37bcdc40d910bdae3",
+      "connect-before.jpg": "e00ddb7870a50f5b734c7ecb7a9df51c51659d4ef67b8e6096cb01ae77be6aa8",
+      "merchant-consent.jpg": "e84d6ee690a5f255d4b2f666d22a7d1b94f41ba8c1d2f6e25d64286d92db0367",
+      "installed-challenge.jpg": "445b834b9847e4bb094925e56d30f5b79b181e0ced3c9fe9b90a7da633daae24",
+      "merchant-own-pool.jpg": "b4882f32e049fe997d04582e2bca49bac26dcb72dc1366b37bcdc40d910bdae3",
+      "merchant-renewal-consent.jpg": "eb229eb50512f7f09064dbdb79ac3af7d2de049e2faf97a31a42c187c6df1ead",
+      "merchant-renewal-own-pool.jpg": "759c9f8f352ee5ae89581d634ade1cb26332f9abf1ac3daef6c3188f0075de45"
+    }
+  },
+  "installedMerchantTarballSha256": "cfb8e197ab7db5637cd1c355aa8a4cd6f657977436e6050f655f3864bacde4b9",
+  "verification": {
+    "gate": "bin/verify-inventory full",
+    "exit": 0,
+    "nodeTests": 224,
+    "merchantWorkerTests": 3,
+    "cloudflareTests": 29,
+    "hostedTests": 5,
+    "seconds": 29
+  },
+  "limits": [
+    "Production service/account authorities remain placeholders",
+    "No Registry publisher signing, hosted HTTPS integration, production grant, deployment or live inventory proved",
+    "Normal BetterAuth session records persist in ignored local D1; parent private keys remain memory-only",
+    "An expired challenge encrypted under an ended parent cannot be reused; old proof DB preserved and fresh parent bootstrapped separate host DB"
+  ]
+}

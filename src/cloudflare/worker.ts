@@ -3,6 +3,7 @@ import { createExecuteLocationCommand, createListLocations } from "../applicatio
 import type { AccountPrincipal, Operation, ProvisionResult } from "../features/hosted-onboarding/index.ts";
 
 import {
+	createReadReceiptHistory,
 	createReadSkuLocationBalance,
 	createReadSkuStock,
 } from "../application/read-inventory.ts";
@@ -14,6 +15,19 @@ import {
 	type SkuStockReadResult,
 	type SkuLocationBalanceReadResult,
 } from "../domain/inventory-read.ts";
+import {
+	InvalidStockAdjustmentCommandError,
+	StockAdjustmentConfirmationError,
+	StockAdjustmentPreviewError,
+	createConfirmStockAdjustment,
+	createPreviewStockAdjustment,
+	type AdjustStockCommandV1,
+	type ConfirmStockAdjustmentExecution,
+	type PreviewStockAdjustmentExecution,
+	type PreviewStockAdjustmentInputV1,
+	type StockAdjustmentPreviewV1,
+	type StockAdjustmentResult,
+} from "../features/stock-adjustment/index.ts";
 import { createCloudflareSqliteInventoryStore } from "../storage/cloudflare-sqlite-inventory-store.ts";
 import {
 	initializeCloudflareInventorySchema,
@@ -76,6 +90,67 @@ export class InventoryPool extends DurableObject<InventoryWorkerEnv> {
 			poolId: query.poolId,
 		});
 		return createReadSkuStock({ store })(query);
+	}
+
+	async previewStockAdjustment(
+		input: PreviewStockAdjustmentInputV1,
+		execution: PreviewStockAdjustmentExecution,
+	): Promise<{ ok: true; preview: StockAdjustmentPreviewV1 } | { ok: false; error: string; message: string }> {
+		const store = createCloudflareSqliteInventoryStore({
+			storage: this.ctx.storage,
+			poolId: input.context.poolId,
+		});
+		try {
+			const preview = await createPreviewStockAdjustment({
+				store,
+				now: () => new Date(),
+				createConfirmation: () => crypto.randomUUID(),
+			})(input, execution);
+			return { ok: true, preview };
+		} catch (error) {
+			if (error instanceof StockAdjustmentPreviewError) {
+				return { ok: false, error: error.code, message: error.message };
+			}
+			throw error;
+		}
+	}
+
+	async confirmStockAdjustment(
+		confirmation: string,
+		command: AdjustStockCommandV1,
+		execution: ConfirmStockAdjustmentExecution,
+	): Promise<{ ok: true; result: StockAdjustmentResult } | { ok: false; error: string; message: string }> {
+		const store = createCloudflareSqliteInventoryStore({
+			storage: this.ctx.storage,
+			poolId: command.context.poolId,
+		});
+		try {
+			const result = await createConfirmStockAdjustment({
+				store,
+				now: () => new Date(),
+				createReceiptId: () => crypto.randomUUID(),
+			})(confirmation, command, execution);
+			return { ok: true, result };
+		} catch (error) {
+			if (error instanceof StockAdjustmentConfirmationError) {
+				return { ok: false, error: error.code, message: error.message };
+			}
+			if (error instanceof InvalidStockAdjustmentCommandError) {
+				return { ok: false, error: "invalid_command", message: error.message };
+			}
+			throw error;
+		}
+	}
+
+	async readReceiptHistory(input: {
+		poolId: string;
+		scope: { kind: "location"; locationId: string } | { kind: "all_locations" };
+	}) {
+		const store = createCloudflareSqliteInventoryStore({
+			storage: this.ctx.storage,
+			poolId: input.poolId,
+		});
+		return createReadReceiptHistory({ store })(input);
 	}
 
 	async recordCounts(): Promise<CloudflareInventoryRecordCounts> {
