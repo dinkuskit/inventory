@@ -4,5 +4,8 @@
 	"type": "module",
 	"private": true,
 	"license": "MIT",
-	"exports": { ".": "./dist/index.mjs" }
+	"exports": {
+		".": "./dist/index.mjs",
+		"./sandbox": "./dist/plugin.mjs"
+	}
 }

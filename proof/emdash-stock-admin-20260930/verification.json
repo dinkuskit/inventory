@@ -1,0 +1,39 @@
+{
+  "timestamp": "2026-10-01T04:41:20.902Z",
+  "emdash_version": "1.0.1",
+  "sandbox_runner": "@emdash-cms/sandbox-workerd@0.9.1",
+  "tarball": {
+    "path": "plugins/emdash-inventory/dist/dinkus-inventory-0.0.0.tar.gz",
+    "sha256": "094351165c92d0d8a892c29a4ef3c68158268ad77f88914d4be36bfbf08455fe",
+    "bytes": 31274
+  },
+  "install_method": "dispatcher_fixture_test_runtime",
+  "coverage_scope": "dispatcher_sandbox_component_only",
+  "coverage_notes": "EmDashRuntime/manual manifest fixture is dispatcher/sandbox component coverage only, not genuine npm config-managed Astro install or complete runtime/security compliance.",
+  "genuine_clean_install": {
+    "status": "PASSED_FOR_EXPLICIT_LOCAL_TEST_VARIANTS",
+    "proof": "proof/emdash-stock-admin-20260930/installed-flow.json",
+    "notes": "Actual config-managed npm install into EmDash1.0.1 Astro host, standard workerd sandbox and Block Kit renderer. Stock adjustment/restart and real merchant consent are separate exact packages; production Registry and hosted authorities remain unavailable."
+  },
+  "capabilities": [
+    "network:request"
+  ],
+  "allowed_hosts": [
+    "inventory.dinkuskit.invalid",
+    "accounts.dinkuskit.invalid"
+  ],
+  "admin_route": "admin (Block Kit renderer)",
+  "proof_sku": "sku_proof_widget",
+  "outcomes": {
+    "canonical_stock_read": "On-Hand 10, Reserved 0, Available 10, Outgoing Transfer 0, Expected 0, In-Transit 0 (v1)",
+    "adjustment_preview": "before=10, after=7, delta=-3",
+    "adjustment_commit": "committed, balance=7 each (v2)",
+    "network_recovery_retry": "recovers pending command, balance=12 each (v3)",
+    "duplicate_replay_idempotency": "no second balance movement",
+    "storage_audit": "zero balances or ledgers in EmDash KV/settings"
+  },
+  "registry_gate": {
+    "status": "GATED_BY_DESIGN",
+    "reason": "Published Registry releases require ATProto lexicon validation (com.emdashcms.plugin.*) and publisher DID signing; invalid publisher remains gated by design. This dispatcher fixture proof verifies isolated component behaviors (Block Kit routes, CAS, retry idempotency) with partial runtime coverage, while actual local config-managed installation into a clean Astro site is verified separately."
+  }
+}

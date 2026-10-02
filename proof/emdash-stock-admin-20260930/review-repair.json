@@ -1,0 +1,154 @@
+{
+  "schema_version": 1,
+  "at": "2026-10-02T01:48:49.839374+00:00",
+  "pr": "https://github.com/dinkuskit/inventory/pull/40",
+  "reviewed_old_head": "9b91488f19b59ba63bc298b97008429fd506992a",
+  "review_ref": "https://github.com/dinkuskit/inventory/pull/40#issuecomment-5943872412",
+  "dispositions": [
+    {
+      "priority": "P1",
+      "classification": "required_fix",
+      "finding": "Missing originating EmDash administrator guard on stock adjustment intents",
+      "repair": "Bind trusted framework administrator to every intent phase; guard rendering, replacement, late preview response, confirm, retry, cancel and clear before final mutation or shared intent changes. Preserve unbound legacy intents without adopting the caller."
+    },
+    {
+      "priority": "P2",
+      "classification": "required_fix",
+      "finding": "Duplicate replay proof sends raw command instead of confirmation/command request",
+      "repair": "Replay the exact original serialized confirmation/command envelope and require the original receipt plus unchanged canonical stock and receipt bytes."
+    },
+    {
+      "classification": "reject_false_positive",
+      "finding": "Receipt attributed to the second EmDash administrator",
+      "reason": "Hosted principal intentionally remains the shared accountId / Site Administrator. Plugin originating-admin guard is required independently; hosted principal has not been redesigned."
+    }
+  ],
+  "source_sha256": {
+    "plugins/emdash-inventory/src/plugin.ts": "6e64fcec12a85772fc9daac364f15647fd9ccaef5b60fcb794b2edc76cd96ee7",
+    "tests/store-connect/plugin-stock-adjustment.test.mjs": "ca76bbd51da55153d91d075b984566abd820d80afbdf36dec197ce04de923dd9",
+    "tools/emdash-stock-admin-proof.mjs": "26abd8bcf8eaf0816a55b79648b792ffeb3735b61b11fc5d58b5de784654a678"
+  },
+  "regression": {
+    "old_head_real_red": {
+      "test": "second trusted admin cannot reach final mutation for another admin real preview",
+      "expected_final_mutations": 0,
+      "actual_final_mutations": 1,
+      "failed_tests": 1,
+      "log_sha256": "f7f498442a28ba5aef48f0cf57c0a73268776ddb61a1a05ee8851ce07b7a52aa"
+    },
+    "focused_green": {
+      "tests": 14,
+      "failed": 0,
+      "node": "22.23.2",
+      "log_sha256": "192d79ef51993480582bf1f21986f9265603b8bbe7816c24cdebcabff4c5b098",
+      "coverage": [
+        "trusted second admin rejected before final I/O",
+        "owner lost acknowledgement exact identity recovery",
+        "legacy unbound preview/pending/committed/rejected preserved",
+        "late preview cannot overwrite another administrator winning intent",
+        "foreign terminal result clearing blocked",
+        "expired unsubmitted preview recoverable only by its owner"
+      ]
+    }
+  },
+  "component_proof": {
+    "node": "24.21.0",
+    "exit_code": 0,
+    "cleanup": "runtime.shutdown() and Miniflare.dispose() awaited; wrapper exited normally; earlier retained partial-cleanup attempt required exact owned-helper termination",
+    "log_sha256": "f787b86b215fb79f679a15d5c6bfca471903eb5b02c1ef943bc8ac1b73a85dc7",
+    "verification": {
+      "timestamp": "2026-10-02T01:48:22.794Z",
+      "emdash_version": "1.0.1",
+      "sandbox_runner": "@emdash-cms/sandbox-workerd@0.9.1",
+      "tarball": {
+        "path": "plugins/emdash-inventory/dist/dinkus-inventory-0.0.0.tar.gz",
+        "sha256": "591aee1a3fc5a3401f078c83f874396f9a44af4d2611e7b112c98cdd2b3498f2",
+        "bytes": 31516
+      },
+      "install_method": "dispatcher_fixture_test_runtime",
+      "coverage_scope": "dispatcher_sandbox_component_only",
+      "administrator_isolation": {
+        "preview": {
+          "finalMutationCalls": 0,
+          "intentRevisionAndBytesUnchanged": true,
+          "balanceAndReceiptsUnchanged": true
+        },
+        "committed": {
+          "intentRevisionAndBytesUnchanged": true,
+          "balanceAndReceiptsUnchanged": true
+        },
+        "pending": {
+          "finalMutationCalls": 0,
+          "intentRevisionAndBytesUnchanged": true,
+          "balanceAndReceiptsUnchanged": true
+        }
+      },
+      "duplicate_replay": {
+        "exactOriginalEnvelope": true,
+        "originalReceiptId": "9a4bf3dc-0c53-40e3-b7a4-a10c3517ca9a",
+        "balance": {
+          "value": "12",
+          "unit": "each"
+        },
+        "version": "3",
+        "receiptCount": 3,
+        "stockAndReceiptBytesUnchanged": true
+      },
+      "local_authority_variant": {
+        "original": "https://inventory.dinkuskit.invalid",
+        "replacement": "https://dinkuskit.com",
+        "originalCodeSha256": "c3f20ff788a21276f8ab151a16c5ff4d3b34e8f9e994fce2fb221b25c1b61f27",
+        "runningCodeSha256": "08777e9dff83d41ded71e85e2e347b874cb21098755cd87cd6aeb2626558f690",
+        "fixturePublicSiteBinding": "proof-persist-site",
+        "standardHostChecks": true,
+        "finiteTransport": true
+      },
+      "coverage_notes": "EmDashRuntime/manual manifest fixture is dispatcher/sandbox component coverage only, not genuine npm config-managed Astro install or complete runtime/security compliance.",
+      "genuine_clean_install": {
+        "status": "NOT_PASSED",
+        "notes": "Current separate genuine clean install is evaluated separately by tools/emdash-clean-install-proof.mjs."
+      },
+      "capabilities": [
+        "network:request"
+      ],
+      "allowed_hosts": [
+        "dinkuskit.com",
+        "accounts.dinkuskit.invalid"
+      ],
+      "admin_route": "admin (Block Kit renderer)",
+      "proof_sku": "sku_proof_widget",
+      "outcomes": {
+        "canonical_stock_read": "On-Hand 10, Reserved 0, Available 10, Outgoing Transfer 0, Expected 0, In-Transit 0 (v1)",
+        "adjustment_preview": "before=10, after=7, delta=-3",
+        "adjustment_commit": "committed, balance=7 each (v2)",
+        "network_recovery_retry": "recovers pending command, balance=12 each (v3)",
+        "duplicate_replay_idempotency": "no second balance movement",
+        "storage_audit": "zero balances or ledgers in EmDash KV/settings"
+      },
+      "registry_gate": {
+        "status": "GATED_BY_DESIGN",
+        "reason": "Published Registry releases require ATProto lexicon validation (com.emdashcms.plugin.*) and publisher DID signing; invalid publisher remains gated by design. This dispatcher fixture proof verifies isolated component behaviors (Block Kit routes, CAS, retry idempotency) with partial runtime coverage, while actual local config-managed installation into a clean Astro site is verified separately."
+      }
+    },
+    "qualification": "Actual EmDash dispatcher/workerd sandbox and hosted Durable Object component proof. Uses an explicit in-memory resolving authority variant and public synthetic site binding; standard host/DNS/private-address/redirect and signed account checks precede finite transport. This repaired package has not been rerun through the separate config-managed Astro GUI install; prior installed-flow packages/screenshots remain historical exact artifacts."
+  },
+  "full_gate": {
+    "command": "bin/verify-inventory full",
+    "node": "22.23.2",
+    "exit_code": 0,
+    "seconds": 11.29,
+    "node_tests": 230,
+    "merchant_worker_tests": 3,
+    "cloudflare_tests": 29,
+    "hosted_tests": 5,
+    "type_architecture_bundle": "passed",
+    "log_sha256": "1671097eb8b6d12af528044459ee8afdd1728794797ed93a74e1735014783881"
+  },
+  "review_status": "Author implementation and verification complete; fresh exact-head official review required. Old-head CI/review does not clear this candidate.",
+  "scope_limits": [
+    "No production authority/package rewrite",
+    "No hosted principal redesign",
+    "No Registry publication, deployment, live merchant grant, real stock activation or merge",
+    "No raw token, cookie, private key or confirmation envelope persisted in public proof"
+  ]
+}
