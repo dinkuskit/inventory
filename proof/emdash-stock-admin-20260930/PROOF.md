@@ -47,3 +47,20 @@ This proves explicit local test variants. It does not approve Registry publisher
 signing or establish hosted HTTPS/DNS, deployment, a live merchant grant, real
 inventory activation, billing or merge readiness. Exact-source review and human
 merge authority remain separate.
+
+The subsequent PR40 review repairs are recorded in `review-repair.json`.
+They bind stock intents to the trusted initiating EmDash administrator and
+repair exact-envelope replay verification. A real old-head regression sent
+one unauthorized final mutation; the repaired handler suite passes 14 tests.
+The actual dispatcher/workerd/Inventory Durable Object component run verifies
+zero foreign final mutations, unchanged intent revisions and canonical
+balances/receipts, originating-admin lost-acknowledgement recovery, and replay
+of the original envelope returning the original receipt without another
+movement. Full runtime shutdown completes and the helper exits normally.
+
+The repair gate passes 230 Node, 3 merchant-worker, 29 Cloudflare and 5 hosted
+tests. This component run explicitly transforms only its in-memory authority
+and uses a public synthetic site binding. Earlier installed GUI packages and
+screenshots above remain historical exact artifacts; they do not prove the
+repaired package's config-managed GUI install. Fresh official review of the
+repaired head remains required. The shared hosted account principal is unchanged.

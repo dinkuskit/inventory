@@ -148,6 +148,7 @@ test("1. Fails closed and blocks preview replacement, cancel, or clear when an a
 	const kv = createMockKv();
 	const originalPendingIntent = {
 		status: "pending",
+		initiatingAdminId: ADMIN_ID,
 		preview: sampleCanonicalPreview(),
 		command: {
 			schema: "dinkuskit.inventory.command/v1",
@@ -238,6 +239,7 @@ test("2. Aborts confirm and DOES NOT call service if CAS to pending fails (unche
 	};
 	await kv.compareAndSet("state:stock-adjustment-intent", null, {
 		status: "preview",
+		initiatingAdminId: ADMIN_ID,
 		preview,
 		command,
 		expiresAt: Date.now() + 60000,
@@ -293,6 +295,7 @@ test("3. Rejects stale confirmation action referencing an outdated preview ident
 	};
 	await kv.compareAndSet("state:stock-adjustment-intent", null, {
 		status: "preview",
+		initiatingAdminId: ADMIN_ID,
 		preview,
 		command,
 		expiresAt: Date.now() + 60000,
@@ -340,6 +343,7 @@ test("4. Models lost acknowledgement at transport AFTER real service commit, the
 	};
 	await kv.compareAndSet("state:stock-adjustment-intent", null, {
 		status: "preview",
+		initiatingAdminId: ADMIN_ID,
 		preview,
 		command,
 		expiresAt: Date.now() + 60000,
@@ -423,6 +427,7 @@ test("5. Late retry/response cannot overwrite foreign state if revision changed 
 	// State is pending
 	await kv.compareAndSet("state:stock-adjustment-intent", null, {
 		status: "pending",
+		initiatingAdminId: ADMIN_ID,
 		preview,
 		command,
 		expiresAt: Date.now() + 60000,
@@ -434,6 +439,7 @@ test("5. Late retry/response cannot overwrite foreign state if revision changed 
 			// During HTTP call, a foreign state or recovery happens in KV
 			const foreignState = {
 				status: "preview",
+				initiatingAdminId: ADMIN_ID,
 				preview: sampleCanonicalPreview({ skuId: "sku_foreign_diff" }),
 				command: { ...command, commandId: "cmd_foreign_new_999" },
 				expiresAt: Date.now() + 100000,
@@ -483,6 +489,7 @@ test("6. Consumes canonical rejected StockAdjustmentResult at HTTP 409 (e.g. sta
 	};
 	await kv.compareAndSet("state:stock-adjustment-intent", null, {
 		status: "preview",
+		initiatingAdminId: ADMIN_ID,
 		preview,
 		command,
 		expiresAt: Date.now() + 60000,
@@ -533,6 +540,7 @@ test("6. Consumes canonical rejected StockAdjustmentResult at HTTP 409 (e.g. sta
 	// Now verify that a 409 canonical result with mismatched/foreign commandId does NOT terminalize
 	await kv.compareAndSet("state:stock-adjustment-intent", (await kv.getVersioned("state:stock-adjustment-intent")).revision, {
 		status: "pending",
+		initiatingAdminId: ADMIN_ID,
 		preview,
 		command,
 		expiresAt: Date.now() + 60000,
@@ -591,6 +599,7 @@ test("7. Lost ACK followed by non-authoritative inventory_not_ready (409) or una
 	// State already in pending (e.g. after prior lost ACK)
 	await kv.compareAndSet("state:stock-adjustment-intent", null, {
 		status: "pending",
+		initiatingAdminId: ADMIN_ID,
 		preview,
 		command,
 		expiresAt: Date.now() + 60000,
@@ -712,6 +721,7 @@ test("8. Action without explicit non-empty matching string for confirm, retry, c
 	// Set initial preview state
 	await kv.compareAndSet("state:stock-adjustment-intent", null, {
 		status: "preview",
+		initiatingAdminId: ADMIN_ID,
 		preview,
 		command,
 		expiresAt: Date.now() + 60000,
@@ -751,6 +761,7 @@ test("8. Action without explicit non-empty matching string for confirm, retry, c
 	// C. retry_adjustment with missing / empty / non-string / mismatched value must NOT call service writer
 	await kv.compareAndSet("state:stock-adjustment-intent", (await kv.getVersioned("state:stock-adjustment-intent")).revision, {
 		status: "pending",
+		initiatingAdminId: ADMIN_ID,
 		preview,
 		command,
 		expiresAt: Date.now() + 60000,
@@ -773,6 +784,7 @@ test("8. Action without explicit non-empty matching string for confirm, retry, c
 	// D. clear_adjustment_result with missing / empty / non-string / mismatched value must NOT delete result
 	await kv.compareAndSet("state:stock-adjustment-intent", (await kv.getVersioned("state:stock-adjustment-intent")).revision, {
 		status: "committed",
+		initiatingAdminId: ADMIN_ID,
 		commandId: "cmd_guard_001",
 		receipt: { receiptId: "rcpt_guard", committedAt: new Date().toISOString() },
 	});
@@ -793,6 +805,7 @@ test("8. Action without explicit non-empty matching string for confirm, retry, c
 	// E. Valid cancel with exact matching string succeeds
 	await kv.compareAndSet("state:stock-adjustment-intent", (await kv.getVersioned("state:stock-adjustment-intent")).revision, {
 		status: "preview",
+		initiatingAdminId: ADMIN_ID,
 		preview,
 		command,
 		expiresAt: Date.now() + 60000,
@@ -811,6 +824,7 @@ test("8. Action without explicit non-empty matching string for confirm, retry, c
 	// F. Valid clear with exact matching string succeeds
 	await kv.compareAndSet("state:stock-adjustment-intent", null, {
 		status: "committed",
+		initiatingAdminId: ADMIN_ID,
 		commandId: "cmd_guard_001",
 		receipt: { receiptId: "rcpt_guard", committedAt: new Date().toISOString() },
 	});
@@ -824,4 +838,221 @@ test("8. Action without explicit non-empty matching string for confirm, retry, c
 	}, ctx);
 	const storedAfterValidClear = await kv.get("state:stock-adjustment-intent");
 	assert.equal(storedAfterValidClear, null, "Valid clear_adjustment_result with matching commandId must delete state");
+});
+
+test("9. Binds a real preview to adminA, isolates adminB, and preserves exact pending retry", async () => {
+	const kv = createMockKv();
+	const preview = sampleCanonicalPreview();
+	let confirmCalls = 0;
+	let firstConfirmBody = null;
+	let retryBody = null;
+	let expectedCommandId = null;
+	const fetchHandler = async (req) => {
+		const url = new URL(req.url);
+		if (url.pathname === "/v1/status") return Response.json({ status: "ready", operation: { operationId: "op_1", poolId: "pool_1", locationName: "Warehouse One", locationId: "loc_wh_2", status: "ready", failureCode: null } });
+		if (url.pathname === "/v1/locations") return Response.json(sampleLocations());
+		if (url.pathname === "/v1/stock") return Response.json(sampleStockBalance());
+		if (url.pathname === "/v1/stock/adjust/preview") return Response.json(preview);
+		if (url.pathname === "/v1/stock/adjust/confirm") {
+			confirmCalls++;
+			const body = await req.text();
+			if (confirmCalls === 1) {
+				firstConfirmBody = body;
+				throw new Error("lost acknowledgement");
+			}
+			retryBody = body;
+			return Response.json({
+				schema: "dinkuskit.inventory.command-result/v1",
+				outcome: "committed",
+				commandId: expectedCommandId,
+				receipt: { receiptId: "rcpt_real_owner", committedAt: "2026-10-01T01:00:00Z" },
+			});
+		}
+		throw new Error(`Unexpected fetch: ${req.url}`);
+	};
+	const ctx = createTestCtx({ fetchHandler, kv });
+	const adminA = { id: "adminA" };
+	const adminB = { id: "adminB" };
+	const previewPage = await plugin.routes.admin.handler({
+		input: {
+			type: "form_submit",
+			action_id: "preview_adjustment",
+			values: { location_id: "loc_wh_2", sku_id: "sku_mug", delta_value: "-2", note: "Breakage" },
+		},
+		user: adminA,
+	}, ctx);
+	const confirmButton = (previewPage.blocks || []).find((block) => block.type === "actions")?.elements?.find((element) => element.action_id === "confirm_adjustment");
+	assert.equal(typeof confirmButton?.value, "string");
+	const frozen = await kv.get("state:stock-adjustment-intent");
+	assert.equal(frozen.initiatingAdminId, "adminA");
+	assert.equal(frozen.status, "preview");
+	assert.equal(frozen.command.commandId, confirmButton.value);
+	expectedCommandId = frozen.command.commandId;
+
+	const beforeAdminB = structuredClone(frozen);
+	const foreignPage = await plugin.routes.admin.handler({ input: { type: "page_load", page: "/inventory" }, user: adminB }, ctx);
+	assert.doesNotMatch(JSON.stringify(foreignPage), /confirm_adjustment|retry_adjustment|cancel_adjustment|clear_adjustment_result/);
+	for (const input of [
+		{ type: "block_action", action_id: "confirm_adjustment", value: confirmButton.value },
+		{ type: "block_action", action_id: "retry_adjustment", value: confirmButton.value },
+		{ type: "block_action", action_id: "cancel_adjustment", value: confirmButton.value },
+		{ type: "block_action", action_id: "clear_adjustment_result", value: confirmButton.value },
+		{ type: "form_submit", action_id: "preview_adjustment", values: { location_id: "loc_wh_2", sku_id: "sku_mug", delta_value: "99", note: "foreign replacement" } },
+	]) {
+		await plugin.routes.admin.handler({ input, user: adminB }, ctx);
+	}
+	assert.equal(confirmCalls, 0);
+	assert.deepEqual(await kv.get("state:stock-adjustment-intent"), beforeAdminB);
+
+	await plugin.routes.admin.handler({
+		input: { type: "block_action", action_id: "confirm_adjustment", value: confirmButton.value },
+		user: adminA,
+	}, ctx);
+	const pending = await kv.get("state:stock-adjustment-intent");
+	assert.equal(pending.status, "pending");
+	assert.equal(pending.initiatingAdminId, "adminA");
+	assert.equal(confirmCalls, 1);
+
+	const foreignPendingPage = await plugin.routes.admin.handler({ input: { type: "page_load", page: "/inventory" }, user: adminB }, ctx);
+	assert.doesNotMatch(JSON.stringify(foreignPendingPage), /retry_adjustment/);
+	await plugin.routes.admin.handler({
+		input: { type: "block_action", action_id: "retry_adjustment", value: confirmButton.value },
+		user: adminB,
+	}, ctx);
+	assert.equal(confirmCalls, 1);
+	assert.deepEqual(await kv.get("state:stock-adjustment-intent"), pending);
+
+	await plugin.routes.admin.handler({
+		input: { type: "block_action", action_id: "retry_adjustment", value: confirmButton.value },
+		user: adminA,
+	}, ctx);
+	const committed = await kv.get("state:stock-adjustment-intent");
+	assert.equal(committed.status, "committed");
+	assert.equal(committed.initiatingAdminId, "adminA");
+	assert.equal(retryBody, firstConfirmBody);
+	assert.equal(committed.receipt.receiptId, "rcpt_real_owner");
+});
+
+test("10. Legacy unbound adjustment intents are preserved and expose no actionable controls", async () => {
+	for (const legacyIntent of [
+		{ status: "preview", preview: sampleCanonicalPreview(), command: { schema: "dinkuskit.inventory.command/v1", commandId: "legacy_preview", type: "stock.adjust", context: { siteId: "https://shop.example.com", poolId: "pool_1", locationId: "loc_wh_2" }, payload: { skuId: "sku_mug", delta: { value: "-2", unit: "each" } }, reason: { note: "Breakage" }, references: [], expectedVersions: [{ skuId: "sku_mug", locationId: "loc_wh_2", version: "3" }] }, expiresAt: Date.now() + 60000 },
+		{ status: "pending", preview: sampleCanonicalPreview(), command: { schema: "dinkuskit.inventory.command/v1", commandId: "legacy_pending", type: "stock.adjust", context: { siteId: "https://shop.example.com", poolId: "pool_1", locationId: "loc_wh_2" }, payload: { skuId: "sku_mug", delta: { value: "-2", unit: "each" } }, reason: { note: "Breakage" }, references: [], expectedVersions: [{ skuId: "sku_mug", locationId: "loc_wh_2", version: "3" }] }, expiresAt: Date.now() + 60000 },
+		{ status: "committed", commandId: "legacy_committed", receipt: { receiptId: "legacy_receipt", committedAt: "2026-10-01T01:00:00Z" } },
+		{ status: "rejected", commandId: "legacy_rejected", code: "stale_version", message: "legacy" },
+	]) {
+		const kv = createMockKv();
+		await kv.compareAndSet("state:stock-adjustment-intent", null, legacyIntent);
+		let serviceCalls = 0;
+		const ctx = createTestCtx({
+			kv,
+			fetchHandler: async () => {
+				serviceCalls++;
+				throw new Error("legacy intent must not reach service");
+			},
+		});
+		const before = structuredClone(legacyIntent);
+		const page = await plugin.routes.admin.handler({ input: { type: "page_load", page: "/inventory" }, user: { id: ADMIN_ID } }, ctx);
+		assert.doesNotMatch(JSON.stringify(page), /confirm_adjustment|retry_adjustment|cancel_adjustment|clear_adjustment_result/);
+		await plugin.routes.admin.handler({ input: { type: "block_action", action_id: "clear_adjustment_result", value: legacyIntent.commandId }, user: { id: ADMIN_ID } }, ctx);
+		assert.equal(serviceCalls, 0);
+		assert.deepEqual(await kv.get("state:stock-adjustment-intent"), before);
+	}
+});
+
+function readyOperation() {
+	return { status: "ready", operation: { operationId: "op_1", poolId: "pool_1", locationName: "Warehouse Two", locationId: "loc_wh_2", status: "ready", failureCode: null } };
+}
+
+const previewInput = { type: "form_submit", action_id: "preview_adjustment", values: { location_id: "loc_wh_2", sku_id: "sku_mug", delta_value: "-2", note: "Breakage" } };
+
+test("11. A second trusted admin cannot reach final mutation for another admin's real preview", async () => {
+	let finalCalls = 0;
+	const ctx = createTestCtx({ fetchHandler: async req => {
+		const path = new URL(req.url).pathname;
+		if (path === "/v1/locations") return Response.json(sampleLocations());
+		if (path === "/v1/status") return Response.json(readyOperation());
+		if (path === "/v1/stock/adjust/preview") return Response.json(sampleCanonicalPreview());
+		if (path === "/v1/stock/adjust/confirm") {
+			finalCalls++;
+			const body = await req.json();
+			return Response.json({ outcome: "committed", commandId: body.command.commandId, receipt: { receiptId: "owner_receipt", committedAt: "2026-10-01T01:00:00Z" } });
+		}
+		throw new Error("Unexpected service route");
+	} });
+	await plugin.routes.admin.handler({ input: previewInput, user: { id: "adminA" } }, ctx);
+	const before = structuredClone(await ctx.kv.getVersioned("state:stock-adjustment-intent"));
+	await plugin.routes.admin.handler({ input: { type: "block_action", action_id: "confirm_adjustment", value: before.value.command.commandId }, user: { id: "adminB" } }, ctx);
+	assert.equal(finalCalls, 0, "foreign trusted administrator must not send a final stock mutation");
+	assert.deepEqual(await ctx.kv.getVersioned("state:stock-adjustment-intent"), before);
+	await plugin.routes.admin.handler({ input: { type: "block_action", action_id: "confirm_adjustment", value: before.value.command.commandId }, user: { id: "adminA" } }, ctx);
+	assert.equal(finalCalls, 1);
+	assert.equal((await ctx.kv.get("state:stock-adjustment-intent")).receipt.receiptId, "owner_receipt");
+});
+
+test("12. A late preview response cannot replace a different administrator's winning intent", async () => {
+	let releaseFirst, signalFirst;
+	const waiting = new Promise(resolve => { signalFirst = resolve; });
+	const gate = new Promise(resolve => { releaseFirst = resolve; });
+	let previews = 0;
+	const ctx = createTestCtx({ fetchHandler: async req => {
+		const path = new URL(req.url).pathname;
+		if (path === "/v1/locations") return Response.json(sampleLocations());
+		if (path === "/v1/stock/adjust/preview") {
+			if (++previews === 1) { signalFirst(); await gate; }
+			return Response.json(sampleCanonicalPreview());
+		}
+		throw new Error("Unexpected service route");
+	} });
+	const first = plugin.routes.admin.handler({ input: previewInput, user: { id: "adminA" } }, ctx);
+	await waiting;
+	await plugin.routes.admin.handler({ input: previewInput, user: { id: "adminB" } }, ctx);
+	const winner = structuredClone(await ctx.kv.getVersioned("state:stock-adjustment-intent"));
+	assert.equal(winner.value.initiatingAdminId, "adminB");
+	releaseFirst();
+	await first;
+	assert.deepEqual(await ctx.kv.getVersioned("state:stock-adjustment-intent"), winner);
+});
+
+test("13. Foreign administrators cannot clear bound committed or rejected results", async () => {
+	for (const terminal of [
+		{ status: "committed", initiatingAdminId: "adminA", commandId: "terminal_command", receipt: { receiptId: "terminal_receipt", committedAt: "2026-10-01T01:00:00Z" } },
+		{ status: "rejected", initiatingAdminId: "adminA", commandId: "terminal_command", code: "stale_version" },
+	]) {
+		let finalCalls = 0;
+		const ctx = createTestCtx({ fetchHandler: async req => {
+			const path = new URL(req.url).pathname;
+			if (path === "/v1/status") return Response.json(readyOperation());
+			if (path === "/v1/locations") return Response.json(sampleLocations());
+			finalCalls++;
+			throw new Error("Unexpected mutation");
+		} });
+		await ctx.kv.compareAndSet("state:stock-adjustment-intent", null, terminal);
+		const before = structuredClone(await ctx.kv.getVersioned("state:stock-adjustment-intent"));
+		const foreign = await plugin.routes.admin.handler({ input: { type: "page_load", page: "/inventory" }, user: { id: "adminB" } }, ctx);
+		assert.doesNotMatch(JSON.stringify(foreign), /terminal_command|terminal_receipt|clear_adjustment_result/);
+		await plugin.routes.admin.handler({ input: { type: "block_action", action_id: "clear_adjustment_result", value: terminal.commandId }, user: { id: "adminB" } }, ctx);
+		assert.deepEqual(await ctx.kv.getVersioned("state:stock-adjustment-intent"), before);
+		await plugin.routes.admin.handler({ input: { type: "block_action", action_id: "clear_adjustment_result", value: terminal.commandId }, user: { id: "adminA" } }, ctx);
+		assert.equal(await ctx.kv.get("state:stock-adjustment-intent"), null);
+		assert.equal(finalCalls, 0);
+	}
+});
+
+test("14. Only the originating administrator recovers an expired unsubmitted preview", async () => {
+	const ctx = createTestCtx({ fetchHandler: async req => {
+		const path = new URL(req.url).pathname;
+		if (path === "/v1/locations") return Response.json(sampleLocations());
+		if (path === "/v1/status") return Response.json(readyOperation());
+		if (path === "/v1/stock/adjust/preview") return Response.json(sampleCanonicalPreview());
+		throw new Error("Unexpected mutation");
+	} });
+	await plugin.routes.admin.handler({ input: previewInput, user: { id: "adminA" } }, ctx);
+	const saved = await ctx.kv.getVersioned("state:stock-adjustment-intent");
+	await ctx.kv.compareAndSet("state:stock-adjustment-intent", saved.revision, { ...saved.value, expiresAt: Date.now() - 1 });
+	const expired = structuredClone(await ctx.kv.getVersioned("state:stock-adjustment-intent"));
+	await plugin.routes.admin.handler({ input: { type: "page_load", page: "/inventory" }, user: { id: "adminB" } }, ctx);
+	assert.deepEqual(await ctx.kv.getVersioned("state:stock-adjustment-intent"), expired);
+	const owner = await plugin.routes.admin.handler({ input: { type: "page_load", page: "/inventory" }, user: { id: "adminA" } }, ctx);
+	assert.equal(await ctx.kv.get("state:stock-adjustment-intent"), null);
+	assert.match(JSON.stringify(owner), /select_stock/);
 });

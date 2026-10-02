@@ -713,22 +713,76 @@
           "review_source_identity": null,
           "to": "verified",
           "verification_ref": null
+        },
+        {
+          "at": "2026-10-02T01:41:20+00:00",
+          "choice": "Install the standard sandboxed plugin through a clean real EmDash host; show synthetic SKU stock by explicit location; preview and confirm one permissioned reasoned adjustment through canonical Inventory; retain balance and immutable receipt across normal restart. Coordinate test-merchant Connect through DinkusKit website owner. No Registry publication, public deployment, real stock, billing, or Commerce Manage stock activation.",
+          "from": "verified",
+          "implementation_ref": "file:plugins/emdash-inventory/src/plugin.ts;file:tools/emdash-host-observer.mjs;file:tools/emdash-proof-sandbox.mjs;file:tools/emdash-transport-fixture.mjs;file:tests/store-connect/plugin-site-identity.test.mjs",
+          "note": "adjudicated review requires a fix",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "needs_reverification",
+          "verification_ref": "proof/emdash-stock-admin-20260930/installed-flow.json"
+        },
+        {
+          "at": "2026-10-02T01:49:02+00:00",
+          "choice": "Install the standard sandboxed plugin through a clean real EmDash host; show synthetic SKU stock by explicit location; preview and confirm one permissioned reasoned adjustment through canonical Inventory; retain balance and immutable receipt across normal restart. Coordinate test-merchant Connect through DinkusKit website owner. No Registry publication, public deployment, real stock, billing, or Commerce Manage stock activation.",
+          "from": "needs_reverification",
+          "implementation_ref": "file:plugins/emdash-inventory/src/plugin.ts;file:tools/emdash-host-observer.mjs;file:tools/emdash-proof-sandbox.mjs;file:tools/emdash-transport-fixture.mjs;file:tests/store-connect/plugin-site-identity.test.mjs",
+          "note": "bounded implementation recorded",
+          "repair_required": true,
+          "review_classifications": [
+            "required_fix"
+          ],
+          "review_ref": "https://github.com/dinkuskit/inventory/pull/40#issuecomment-5943872412",
+          "review_result": "findings",
+          "review_source_identity": "git:9b91488f19b59ba63bc298b97008429fd506992a",
+          "to": "implemented",
+          "verification_ref": "proof/emdash-stock-admin-20260930/installed-flow.json"
+        },
+        {
+          "at": "2026-10-02T01:49:02+00:00",
+          "choice": "Install the standard sandboxed plugin through a clean real EmDash host; show synthetic SKU stock by explicit location; preview and confirm one permissioned reasoned adjustment through canonical Inventory; retain balance and immutable receipt across normal restart. Coordinate test-merchant Connect through DinkusKit website owner. No Registry publication, public deployment, real stock, billing, or Commerce Manage stock activation.",
+          "from": "implemented",
+          "implementation_ref": "proof/emdash-stock-admin-20260930/review-repair.json",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": "proof/emdash-stock-admin-20260930/installed-flow.json"
         }
       ],
       "id": "emdash-stock-proof-005",
-      "implementation_ref": "file:plugins/emdash-inventory/src/plugin.ts;file:tools/emdash-host-observer.mjs;file:tools/emdash-proof-sandbox.mjs;file:tools/emdash-transport-fixture.mjs;file:tests/store-connect/plugin-site-identity.test.mjs",
+      "implementation_ref": "proof/emdash-stock-admin-20260930/review-repair.json",
       "question": "What is the next approved Inventory proof slice?",
       "rationale": "",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
+      "review_history": [
+        {
+          "classifications": [
+            "required_fix"
+          ],
+          "ref": "https://github.com/dinkuskit/inventory/pull/40#issuecomment-5943872412",
+          "result": "findings",
+          "reviewed_at": "2026-10-02T01:41:20+00:00",
+          "source_identity": "git:9b91488f19b59ba63bc298b97008429fd506992a"
+        }
+      ],
       "review_ref": null,
       "review_result": null,
       "review_source_identity": null,
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-10-02T01:18:32+00:00",
-      "verification_ref": "proof/emdash-stock-admin-20260930/installed-flow.json"
+      "updated_at": "2026-10-02T01:49:02+00:00",
+      "verification_ref": "proof/emdash-stock-admin-20260930/review-repair.json"
     }
   ],
   "last_activation": {
@@ -751,5 +805,5 @@
   "status": "active",
   "title": "Inventory store-connect polling repair and current-main integration",
   "track_id": "gt-join-42f7bb6da7a34ed32ceed850c064516d",
-  "updated_at": "2026-10-02T01:18:32+00:00"
+  "updated_at": "2026-10-02T01:49:02+00:00"
 }

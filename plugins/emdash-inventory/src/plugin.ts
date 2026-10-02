@@ -115,18 +115,21 @@ type StockCommand = z.infer<typeof stockCommandSchema>;
 const adjustmentIntentSchema = z.discriminatedUnion("status", [
 	z.object({
 		status: z.literal("preview"),
+		initiatingAdminId: id,
 		preview: adjustmentPreviewSchema,
 		command: stockCommandSchema,
 		expiresAt: z.number(),
 	}).strict(),
 	z.object({
 		status: z.literal("pending"),
+		initiatingAdminId: id,
 		preview: adjustmentPreviewSchema,
 		command: stockCommandSchema,
 		expiresAt: z.number(),
 	}).strict(),
 	z.object({
 		status: z.literal("committed"),
+		initiatingAdminId: id,
 		commandId: z.string(),
 		receipt: z.object({
 			receiptId: z.string(),
@@ -135,6 +138,7 @@ const adjustmentIntentSchema = z.discriminatedUnion("status", [
 	}).strict(),
 	z.object({
 		status: z.literal("rejected"),
+		initiatingAdminId: id,
 		commandId: z.string(),
 		code: z.string(),
 		message: z.string().optional(),
@@ -475,6 +479,7 @@ async function executeAdjustmentConfirm(
 	const intentParsed = adjustmentIntentSchema.safeParse(intentRecord.value);
 	if (!intentParsed.success) return render(ctx, adminId);
 	const intent = intentParsed.data;
+	requireOriginatingAdministrator(intent.initiatingAdminId, adminId);
 
 	if (intent.status !== "preview" && intent.status !== "pending") {
 		return render(ctx, adminId);
@@ -485,7 +490,7 @@ async function executeAdjustmentConfirm(
 	}
 
 	let capturedRevision: string | null = null;
-	let frozenIntent: { preview: AdjustmentPreview; command: StockCommand; expiresAt: number };
+	let frozenIntent: { initiatingAdminId: string; preview: AdjustmentPreview; command: StockCommand; expiresAt: number };
 
 	if (intent.status === "preview") {
 		if (intent.expiresAt <= Date.now()) {
@@ -494,6 +499,7 @@ async function executeAdjustmentConfirm(
 		}
 		const pendingIntent: AdjustmentIntent = {
 			status: "pending",
+			initiatingAdminId: intent.initiatingAdminId,
 			preview: intent.preview,
 			command: intent.command,
 			expiresAt: intent.expiresAt,
@@ -546,6 +552,7 @@ async function executeAdjustmentConfirm(
 		if (res.outcome === "committed") {
 			const committedIntent: AdjustmentIntent = {
 				status: "committed",
+			initiatingAdminId: frozenIntent.initiatingAdminId,
 				commandId: res.commandId,
 				receipt: {
 					receiptId: res.receipt.receiptId,
@@ -560,6 +567,7 @@ async function executeAdjustmentConfirm(
 			// Canonical rejected outcome (e.g. stale_version, command_id_conflict, etc.)
 			const rejectedIntent: AdjustmentIntent = {
 				status: "rejected",
+				initiatingAdminId: frozenIntent.initiatingAdminId,
 				commandId: res.commandId,
 				code: res.code,
 				message: res.message,
@@ -578,6 +586,7 @@ async function executeAdjustmentConfirm(
 		if (parsedError.success && CONFIRMATION_FAILURE_CODES.has(parsedError.data.error)) {
 			const rejectedIntent: AdjustmentIntent = {
 				status: "rejected",
+				initiatingAdminId: frozenIntent.initiatingAdminId,
 				commandId: frozenIntent.command.commandId,
 				code: parsedError.data.error,
 				message: parsedError.data.message,
@@ -629,12 +638,19 @@ async function render(ctx: PluginContext, adminId: string): Promise<BlockRespons
 	const intentRaw = await ctx.kv.getVersioned<unknown>("state:stock-adjustment-intent");
 	if (intentRaw) {
 		const intentParsed = adjustmentIntentSchema.safeParse(intentRaw.value);
-		if (intentParsed.success) {
-			const intent = intentParsed.data;
-			if (intent.status === "preview") {
-				if (intent.expiresAt <= Date.now()) {
-					await ctx.kv.compareAndDelete("state:stock-adjustment-intent", intentRaw.revision);
-				} else {
+		if (!intentParsed.success) {
+			return notice("Adjustment requires its originating administrator", "This adjustment is preserved safely. The administrator who created it must continue, or support must resolve legacy state.");
+		}
+		const intent = intentParsed.data;
+		if (intent.initiatingAdminId !== adminId) {
+			return notice("Adjustment belongs to another administrator", "Only the administrator who created this adjustment can confirm, retry, cancel, clear, or replace it.");
+		}
+		if (intent.status === "preview") {
+			if (intent.expiresAt <= Date.now()) {
+				const cleared = await ctx.kv.compareAndDelete("state:stock-adjustment-intent", intentRaw.revision);
+				if (!cleared.applied) return notice("Preview changed", "Reload Inventory to inspect the current adjustment.");
+				return await render(ctx, adminId);
+			} else {
 					const p = intent.preview;
 					const deltaSign = Number(p.effect.onHandDelta.value) > 0 ? `+${p.effect.onHandDelta.value}` : p.effect.onHandDelta.value;
 					const blocks: Block[] = [
@@ -665,39 +681,38 @@ async function render(ctx: PluginContext, adminId: string): Promise<BlockRespons
 						],
 					});
 					return page(blocks);
-				}
-			} else if (intent.status === "pending") {
-				return page([
-					{
-						type: "banner",
-						variant: "alert",
-						title: "Adjustment outcome unknown / pending",
-						description: `Command ${intent.command.commandId} was sent but the network outcome is unconfirmed. Retry safely to resolve the original command without double-adjusting.`,
-					},
-					button("retry_adjustment", "Retry adjustment", intent.command.commandId),
-				]);
-			} else if (intent.status === "committed") {
-				return page([
-					{
-						type: "banner",
-						title: "Stock adjustment committed",
-						description: `Receipt: ${intent.receipt.receiptId}. Committed at: ${intent.receipt.committedAt}.`,
-					},
-					button("clear_adjustment_result", "Adjust stock again", intent.commandId),
-					button("refresh", "Refresh Inventory"),
-				]);
-			} else if (intent.status === "rejected") {
-				return page([
-					{
-						type: "banner",
-						variant: "alert",
-						title: "Stock adjustment rejected",
-						description: `Rejected code: ${intent.code}.`,
-					},
-					button("clear_adjustment_result", "Adjust stock again", intent.commandId),
-					button("refresh", "Refresh Inventory"),
-				]);
 			}
+		} else if (intent.status === "pending") {
+			return page([
+				{
+					type: "banner",
+					variant: "alert",
+					title: "Adjustment outcome unknown / pending",
+					description: `Command ${intent.command.commandId} was sent but the network outcome is unconfirmed. Retry safely to resolve the original command without double-adjusting.`,
+				},
+				button("retry_adjustment", "Retry adjustment", intent.command.commandId),
+			]);
+		} else if (intent.status === "committed") {
+			return page([
+				{
+					type: "banner",
+					title: "Stock adjustment committed",
+					description: `Receipt: ${intent.receipt.receiptId}. Committed at: ${intent.receipt.committedAt}.`,
+				},
+				button("clear_adjustment_result", "Adjust stock again", intent.commandId),
+				button("refresh", "Refresh Inventory"),
+			]);
+		} else if (intent.status === "rejected") {
+			return page([
+				{
+					type: "banner",
+					variant: "alert",
+					title: "Stock adjustment rejected",
+					description: `Rejected code: ${intent.code}.`,
+				},
+				button("clear_adjustment_result", "Adjust stock again", intent.commandId),
+				button("refresh", "Refresh Inventory"),
+			]);
 		}
 	}
 
@@ -856,9 +871,9 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 			const existingIntentRecord = await ctx.kv.getVersioned<unknown>("state:stock-adjustment-intent");
 			if (existingIntentRecord) {
 				const existingParsed = adjustmentIntentSchema.safeParse(existingIntentRecord.value);
-				if (existingParsed.success && existingParsed.data.status === "pending") {
-					return notice("Adjustment pending", "An adjustment is currently pending confirmation. Resolve or retry the pending adjustment first.");
-				}
+				if (!existingParsed.success) return notice("Adjustment requires its originating administrator", "This adjustment is preserved safely. Resolve the existing legacy state before preparing another.");
+				requireOriginatingAdministrator(existingParsed.data.initiatingAdminId, adminId);
+				if (existingParsed.data.status === "pending") return notice("Adjustment pending", "An adjustment is currently pending confirmation. Resolve or retry the pending adjustment first.");
 			}
 
 			const locId = interaction.values.location_id ?? (await ctx.kv.get<string>("state:selected-location"));
@@ -912,6 +927,7 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 			};
 			const intent: AdjustmentIntent = {
 				status: "preview",
+				initiatingAdminId: adminId,
 				preview,
 				command,
 				expiresAt: Date.parse(preview.confirmation.expiresAt),
@@ -919,7 +935,9 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 			const latestIntent = await ctx.kv.getVersioned<unknown>("state:stock-adjustment-intent");
 			if (latestIntent) {
 				const latestParsed = adjustmentIntentSchema.safeParse(latestIntent.value);
-				if (latestParsed.success && latestParsed.data.status === "pending") {
+				if (!latestParsed.success) return notice("Adjustment requires its originating administrator", "This adjustment is preserved safely. Resolve the existing legacy state before preparing another.");
+				requireOriginatingAdministrator(latestParsed.data.initiatingAdminId, adminId);
+				if (latestParsed.data.status === "pending") {
 					return notice("Adjustment pending", "An adjustment is currently pending confirmation.");
 				}
 				await ctx.kv.compareAndSet("state:stock-adjustment-intent", latestIntent.revision, intent);
@@ -933,14 +951,14 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 		if (interaction.type === "block_action" && interaction.action_id === "confirm_adjustment") {
 			const stored = await readSession(ctx);
 			if (!stored || stored.session.phase !== "token" || stored.session.expiresAt <= Date.now()) return render(ctx, adminId);
-			return executeAdjustmentConfirm(ctx, adminId, stored.session.token, interaction.value);
+			return await executeAdjustmentConfirm(ctx, adminId, stored.session.token, interaction.value);
 		}
 
 		// Handle retry stock adjustment action
 		if (interaction.type === "block_action" && interaction.action_id === "retry_adjustment") {
 			const stored = await readSession(ctx);
 			if (!stored || stored.session.phase !== "token" || stored.session.expiresAt <= Date.now()) return render(ctx, adminId);
-			return executeAdjustmentConfirm(ctx, adminId, stored.session.token, interaction.value);
+			return await executeAdjustmentConfirm(ctx, adminId, stored.session.token, interaction.value);
 		}
 
 		// Handle cancel adjustment (only cancels unsubmitted preview)
@@ -954,6 +972,7 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 			if (!intentParsed.success || intentParsed.data.status !== "preview") {
 				return render(ctx, adminId);
 			}
+			requireOriginatingAdministrator(intentParsed.data.initiatingAdminId, adminId);
 			if (intentParsed.data.command.commandId !== interaction.value) {
 				return render(ctx, adminId);
 			}
@@ -972,6 +991,7 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 			if (!intentParsed.success || (intentParsed.data.status !== "committed" && intentParsed.data.status !== "rejected")) {
 				return render(ctx, adminId);
 			}
+			requireOriginatingAdministrator(intentParsed.data.initiatingAdminId, adminId);
 			if (intentParsed.data.commandId !== interaction.value) {
 				return render(ctx, adminId);
 			}
@@ -1003,6 +1023,9 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 		return await render(ctx, adminId);
 	} catch (error) {
 		if (error instanceof StoreConnectError) {
+			if (error.code === "wrong_originating_admin" && ((parsed.data.type === "form_submit" && parsed.data.action_id === "preview_adjustment") || (parsed.data.type === "block_action" && ["confirm_adjustment", "retry_adjustment", "cancel_adjustment", "clear_adjustment_result"].includes(parsed.data.action_id)))) {
+				return notice("Adjustment belongs to another administrator", "Only the administrator who created this adjustment can continue or change it.");
+			}
 			if (error.code === "wrong_originating_admin" || error.code === "connection_in_progress") {
 				return notice("Connect already started", "Only the originating site administrator can continue this connection. Wait for it to finish or expire.");
 			}

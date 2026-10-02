@@ -18,9 +18,12 @@ import { Miniflare, convertV4MiniflareOptions } from "miniflare";
 import { createDialect } from "emdash/db/sqlite";
 import { build } from "esbuild";
 import { exportJWK, generateKeyPair, SignJWT } from "jose";
+import { installInventoryProofTransport, inventoryProofFetch } from "./emdash-proof-sandbox.mjs";
+
+const PROOF_SERVICE_ORIGIN = "https://dinkuskit.com";
 
 const root = process.cwd();
-const proofDir = resolve(root, "proof/emdash-stock-admin-20260930");
+const proofDir = resolve(root, process.env.EMDASH_STOCK_ADMIN_PROOF_RUN_DIR ?? "runs/emdash-install-proof-runs/20260930/review-repair-20261001");
 await mkdir(proofDir, { recursive: true });
 
 process.env.EMDASH_ENCRYPTION_KEY = `emdash_enc_v1_${randomBytes(32).toString("base64url")}`;
@@ -72,18 +75,29 @@ const mf = new Miniflare(
 );
 
 let dropNextConfirmResponse = false;
+let confirmTransportCalls = 0;
+let originalConfirmEnvelope = null;
+let originalConfirmResult = null;
 
 const originalFetch = globalThis.fetch;
 
 async function transport(url, init) {
 	const request = new Request(url, init);
 	const target = new URL(request.url);
-	if (target.origin === "https://inventory.dinkuskit.invalid") {
-		const res = await mf.dispatchFetch(request.url, {
+	if (target.origin === PROOF_SERVICE_ORIGIN) {
+		const requestBody = request.method === "POST" ? await request.text() : undefined;
+		if (target.pathname === "/v1/stock/adjust/confirm") {
+			confirmTransportCalls++;
+			if (originalConfirmEnvelope === null) originalConfirmEnvelope = requestBody;
+		}
+		const res = await mf.dispatchFetch(`https://inventory.dinkuskit.invalid${target.pathname}${target.search}`, {
 			method: request.method,
 			headers: request.headers,
-			body: request.method === "POST" ? await request.text() : undefined,
+			body: requestBody,
 		});
+		if (target.pathname === "/v1/stock/adjust/confirm" && originalConfirmResult === null) {
+			originalConfirmResult = await res.clone().json();
+		}
 		if (dropNextConfirmResponse && target.pathname === "/v1/stock/adjust/confirm") {
 			dropNextConfirmResponse = false;
 			// Network transport loss AFTER real service commit
@@ -103,6 +117,13 @@ console.log(`Tarball SHA-256: ${tarballSha256}`);
 
 const manifest = JSON.parse(await readFile(resolve(root, "plugins/emdash-inventory/dist/manifest.json"), "utf8"));
 const code = await readFile(resolve(root, "plugins/emdash-inventory/dist/plugin.mjs"), "utf8");
+// Explicit component-only authority variant. Standard host/DNS/SSRF checks
+// remain before the finite transport; production package bytes are unchanged.
+const authorityAnchor = "https://inventory.dinkuskit.invalid";
+if (code.split(authorityAnchor).length !== 2) throw new Error("Proof authority anchor differs");
+const proofCode = code.replace(authorityAnchor, PROOF_SERVICE_ORIGIN);
+const proofManifest = { ...manifest, allowedHosts: manifest.allowedHosts.map(host => host === "inventory.dinkuskit.invalid" ? "dinkuskit.com" : host) };
+const uninstallProofTransport = installInventoryProofTransport(transport);
 
 let runner;
 const runtime = await EmDashRuntime.create({
@@ -113,15 +134,15 @@ const runtime = await EmDashRuntime.create({
 	sandboxEnabled: true,
 	sandboxedPluginEntries: [
 		{
-			...manifest,
+			...proofManifest,
 			options: {},
-			code,
+			code: proofCode,
 			adminPages: manifest.admin.pages,
 			settingsSchema: manifest.admin.settingsSchema,
 		},
 	],
 	createSandboxRunner: (options) => {
-		runner = new WorkerdSandboxRunner({ ...options, httpFetch: transport });
+		runner = new WorkerdSandboxRunner({ ...options, httpFetch: inventoryProofFetch });
 		return runner;
 	},
 });
@@ -139,7 +160,7 @@ const adminUser = {
 	updatedAt: new Date().toISOString(),
 };
 
-async function dispatchAdmin(body) {
+async function dispatchAdmin(body, user = adminUser) {
 	const req = new Request("http://localhost:4321/_emdash/api/plugins/dinkus-inventory/admin", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -149,12 +170,38 @@ async function dispatchAdmin(body) {
 		runtime,
 		pluginId: "dinkus-inventory",
 		path: "admin",
-		user: adminUser,
+		user,
 		tokenScopes: ["admin", "plugins:manage"],
 		request: req,
 	});
 	return res.json();
 }
+
+async function intentFingerprint() {
+	const row = await runtime.db.selectFrom("_plugin_storage").select(["data", "revision"])
+		.where("plugin_id", "=", "dinkus-inventory").where("collection", "=", "__kv")
+		.where("id", "=", "state:stock-adjustment-intent").executeTakeFirst();
+	if (!row) throw new Error("Actual adjustment intent missing at proof boundary");
+	// Hash the transaction state in memory; never log or persist its confirmation.
+	return { revision: row.revision, sha256: createHash("sha256").update(row.data).digest("hex") };
+}
+
+async function canonicalSnapshot(locationId, skuId) {
+	const headers = { Authorization: `Bearer ${serviceToken}`, "X-Inventory-Site": principal.siteId };
+	const stock = await mf.dispatchFetch(`https://inventory.dinkuskit.invalid/v1/stock?sku_id=${skuId}&location_id=${locationId}`, { headers });
+	const receipts = await mf.dispatchFetch(`https://inventory.dinkuskit.invalid/v1/receipts?location_id=${locationId}`, { headers });
+	if (!stock.ok || !receipts.ok) throw new Error("Canonical proof state read failed");
+	const balance = (await stock.json()).balance?.balance;
+	const history = await receipts.json();
+	if (!balance || !Array.isArray(history.receipts)) throw new Error("Canonical proof state shape invalid");
+	return { balance, receiptIds: history.receipts.map(receipt => receipt.receiptId), receiptHash: createHash("sha256").update(JSON.stringify(history)).digest("hex") };
+}
+
+function unchanged(before, after, label) {
+	if (JSON.stringify(before) !== JSON.stringify(after)) throw new Error(`${label} changed unexpectedly`);
+}
+
+const administratorProof = {};
 
 try {
 	console.log("\n=== Starting End-to-End EmDash Stock Admin Proof ===\n");
@@ -184,6 +231,11 @@ try {
 	console.log(`Connected Pool: ${poolId}, Location: ${locationId}`);
 
 	const PROOF_SKU = "sku_proof_widget";
+	const secondAdmin = {
+		...adminUser,
+		id: "usr_proof_admin_other",
+		email: "other-admin@emdash.local",
+	};
 
 	// Step 2: Seed opening balance (10 each) for proof SKU in private SQLite DO...
 	console.log("\n[Step 2] Seeding opening balance (10 each) for proof SKU in private SQLite DO...");
@@ -221,6 +273,17 @@ try {
 	await runtime.db
 		.insertInto("_plugin_storage")
 		.values([
+			// This component fixture intentionally starts with an existing public
+			// synthetic site binding matching its signed service principal.
+			{
+				plugin_id: "dinkus-inventory",
+				collection: "__kv",
+				id: "state:site-id",
+				data: JSON.stringify(principal.siteId),
+				revision: "rev_site_01",
+				created_at: new Date().toISOString(),
+				updated_at: new Date().toISOString(),
+			},
 			{
 				plugin_id: "dinkus-inventory",
 				collection: "__kv",
@@ -294,6 +357,33 @@ try {
 	console.log(`PASS: Adjustment preview rendered with before (10) and after (7) balance effect.`);
 	console.log(`PASS: Intent saved to KV with status="preview", stable commandId=${boundCommandId}`);
 
+	// Step 5b: A different trusted administrator cannot see or mutate the frozen intent.
+	console.log("\n[Step 5b] Checking cross-administrator adjustment isolation...");
+	const otherAdminPage = await dispatchAdmin({ type: "page_load", page: "/inventory" }, secondAdmin);
+	const otherAdminText = JSON.stringify(otherAdminPage.data?.blocks || otherAdminPage.blocks || []);
+	if (otherAdminText.includes("confirm_adjustment") || otherAdminText.includes("retry_adjustment") || otherAdminText.includes("clear_adjustment_result") || otherAdminText.includes("cancel_adjustment")) {
+		throw new Error("Foreign administrator received actionable adjustment controls");
+	}
+	const previewCallsBeforeForeignActions = confirmTransportCalls;
+	const previewIntentBefore = await intentFingerprint();
+	const previewStockBefore = await canonicalSnapshot(locationId, PROOF_SKU);
+	for (const action of [
+		{ type: "block_action", action_id: "confirm_adjustment", value: boundCommandId },
+		{ type: "block_action", action_id: "retry_adjustment", value: boundCommandId },
+		{ type: "block_action", action_id: "cancel_adjustment", value: boundCommandId },
+		{ type: "block_action", action_id: "clear_adjustment_result", value: boundCommandId },
+		{ type: "form_submit", action_id: "preview_adjustment", values: { location_id: locationId, sku_id: PROOF_SKU, delta_value: "99", note: "Foreign replacement attempt" } },
+	]) {
+		await dispatchAdmin(action, secondAdmin);
+	}
+	if (confirmTransportCalls !== previewCallsBeforeForeignActions) {
+		throw new Error("Foreign administrator reached the final stock mutation endpoint");
+	}
+	unchanged(previewIntentBefore, await intentFingerprint(), "Foreign-admin preview intent");
+	unchanged(previewStockBefore, await canonicalSnapshot(locationId, PROOF_SKU), "Foreign-admin stock/receipts");
+	administratorProof.preview = { finalMutationCalls: 0, intentRevisionAndBytesUnchanged: true, balanceAndReceiptsUnchanged: true };
+	console.log("PASS: Foreign administrator received no adjustment controls and could not confirm, retry, cancel, clear, or replace the frozen intent.");
+
 	// Step 6: Confirming stock adjustment
 	console.log("\n[Step 6] Confirming stock adjustment...");
 	const confirmBody = await dispatchAdmin({
@@ -308,6 +398,13 @@ try {
 		throw new Error(`Confirm failed: ${confirmText}`);
 	}
 	console.log("PASS: Adjustment committed atomically.");
+	const committedBefore = await intentFingerprint();
+	const committedStockBefore = await canonicalSnapshot(locationId, PROOF_SKU);
+	await dispatchAdmin({ type: "block_action", action_id: "clear_adjustment_result", value: boundCommandId }, secondAdmin);
+	unchanged(committedBefore, await intentFingerprint(), "Foreign-admin committed result");
+	unchanged(committedStockBefore, await canonicalSnapshot(locationId, PROOF_SKU), "Foreign-admin committed stock/receipts");
+	administratorProof.committed = { intentRevisionAndBytesUnchanged: true, balanceAndReceiptsUnchanged: true };
+	await dispatchAdmin({ type: "block_action", action_id: "clear_adjustment_result", value: boundCommandId });
 
 	// Step 7: Reloading /inventory to check updated canonical stock
 	console.log("\n[Step 7] Reloading /inventory to check updated canonical stock...");
@@ -321,6 +418,8 @@ try {
 
 	// Step 8: Testing transport loss recovery and idempotent retry
 	console.log("\n[Step 8] Testing transport loss recovery and idempotent retry...");
+	originalConfirmEnvelope = null;
+	originalConfirmResult = null;
 	// Preview another adjustment: +5 each
 	const preview2Body = await dispatchAdmin({
 		type: "form_submit",
@@ -350,6 +449,16 @@ try {
 		throw new Error(`Expected pending banner, got: ${dropText}`);
 	}
 	console.log("PASS: Transport loss left intent in pending state, rendered pending banner.");
+	const pendingBefore = await intentFingerprint();
+	const pendingStockBefore = await canonicalSnapshot(locationId, PROOF_SKU);
+	const pendingCallsBefore = confirmTransportCalls;
+	for (const action_id of ["confirm_adjustment", "retry_adjustment", "cancel_adjustment", "clear_adjustment_result"]) {
+		await dispatchAdmin({ type: "block_action", action_id, value: testCmdId }, secondAdmin);
+	}
+	if (confirmTransportCalls !== pendingCallsBefore) throw new Error("Foreign administrator reached pending final mutation I/O");
+	unchanged(pendingBefore, await intentFingerprint(), "Foreign-admin pending intent");
+	unchanged(pendingStockBefore, await canonicalSnapshot(locationId, PROOF_SKU), "Foreign-admin pending stock/receipts");
+	administratorProof.pending = { finalMutationCalls: 0, intentRevisionAndBytesUnchanged: true, balanceAndReceiptsUnchanged: true };
 
 	// Reload renders pending
 	const pendingReloadBody = await dispatchAdmin({ type: "page_load", page: "/inventory" });
@@ -372,6 +481,7 @@ try {
 		throw new Error(`Retry failed: ${retryText}`);
 	}
 	console.log("PASS: Retry successfully re-sent original frozen command and committed.");
+	await dispatchAdmin({ type: "block_action", action_id: "clear_adjustment_result", value: testCmdId });
 
 	// Check updated balance
 	const afterRetryBody = await dispatchAdmin({ type: "page_load", page: "/inventory" });
@@ -383,6 +493,17 @@ try {
 
 	// Step 9: Testing exact duplicate replay produces no second stock movement
 	console.log("\n[Step 9] Testing exact duplicate replay produces no second stock movement...");
+	if (typeof originalConfirmEnvelope !== "string" || !originalConfirmResult?.receipt?.receiptId) {
+		throw new Error("Missing captured original confirm envelope or canonical receipt");
+	}
+	const stockBeforeDuplicateRes = await mf.dispatchFetch(`https://inventory.dinkuskit.invalid/v1/stock?sku_id=${PROOF_SKU}&location_id=${locationId}`, {
+		headers: { Authorization: `Bearer ${serviceToken}`, "X-Inventory-Site": principal.siteId },
+	});
+	const stockBeforeDuplicate = await stockBeforeDuplicateRes.json();
+	const receiptsBeforeDuplicateRes = await mf.dispatchFetch(`https://inventory.dinkuskit.invalid/v1/receipts?location_id=${locationId}`, {
+		headers: { Authorization: `Bearer ${serviceToken}`, "X-Inventory-Site": principal.siteId },
+	});
+	const receiptsBeforeDuplicate = await receiptsBeforeDuplicateRes.json();
 	const dupRes = await mf.dispatchFetch("https://inventory.dinkuskit.invalid/v1/stock/adjust/confirm", {
 		method: "POST",
 		headers: {
@@ -390,20 +511,26 @@ try {
 			"X-Inventory-Site": principal.siteId,
 			"Content-Type": "application/json",
 		},
-		body: JSON.stringify({
-			schema: "dinkuskit.inventory.command/v1",
-			commandId: testCmdId,
-			type: "stock.adjust",
-			context: { siteId: principal.siteId, poolId, locationId },
-			payload: { skuId: PROOF_SKU, delta: { value: "5", unit: "each" } },
-			reason: { note: "Restock with transport loss" },
-			references: [],
-			expectedVersions: [{ skuId: PROOF_SKU, locationId, version: "2" }],
-		}),
+		body: originalConfirmEnvelope,
 	});
 	const dupData = await dupRes.json();
-	if (dupData.outcome !== "committed") {
+	if (!dupRes.ok || dupData.outcome !== "committed" || dupData.commandId !== originalConfirmResult.commandId || dupData.receipt?.receiptId !== originalConfirmResult.receipt.receiptId) {
 		throw new Error(`Duplicate replay failed: ${JSON.stringify(dupData)}`);
+	}
+	const stockAfterDuplicateRes = await mf.dispatchFetch(`https://inventory.dinkuskit.invalid/v1/stock?sku_id=${PROOF_SKU}&location_id=${locationId}`, {
+		headers: { Authorization: `Bearer ${serviceToken}`, "X-Inventory-Site": principal.siteId },
+	});
+	const stockAfterDuplicate = await stockAfterDuplicateRes.json();
+	const receiptsAfterDuplicateRes = await mf.dispatchFetch(`https://inventory.dinkuskit.invalid/v1/receipts?location_id=${locationId}`, {
+		headers: { Authorization: `Bearer ${serviceToken}`, "X-Inventory-Site": principal.siteId },
+	});
+	const receiptsAfterDuplicate = await receiptsAfterDuplicateRes.json();
+	unchanged(stockBeforeDuplicate, stockAfterDuplicate, "Exact duplicate canonical stock");
+	unchanged(receiptsBeforeDuplicate, receiptsAfterDuplicate, "Exact duplicate immutable receipts");
+	if (stockAfterDuplicate.balance.balance.onHand.value !== stockBeforeDuplicate.balance.balance.onHand.value
+		|| stockAfterDuplicate.balance.balance.version !== stockBeforeDuplicate.balance.balance.version
+		|| receiptsAfterDuplicate.receipts.length !== receiptsBeforeDuplicate.receipts.length) {
+		throw new Error("Duplicate replay changed canonical stock balance, version, or receipt count");
 	}
 	console.log("PASS: Duplicate replay did not move stock balance (remains 12 each, v3).");
 
@@ -421,6 +548,17 @@ try {
 		},
 		install_method: "dispatcher_fixture_test_runtime",
 		coverage_scope: "dispatcher_sandbox_component_only",
+		administrator_isolation: administratorProof,
+		duplicate_replay: { exactOriginalEnvelope: true, originalReceiptId: dupData.receipt.receiptId, balance: stockAfterDuplicate.balance.balance.onHand, version: stockAfterDuplicate.balance.balance.version, receiptCount: receiptsAfterDuplicate.receipts.length, stockAndReceiptBytesUnchanged: true },
+		local_authority_variant: {
+			original: authorityAnchor,
+			replacement: PROOF_SERVICE_ORIGIN,
+			originalCodeSha256: createHash("sha256").update(code).digest("hex"),
+			runningCodeSha256: createHash("sha256").update(proofCode).digest("hex"),
+			fixturePublicSiteBinding: principal.siteId,
+			standardHostChecks: true,
+			finiteTransport: true,
+		},
 		coverage_notes:
 			"EmDashRuntime/manual manifest fixture is dispatcher/sandbox component coverage only, not genuine npm config-managed Astro install or complete runtime/security compliance.",
 		genuine_clean_install: {
@@ -429,7 +567,7 @@ try {
 				"Current separate genuine clean install is evaluated separately by tools/emdash-clean-install-proof.mjs.",
 		},
 		capabilities: ["network:request"],
-		allowed_hosts: ["inventory.dinkuskit.invalid", "accounts.dinkuskit.invalid"],
+		allowed_hosts: proofManifest.allowedHosts,
 		admin_route: "admin (Block Kit renderer)",
 		proof_sku: PROOF_SKU,
 		outcomes: {
@@ -451,8 +589,11 @@ try {
 	console.log(`Wrote verification to ${resolve(proofDir, "verification.json")}`);
 } finally {
 	globalThis.fetch = originalFetch;
+	uninstallProofTransport();
 	try {
-		await runner?.stopWorkerd();
-	} catch {}
-	await mf.dispose();
+		await runtime.shutdown();
+	} finally {
+		await mf.dispose();
+	}
+	console.log("PASS: EmDash runtime and Inventory proof service shut down.");
 }
