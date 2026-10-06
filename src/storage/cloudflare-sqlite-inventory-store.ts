@@ -21,6 +21,7 @@ import type {
 	InventoryStore,
 	InventoryTransaction,
 	ListLocationsQuery,
+	ListManagedSkusQuery,
 	ListReceiptsQuery,
 	ListStockTransfersQuery,
 	LocationCommit,
@@ -1054,6 +1055,26 @@ export class CloudflareSqliteInventoryStore implements InventoryStore {
 				query.skuId,
 			),
 		);
+	}
+
+	async listManagedSkus(
+		query: ListManagedSkusQuery,
+	): Promise<readonly ManagedSkuRecord[]> {
+		if (query.poolId !== this.#poolId) {
+			throw new Error("A store cannot read across inventory pools.");
+		}
+		return this.#storage.sql
+			.exec(
+				`SELECT pool_id, inventory_sku_id, sku, display_name, unit,
+				        version, registered_at, registered_by_json
+				 FROM inventory_skus
+				 WHERE pool_id = ?
+				 ORDER BY sku, inventory_sku_id`,
+				query.poolId,
+			)
+			.toArray()
+			.map((row) => managedSkuFrom(row))
+			.filter((sku): sku is ManagedSkuRecord => sku !== null);
 	}
 
 	async readStockTransfer(

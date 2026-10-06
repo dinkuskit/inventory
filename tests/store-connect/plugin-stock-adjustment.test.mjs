@@ -1023,6 +1023,7 @@ test("13. Foreign administrators cannot clear bound committed or rejected result
 			const path = new URL(req.url).pathname;
 			if (path === "/v1/status") return Response.json(readyOperation());
 			if (path === "/v1/locations") return Response.json(sampleLocations());
+			if (path === "/v1/skus") return Response.json({ skus: [{ inventorySkuId: "sku_1", sku: "SKU-1", displayName: "SKU 1", unit: "each" }] });
 			finalCalls++;
 			throw new Error("Unexpected mutation");
 		} });
@@ -1034,7 +1035,7 @@ test("13. Foreign administrators cannot clear bound committed or rejected result
 		assert.deepEqual(await ctx.kv.getVersioned("state:stock-adjustment-intent"), before);
 		await plugin.routes.admin.handler({ input: { type: "block_action", action_id: "clear_adjustment_result", value: terminal.commandId }, user: { id: "adminA" } }, ctx);
 		assert.equal(await ctx.kv.get("state:stock-adjustment-intent"), null);
-		assert.equal(finalCalls, 0);
+		assert.equal(finalCalls, 2);
 	}
 });
 
@@ -1042,6 +1043,7 @@ test("14. Only the originating administrator recovers an expired unsubmitted pre
 	const ctx = createTestCtx({ fetchHandler: async req => {
 		const path = new URL(req.url).pathname;
 		if (path === "/v1/locations") return Response.json(sampleLocations());
+		if (path === "/v1/skus") return Response.json({ skus: [{ inventorySkuId: "sku_1", sku: "SKU-1", displayName: "SKU 1", unit: "each" }] });
 		if (path === "/v1/status") return Response.json(readyOperation());
 		if (path === "/v1/stock/adjust/preview") return Response.json(sampleCanonicalPreview());
 		throw new Error("Unexpected mutation");

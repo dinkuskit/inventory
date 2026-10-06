@@ -40,6 +40,9 @@ const intentSchema = z.discriminatedUnion("type", [
 ]);
 const operationSchema = z.object({ operationId: id, poolId: id, locationName: z.string(), locationId: z.string().nullable(), status: z.enum(["pending", "ready", "failed"]), failureCode: z.string().nullable() });
 const statusSchema = z.discriminatedUnion("status", [z.object({ status: z.literal("unconnected") }), z.object({ status: z.enum(["pending", "ready", "failed"]), operation: operationSchema })]);
+const managedSkuIdentitySchema = z.object({ inventorySkuId: id, sku: z.string(), displayName: z.string() }).strict();
+const managedSkuSchema = managedSkuIdentitySchema.extend({ unit: z.literal("each") });
+const managedSkuListSchema = z.object({ skus: z.array(managedSkuSchema) }).strict();
 type Session = StoreConnectSession;
 
 class InventoryApiError extends Error {
@@ -186,6 +189,19 @@ const openingIntentSchema = z.discriminatedUnion("status", [
 ]);
 type OpeningIntent = z.infer<typeof openingIntentSchema>;
 
+const registrationBaseSchema = z.object({ initiatingAdminId: id, commandId: id });
+const registrationResultBaseSchema = z.object({ schema: z.literal("dinkuskit.inventory.command-result/v1").optional(), commandId: id });
+const registrationResultSchema = z.discriminatedUnion("outcome", [
+ registrationResultBaseSchema.extend({ outcome: z.enum(["registered", "existing"]), inventorySku: managedSkuIdentitySchema }),
+ registrationResultBaseSchema.extend({ outcome: z.literal("rejected"), code: z.string(), message: z.string().optional() }),
+]);
+const registrationIntentSchema = z.discriminatedUnion("status", [
+ registrationBaseSchema.extend({ status: z.literal("pending"), sku: z.string(), displayNameIfNew: z.string() }).strict(),
+ registrationBaseSchema.extend({ status: z.literal("committed"), inventorySku: managedSkuIdentitySchema }).strict(),
+ registrationBaseSchema.extend({ status: z.literal("rejected"), code: z.string(), message: z.string().optional() }).strict(),
+]);
+type RegistrationIntent = z.infer<typeof registrationIntentSchema>;
+
 const canonicalStockAdjustmentResultSchema = z.discriminatedUnion("outcome", [
 	z.object({
 		schema: z.literal("dinkuskit.inventory.command-result/v1").optional(),
@@ -229,6 +245,8 @@ const interactionSchema = z.union([
 			"cancel_opening_balance",
 			"retry_opening_balance",
 			"clear_opening_balance_result",
+			"retry_registration",
+			"clear_registration_result",
 		]),
 		block_id: z.string().optional(),
 		value: z.unknown().optional(),
@@ -253,6 +271,12 @@ const interactionSchema = z.union([
 			location_id: id,
 			sku_id: z.string().trim().min(1).max(200),
 		}).strict(),
+	}),
+	z.object({
+		type: z.literal("form_submit"),
+		action_id: z.literal("register_sku"),
+		block_id: z.string().optional(),
+		values: z.object({ sku: z.string().trim().min(1).max(200), display_name: z.string().trim().min(1).max(200) }).strict(),
 	}),
 	z.object({
 		type: z.literal("form_submit"),
@@ -710,6 +734,42 @@ async function executeOpeningConfirm(ctx: PluginContext, adminId: string, token:
 	return render(ctx, adminId);
 }
 
+async function executeRegistration(
+	ctx: PluginContext,
+	adminId: string,
+	token: string,
+	targetCommandId: string,
+): Promise<BlockResponse> {
+	const record = await ctx.kv.getVersioned<unknown>("state:sku-registration-intent");
+	if (!record) return render(ctx, adminId);
+	const parsed = registrationIntentSchema.safeParse(record.value);
+	if (!parsed.success || parsed.data.status !== "pending" || parsed.data.commandId !== targetCommandId) return render(ctx, adminId);
+	requireOriginatingAdministrator(parsed.data.initiatingAdminId, adminId);
+	let response: Response;
+	let body: unknown;
+	try {
+		({ response, body } = await fetchJson(ctx, SERVICE + "/v1/skus/register", {
+			method: "POST",
+			headers: { Authorization: `Bearer ${token}`, "X-Inventory-Site": await siteId(ctx), "Content-Type": "application/json" },
+			body: JSON.stringify({
+				commandId: parsed.data.commandId,
+				sku: parsed.data.sku,
+				displayNameIfNew: parsed.data.displayNameIfNew,
+			}),
+		}));
+	} catch {
+		return render(ctx, adminId);
+	}
+	const canonical = registrationResultSchema.safeParse(body);
+	const expectedStatus = canonical.success && canonical.data.outcome === "rejected" ? 409 : 200;
+	if (!canonical.success || response.status !== expectedStatus || canonical.data.commandId !== parsed.data.commandId) return render(ctx, adminId);
+	const next: RegistrationIntent = canonical.data.outcome === "rejected"
+		? { status: "rejected", initiatingAdminId: parsed.data.initiatingAdminId, commandId: canonical.data.commandId, code: canonical.data.code, message: canonical.data.message }
+		: { status: "committed", initiatingAdminId: parsed.data.initiatingAdminId, commandId: canonical.data.commandId, inventorySku: canonical.data.inventorySku };
+	await ctx.kv.compareAndSet("state:sku-registration-intent", record.revision, next);
+	return render(ctx, adminId);
+}
+
 async function render(ctx: PluginContext, adminId: string): Promise<BlockResponse> {
 	const stored = await readSession(ctx);
 	if (!stored || stored.session.expiresAt <= Date.now()) {
@@ -733,6 +793,26 @@ async function render(ctx: PluginContext, adminId: string): Promise<BlockRespons
 			{ type: "actions", elements: [{ type: "link", label: "Approve this site", target: { kind: "external", url: session.verificationUri } }] },
 			button("check_sign_in", "I’ve approved this site — continue"),
 			{ type: "context", text: "Waiting for explicit merchant consent. Stock has not been provisioned yet. After approval you return to Inventory." },
+		]);
+	}
+
+	const registrationRaw = await ctx.kv.getVersioned<unknown>("state:sku-registration-intent");
+	if (registrationRaw) {
+		const registrationParsed = registrationIntentSchema.safeParse(registrationRaw.value);
+		if (!registrationParsed.success) return notice("SKU registration requires its originating administrator", "The saved request is invalid. Contact support.");
+		const registration = registrationParsed.data;
+		if (registration.initiatingAdminId !== adminId) return notice("SKU registration belongs to another administrator", "The originating administrator must resolve this request.");
+		if (registration.status === "pending") return page([
+			{ type: "banner", variant: "alert", title: "SKU registration outcome unknown / pending", description: `Command ${registration.commandId} has an unconfirmed outcome. Retry safely.` },
+			button("retry_registration", "Retry SKU registration", registration.commandId),
+		]);
+		if (registration.status === "committed") return page([
+			{ type: "banner", title: "SKU registered", description: `${registration.inventorySku.displayName} (${registration.inventorySku.sku}) is registered. Stock was unchanged.` },
+			button("clear_registration_result", "Back to Inventory", registration.commandId),
+		]);
+		return page([
+			{ type: "banner", variant: "alert", title: "SKU registration rejected", description: `Rejected code: ${registration.code}.` },
+			button("clear_registration_result", "Back to Inventory", registration.commandId),
 		]);
 	}
 
@@ -863,9 +943,14 @@ async function render(ctx: PluginContext, adminId: string): Promise<BlockRespons
 		return page([{ type: "banner", title: "Inventory connected", description: "No stock locations found." }, button("refresh", "Refresh Inventory")]);
 	}
 
+	const skuList = managedSkuListSchema.parse(await api(ctx, session.token, "/v1/skus"));
 	const selectedLocId = await ctx.kv.get<string>("state:selected-location");
-	const selectedSkuId = await ctx.kv.get<string>("state:selected-sku");
+	const storedSkuId = await ctx.kv.get<string>("state:selected-sku");
+	const selectedSku = skuList.skus.find(sku => sku.inventorySkuId === storedSkuId) ?? skuList.skus[0];
+	const selectedSkuId = selectedSku?.inventorySkuId;
 	const activeLocation = locations.locations.find(l => l.locationId === selectedLocId) ?? locations.locations[0];
+	const locationOptions = locations.locations.map(location => ({ label: location.name, value: location.locationId }));
+	const skuOptions = skuList.skus.map(sku => ({ label: `${sku.displayName} (${sku.sku})`, value: sku.inventorySkuId }));
 
 	let stockBalance: {
 		onHand: string;
@@ -927,23 +1012,29 @@ async function render(ctx: PluginContext, adminId: string): Promise<BlockRespons
 	const blocks: Block[] = [
 		{ type: "banner", title: "Inventory connected", description: "Your Inventory operation is ready." },
 		{ type: "section", text: `Active stock locations: ${locations.locations.map(l => l.name).join(", ")}` },
+		{ type: "form", block_id: "register-sku", fields: [
+			{ type: "text_input", action_id: "sku", label: "Visible Commerce SKU" },
+			{ type: "text_input", action_id: "display_name", label: "Display name" },
+		], submit: { label: "Register SKU for Inventory", action_id: "register_sku" } },
 	];
 
-	blocks.push({
+	if (skuOptions.length > 0) blocks.push({
 		type: "form",
 		block_id: "select-stock-view",
 		fields: [
 			{
-				type: "text_input",
+				type: "select",
 				action_id: "location_id",
-				label: `Select Location ID (${locations.locations.map(l => `${l.name}: ${l.locationId}`).join("; ")})`,
-				initial_value: activeLocation ? activeLocation.locationId : "",
+				label: "Active location",
+				options: locationOptions,
+				initial_value: activeLocation ? activeLocation.locationId : undefined,
 			},
 			{
-				type: "text_input",
+				type: "select",
 				action_id: "sku_id",
-				label: "Inventory SKU ID",
-				initial_value: selectedSkuId ?? "",
+				label: "Registered SKU",
+				options: skuOptions,
+				initial_value: selectedSku?.inventorySkuId,
 			},
 		],
 		submit: { label: "View stock", action_id: "select_stock" },
@@ -959,8 +1050,8 @@ async function render(ctx: PluginContext, adminId: string): Promise<BlockRespons
 				type: "form",
 				block_id: "adjust-stock",
 				fields: [
-					{ type: "text_input", action_id: "location_id", label: "Location ID", initial_value: activeLocation.locationId },
-					{ type: "text_input", action_id: "sku_id", label: "SKU ID", initial_value: selectedSkuId },
+					{ type: "select", action_id: "location_id", label: "Active location", options: locationOptions, initial_value: activeLocation.locationId },
+					{ type: "select", action_id: "sku_id", label: "Registered SKU", options: skuOptions, initial_value: selectedSkuId },
 					{ type: "text_input", action_id: "delta_value", label: "Signed quantity delta (e.g. -2 or 5)" },
 					{ type: "text_input", action_id: "note", label: "Reason note" },
 				],
@@ -978,8 +1069,8 @@ async function render(ctx: PluginContext, adminId: string): Promise<BlockRespons
 					type: "form",
 					block_id: "opening-stock",
 					fields: [
-						{ type: "text_input", action_id: "location_id", label: "Location ID", initial_value: activeLocation.locationId },
-						{ type: "text_input", action_id: "sku_id", label: "SKU ID", initial_value: selectedSkuId },
+						{ type: "select", action_id: "location_id", label: "Active location", options: locationOptions, initial_value: activeLocation.locationId },
+						{ type: "select", action_id: "sku_id", label: "Registered SKU", options: skuOptions, initial_value: selectedSkuId },
 						{ type: "text_input", action_id: "quantity_value", label: "Initial quantity (non-negative)" },
 					],
 					submit: { label: "Preview initial stock", action_id: "preview_opening_balance" },
@@ -1012,6 +1103,28 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 			await setKvKey(ctx, "state:selected-location", interaction.values.location_id);
 			await setKvKey(ctx, "state:selected-sku", interaction.values.sku_id);
 			return await render(ctx, adminId);
+		}
+
+		if (interaction.type === "form_submit" && interaction.action_id === "register_sku") {
+			const stored = await readSession(ctx);
+			if (!stored || stored.session.phase !== "token" || stored.session.expiresAt <= Date.now()) return render(ctx, adminId);
+			const existing = await ctx.kv.getVersioned<unknown>("state:sku-registration-intent");
+			if (existing) {
+				const prior = registrationIntentSchema.safeParse(existing.value);
+				if (!prior.success) return notice("SKU registration requires its originating administrator", "Resolve the preserved registration request first.");
+				requireOriginatingAdministrator(prior.data.initiatingAdminId, adminId);
+				return notice("SKU registration pending", "Retry or resolve the existing registration before replacing it.");
+			}
+			const pending: RegistrationIntent = {
+				status: "pending",
+				initiatingAdminId: adminId,
+				commandId: crypto.randomUUID(),
+				sku: interaction.values.sku,
+				displayNameIfNew: interaction.values.display_name,
+			};
+			const saved = await ctx.kv.compareAndSet("state:sku-registration-intent", null, pending);
+			if (!saved.applied) return render(ctx, adminId);
+			return await executeRegistration(ctx, adminId, stored.session.token, pending.commandId);
 		}
 
 		if (interaction.type === "form_submit" && interaction.action_id === "preview_opening_balance") {
@@ -1157,6 +1270,22 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 			return await executeOpeningConfirm(ctx, adminId, stored.session.token, interaction.value);
 		}
 
+		if (interaction.type === "block_action" && interaction.action_id === "retry_registration") {
+			const stored = await readSession(ctx);
+			if (!stored || stored.session.phase !== "token" || stored.session.expiresAt <= Date.now() || typeof interaction.value !== "string") return render(ctx, adminId);
+			return await executeRegistration(ctx, adminId, stored.session.token, interaction.value);
+		}
+
+		if (interaction.type === "block_action" && interaction.action_id === "clear_registration_result") {
+			if (typeof interaction.value !== "string" || !interaction.value.trim()) return render(ctx, adminId);
+			const record = await ctx.kv.getVersioned<unknown>("state:sku-registration-intent");
+			const parsed = record && registrationIntentSchema.safeParse(record.value);
+			if (!record || !parsed || !parsed.success || parsed.data.status === "pending") return render(ctx, adminId);
+			requireOriginatingAdministrator(parsed.data.initiatingAdminId, adminId);
+			if (parsed.data.commandId === interaction.value) await ctx.kv.compareAndDelete("state:sku-registration-intent", record.revision);
+			return await render(ctx, adminId);
+		}
+
 		if (interaction.type === "block_action" && interaction.action_id === "cancel_opening_balance") {
 			if (typeof interaction.value !== "string" || !interaction.value.trim()) return render(ctx, adminId);
 			const record = await ctx.kv.getVersioned<unknown>("state:opening-balance-intent");
@@ -1239,7 +1368,7 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 		return await render(ctx, adminId);
 	} catch (error) {
 		if (error instanceof StoreConnectError) {
-			if (error.code === "wrong_originating_admin" && ((parsed.data.type === "form_submit" && ["preview_adjustment", "preview_opening_balance"].includes(parsed.data.action_id)) || (parsed.data.type === "block_action" && ["confirm_adjustment", "retry_adjustment", "cancel_adjustment", "clear_adjustment_result", "confirm_opening_balance", "retry_opening_balance", "cancel_opening_balance", "clear_opening_balance_result"].includes(parsed.data.action_id)))) {
+			if (error.code === "wrong_originating_admin" && ((parsed.data.type === "form_submit" && ["preview_adjustment", "preview_opening_balance", "register_sku"].includes(parsed.data.action_id)) || (parsed.data.type === "block_action" && ["confirm_adjustment", "retry_adjustment", "cancel_adjustment", "clear_adjustment_result", "confirm_opening_balance", "retry_opening_balance", "cancel_opening_balance", "clear_opening_balance_result", "retry_registration", "clear_registration_result"].includes(parsed.data.action_id)))) {
 				return notice("Request belongs to another administrator", "Only the administrator who created this request can continue or change it.");
 			}
 			if (error.code === "wrong_originating_admin" || error.code === "connection_in_progress") {

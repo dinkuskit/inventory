@@ -114,6 +114,12 @@ const openingConfirmInputSchema = z.object({
 	}).strict(),
 }).strict();
 
+const registerSkuInputSchema = z.object({
+	commandId: z.string().trim().min(1).max(200),
+	sku: z.string().trim().min(1).max(200),
+	displayNameIfNew: z.string().trim().min(1).max(200),
+}).strict();
+
 async function readBoundedJson(request: Request, maxBytes = 8192): Promise<{ text: string } | { error: "request_too_large" | "invalid_request" }> {
 	if (!request.headers.get("content-type")?.startsWith("application/json")) return { error: "invalid_request" };
 	const reader = request.body?.getReader();
@@ -143,6 +149,8 @@ export function createHostedInventoryHandler(env: HostedInventoryEnv, authentica
 			"/v1/status",
 			"/v1/operations",
 			"/v1/locations",
+			"/v1/skus",
+			"/v1/skus/register",
 			"/v1/stock",
 			"/v1/stock/opening/eligibility",
 			"/v1/stock/adjust/preview",
@@ -291,6 +299,26 @@ export function createHostedInventoryHandler(env: HostedInventoryEnv, authentica
 				return respond(result.result, result.result.outcome === "rejected" ? 409 : 200);
 			}
 
+			if (path === "/v1/skus/register") {
+				if (request.method !== "POST") return respond({ error: "method_not_allowed" }, 405);
+				const statusResult = await account.status(principal.siteId);
+				if (statusResult.status !== "ready") return respond({ error: "inventory_not_ready", connection: statusResult }, 409);
+				const bodyRead = await readBoundedJson(request, 4096);
+				if ("error" in bodyRead) return respond({ error: bodyRead.error }, bodyRead.error === "request_too_large" ? 413 : 400);
+				let parsed;
+				try { parsed = registerSkuInputSchema.parse(JSON.parse(bodyRead.text)); } catch { return respond({ error: "invalid_request" }, 400); }
+				const command = {
+					schema: "dinkuskit.inventory.command/v1" as const,
+					commandId: parsed.commandId,
+					type: "sku.register" as const,
+					context: { siteId: principal.siteId, poolId: statusResult.operation.poolId },
+					payload: { sku: parsed.sku, displayNameIfNew: parsed.displayNameIfNew, unit: "each" as const },
+					references: [],
+				};
+				const result = await env.INVENTORY_POOLS.getByName(statusResult.operation.poolId).registerManagedSku(command, principal);
+				return respond(result, result.outcome === "rejected" ? 409 : 200);
+			}
+
 			if (request.method !== "GET") return respond({ error: "method_not_allowed" }, 405);
 			if (path === "/v1/operations") return respond({ operations: await account.operations() });
 			const result = await account.status(principal.siteId);
@@ -301,6 +329,10 @@ export function createHostedInventoryHandler(env: HostedInventoryEnv, authentica
 
 			if (path === "/v1/locations") {
 				return respond(await pool.listLocations(result.operation.poolId));
+			}
+
+			if (path === "/v1/skus") {
+				return respond(await pool.listManagedSkus(result.operation.poolId));
 			}
 
 			if (path === "/v1/stock") {

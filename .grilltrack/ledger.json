@@ -4,11 +4,11 @@
   "current_focus": {
     "cadence": "sequential",
     "confirmed": true,
-    "confirmed_at": "2026-10-06T20:38:32+00:00",
-    "domain": "Reviewed initial stock in installed Inventory",
-    "started_at": "2026-10-06T20:38:31+00:00",
+    "confirmed_at": "2026-10-06T21:53:14+00:00",
+    "domain": "Default hosting and first-run Inventory installation experience",
+    "started_at": "2026-10-06T21:53:14+00:00",
     "status": "confirmed",
-    "summary": "Bobby explicitly authorized the complete merchant setup milestone and direct first bounded Inventory implementation. Implement reviewed initial stock using existing canonical kernel, host-attested administrator, explicit location and registered SKU, no physical opening seeding in acceptance flow, exact retries/reload with one mutation. Verify focused suites and full gate; Registry transport/live hosted issuance and cross-repo Commerce/website handoffs remain honestly unproven."
+    "summary": "The confirmed account/pool default supplements the active two-store onboarding slice. Preserve existing storage topology and source ownership; verify two different customers and explicit same-account joining."
   },
   "decisions": [
     {
@@ -86,10 +86,52 @@
           "review_source_identity": null,
           "to": "verified",
           "verification_ref": null
+        },
+        {
+          "at": "2026-10-06T21:53:14+00:00",
+          "choice": "Yes. Install Inventory from the EmDash Registry, click Connect Inventory, sign in or create a DinkusKit account, name the first stock location, then start adding stock. DinkusKit provisions the infrastructure automatically. Returning users can connect an existing inventory operation. Daily inventory work remains inside EmDash.",
+          "from": "verified",
+          "implementation_ref": "file:plugins/emdash-inventory/src/plugin.ts",
+          "note": "dependency hosted-default-001 changed: Confirmed account/pool behavior requires current-source reverification: each new store defaults to its own pool and explicit shared-pool joining requires same-account server authorization. No topology migration.",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "needs_reverification",
+          "verification_ref": "runs/store-connect-repair-runs/20260930/PROOF.md"
+        },
+        {
+          "at": "2026-10-06T22:23:15+00:00",
+          "choice": "Yes. Install Inventory from the EmDash Registry, click Connect Inventory, sign in or create a DinkusKit account, name the first stock location, then start adding stock. DinkusKit provisions the infrastructure automatically. Returning users can connect an existing inventory operation. Daily inventory work remains inside EmDash.",
+          "from": "needs_reverification",
+          "implementation_ref": "file:plugins/emdash-inventory/src/plugin.ts",
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": "runs/store-connect-repair-runs/20260930/PROOF.md"
+        },
+        {
+          "at": "2026-10-06T22:23:15+00:00",
+          "choice": "Yes. Install Inventory from the EmDash Registry, click Connect Inventory, sign in or create a DinkusKit account, name the first stock location, then start adding stock. DinkusKit provisions the infrastructure automatically. Returning users can connect an existing inventory operation. Daily inventory work remains inside EmDash.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/managed-sku-onboarding.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": "runs/store-connect-repair-runs/20260930/PROOF.md"
         }
       ],
       "id": "account-connect-002",
-      "implementation_ref": "file:plugins/emdash-inventory/src/plugin.ts",
+      "implementation_ref": "file:docs/implementation/managed-sku-onboarding.md",
       "question": "Does the default hosted installation use an explicit DinkusKit account connection?",
       "rationale": "The user explicitly agreed to the recommended one-time DinkusKit sign-in and setup flow. The account provides continuity across stores and site reinstalls and an identity for future billing; pricing and payment requirements are not decided by this choice.",
       "reconciliation_sources": [
@@ -117,8 +159,8 @@
       "review_source_identity": null,
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-30T19:28:11+00:00",
-      "verification_ref": "runs/store-connect-repair-runs/20260930/PROOF.md"
+      "updated_at": "2026-10-06T22:23:15+00:00",
+      "verification_ref": "file:proof/two-store-onboarding-20261006/PROOF.md"
     },
     {
       "baseline_ref": "git:1228ed5f0ff74b8e5a6e303a1fe54698b04de441",
@@ -344,12 +386,68 @@
           "review_source_identity": null,
           "to": "verified",
           "verification_ref": null
+        },
+        {
+          "at": "2026-10-06T21:53:14+00:00",
+          "choice": "DinkusKit operates the default hosted Inventory service. Shop owners install the sandboxed EmDash Registry plugin and configure inventory through EmDash without configuring Cloudflare, deploying Workers, or copying infrastructure credentials. The Inventory service remains the sole stock authority per pool.",
+          "from": "verified",
+          "implementation_ref": "file:src/cloudflare/hosted-worker.ts",
+          "note": "Confirmed account/pool behavior requires current-source reverification: each new store defaults to its own pool and explicit shared-pool joining requires same-account server authorization. No topology migration.",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "reopened",
+          "verification_ref": "runs/store-connect-repair-runs/20260930/PROOF.md"
+        },
+        {
+          "at": "2026-10-06T21:53:14+00:00",
+          "choice": "DinkusKit operates the default hosted Inventory service. Shop owners install the sandboxed EmDash Registry plugin and configure inventory through EmDash without configuring Cloudflare, deploying Workers, or copying infrastructure credentials. The Inventory service remains the sole stock authority per pool.",
+          "from": "reopened",
+          "implementation_ref": "file:src/cloudflare/hosted-worker.ts",
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": "runs/store-connect-repair-runs/20260930/PROOF.md"
+        },
+        {
+          "at": "2026-10-06T22:23:15+00:00",
+          "choice": "DinkusKit operates the default hosted Inventory service. Shop owners install the sandboxed EmDash Registry plugin and configure inventory through EmDash without configuring Cloudflare, deploying Workers, or copying infrastructure credentials. The Inventory service remains the sole stock authority per pool.",
+          "from": "locked",
+          "implementation_ref": "file:src/cloudflare/hosted-worker.ts",
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": "runs/store-connect-repair-runs/20260930/PROOF.md"
+        },
+        {
+          "at": "2026-10-06T22:23:15+00:00",
+          "choice": "DinkusKit operates the default hosted Inventory service. Shop owners install the sandboxed EmDash Registry plugin and configure inventory through EmDash without configuring Cloudflare, deploying Workers, or copying infrastructure credentials. The Inventory service remains the sole stock authority per pool.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/managed-sku-onboarding.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": "runs/store-connect-repair-runs/20260930/PROOF.md"
         }
       ],
       "id": "hosted-default-001",
-      "implementation_ref": "file:src/cloudflare/hosted-worker.ts",
+      "implementation_ref": "file:docs/implementation/managed-sku-onboarding.md",
       "question": "Who operates the default inventory service for registry plugin users?",
-      "rationale": "The product requires a low-friction installation. The user explicitly accepted DinkusKit-hosted inventory as the default.",
+      "rationale": "Preserve the hosted default. The confirmed pool choice supplements this decision without changing its hosting or publication authority.",
       "reconciliation_sources": [
         {
           "role": "base",
@@ -375,8 +473,8 @@
       "review_source_identity": null,
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-30T19:28:14+00:00",
-      "verification_ref": "runs/store-connect-repair-runs/20260930/PROOF.md"
+      "updated_at": "2026-10-06T22:23:15+00:00",
+      "verification_ref": "file:proof/two-store-onboarding-20261006/PROOF.md"
     },
     {
       "baseline_ref": "git:57aa9521fdfbddcbde0bf79a70708fdd8e771582",
@@ -497,10 +595,52 @@
           "review_source_identity": null,
           "to": "verified",
           "verification_ref": null
+        },
+        {
+          "at": "2026-10-06T21:53:14+00:00",
+          "choice": "The real sandboxed Inventory plugin binds a fresh expiring one-use store-control challenge to the host-attested site administrator, host site origin/identity, fixed callback and PKCE exchange. DinkusKit Better Auth owns separate merchant sessions, explicit consent, persistent site grants and service JWT issuance. No manual infrastructure setup or caller-provided ownership claim.",
+          "from": "verified",
+          "implementation_ref": "file:src/features/store-connect/protocol.ts;file:src/features/store-connect/index.ts;file:plugins/emdash-inventory/src/plugin.ts;file:docs/implementation/store-connect.md;file:.grilltrack/work/store-connect/CONTRACT.md;file:tools/run-hosted-onboarding-proof.mjs",
+          "note": "dependency hosted-default-001 changed: Confirmed account/pool behavior requires current-source reverification: each new store defaults to its own pool and explicit shared-pool joining requires same-account server authorization. No topology migration.",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "needs_reverification",
+          "verification_ref": "runs/store-connect-repair-runs/20260930/PROOF.md"
+        },
+        {
+          "at": "2026-10-06T22:23:15+00:00",
+          "choice": "The real sandboxed Inventory plugin binds a fresh expiring one-use store-control challenge to the host-attested site administrator, host site origin/identity, fixed callback and PKCE exchange. DinkusKit Better Auth owns separate merchant sessions, explicit consent, persistent site grants and service JWT issuance. No manual infrastructure setup or caller-provided ownership claim.",
+          "from": "needs_reverification",
+          "implementation_ref": "file:src/features/store-connect/protocol.ts;file:src/features/store-connect/index.ts;file:plugins/emdash-inventory/src/plugin.ts;file:docs/implementation/store-connect.md;file:.grilltrack/work/store-connect/CONTRACT.md;file:tools/run-hosted-onboarding-proof.mjs",
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": "runs/store-connect-repair-runs/20260930/PROOF.md"
+        },
+        {
+          "at": "2026-10-06T22:23:15+00:00",
+          "choice": "The real sandboxed Inventory plugin binds a fresh expiring one-use store-control challenge to the host-attested site administrator, host site origin/identity, fixed callback and PKCE exchange. DinkusKit Better Auth owns separate merchant sessions, explicit consent, persistent site grants and service JWT issuance. No manual infrastructure setup or caller-provided ownership claim.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/managed-sku-onboarding.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": "runs/store-connect-repair-runs/20260930/PROOF.md"
         }
       ],
       "id": "store-control-004",
-      "implementation_ref": "file:src/features/store-connect/protocol.ts;file:src/features/store-connect/index.ts;file:plugins/emdash-inventory/src/plugin.ts;file:docs/implementation/store-connect.md;file:.grilltrack/work/store-connect/CONTRACT.md;file:tools/run-hosted-onboarding-proof.mjs",
+      "implementation_ref": "file:docs/implementation/managed-sku-onboarding.md",
       "question": "How does Registry Connect authorize an actual merchant site?",
       "rationale": "User explicitly selected Better Auth and authorized Registry store-connection implementation and draft PR delivery; existing product boundaries remain.",
       "reconciliation_sources": [
@@ -546,8 +686,8 @@
       "review_source_identity": null,
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-30T19:28:14+00:00",
-      "verification_ref": "runs/store-connect-repair-runs/20260930/PROOF.md"
+      "updated_at": "2026-10-06T22:23:15+00:00",
+      "verification_ref": "file:proof/two-store-onboarding-20261006/PROOF.md"
     },
     {
       "baseline_ref": "git:1228ed5f0ff74b8e5a6e303a1fe54698b04de441",
@@ -624,10 +764,52 @@
           "review_source_identity": null,
           "to": "verified",
           "verification_ref": null
+        },
+        {
+          "at": "2026-10-06T21:53:14+00:00",
+          "choice": "Yes. Initial hosted Inventory access is a trial experience with no payment details required to connect and begin using Inventory. Trial duration, usage limits, pricing, and conversion policy remain undecided; this decision does not promise unlimited or permanently free service.",
+          "from": "verified",
+          "implementation_ref": "file:plugins/emdash-inventory/src/plugin.ts",
+          "note": "dependency hosted-default-001 changed: Confirmed account/pool behavior requires current-source reverification: each new store defaults to its own pool and explicit shared-pool joining requires same-account server authorization. No topology migration.",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "needs_reverification",
+          "verification_ref": "runs/store-connect-repair-runs/20260930/PROOF.md"
+        },
+        {
+          "at": "2026-10-06T22:23:15+00:00",
+          "choice": "Yes. Initial hosted Inventory access is a trial experience with no payment details required to connect and begin using Inventory. Trial duration, usage limits, pricing, and conversion policy remain undecided; this decision does not promise unlimited or permanently free service.",
+          "from": "needs_reverification",
+          "implementation_ref": "file:plugins/emdash-inventory/src/plugin.ts",
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": "runs/store-connect-repair-runs/20260930/PROOF.md"
+        },
+        {
+          "at": "2026-10-06T22:23:15+00:00",
+          "choice": "Yes. Initial hosted Inventory access is a trial experience with no payment details required to connect and begin using Inventory. Trial duration, usage limits, pricing, and conversion policy remain undecided; this decision does not promise unlimited or permanently free service.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/managed-sku-onboarding.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": "runs/store-connect-repair-runs/20260930/PROOF.md"
         }
       ],
       "id": "trial-access-003",
-      "implementation_ref": "file:plugins/emdash-inventory/src/plugin.ts",
+      "implementation_ref": "file:docs/implementation/managed-sku-onboarding.md",
       "question": "Can new users connect and try hosted Inventory without entering payment details?",
       "rationale": "The user wants to launch a low-friction trial experience and explore trial limits and pricing after gaining users.",
       "reconciliation_sources": [
@@ -655,8 +837,8 @@
       "review_source_identity": null,
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-09-30T19:28:14+00:00",
-      "verification_ref": "runs/store-connect-repair-runs/20260930/PROOF.md"
+      "updated_at": "2026-10-06T22:23:15+00:00",
+      "verification_ref": "file:proof/two-store-onboarding-20261006/PROOF.md"
     },
     {
       "baseline_ref": "git:3e6ff39",
@@ -757,10 +939,52 @@
           "review_source_identity": null,
           "to": "verified",
           "verification_ref": "proof/emdash-stock-admin-20260930/installed-flow.json"
+        },
+        {
+          "at": "2026-10-06T21:53:14+00:00",
+          "choice": "Install the standard sandboxed plugin through a clean real EmDash host; show synthetic SKU stock by explicit location; preview and confirm one permissioned reasoned adjustment through canonical Inventory; retain balance and immutable receipt across normal restart. Coordinate test-merchant Connect through DinkusKit website owner. No Registry publication, public deployment, real stock, billing, or Commerce Manage stock activation.",
+          "from": "verified",
+          "implementation_ref": "proof/emdash-stock-admin-20260930/review-repair.json",
+          "note": "dependency hosted-default-001 changed: Confirmed account/pool behavior requires current-source reverification: each new store defaults to its own pool and explicit shared-pool joining requires same-account server authorization. No topology migration.",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "needs_reverification",
+          "verification_ref": "proof/emdash-stock-admin-20260930/review-repair.json"
+        },
+        {
+          "at": "2026-10-06T22:23:15+00:00",
+          "choice": "Install the standard sandboxed plugin through a clean real EmDash host; show synthetic SKU stock by explicit location; preview and confirm one permissioned reasoned adjustment through canonical Inventory; retain balance and immutable receipt across normal restart. Coordinate test-merchant Connect through DinkusKit website owner. No Registry publication, public deployment, real stock, billing, or Commerce Manage stock activation.",
+          "from": "needs_reverification",
+          "implementation_ref": "proof/emdash-stock-admin-20260930/review-repair.json",
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": "proof/emdash-stock-admin-20260930/review-repair.json"
+        },
+        {
+          "at": "2026-10-06T22:23:15+00:00",
+          "choice": "Install the standard sandboxed plugin through a clean real EmDash host; show synthetic SKU stock by explicit location; preview and confirm one permissioned reasoned adjustment through canonical Inventory; retain balance and immutable receipt across normal restart. Coordinate test-merchant Connect through DinkusKit website owner. No Registry publication, public deployment, real stock, billing, or Commerce Manage stock activation.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/managed-sku-onboarding.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": "proof/emdash-stock-admin-20260930/review-repair.json"
         }
       ],
       "id": "emdash-stock-proof-005",
-      "implementation_ref": "proof/emdash-stock-admin-20260930/review-repair.json",
+      "implementation_ref": "file:docs/implementation/managed-sku-onboarding.md",
       "question": "What is the next approved Inventory proof slice?",
       "rationale": "",
       "repair_required": false,
@@ -781,8 +1005,8 @@
       "review_source_identity": null,
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-10-02T01:49:02+00:00",
-      "verification_ref": "proof/emdash-stock-admin-20260930/review-repair.json"
+      "updated_at": "2026-10-06T22:23:15+00:00",
+      "verification_ref": "file:proof/two-store-onboarding-20261006/PROOF.md"
     },
     {
       "baseline_ref": "git:ea957d7418ff4dbfeb859967d82349d84456fb94",
@@ -839,10 +1063,52 @@
           "review_source_identity": null,
           "to": "verified",
           "verification_ref": null
+        },
+        {
+          "at": "2026-10-06T21:53:14+00:00",
+          "choice": "Expose the existing Inventory opening preview and explicit confirmation through authenticated hosted service and standard plugin for an already registered SKU and explicit active location. Persist original command identity and initiating administrator through uncertain outcomes and retry. Do not invent SKU registration, a fallback ledger, production admission or Commerce stock activation.",
+          "from": "verified",
+          "implementation_ref": "file:docs/implementation/merchant-opening-stock.md",
+          "note": "dependency hosted-default-001 changed: Confirmed account/pool behavior requires current-source reverification: each new store defaults to its own pool and explicit shared-pool joining requires same-account server authorization. No topology migration.",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": "file:proof/merchant-setup-20261006/REVIEW-FINDINGS.md",
+          "review_result": "clean",
+          "review_source_identity": "git:9e80c1c8576080e963abeffa8bf2208806fa364c",
+          "to": "needs_reverification",
+          "verification_ref": "file:proof/merchant-setup-20261006/verification.json"
+        },
+        {
+          "at": "2026-10-06T22:23:15+00:00",
+          "choice": "Expose the existing Inventory opening preview and explicit confirmation through authenticated hosted service and standard plugin for an already registered SKU and explicit active location. Persist original command identity and initiating administrator through uncertain outcomes and retry. Do not invent SKU registration, a fallback ledger, production admission or Commerce stock activation.",
+          "from": "needs_reverification",
+          "implementation_ref": "file:docs/implementation/merchant-opening-stock.md",
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": "file:proof/merchant-setup-20261006/verification.json"
+        },
+        {
+          "at": "2026-10-06T22:23:15+00:00",
+          "choice": "Expose the existing Inventory opening preview and explicit confirmation through authenticated hosted service and standard plugin for an already registered SKU and explicit active location. Persist original command identity and initiating administrator through uncertain outcomes and retry. Do not invent SKU registration, a fallback ledger, production admission or Commerce stock activation.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/managed-sku-onboarding.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": "file:proof/merchant-setup-20261006/verification.json"
         }
       ],
       "id": "merchant-opening-stock-006",
-      "implementation_ref": "file:docs/implementation/merchant-opening-stock.md",
+      "implementation_ref": "file:docs/implementation/managed-sku-onboarding.md",
       "question": "How does a connected merchant establish reviewed stock without a fixture opening mutation?",
       "rationale": "Continuation of the explicitly accepted complete merchant setup milestone and existing opening-balance confirmation locks.",
       "repair_required": false,
@@ -856,17 +1122,174 @@
           "source_identity": "git:9e80c1c8576080e963abeffa8bf2208806fa364c"
         }
       ],
-      "review_ref": "file:proof/merchant-setup-20261006/REVIEW-FINDINGS.md",
-      "review_result": "clean",
-      "review_source_identity": "git:9e80c1c8576080e963abeffa8bf2208806fa364c",
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-10-06T20:58:54+00:00",
-      "verification_ref": "file:proof/merchant-setup-20261006/verification.json"
+      "updated_at": "2026-10-06T22:23:15+00:00",
+      "verification_ref": "file:proof/two-store-onboarding-20261006/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:206879d9562f927f2fad00dfa9b10a5cbef796c8",
+      "candidate_refs": [],
+      "choice": "Preserve separate server-owned InventoryAccount and InventoryPool SQLite objects with one canonical kernel. Expose existing managed-SKU registration through authenticated site-bound service and persisted originating-admin original command identity; use registered SKU and active location selectors. Prove two isolated EmDash1.0.1 package installs against one shared local test service, independent stocks/receipts and cross-tenant denial, then qualify actual consent/hosted provisioning only through approved Website artifacts and runtime scope. No architecture migration, catalog synchronization, Commerce activation, deployment or production stock.",
+      "context_ref": "file:proof/two-store-onboarding-20261006/BASELINE.md",
+      "created_at": "2026-10-06T21:48:54+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "merchant-opening-stock-006"
+      ],
+      "domain": "Two-store first-stock onboarding",
+      "history": [
+        {
+          "at": "2026-10-06T21:48:54+00:00",
+          "choice": "Preserve separate server-owned InventoryAccount and InventoryPool SQLite objects with one canonical kernel. Expose existing managed-SKU registration through authenticated site-bound service and persisted originating-admin original command identity; use registered SKU and active location selectors. Prove two isolated EmDash1.0.1 package installs against one shared local test service, independent stocks/receipts and cross-tenant denial, then qualify actual consent/hosted provisioning only through approved Website artifacts and runtime scope. No architecture migration, catalog synchronization, Commerce activation, deployment or production stock.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-10-06T21:53:14+00:00",
+          "choice": "Preserve separate server-owned InventoryAccount and InventoryPool SQLite objects with one canonical kernel. Expose existing managed-SKU registration through authenticated site-bound service and persisted originating-admin original command identity; use registered SKU and active location selectors. Prove two isolated EmDash1.0.1 package installs against one shared local test service, independent stocks/receipts and cross-tenant denial, then qualify actual consent/hosted provisioning only through approved Website artifacts and runtime scope. No architecture migration, catalog synchronization, Commerce activation, deployment or production stock.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "dependency hosted-default-001 changed: Confirmed account/pool behavior requires current-source reverification: each new store defaults to its own pool and explicit shared-pool joining requires same-account server authorization. No topology migration.",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "needs_reverification",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-10-06T22:23:16+00:00",
+          "choice": "Preserve separate server-owned InventoryAccount and InventoryPool SQLite objects with one canonical kernel. Expose existing managed-SKU registration through authenticated site-bound service and persisted originating-admin original command identity; use registered SKU and active location selectors. Prove two isolated EmDash1.0.1 package installs against one shared local test service, independent stocks/receipts and cross-tenant denial, then qualify actual consent/hosted provisioning only through approved Website artifacts and runtime scope. No architecture migration, catalog synchronization, Commerce activation, deployment or production stock.",
+          "from": "needs_reverification",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-10-06T22:23:16+00:00",
+          "choice": "Preserve separate server-owned InventoryAccount and InventoryPool SQLite objects with one canonical kernel. Expose existing managed-SKU registration through authenticated site-bound service and persisted originating-admin original command identity; use registered SKU and active location selectors. Prove two isolated EmDash1.0.1 package installs against one shared local test service, independent stocks/receipts and cross-tenant denial, then qualify actual consent/hosted provisioning only through approved Website artifacts and runtime scope. No architecture migration, catalog synchronization, Commerce activation, deployment or production stock.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/managed-sku-onboarding.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "two-store-onboarding-007",
+      "implementation_ref": "file:docs/implementation/managed-sku-onboarding.md",
+      "question": "How can two synthetic merchants establish independent initial stock through existing Inventory authority?",
+      "rationale": "The human accepted the two-store outcome and registration/selection sequence; existing contracts already lock tenancy, managed SKU and reviewed opening balance.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-10-06T22:23:16+00:00",
+      "verification_ref": "file:proof/two-store-onboarding-20261006/PROOF.md"
+    },
+    {
+      "baseline_ref": "git:206879d9562f927f2fad00dfa9b10a5cbef796c8",
+      "candidate_refs": [],
+      "choice": "An Inventory account can own multiple stock pools. Each new store receives a separate server-created pool by default. The merchant may explicitly join an existing pool only after server verification that the pool belongs to the same account. Different customers stay isolated. Browser-provided account or pool identifiers do not grant authority. Joining never silently merges or migrates a populated pool. This is logical behavior, not a physical database topology change.",
+      "context_ref": "file:proof/two-store-onboarding-20261006/BASELINE.md",
+      "created_at": "2026-10-06T21:53:14+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [
+        "two-store-onboarding-007",
+        "account-connect-002"
+      ],
+      "domain": "Default hosting and first-run Inventory installation experience",
+      "history": [
+        {
+          "at": "2026-10-06T21:53:14+00:00",
+          "choice": "An Inventory account can own multiple stock pools. Each new store receives a separate server-created pool by default. The merchant may explicitly join an existing pool only after server verification that the pool belongs to the same account. Different customers stay isolated. Browser-provided account or pool identifiers do not grant authority. Joining never silently merges or migrates a populated pool. This is logical behavior, not a physical database topology change.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-10-06T22:23:16+00:00",
+          "choice": "An Inventory account can own multiple stock pools. Each new store receives a separate server-created pool by default. The merchant may explicitly join an existing pool only after server verification that the pool belongs to the same account. Different customers stay isolated. Browser-provided account or pool identifiers do not grant authority. Joining never silently merges or migrates a populated pool. This is logical behavior, not a physical database topology change.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-10-06T22:23:16+00:00",
+          "choice": "An Inventory account can own multiple stock pools. Each new store receives a separate server-created pool by default. The merchant may explicitly join an existing pool only after server verification that the pool belongs to the same account. Different customers stay isolated. Browser-provided account or pool identifiers do not grant authority. Joining never silently merges or migrates a populated pool. This is logical behavior, not a physical database topology change.",
+          "from": "implemented",
+          "implementation_ref": "file:docs/implementation/managed-sku-onboarding.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "account-pool-default-008",
+      "implementation_ref": "file:docs/implementation/managed-sku-onboarding.md",
+      "question": "How do stores owned by an Inventory account choose stock pools?",
+      "rationale": "Explicitly confirmed merchant setup choice; preserve existing account-authorized reconnect semantics.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-10-06T22:23:16+00:00",
+      "verification_ref": "file:proof/two-store-onboarding-20261006/PROOF.md"
     }
   ],
   "last_activation": {
-    "at": "2026-09-30T16:14:40+00:00",
+    "at": "2026-10-06T21:53:14+00:00",
     "mechanism": "implicit"
   },
   "last_pause": null,
@@ -885,5 +1308,5 @@
   "status": "active",
   "title": "Inventory store-connect polling repair and current-main integration",
   "track_id": "gt-join-42f7bb6da7a34ed32ceed850c064516d",
-  "updated_at": "2026-10-06T20:58:54+00:00"
+  "updated_at": "2026-10-06T22:23:16+00:00"
 }

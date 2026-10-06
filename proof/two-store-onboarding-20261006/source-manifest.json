@@ -1,0 +1,13 @@
+{
+  "plugins/emdash-inventory/src/plugin.ts": "d97e8ca46a51dbaef81f07c159745186cf49073216d9a2eaff51275c63b586e0",
+  "src/cloudflare/hosted-worker.ts": "4745fbf57609884f041daf371fdaefcb3718e96de2b84f327d3bc009ee85e6e4",
+  "src/cloudflare/worker.ts": "3cce4f99ab50bb9fb4353b85235043ecde1e1ac559d8ba969c7205eaececd646",
+  "src/storage/cloudflare-sqlite-inventory-store.ts": "917299727504b836a4b9eba6eba3df3f5928b1b28b9d41c18e279c31842f2962",
+  "src/storage/inventory-store.ts": "a2f5d29b5f8258bb931fa777cf5aa298ee8ed2b0b8a4ecfad7ee7ad62310bdc1",
+  "src/storage/local-sqlite-test-store.ts": "da1b8346c80ce11ab9be4990818fa6fa28307d069c22d612d5ff987880fee584",
+  "tests/hosted-runtime/two-store-registration.test.mjs": "e4ffac0e94033ca0a0fea3714130f446796cb0e394eaefd131946d6b9765d270",
+  "tests/store-connect/plugin-sku-registration.test.mjs": "ce7ee323820964e040e2f0fb11d7be32f012b6997e6d4a2759d05143b6660f75",
+  "tests/store-connect/plugin-stock-adjustment.test.mjs": "bafa022d441bf42b41c750a25c386e7b363d93b5d894760ca767770a8d2bb325",
+  "docs/CHARTER.md": "81c3c5a5a76e519e90ce49e7a8a9ec5eb27c3fcf6ec4dd795866135d8fd2a6f4",
+  "docs/implementation/managed-sku-onboarding.md": "232694bad0a1648f7ce2549842cfc19553d165b02b75adf3db0fa5d50d0b52ea"
+}

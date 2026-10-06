@@ -1,0 +1,5 @@
+{"at":"2026-10-06T17:49:00-04:00","event":"started","detail":"Implemented bounded registration/selection slice from locked two-store-onboarding-007."}
+{"at":"2026-10-06T17:51:00-04:00","event":"verified","detail":"Cloudflare and plugin typechecks plus architecture audit passed; focused plugin tests passed 21/21."}
+{"at":"2026-10-06T17:52:00-04:00","event":"blocked","detail":"Hosted Vitest and plugin build could not start because pinned Rolldown native bindings are unavailable or have a macOS Team ID mismatch."}
+{"at": "2026-10-06T22:24:16.921249+00:00", "event": "parent_verified", "detail": "Official local WASI fallback restored runtime and bundle verification; final full source gate passed 240 Node, 29 Cloudflare and 9 hosted tests."}
+{"at": "2026-10-06T22:24:16.921249+00:00", "event": "installed_local_proof", "detail": "Two fresh installed hosts: real local merchant signup/consent, independent seven/eleven unit opening receipts, scoped child-cleanup restart, renewal and second-site grant revocation with first-site read intact. Hosted authority remains unproved."}

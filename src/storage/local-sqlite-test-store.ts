@@ -24,6 +24,7 @@ import type {
 	InventoryStore,
 	InventoryTransaction,
 	ListLocationsQuery,
+	ListManagedSkusQuery,
 	ListReceiptsQuery,
 	ListStockTransfersQuery,
 	LocationCommit,
@@ -1192,6 +1193,21 @@ export class LocalSqliteTestInventoryStore implements InventoryStore {
 				)
 				.get(query.poolId, query.skuId) as DatabaseRow | undefined,
 		);
+	}
+
+	async listManagedSkus(
+		query: ListManagedSkusQuery,
+	): Promise<readonly ManagedSkuRecord[]> {
+		return this.#openDatabase()
+			.prepare(
+				`SELECT pool_id, inventory_sku_id, sku, display_name, unit,
+				        version, registered_at, registered_by_json
+				 FROM inventory_skus
+				 WHERE pool_id = ?
+				 ORDER BY sku, inventory_sku_id`,
+			)
+			.all(query.poolId)
+			.map((row) => managedSkuFrom(row as DatabaseRow));
 	}
 
 	async readStockTransfer(

@@ -43,6 +43,11 @@ import type {
 	PreviewOpeningBalanceInputV1,
 	SetOpeningBalanceCommandV1,
 } from "../domain/opening-balance.ts";
+import {
+	createRegisterManagedSku,
+	type RegisterManagedSkuCommandV1,
+	type RegisterManagedSkuResult,
+} from "../features/managed-sku/index.ts";
 import { createCloudflareSqliteInventoryStore } from "../storage/cloudflare-sqlite-inventory-store.ts";
 import {
 	initializeCloudflareInventorySchema,
@@ -85,6 +90,41 @@ export class InventoryPool extends DurableObject<InventoryWorkerEnv> {
 	async listLocations(poolId: string) {
 		const store = createCloudflareSqliteInventoryStore({ storage: this.ctx.storage, poolId });
 		return createListLocations({ store })({ poolId, status: "active" });
+	}
+
+	async listManagedSkus(poolId: string) {
+		const store = createCloudflareSqliteInventoryStore({ storage: this.ctx.storage, poolId });
+		const skus = await store.listManagedSkus({ poolId });
+		return {
+			skus: skus.map((sku) => ({
+				inventorySkuId: sku.inventorySkuId,
+				sku: sku.sku,
+				displayName: sku.displayName,
+				unit: sku.unit,
+			})),
+		};
+	}
+
+	async registerManagedSku(
+		command: RegisterManagedSkuCommandV1,
+		principal: AccountPrincipal,
+	): Promise<RegisterManagedSkuResult> {
+		const store = createCloudflareSqliteInventoryStore({
+			storage: this.ctx.storage,
+			poolId: command.context.poolId,
+		});
+		return createRegisterManagedSku({
+			store,
+			now: () => new Date(),
+			createInventorySkuId: () => `inventory_sku_${crypto.randomUUID()}`,
+		})(command, {
+			principal: {
+				kind: "human",
+				id: principal.accountId,
+				displayName: "Site Administrator",
+				surface: "emdash",
+			},
+		});
 	}
 
 	async readSkuLocationBalance(

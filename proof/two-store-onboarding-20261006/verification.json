@@ -1,0 +1,15 @@
+{
+  "command": "NAPI_RS_FORCE_WASI=error npm run verify:full",
+  "exit": 0,
+  "nodeTests": 240,
+  "cloudflareTests": 29,
+  "hostedTests": 9,
+  "architecture": "passed",
+  "typechecks": [
+    "cloudflare",
+    "plugin"
+  ],
+  "bundleValidation": "passed",
+  "localFallback": "official version-matched WASI bindings only in ignored node_modules; repository package and lockfile unchanged",
+  "rawLogSha256": "265f165ce6de4814d2b1b297301f4c0ca68f0a65937b0c8e8cdabadb686e1a93"
+}
