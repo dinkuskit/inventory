@@ -3,6 +3,7 @@ import {
 	MUTATION_READ_RESULT_SCHEMA,
 	RECEIPT_HISTORY_READ_RESULT_SCHEMA,
 	SKU_STOCK_READ_RESULT_SCHEMA,
+	OPENING_BALANCE_ELIGIBILITY_READ_RESULT_SCHEMA,
 	InconsistentSkuStockUnitError,
 	normalizeInventoryMutationLookup,
 	normalizeReadReceiptHistoryInput,
@@ -18,6 +19,7 @@ import {
 	type SkuStockReadResult,
 	type StockQuantities,
 	type SkuLocationBalanceReadResult,
+	type OpeningBalanceEligibilityReadResult,
 } from "../domain/inventory-read.ts";
 import type { BalanceRecord, ExactQuantity } from "../domain/opening-balance.ts";
 import type { InventoryStore } from "../storage/inventory-store.ts";
@@ -70,6 +72,33 @@ export function createReadSkuLocationBalance(
 					key,
 					balance,
 				};
+	};
+}
+
+export function createReadOpeningBalanceEligibility(
+	dependencies: ReadInventoryDependencies,
+): (input: ReadSkuLocationBalanceInput) => Promise<OpeningBalanceEligibilityReadResult> {
+	const store = requireStore(dependencies);
+	return async (input) => {
+		const key = normalizeReadSkuLocationBalanceInput(input);
+		return store.runTransaction(key.poolId, (transaction) => {
+			const sku = transaction.getManagedSku(key.skuId);
+			if (sku === null) throw new Error("sku_not_registered");
+			const location = transaction.getLocation(key.locationId);
+			if (location === null || location.status !== "active") {
+				throw new Error("location_not_active");
+			}
+			const balance = transaction.getBalance(key);
+			return {
+				schema: OPENING_BALANCE_ELIGIBILITY_READ_RESULT_SCHEMA,
+				key,
+				eligibility: balance?.hasStockHistory === true ? "history_exists" as const : "eligible" as const,
+				sku: { inventorySkuId: sku.inventorySkuId, sku: sku.sku, unit: sku.unit },
+				location: { locationId: location.locationId, status: "active" },
+				balance,
+				hasStockHistory: balance?.hasStockHistory === true,
+			};
+		});
 	};
 }
 

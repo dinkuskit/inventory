@@ -1,0 +1,14 @@
+{
+  "plugins/emdash-inventory/src/plugin.ts": "553d2ffef527928d44d5cc9d2326fa1f696cb3c1052ed032afe2425c68fe9123",
+  "src/application/read-inventory.ts": "3f8a67adaf284808d86361008f9fa5a105ba41502086c30834ffd5a04f637819",
+  "src/cloudflare/hosted-worker.ts": "060606da5b128c6de211c1fc45e2d9f2246a3ca2031425b03622167258afc849",
+  "src/cloudflare/worker.ts": "730b8fee67f6b669af64b5875f7df1cee19dd5b49273374d15c02290b56bedd4",
+  "src/domain/inventory-read.ts": "6c34b6fe321805464322eda2803b208dcd1f43c86ac291e68c3c8996f1974a9e",
+  "src/index.ts": "ad6c7620b0eae08375fbb4882d9466c275187e0e216f13853f309d975c80694d",
+  "tools/emdash-proof-sandbox.mjs": "0b4d74add4b27a2231aceaa2b9b04eb7d16ec573792842b96db10b99fd813719",
+  "tools/opening-stock-proof.mjs": "3c63514affa7e1aa85ed50f94e66b6ddf39535aa561d3a31adc9b800025eee6d",
+  "tools/opening-stock-proof-host.mjs": "1bfa28d803170d974357b460ecb41a0b8aa473df5e7c7b975a36efd3b0f1f042",
+  "tools/opening-stock-proof-worker.ts": "7784a17ad5f190949298aba330af9fcf1330736b88f7bd67578cdce27dc86560",
+  "tests/hosted-runtime/opening-stock.test.mjs": "d58e63aef0fef4772448cfa568e2bff44093275d761223deb641cb732f8644e0",
+  "tests/store-connect/plugin-opening-balance.test.mjs": "cae717121e1496f81581aad644b2b2aeafe36c6db20180996c647718a8e35595"
+}

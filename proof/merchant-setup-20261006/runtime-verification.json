@@ -1,0 +1,293 @@
+{
+  "qualification": "published_dispatcher_workerd_component_with_synthetic_auth_and_local_authority_variant",
+  "openingSeeded": false,
+  "registryTransport": false,
+  "hostedIssuance": false,
+  "checkpoints": {
+    "initial": [
+      {
+        "type": "header",
+        "text": "Inventory"
+      },
+      {
+        "type": "banner",
+        "title": "Inventory connected",
+        "description": "Your Inventory operation is ready."
+      },
+      {
+        "type": "section",
+        "text": "Active stock locations: Synthetic Opening Depot"
+      },
+      {
+        "type": "form",
+        "block_id": "select-stock-view",
+        "fields": [
+          {
+            "type": "text_input",
+            "action_id": "location_id",
+            "label": "Select Location ID (Synthetic Opening Depot: location_82b0f287-03d3-429f-8cc5-55ad07d55500)",
+            "initial_value": "location_82b0f287-03d3-429f-8cc5-55ad07d55500"
+          },
+          {
+            "type": "text_input",
+            "action_id": "sku_id",
+            "label": "Inventory SKU ID",
+            "initial_value": "sku_opening_component"
+          }
+        ],
+        "submit": {
+          "label": "View stock",
+          "action_id": "select_stock"
+        }
+      },
+      {
+        "type": "context",
+        "text": "No stock history exists for SKU \"sku_opening_component\" at Synthetic Opening Depot. Set Initial Stock to begin stock adjustments."
+      },
+      {
+        "type": "form",
+        "block_id": "opening-stock",
+        "fields": [
+          {
+            "type": "text_input",
+            "action_id": "location_id",
+            "label": "Location ID",
+            "initial_value": "location_82b0f287-03d3-429f-8cc5-55ad07d55500"
+          },
+          {
+            "type": "text_input",
+            "action_id": "sku_id",
+            "label": "SKU ID",
+            "initial_value": "sku_opening_component"
+          },
+          {
+            "type": "text_input",
+            "action_id": "quantity_value",
+            "label": "Initial quantity (non-negative)"
+          }
+        ],
+        "submit": {
+          "label": "Preview initial stock",
+          "action_id": "preview_opening_balance"
+        }
+      },
+      {
+        "type": "actions",
+        "elements": [
+          {
+            "type": "button",
+            "action_id": "refresh",
+            "label": "Refresh Inventory"
+          }
+        ]
+      }
+    ],
+    "preview": [
+      {
+        "type": "header",
+        "text": "Inventory"
+      },
+      {
+        "type": "banner",
+        "variant": "alert",
+        "title": "Confirm initial stock",
+        "description": "SKU: sku_opening_component | Location: location_82b0f287-03d3-429f-8cc5-55ad07d55500 | On hand: 7 each"
+      },
+      {
+        "type": "section",
+        "text": "This opening balance permanently starts stock history for this SKU-location. Reason: Set Initial Stock after reviewing the authoritative SKU-location history"
+      },
+      {
+        "type": "actions",
+        "elements": [
+          {
+            "type": "button",
+            "action_id": "confirm_opening_balance",
+            "label": "Confirm initial stock",
+            "value": "21f36464-f8d9-49a4-a868-9b2141b19bc5"
+          },
+          {
+            "type": "button",
+            "action_id": "cancel_opening_balance",
+            "label": "Cancel",
+            "value": "21f36464-f8d9-49a4-a868-9b2141b19bc5"
+          }
+        ]
+      }
+    ],
+    "pending": [
+      {
+        "type": "header",
+        "text": "Inventory"
+      },
+      {
+        "type": "banner",
+        "variant": "alert",
+        "title": "Initial stock outcome unknown / pending",
+        "description": "Command 21f36464-f8d9-49a4-a868-9b2141b19bc5 was sent but the outcome is unconfirmed. Retry the original command safely."
+      },
+      {
+        "type": "actions",
+        "elements": [
+          {
+            "type": "button",
+            "action_id": "retry_opening_balance",
+            "label": "Retry initial stock",
+            "value": "21f36464-f8d9-49a4-a868-9b2141b19bc5"
+          }
+        ]
+      }
+    ],
+    "committed": [
+      {
+        "type": "header",
+        "text": "Inventory"
+      },
+      {
+        "type": "banner",
+        "title": "Initial stock committed",
+        "description": "Receipt: 55058e7f-d53d-4e78-afd4-b05b5f692ecb."
+      },
+      {
+        "type": "actions",
+        "elements": [
+          {
+            "type": "button",
+            "action_id": "clear_opening_balance_result",
+            "label": "Back to Inventory",
+            "value": "21f36464-f8d9-49a4-a868-9b2141b19bc5"
+          }
+        ]
+      }
+    ],
+    "stock": [
+      {
+        "type": "header",
+        "text": "Inventory"
+      },
+      {
+        "type": "banner",
+        "title": "Inventory connected",
+        "description": "Your Inventory operation is ready."
+      },
+      {
+        "type": "section",
+        "text": "Active stock locations: Synthetic Opening Depot"
+      },
+      {
+        "type": "form",
+        "block_id": "select-stock-view",
+        "fields": [
+          {
+            "type": "text_input",
+            "action_id": "location_id",
+            "label": "Select Location ID (Synthetic Opening Depot: location_82b0f287-03d3-429f-8cc5-55ad07d55500)",
+            "initial_value": "location_82b0f287-03d3-429f-8cc5-55ad07d55500"
+          },
+          {
+            "type": "text_input",
+            "action_id": "sku_id",
+            "label": "Inventory SKU ID",
+            "initial_value": "sku_opening_component"
+          }
+        ],
+        "submit": {
+          "label": "View stock",
+          "action_id": "select_stock"
+        }
+      },
+      {
+        "type": "section",
+        "text": "Canonical Stock for SKU sku_opening_component at Synthetic Opening Depot: On-Hand: 7 each | Reserved: 0 each | Available: 7 each | Outgoing Transfer: 0 each | Expected: 0 each | In-Transit: 0 each (v1)"
+      },
+      {
+        "type": "form",
+        "block_id": "adjust-stock",
+        "fields": [
+          {
+            "type": "text_input",
+            "action_id": "location_id",
+            "label": "Location ID",
+            "initial_value": "location_82b0f287-03d3-429f-8cc5-55ad07d55500"
+          },
+          {
+            "type": "text_input",
+            "action_id": "sku_id",
+            "label": "SKU ID",
+            "initial_value": "sku_opening_component"
+          },
+          {
+            "type": "text_input",
+            "action_id": "delta_value",
+            "label": "Signed quantity delta (e.g. -2 or 5)"
+          },
+          {
+            "type": "text_input",
+            "action_id": "note",
+            "label": "Reason note"
+          }
+        ],
+        "submit": {
+          "label": "Preview stock adjustment",
+          "action_id": "preview_adjustment"
+        }
+      },
+      {
+        "type": "actions",
+        "elements": [
+          {
+            "type": "button",
+            "action_id": "refresh",
+            "label": "Refresh Inventory"
+          }
+        ]
+      }
+    ]
+  },
+  "canonicalRestartSameReceipt": true,
+  "poolId": "pool_82b0f287-03d3-429f-8cc5-55ad07d55500",
+  "locationId": "location_82b0f287-03d3-429f-8cc5-55ad07d55500",
+  "skuId": "sku_opening_component",
+  "balance": {
+    "poolId": "pool_82b0f287-03d3-429f-8cc5-55ad07d55500",
+    "locationId": "location_82b0f287-03d3-429f-8cc5-55ad07d55500",
+    "skuId": "sku_opening_component",
+    "onHand": {
+      "value": "7",
+      "unit": "each"
+    },
+    "reserved": {
+      "value": "0",
+      "unit": "each"
+    },
+    "outgoingTransferCommitted": {
+      "value": "0",
+      "unit": "each"
+    },
+    "available": {
+      "value": "7",
+      "unit": "each"
+    },
+    "expected": {
+      "value": "0",
+      "unit": "each"
+    },
+    "inTransit": {
+      "value": "0",
+      "unit": "each"
+    },
+    "version": "1",
+    "hasStockHistory": true
+  },
+  "receiptId": "55058e7f-d53d-4e78-afd4-b05b5f692ecb",
+  "exactReplay": true,
+  "previewNoMovement": true,
+  "foreignAdminMutationCalls": 0,
+  "lostAckReloadOriginalIntent": true,
+  "bundle": {
+    "sha256": "cc31e69ac5ead7356d88673e387a1cc1f4b9a0f237cc851f2fb9056ea686d76a",
+    "bytes": 33201,
+    "originalCodeSha256": "1316ab408621c5d2b4e1bca21237347ab688036d7389dfaba877453eb02b578a",
+    "runningCodeSha256": "815c169fb210744f15a5e9716f2bf6968e462f0ff09e942c7f9318eb71b30dcc"
+  }
+}

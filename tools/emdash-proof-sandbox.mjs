@@ -3,8 +3,8 @@
 import { createSandboxRunner as standardRunner } from "@emdash-cms/sandbox-workerd/sandbox";
 
 const registry = Symbol.for("dinkuskit.inventory.proof.httpFetch");
-const reads = new Set(["/v1/status", "/v1/operations", "/v1/locations"]);
-const writes = new Set(["/v1/connect", "/v1/stock/adjust/preview", "/v1/stock/adjust/confirm"]);
+const reads = new Set(["/v1/status", "/v1/operations", "/v1/locations", "/v1/stock/opening/eligibility"]);
+const writes = new Set(["/v1/connect", "/v1/stock/adjust/preview", "/v1/stock/adjust/confirm", "/v1/stock/opening/preview", "/v1/stock/opening/confirm"]);
 
 export function installInventoryProofTransport(dispatch) {
 	if (typeof dispatch !== "function") throw new Error("Proof dispatch must be callable");
@@ -20,7 +20,7 @@ export async function inventoryProofFetch(input, init) {
 	}
 	let allowed = request.method === "GET" && reads.has(url.pathname) && !url.search;
 	allowed ||= request.method === "POST" && writes.has(url.pathname) && !url.search;
-	if (request.method === "GET" && url.pathname === "/v1/stock") {
+	if (request.method === "GET" && ["/v1/stock", "/v1/stock/opening/eligibility"].includes(url.pathname)) {
 		const entries = [...url.searchParams];
 		allowed = entries.length === 2 && ["sku_id", "location_id"].every(key => {
 			const values = url.searchParams.getAll(key);

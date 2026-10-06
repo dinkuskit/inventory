@@ -1,0 +1,33 @@
+{
+  "base": "ea957d7418ff4dbfeb859967d82349d84456fb94",
+  "gate": "bin/verify-inventory full",
+  "exit": 0,
+  "nodeTests": 235,
+  "cloudflareTests": 29,
+  "hostedTests": 7,
+  "pluginOpeningTests": 5,
+  "rawLogHashes": {
+    "parent-hosted.log": "1e1c40f20953dea4623aad421bba45317f553e6e144d82c263c788ae38575d0c",
+    "parent-full.log": "9323418b500ff30ed10189c89764fb58e9acd78e5e6c6c9cbd8c15154e5ae468",
+    "parent-typecheck.log": "fc25e8a9e30c0ed6b5386bd3c196fc0b1217832971fcf1b9a7b77c1a5e90ce8f",
+    "parent-runtime-2.log": "85afbb5b64412275e7efdee4a0259eb7832223dc7218418e89fae438bbbdd054",
+    "parent-runtime-final.log": "2fd86d5ad8b333cc6088bd2d16e2c841a0590d0e9d6f2e0d4c74e6d81d65aa9e",
+    "parent-bundle.log": "28e86782556fe1d0e56eaf20c03714edd77e05779eb646b2b9d34aa00ff7725d",
+    "parent-runtime.log": "be6334d4bfd56de6e34091c3cc858a4c9a43fbf43576e195e3d7b0a6d992ca87",
+    "parent-runtime-exact.log": "c02b12fe6db2c28d94554d2abb6ad9e985eee1094cb71f0f7fa402760c598af8",
+    "parent-bundle-3.log": "cb11a591ac591f6503536c0c403a426466464d0451fe8540759163f38984612d",
+    "parent-full-final.log": "b7f01d523032ee0a3da58d4e6360597a799cc55d9cbb874119c3f7a5d4ff7b0c",
+    "parent-bundle-2.log": "7d0594257c893f4a9d4db52768571cd58980bfaaa0ca28975d9f7b16bf889654",
+    "parent-plugin-tests.log": "d78e7faf00220de324da6adbae13e0e8e8038bb1f7afbe5c8195d5aac90643ad"
+  },
+  "runtime": "runtime-verification.json",
+  "codeSha256": "1316ab408621c5d2b4e1bca21237347ab688036d7389dfaba877453eb02b578a",
+  "finalGatePackageSha256": "cc31e69ac5ead7356d88673e387a1cc1f4b9a0f237cc851f2fb9056ea686d76a",
+  "limits": [
+    "synthetic auth and identity-only fixture",
+    "local authority transform",
+    "dispatcher/workerd component proof; no Registry transport or live hosted issuance",
+    "static captures of actual sandbox responses; not config-managed GUI installation"
+  ],
+  "packagePreservedInRun": true
+}

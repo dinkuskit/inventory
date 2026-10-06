@@ -4,6 +4,7 @@ import type { AccountPrincipal, Operation, ProvisionResult } from "../features/h
 
 import {
 	createReadReceiptHistory,
+	createReadOpeningBalanceEligibility,
 	createReadSkuLocationBalance,
 	createReadSkuStock,
 } from "../application/read-inventory.ts";
@@ -28,6 +29,20 @@ import {
 	type StockAdjustmentPreviewV1,
 	type StockAdjustmentResult,
 } from "../features/stock-adjustment/index.ts";
+import {
+	OpeningBalanceConfirmationError,
+	OpeningBalancePreviewError,
+	createConfirmOpeningBalance,
+	createPreviewOpeningBalance,
+	type ConfirmOpeningBalanceExecution,
+	type PreviewOpeningBalanceExecution,
+} from "../application/preview-confirm-opening-balance.ts";
+import type {
+	OpeningBalancePreviewV1,
+	OpeningBalanceResult,
+	PreviewOpeningBalanceInputV1,
+	SetOpeningBalanceCommandV1,
+} from "../domain/opening-balance.ts";
 import { createCloudflareSqliteInventoryStore } from "../storage/cloudflare-sqlite-inventory-store.ts";
 import {
 	initializeCloudflareInventorySchema,
@@ -83,6 +98,12 @@ export class InventoryPool extends DurableObject<InventoryWorkerEnv> {
 		return createReadSkuLocationBalance({ store })(key);
 	}
 
+	async readOpeningBalanceEligibility(input: ReadSkuLocationBalanceInput) {
+		const key = normalizeReadSkuLocationBalanceInput(input);
+		const store = createCloudflareSqliteInventoryStore({ storage: this.ctx.storage, poolId: key.poolId });
+		return createReadOpeningBalanceEligibility({ store })(key);
+	}
+
 	async readSkuStock(input: ReadSkuStockInput): Promise<SkuStockReadResult> {
 		const query = normalizeReadSkuStockInput(input);
 		const store = createCloudflareSqliteInventoryStore({
@@ -111,6 +132,37 @@ export class InventoryPool extends DurableObject<InventoryWorkerEnv> {
 			if (error instanceof StockAdjustmentPreviewError) {
 				return { ok: false, error: error.code, message: error.message };
 			}
+			throw error;
+		}
+	}
+
+	async previewOpeningBalance(
+		input: PreviewOpeningBalanceInputV1,
+		execution: PreviewOpeningBalanceExecution,
+	): Promise<{ ok: true; preview: OpeningBalancePreviewV1 } | { ok: false; error: string; message: string }> {
+		const store = createCloudflareSqliteInventoryStore({ storage: this.ctx.storage, poolId: input.context.poolId });
+		try {
+			return { ok: true, preview: await createPreviewOpeningBalance({
+				store, now: () => new Date(), createConfirmation: () => crypto.randomUUID(),
+			})(input, execution) };
+		} catch (error) {
+			if (error instanceof OpeningBalancePreviewError) return { ok: false, error: error.code, message: error.message };
+			throw error;
+		}
+	}
+
+	async confirmOpeningBalance(
+		confirmation: string,
+		command: SetOpeningBalanceCommandV1,
+		execution: ConfirmOpeningBalanceExecution,
+	): Promise<{ ok: true; result: OpeningBalanceResult } | { ok: false; error: string; message: string }> {
+		const store = createCloudflareSqliteInventoryStore({ storage: this.ctx.storage, poolId: command.context.poolId });
+		try {
+			return { ok: true, result: await createConfirmOpeningBalance({
+				store, now: () => new Date(), createReceiptId: () => crypto.randomUUID(),
+			})(confirmation, command, execution) };
+		} catch (error) {
+			if (error instanceof OpeningBalanceConfirmationError) return { ok: false, error: error.code, message: error.message };
 			throw error;
 		}
 	}

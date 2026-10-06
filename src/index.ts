@@ -281,6 +281,7 @@ export type {
 	SystemCommandPrincipal,
 } from "./domain/opening-balance.ts";
 export {
+	OPENING_BALANCE_ELIGIBILITY_READ_RESULT_SCHEMA,
 	BALANCE_READ_RESULT_SCHEMA,
 	InvalidInventoryReadQueryError,
 	MUTATION_READ_RESULT_SCHEMA,
@@ -311,6 +312,7 @@ export type {
 	SkuStockReadResult,
 	SkuStockScope,
 	StockQuantities,
+	OpeningBalanceEligibilityReadResult,
 	SkuLocationBalanceReadResult,
 } from "./domain/inventory-read.ts";
 export {
@@ -348,6 +350,7 @@ export {
 export {
 	createReadInventoryMutation,
 	createReadReceiptHistory,
+	createReadOpeningBalanceEligibility,
 	createReadSkuLocationBalance,
 	createReadSkuStock,
 } from "./application/read-inventory.ts";
