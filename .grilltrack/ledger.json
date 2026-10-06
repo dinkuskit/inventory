@@ -847,13 +847,21 @@
       "rationale": "Continuation of the explicitly accepted complete merchant setup milestone and existing opening-balance confirmation locks.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": "file:proof/merchant-setup-20261006/REVIEW-FINDINGS.md",
+          "result": "clean",
+          "reviewed_at": "2026-10-06T20:58:54+00:00",
+          "source_identity": "git:9e80c1c8576080e963abeffa8bf2208806fa364c"
+        }
+      ],
+      "review_ref": "file:proof/merchant-setup-20261006/REVIEW-FINDINGS.md",
+      "review_result": "clean",
+      "review_source_identity": "git:9e80c1c8576080e963abeffa8bf2208806fa364c",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-10-06T20:55:33+00:00",
+      "updated_at": "2026-10-06T20:58:54+00:00",
       "verification_ref": "file:proof/merchant-setup-20261006/verification.json"
     }
   ],
@@ -877,5 +885,5 @@
   "status": "active",
   "title": "Inventory store-connect polling repair and current-main integration",
   "track_id": "gt-join-42f7bb6da7a34ed32ceed850c064516d",
-  "updated_at": "2026-10-06T20:55:33+00:00"
+  "updated_at": "2026-10-06T20:58:54+00:00"
 }
