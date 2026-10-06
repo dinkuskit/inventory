@@ -153,13 +153,21 @@
       ],
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": "file:proof/two-store-onboarding-20261006/REVIEW-FINDINGS.md",
+          "result": "clean",
+          "reviewed_at": "2026-10-06T22:24:17+00:00",
+          "source_identity": "git:a95f4c15be9d826c2eae9a2425f16d8ad7ed2bb1"
+        }
+      ],
+      "review_ref": "file:proof/two-store-onboarding-20261006/REVIEW-FINDINGS.md",
+      "review_result": "clean",
+      "review_source_identity": "git:a95f4c15be9d826c2eae9a2425f16d8ad7ed2bb1",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-10-06T22:23:15+00:00",
+      "updated_at": "2026-10-06T22:24:17+00:00",
       "verification_ref": "file:proof/two-store-onboarding-20261006/PROOF.md"
     },
     {
@@ -467,13 +475,21 @@
       ],
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": "file:proof/two-store-onboarding-20261006/REVIEW-FINDINGS.md",
+          "result": "clean",
+          "reviewed_at": "2026-10-06T22:24:17+00:00",
+          "source_identity": "git:a95f4c15be9d826c2eae9a2425f16d8ad7ed2bb1"
+        }
+      ],
+      "review_ref": "file:proof/two-store-onboarding-20261006/REVIEW-FINDINGS.md",
+      "review_result": "clean",
+      "review_source_identity": "git:a95f4c15be9d826c2eae9a2425f16d8ad7ed2bb1",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-10-06T22:23:15+00:00",
+      "updated_at": "2026-10-06T22:24:17+00:00",
       "verification_ref": "file:proof/two-store-onboarding-20261006/PROOF.md"
     },
     {
@@ -679,14 +695,21 @@
           "result": "findings",
           "reviewed_at": "2026-09-30T03:47:03+00:00",
           "source_identity": "sha256:bca421b7cf0ff02a06520efb38ebbc1620b350bf801de0c3083cdab257ce9549"
+        },
+        {
+          "classifications": [],
+          "ref": "file:proof/two-store-onboarding-20261006/REVIEW-FINDINGS.md",
+          "result": "clean",
+          "reviewed_at": "2026-10-06T22:24:17+00:00",
+          "source_identity": "git:a95f4c15be9d826c2eae9a2425f16d8ad7ed2bb1"
         }
       ],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
+      "review_ref": "file:proof/two-store-onboarding-20261006/REVIEW-FINDINGS.md",
+      "review_result": "clean",
+      "review_source_identity": "git:a95f4c15be9d826c2eae9a2425f16d8ad7ed2bb1",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-10-06T22:23:15+00:00",
+      "updated_at": "2026-10-06T22:24:17+00:00",
       "verification_ref": "file:proof/two-store-onboarding-20261006/PROOF.md"
     },
     {
@@ -831,13 +854,21 @@
       ],
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": "file:proof/two-store-onboarding-20261006/REVIEW-FINDINGS.md",
+          "result": "clean",
+          "reviewed_at": "2026-10-06T22:24:17+00:00",
+          "source_identity": "git:a95f4c15be9d826c2eae9a2425f16d8ad7ed2bb1"
+        }
+      ],
+      "review_ref": "file:proof/two-store-onboarding-20261006/REVIEW-FINDINGS.md",
+      "review_result": "clean",
+      "review_source_identity": "git:a95f4c15be9d826c2eae9a2425f16d8ad7ed2bb1",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-10-06T22:23:15+00:00",
+      "updated_at": "2026-10-06T22:24:17+00:00",
       "verification_ref": "file:proof/two-store-onboarding-20261006/PROOF.md"
     },
     {
@@ -998,14 +1029,21 @@
           "result": "findings",
           "reviewed_at": "2026-10-02T01:41:20+00:00",
           "source_identity": "git:9b91488f19b59ba63bc298b97008429fd506992a"
+        },
+        {
+          "classifications": [],
+          "ref": "file:proof/two-store-onboarding-20261006/REVIEW-FINDINGS.md",
+          "result": "clean",
+          "reviewed_at": "2026-10-06T22:24:17+00:00",
+          "source_identity": "git:a95f4c15be9d826c2eae9a2425f16d8ad7ed2bb1"
         }
       ],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
+      "review_ref": "file:proof/two-store-onboarding-20261006/REVIEW-FINDINGS.md",
+      "review_result": "clean",
+      "review_source_identity": "git:a95f4c15be9d826c2eae9a2425f16d8ad7ed2bb1",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-10-06T22:23:15+00:00",
+      "updated_at": "2026-10-06T22:24:17+00:00",
       "verification_ref": "file:proof/two-store-onboarding-20261006/PROOF.md"
     },
     {
@@ -1120,14 +1158,21 @@
           "result": "clean",
           "reviewed_at": "2026-10-06T20:58:54+00:00",
           "source_identity": "git:9e80c1c8576080e963abeffa8bf2208806fa364c"
+        },
+        {
+          "classifications": [],
+          "ref": "file:proof/two-store-onboarding-20261006/REVIEW-FINDINGS.md",
+          "result": "clean",
+          "reviewed_at": "2026-10-06T22:24:17+00:00",
+          "source_identity": "git:a95f4c15be9d826c2eae9a2425f16d8ad7ed2bb1"
         }
       ],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
+      "review_ref": "file:proof/two-store-onboarding-20261006/REVIEW-FINDINGS.md",
+      "review_result": "clean",
+      "review_source_identity": "git:a95f4c15be9d826c2eae9a2425f16d8ad7ed2bb1",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-10-06T22:23:15+00:00",
+      "updated_at": "2026-10-06T22:24:17+00:00",
       "verification_ref": "file:proof/two-store-onboarding-20261006/PROOF.md"
     },
     {
@@ -1206,13 +1251,21 @@
       "rationale": "The human accepted the two-store outcome and registration/selection sequence; existing contracts already lock tenancy, managed SKU and reviewed opening balance.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": "file:proof/two-store-onboarding-20261006/REVIEW-FINDINGS.md",
+          "result": "clean",
+          "reviewed_at": "2026-10-06T22:24:17+00:00",
+          "source_identity": "git:a95f4c15be9d826c2eae9a2425f16d8ad7ed2bb1"
+        }
+      ],
+      "review_ref": "file:proof/two-store-onboarding-20261006/REVIEW-FINDINGS.md",
+      "review_result": "clean",
+      "review_source_identity": "git:a95f4c15be9d826c2eae9a2425f16d8ad7ed2bb1",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-10-06T22:23:16+00:00",
+      "updated_at": "2026-10-06T22:24:17+00:00",
       "verification_ref": "file:proof/two-store-onboarding-20261006/PROOF.md"
     },
     {
@@ -1278,13 +1331,21 @@
       "rationale": "Explicitly confirmed merchant setup choice; preserve existing account-authorized reconnect semantics.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": "file:proof/two-store-onboarding-20261006/REVIEW-FINDINGS.md",
+          "result": "clean",
+          "reviewed_at": "2026-10-06T22:24:17+00:00",
+          "source_identity": "git:a95f4c15be9d826c2eae9a2425f16d8ad7ed2bb1"
+        }
+      ],
+      "review_ref": "file:proof/two-store-onboarding-20261006/REVIEW-FINDINGS.md",
+      "review_result": "clean",
+      "review_source_identity": "git:a95f4c15be9d826c2eae9a2425f16d8ad7ed2bb1",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-10-06T22:23:16+00:00",
+      "updated_at": "2026-10-06T22:24:17+00:00",
       "verification_ref": "file:proof/two-store-onboarding-20261006/PROOF.md"
     }
   ],
@@ -1308,5 +1369,5 @@
   "status": "active",
   "title": "Inventory store-connect polling repair and current-main integration",
   "track_id": "gt-join-42f7bb6da7a34ed32ceed850c064516d",
-  "updated_at": "2026-10-06T22:23:16+00:00"
+  "updated_at": "2026-10-06T22:24:17+00:00"
 }
