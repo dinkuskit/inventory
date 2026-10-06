@@ -102,12 +102,16 @@
     "consentRenewal": "same original subjects and owned pool bindings",
     "fixtureLimit": "Standalone npm workerd wrapper leaves a native child after termination. Exact task-owned native children were retired using verified process group and executable paths; no unrelated processes were touched."
   },
-  "images": {
+  "originalCaptureHashes": {
     "store-a-receipt-after-restart.jpg": "835945ab1074e901ec7baf38d3fcc05dc9907558451e4fedfb02abc6e4c8b434",
     "store-b-receipt-after-restart.jpg": "c7c2937d4ad418d6d264d40e158494ecf4918b1780daa52ecb7195c80e47509a",
     "store-a-stock-after-restart.jpg": "623dae9acdebf5ee21e0116fa097ae9e92f0f629f488fecb314c2f6cce91d14f",
     "store-b-stock-after-restart.jpg": "23e8ceb7251689edc100b10c971cbd8277c8621f8a3bab929c4c7f5629ec1d77",
     "store-b-grant-revoked.jpg": "81ed4cef002e16348e6ed2f9f07ad23885e57a3fd40b88deb75662dd61005d8f",
     "store-a-after-other-revocation.jpg": "623dae9acdebf5ee21e0116fa097ae9e92f0f629f488fecb314c2f6cce91d14f"
-  }
+  },
+  "mediaManifest": "assets.json",
+  "mediaRelease": "https://github.com/dinkuskit/dinkus-pr-assets/releases/tag/inventory-pr-42-3ed9152d49a9",
+  "mediaSourceHead": "3ed9152d49a9385e9d439f32ddbf59a47b1a7843",
+  "mediaPlacement": "Five selected unchanged captures published as immutable release assets; six raw captures preserved locally. Duplicate store-a-after-other-revocation.jpg was omitted from publication."
 }

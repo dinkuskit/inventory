@@ -18,7 +18,7 @@ Plugin tests cover lost acknowledgement and replay, foreign administrator fencin
 
 Two fresh EmDash1.0.1 sites were built and migrated independently (88 migrations each), with actual non-symlink npm package installation. Both browser flows used the owner-qualified Website11 source `7502dc83424902c442da1eaaa5980fd250ff6aa8`, real local Better Auth signup/sign-in, a token-hidden test mailbox, explicit site consent, real plugin public receipt, fixed callback/PKCE exchange, and actual public JWKS verification. No merchant session, service grant, pool, registered SKU or opening stock was injected. The EmDash host administrator is synthetic.
 
-The sites use two isolated Website test controllers and ONE shared Inventory service with account/pool SQLite Durable Objects. This proves bounded local component behavior, not a shared hosted Website deployment. The package variants change only explicit proof authorities/verification origins; production `.invalid` defaults remain fail-closed. `installed-flow.json` records package hashes, distinct issuer-subject identities, site/pool/SKU IDs, receipts, and six visible screenshots.
+The sites use two isolated Website test controllers and ONE shared Inventory service with account/pool SQLite Durable Objects. This proves bounded local component behavior, not a shared hosted Website deployment. The package variants change only explicit proof authorities/verification origins; production `.invalid` defaults remain fail-closed. `installed-flow.json` records package hashes, distinct issuer-subject identities, site/pool/SKU IDs, receipts, and six original capture hashes. Five unique screenshots are published separately as immutable proof assets; the duplicate remains local.
 
 Both customers used `HAT-BLACK` / `Black Hat` and `Shared Depot`. Store A explicitly confirmed seven units; store B confirmed eleven. Each original receipt and balance remained after host restart and fresh consent renewal. Website tokens last five minutes. Revoking B through the actual local Website GUI left A's seven-unit read functional; immediate invalidation of already-issued JWTs is not claimed.
 
@@ -27,3 +27,17 @@ The standalone EmDash proof runner starts every process at plugin port18788; B's
 ## Remaining maintainer gates
 
 CI, comprehensive exact-source OpenClaw and native ClawSweeper evidence must qualify the final PR tuple. Merge requires explicit owner approval. Hosted HTTPS/DNS/merchant issuance, one shared hosted auth authority, signed Registry availability, production provisioning, deployment, releases, costs, real stock, and immediate grant introspection remain outside this local proof. Any such activation needs a concrete separately approved runtime/authority handoff.
+
+## Immutable media placement
+
+The [selected evidence release](https://github.com/dinkuskit/dinkus-pr-assets/releases/tag/inventory-pr-42-3ed9152d49a9) preserves captures from source head `3ed9152d49a9385e9d439f32ddbf59a47b1a7843`. The subsequent media-only commit removes product-repository binaries and adds this claim map; it does not change runtime source or regenerate UI evidence. `assets.json` records exact URLs, byte sizes, SHA256, capture date, source provenance, visual redaction review, selection rationale and limits. GitHub's uploaded-asset size/digest were checked against local selected bytes. The asset shelf is private; media access requires authorization. Public text remains authoritative.
+
+| Evidence | Supported visible claim |
+| --- | --- |
+| [store-a-stock-after-restart.jpg](https://github.com/dinkuskit/dinkus-pr-assets/releases/download/inventory-pr-42-3ed9152d49a9/store-a-stock-after-restart.jpg) | Store A stock view after scoped host restart: seven each, version 1. |
+| [store-b-stock-after-restart.jpg](https://github.com/dinkuskit/dinkus-pr-assets/releases/download/inventory-pr-42-3ed9152d49a9/store-b-stock-after-restart.jpg) | Store B stock view after scoped host restart: eleven each, version 1. |
+| [store-a-receipt-after-restart.jpg](https://github.com/dinkuskit/dinkus-pr-assets/releases/download/inventory-pr-42-3ed9152d49a9/store-a-receipt-after-restart.jpg) | Store A retains original receipt a13a6955-70b3-4fa0-be28-b47d5554ecdb after restart. |
+| [store-b-receipt-after-restart.jpg](https://github.com/dinkuskit/dinkus-pr-assets/releases/download/inventory-pr-42-3ed9152d49a9/store-b-receipt-after-restart.jpg) | Store B retains original receipt 393a6d75-c53b-4344-b46e-24b5026d3743 after restart. |
+| [store-b-grant-revoked.jpg](https://github.com/dinkuskit/dinkus-pr-assets/releases/download/inventory-pr-42-3ed9152d49a9/store-b-grant-revoked.jpg) | Qualified local Website controller shows store B Inventory grant revoked. |
+
+All six raw captures remain in the ignored local run. The omitted after-other-revocation capture has the same SHA256 as Store A’s stock screenshot; it is not independent timing evidence. Recorded flow and signed-identity runtime tests substantiate the isolation claims. No immediate issued-JWT revocation, hosted publication, Registry release or unsupervised host-child cleanup is claimed.
