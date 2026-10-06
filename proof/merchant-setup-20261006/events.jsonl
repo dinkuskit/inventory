@@ -1,0 +1,4 @@
+{"event":"implemented","decision":"merchant-opening-stock-006","source":"src/cloudflare/worker.ts,src/cloudflare/hosted-worker.ts,plugins/emdash-inventory/src/plugin.ts"}
+{"event":"focused_tests","result":"green","counts":"opening 35; managed-sku 8; stock-adjustment 13; plugin-opening 2; plugin-regression 14; cloudflare-pool 15"}
+{"event":"full_gate","result":"green","counts":"node 232; cloudflare 29; hosted 5","limits":"plugin bundle 128.8 KB total, validation passed"}
+{"event":"boundaries","result":"preserved","notes":"no Commerce, catalog, production, Registry, deployment, merge, push, or physical opening seed"}

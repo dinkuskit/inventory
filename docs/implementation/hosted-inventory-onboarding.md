@@ -22,8 +22,10 @@ settings for the PKCE verifier. Connect uses the store-control challenge and
 public proof receipt in [store-connect](store-connect.md). Website Better Auth
 owns merchant consent and token issuance; this repository only proposes that
 wire format. A persisted connection intent still protects Inventory
-provisioning from browser/network retries. Stock receiving and adjustment
-screens are outside this setup slice.
+provisioning from browser/network retries. The merged plugin supports canonical stock reads and reviewed adjustments.
+Reviewed opening stock for a registered SKU now uses authenticated eligibility,
+preview and confirmation endpoints; see [merchant opening stock](merchant-opening-stock.md).
+Stock receiving and catalog selection remain separate slices.
 
 ## Integration boundary
 

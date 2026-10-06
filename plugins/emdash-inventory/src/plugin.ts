@@ -147,6 +147,45 @@ const adjustmentIntentSchema = z.discriminatedUnion("status", [
 
 type AdjustmentIntent = z.infer<typeof adjustmentIntentSchema>;
 
+const openingEffectBalanceSchema = previewEffectBalanceSchema.extend({
+ outgoingTransferCommitted: z.object({ value: z.string(), unit: z.string() }),
+ expected: z.object({ value: z.string(), unit: z.string() }),
+ inTransit: z.object({ value: z.string(), unit: z.string() }),
+}).strict();
+const openingPreviewSchema = adjustmentPreviewSchema.omit({ warnings: true }).extend({
+ schema: z.literal("dinkuskit.inventory.opening-balance-preview/v1"),
+ type: z.literal("stock.opening_balance"),
+ effect: adjustmentPreviewSchema.shape.effect.extend({ balanceBefore: openingEffectBalanceSchema, balanceAfter: openingEffectBalanceSchema }),
+ reason: z.object({ code: z.string(), note: z.string() }).strict(),
+ warning: z.string(),
+});
+type OpeningPreview = z.infer<typeof openingPreviewSchema>;
+
+const openingEligibilitySchema = z.object({
+	schema: z.literal("dinkuskit.inventory.opening-balance-eligibility-read-result/v1"),
+	key: z.object({ poolId: z.string(), skuId: z.string(), locationId: z.string() }),
+	eligibility: z.enum(["eligible", "history_exists"]),
+	location: z.object({ locationId: z.string(), status: z.literal("active") }),
+	balance: openingEffectBalanceSchema.extend({ hasStockHistory: z.boolean() }).passthrough().nullable(),
+	hasStockHistory: z.boolean(),
+});
+
+const openingCommandSchema = stockCommandSchema.extend({
+ type: z.literal("stock.opening_balance"),
+ payload: z.object({ skuId: z.string(), quantity: z.object({ value: z.string(), unit: z.string() }).strict() }).strict(),
+ reason: openingPreviewSchema.shape.reason,
+ expectedVersions: stockCommandSchema.shape.expectedVersions.length(1),
+});
+type OpeningCommand = z.infer<typeof openingCommandSchema>;
+const openingProgressSchema = z.object({ initiatingAdminId: id, preview: openingPreviewSchema, command: openingCommandSchema, expiresAt: z.number() }).strict();
+const openingIntentSchema = z.discriminatedUnion("status", [
+ openingProgressSchema.extend({ status: z.literal("preview") }),
+ openingProgressSchema.extend({ status: z.literal("pending") }),
+ adjustmentIntentSchema.options[2],
+ adjustmentIntentSchema.options[3],
+]);
+type OpeningIntent = z.infer<typeof openingIntentSchema>;
+
 const canonicalStockAdjustmentResultSchema = z.discriminatedUnion("outcome", [
 	z.object({
 		schema: z.literal("dinkuskit.inventory.command-result/v1").optional(),
@@ -186,6 +225,10 @@ const interactionSchema = z.union([
 			"cancel_adjustment",
 			"retry_adjustment",
 			"clear_adjustment_result",
+			"confirm_opening_balance",
+			"cancel_opening_balance",
+			"retry_opening_balance",
+			"clear_opening_balance_result",
 		]),
 		block_id: z.string().optional(),
 		value: z.unknown().optional(),
@@ -220,6 +263,16 @@ const interactionSchema = z.union([
 			sku_id: z.string().trim().min(1).max(200),
 			delta_value: z.string().trim().min(1).max(50),
 			note: z.string().trim().min(1).max(500),
+		}).strict(),
+	}),
+	z.object({
+		type: z.literal("form_submit"),
+		action_id: z.literal("preview_opening_balance"),
+		block_id: z.string().optional(),
+		values: z.object({
+			location_id: id,
+			sku_id: z.string().trim().min(1).max(200),
+			quantity_value: z.string().trim().regex(/^\d+(?:\.\d+)?$/u).max(50),
 		}).strict(),
 	}),
 ]);
@@ -608,6 +661,55 @@ async function executeAdjustmentConfirm(
 	return render(ctx, adminId);
 }
 
+async function executeOpeningConfirm(ctx: PluginContext, adminId: string, token: string, targetCommandId: unknown): Promise<BlockResponse> {
+	if (typeof targetCommandId !== "string" || targetCommandId.trim() === "") return render(ctx, adminId);
+	const record = await ctx.kv.getVersioned<unknown>("state:opening-balance-intent");
+	if (!record) return render(ctx, adminId);
+	const parsed = openingIntentSchema.safeParse(record.value);
+	if (!parsed.success) return render(ctx, adminId);
+	const intent = parsed.data;
+	requireOriginatingAdministrator(intent.initiatingAdminId, adminId);
+	if (intent.status !== "preview" && intent.status !== "pending" || intent.command.commandId !== targetCommandId) return render(ctx, adminId);
+	let revision: string | null = record.revision;
+	let frozen: Extract<OpeningIntent, { status: "pending" }>;
+	if (intent.status === "preview") {
+		if (intent.expiresAt <= Date.now()) return notice("Preview expired", "The opening-stock preview expired. Prepare it again.");
+		const pending: Extract<OpeningIntent, { status: "pending" }> = { ...intent, status: "pending" };
+		const cas = await ctx.kv.compareAndSet("state:opening-balance-intent", record.revision, pending);
+		if (!cas.applied) return render(ctx, adminId);
+		revision = cas.revision ?? null;
+		frozen = pending;
+	} else frozen = intent;
+	let response: Response;
+	let body: unknown;
+	try {
+		({ response, body } = await fetchJson(ctx, SERVICE + "/v1/stock/opening/confirm", {
+			method: "POST",
+			headers: { Authorization: `Bearer ${token}`, "X-Inventory-Site": await siteId(ctx), "Content-Type": "application/json" },
+			body: JSON.stringify({ confirmation: frozen.preview.confirmation.value, command: frozen.command }),
+		}));
+	} catch {
+		return render(ctx, adminId);
+	}
+	const result = canonicalStockAdjustmentResultSchema.safeParse(body);
+	if (!result.success || result.data.commandId !== frozen.command.commandId) {
+		const parsedError = z.object({ error: z.string(), message: z.string().optional() }).safeParse(body);
+		if (response.status === 409 && parsedError.success && CONFIRMATION_FAILURE_CODES.has(parsedError.data.error) && revision) {
+			await ctx.kv.compareAndSet("state:opening-balance-intent", revision, {
+				status: "rejected", initiatingAdminId: frozen.initiatingAdminId,
+				commandId: frozen.command.commandId, code: parsedError.data.error, message: parsedError.data.message,
+			} satisfies OpeningIntent);
+		}
+		return render(ctx, adminId);
+	}
+	if (response.status !== (result.data.outcome === "committed" ? 200 : 409)) return render(ctx, adminId);
+	const terminal: OpeningIntent = result.data.outcome === "committed"
+		? { status: "committed", initiatingAdminId: frozen.initiatingAdminId, commandId: result.data.commandId, receipt: { receiptId: result.data.receipt.receiptId, committedAt: result.data.receipt.committedAt } }
+		: { status: "rejected", initiatingAdminId: frozen.initiatingAdminId, commandId: result.data.commandId, code: result.data.code, message: result.data.message };
+	if (revision) await ctx.kv.compareAndSet("state:opening-balance-intent", revision, terminal);
+	return render(ctx, adminId);
+}
+
 async function render(ctx: PluginContext, adminId: string): Promise<BlockResponse> {
 	const stored = await readSession(ctx);
 	if (!stored || stored.session.expiresAt <= Date.now()) {
@@ -631,6 +733,34 @@ async function render(ctx: PluginContext, adminId: string): Promise<BlockRespons
 			{ type: "actions", elements: [{ type: "link", label: "Approve this site", target: { kind: "external", url: session.verificationUri } }] },
 			button("check_sign_in", "I’ve approved this site — continue"),
 			{ type: "context", text: "Waiting for explicit merchant consent. Stock has not been provisioned yet. After approval you return to Inventory." },
+		]);
+	}
+
+	const openingRaw = await ctx.kv.getVersioned<unknown>("state:opening-balance-intent");
+	if (openingRaw) {
+		const openingParsed = openingIntentSchema.safeParse(openingRaw.value);
+		if (!openingParsed.success) return notice("Opening stock requires its originating administrator", "This opening-stock request is preserved safely.");
+		const opening = openingParsed.data;
+		if (opening.initiatingAdminId !== adminId) return notice("Opening stock belongs to another administrator", "Only the administrator who created it can confirm, retry, cancel, clear, or replace it.");
+		if (opening.status === "preview") return page([
+			{ type: "banner", variant: "alert", title: "Confirm initial stock", description: `SKU: ${opening.preview.effect.skuId} | Location: ${opening.preview.context.locationId} | On hand: ${opening.preview.effect.onHandDelta.value} ${opening.preview.effect.onHandDelta.unit}` },
+			{ type: "section", text: `${opening.preview.warning} Reason: ${opening.preview.reason.note}` },
+			{ type: "actions", elements: [
+				{ type: "button", action_id: "confirm_opening_balance", label: "Confirm initial stock", value: opening.command.commandId },
+				{ type: "button", action_id: "cancel_opening_balance", label: "Cancel", value: opening.command.commandId },
+			] },
+		]);
+		if (opening.status === "pending") return page([
+			{ type: "banner", variant: "alert", title: "Initial stock outcome unknown / pending", description: `Command ${opening.command.commandId} was sent but the outcome is unconfirmed. Retry the original command safely.` },
+			button("retry_opening_balance", "Retry initial stock", opening.command.commandId),
+		]);
+		if (opening.status === "committed") return page([
+			{ type: "banner", title: "Initial stock committed", description: `Receipt: ${opening.receipt.receiptId}.` },
+			button("clear_opening_balance_result", "Back to Inventory", opening.commandId),
+		]);
+		return page([
+			{ type: "banner", variant: "alert", title: "Initial stock rejected", description: `Rejected code: ${opening.code}.` },
+			button("clear_opening_balance_result", "Back to Inventory", opening.commandId),
 		]);
 	}
 
@@ -746,6 +876,7 @@ async function render(ctx: PluginContext, adminId: string): Promise<BlockRespons
 		inTransit: string;
 		version: string;
 	} | null = null;
+	let openingEligible = false;
 
 	if (selectedSkuId && activeLocation) {
 		try {
@@ -769,9 +900,9 @@ async function render(ctx: PluginContext, adminId: string): Promise<BlockRespons
 					z.object({ outcome: z.literal("not_found") }),
 				]),
 			}).safeParse(stockRes);
-			if (parsedStock.success && parsedStock.data.balance.outcome === "found" && parsedStock.data.balance.balance.hasStockHistory) {
+			if (parsedStock.success && parsedStock.data.balance.outcome === "found") {
 				const b = parsedStock.data.balance.balance;
-				stockBalance = {
+				if (b.hasStockHistory) stockBalance = {
 					onHand: `${b.onHand.value} ${b.onHand.unit}`,
 					reserved: `${b.reserved.value} ${b.reserved.unit}`,
 					outgoingTransferCommitted: `${b.outgoingTransferCommitted?.value ?? "0"} ${b.onHand.unit}`,
@@ -785,6 +916,13 @@ async function render(ctx: PluginContext, adminId: string): Promise<BlockRespons
 			// Stock endpoint unavailable or uninitialized
 		}
 	}
+
+ if (selectedSkuId && activeLocation && !stockBalance) {
+  try {
+   const eligibility = openingEligibilitySchema.parse(await api(ctx, session.token, `/v1/stock/opening/eligibility?sku_id=${encodeURIComponent(selectedSkuId)}&location_id=${encodeURIComponent(activeLocation.locationId)}`));
+   openingEligible = eligibility.key.poolId === result.operation.poolId && eligibility.key.skuId === selectedSkuId && eligibility.key.locationId === activeLocation.locationId && eligibility.location.locationId === activeLocation.locationId && eligibility.eligibility === "eligible" && !eligibility.hasStockHistory;
+  } catch { /* Missing or unavailable authoritative eligibility offers no mutation. */ }
+ }
 
 	const blocks: Block[] = [
 		{ type: "banner", title: "Inventory connected", description: "Your Inventory operation is ready." },
@@ -831,8 +969,22 @@ async function render(ctx: PluginContext, adminId: string): Promise<BlockRespons
 		} else {
 			blocks.push({
 				type: "context",
-				text: `No stock balance found for SKU "${selectedSkuId}" at ${activeLocation.name}. Set Initial Stock to begin stock adjustments.`,
+				text: openingEligible
+					? `No stock history exists for SKU "${selectedSkuId}" at ${activeLocation.name}. Set Initial Stock to begin stock adjustments.`
+					: `No authoritative stock balance found for SKU "${selectedSkuId}" at ${activeLocation.name}.`,
 			});
+			if (openingEligible) {
+				blocks.push({
+					type: "form",
+					block_id: "opening-stock",
+					fields: [
+						{ type: "text_input", action_id: "location_id", label: "Location ID", initial_value: activeLocation.locationId },
+						{ type: "text_input", action_id: "sku_id", label: "SKU ID", initial_value: selectedSkuId },
+						{ type: "text_input", action_id: "quantity_value", label: "Initial quantity (non-negative)" },
+					],
+					submit: { label: "Preview initial stock", action_id: "preview_opening_balance" },
+				});
+			}
 		}
 	}
 	blocks.push(button("refresh", "Refresh Inventory"));
@@ -859,6 +1011,44 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 		if (interaction.type === "form_submit" && interaction.action_id === "select_stock") {
 			await setKvKey(ctx, "state:selected-location", interaction.values.location_id);
 			await setKvKey(ctx, "state:selected-sku", interaction.values.sku_id);
+			return await render(ctx, adminId);
+		}
+
+		if (interaction.type === "form_submit" && interaction.action_id === "preview_opening_balance") {
+			const stored = await readSession(ctx);
+			if (!stored || stored.session.phase !== "token" || stored.session.expiresAt <= Date.now()) return render(ctx, adminId);
+			const existing = await ctx.kv.getVersioned<unknown>("state:opening-balance-intent");
+			const admittedRevision = existing?.revision ?? null;
+			if (existing) {
+				const prior = openingIntentSchema.safeParse(existing.value);
+				if (!prior.success) return notice("Opening stock requires its originating administrator", "Resolve the preserved opening-stock request first.");
+				requireOriginatingAdministrator(prior.data.initiatingAdminId, adminId);
+				if (prior.data.status === "pending") return notice("Initial stock pending", "Retry or resolve the existing initial-stock command first.");
+			}
+			const locationsData = z.object({ locations: z.array(z.object({ name: z.string(), locationId: id })) }).parse(await api(ctx, stored.session.token, "/v1/locations"));
+			if (!locationsData.locations.some(l => l.locationId === interaction.values.location_id)) return notice("Location not found", "The selected location is not active in this inventory operation.");
+			const eligibility = openingEligibilitySchema.parse(await api(ctx, stored.session.token, "/v1/stock/opening/eligibility?sku_id=" + encodeURIComponent(interaction.values.sku_id) + "&location_id=" + encodeURIComponent(interaction.values.location_id)));
+			if (eligibility.key.skuId !== interaction.values.sku_id || eligibility.key.locationId !== interaction.values.location_id || eligibility.location.locationId !== interaction.values.location_id) return notice("Initial stock unavailable", "The authoritative SKU or location identity did not match the request.");
+			if (eligibility.eligibility !== "eligible" || eligibility.hasStockHistory) return notice("Initial stock unavailable", "This SKU-location has physical stock history, including zero balances. Review it as an adjustment.");
+			const preview = openingPreviewSchema.parse(await api(ctx, stored.session.token, "/v1/stock/opening/preview", {
+				locationId: interaction.values.location_id,
+				skuId: interaction.values.sku_id,
+				quantity: { value: interaction.values.quantity_value, unit: "each" },
+				reason: { code: "physical_count", note: "Set Initial Stock after reviewing the authoritative SKU-location history" },
+				references: [],
+			}));
+			const command: OpeningCommand = {
+				schema: "dinkuskit.inventory.command/v1",
+				commandId: crypto.randomUUID(),
+				type: "stock.opening_balance",
+				context: preview.context,
+				payload: { skuId: preview.effect.skuId, quantity: preview.effect.onHandDelta },
+				reason: preview.reason,
+				references: preview.references,
+				expectedVersions: [{ skuId: preview.effect.skuId, locationId: preview.context.locationId, version: preview.effect.balanceBefore.version }],
+			};
+			const next: OpeningIntent = { status: "preview", initiatingAdminId: adminId, preview, command, expiresAt: Date.parse(preview.confirmation.expiresAt) };
+			await ctx.kv.compareAndSet("state:opening-balance-intent", admittedRevision, next);
 			return await render(ctx, adminId);
 		}
 
@@ -961,6 +1151,32 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 			return await executeAdjustmentConfirm(ctx, adminId, stored.session.token, interaction.value);
 		}
 
+		if (interaction.type === "block_action" && (interaction.action_id === "confirm_opening_balance" || interaction.action_id === "retry_opening_balance")) {
+			const stored = await readSession(ctx);
+			if (!stored || stored.session.phase !== "token" || stored.session.expiresAt <= Date.now()) return render(ctx, adminId);
+			return await executeOpeningConfirm(ctx, adminId, stored.session.token, interaction.value);
+		}
+
+		if (interaction.type === "block_action" && interaction.action_id === "cancel_opening_balance") {
+			if (typeof interaction.value !== "string" || !interaction.value.trim()) return render(ctx, adminId);
+			const record = await ctx.kv.getVersioned<unknown>("state:opening-balance-intent");
+			const parsed = record && openingIntentSchema.safeParse(record.value);
+			if (!record || !parsed || !parsed.success || parsed.data.status !== "preview") return render(ctx, adminId);
+			requireOriginatingAdministrator(parsed.data.initiatingAdminId, adminId);
+			if (parsed.data.command.commandId === interaction.value) await ctx.kv.compareAndDelete("state:opening-balance-intent", record.revision);
+			return await render(ctx, adminId);
+		}
+
+		if (interaction.type === "block_action" && interaction.action_id === "clear_opening_balance_result") {
+			if (typeof interaction.value !== "string" || !interaction.value.trim()) return render(ctx, adminId);
+			const record = await ctx.kv.getVersioned<unknown>("state:opening-balance-intent");
+			const parsed = record && openingIntentSchema.safeParse(record.value);
+			if (!record || !parsed || !parsed.success || (parsed.data.status !== "committed" && parsed.data.status !== "rejected")) return render(ctx, adminId);
+			requireOriginatingAdministrator(parsed.data.initiatingAdminId, adminId);
+			if (parsed.data.commandId === interaction.value) await ctx.kv.compareAndDelete("state:opening-balance-intent", record.revision);
+			return await render(ctx, adminId);
+		}
+
 		// Handle cancel adjustment (only cancels unsubmitted preview)
 		if (interaction.type === "block_action" && interaction.action_id === "cancel_adjustment") {
 			if (typeof interaction.value !== "string" || interaction.value.trim() === "") {
@@ -1023,8 +1239,8 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 		return await render(ctx, adminId);
 	} catch (error) {
 		if (error instanceof StoreConnectError) {
-			if (error.code === "wrong_originating_admin" && ((parsed.data.type === "form_submit" && parsed.data.action_id === "preview_adjustment") || (parsed.data.type === "block_action" && ["confirm_adjustment", "retry_adjustment", "cancel_adjustment", "clear_adjustment_result"].includes(parsed.data.action_id)))) {
-				return notice("Adjustment belongs to another administrator", "Only the administrator who created this adjustment can continue or change it.");
+			if (error.code === "wrong_originating_admin" && ((parsed.data.type === "form_submit" && ["preview_adjustment", "preview_opening_balance"].includes(parsed.data.action_id)) || (parsed.data.type === "block_action" && ["confirm_adjustment", "retry_adjustment", "cancel_adjustment", "clear_adjustment_result", "confirm_opening_balance", "retry_opening_balance", "cancel_opening_balance", "clear_opening_balance_result"].includes(parsed.data.action_id)))) {
+				return notice("Request belongs to another administrator", "Only the administrator who created this request can continue or change it.");
 			}
 			if (error.code === "wrong_originating_admin" || error.code === "connection_in_progress") {
 				return notice("Connect already started", "Only the originating site administrator can continue this connection. Wait for it to finish or expire.");
@@ -1042,6 +1258,9 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 			}
 			if (error.code === "opening_balance_required") {
 				return notice("Opening balance required", "Set Initial Stock before making a stock adjustment.");
+			}
+			if (["opening_balance_already_set", "sku_not_registered", "sku_unit_mismatch", "stale_version"].includes(error.code)) {
+				return notice("Initial stock unavailable", "The authoritative stock state changed or the SKU is not eligible. Reload and inspect the stock balance.");
 			}
 			if (error.code === "stale_version") {
 				return notice("Version changed", "Stock balance version changed. Reload Inventory to preview again.");

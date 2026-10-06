@@ -25,10 +25,22 @@ export const RECEIPT_HISTORY_READ_RESULT_SCHEMA =
 	"dinkuskit.inventory.receipt-history-read-result/v1" as const;
 export const SKU_STOCK_READ_RESULT_SCHEMA =
 	"dinkuskit.inventory.sku-stock-read-result/v1" as const;
+export const OPENING_BALANCE_ELIGIBILITY_READ_RESULT_SCHEMA =
+	"dinkuskit.inventory.opening-balance-eligibility-read-result/v1" as const;
 export const RECEIPT_HISTORY_DEFAULT_LIMIT = 50 as const;
 export const RECEIPT_HISTORY_MAX_LIMIT = 100 as const;
 
 export type ReadSkuLocationBalanceInput = SkuLocationKey;
+
+export type OpeningBalanceEligibilityReadResult = Readonly<{
+	schema: typeof OPENING_BALANCE_ELIGIBILITY_READ_RESULT_SCHEMA;
+	key: SkuLocationKey;
+	eligibility: "eligible" | "history_exists";
+	sku: Readonly<{ inventorySkuId: string; sku: string; unit: string }>;
+	location: Readonly<{ locationId: string; status: "active" }>;
+	balance: BalanceRecord | null;
+	hasStockHistory: boolean;
+}>;
 
 export type SkuLocationBalanceReadResult =
 	| Readonly<{

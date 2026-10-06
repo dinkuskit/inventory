@@ -1,0 +1,24 @@
+{
+  "sourceRepo": "dinkuskit/inventory",
+  "base": "ea957d7418ff4dbfeb859967d82349d84456fb94",
+  "qualification": "static capture of real dispatcher/workerd responses in published Block Kit; synthetic auth, local authority variant, not Registry or live merchant installation",
+  "redaction": "reviewed: synthetic identities/quantities only; no credentials or tokens",
+  "pluginCodeSha256": "1316ab408621c5d2b4e1bca21237347ab688036d7389dfaba877453eb02b578a",
+  "assets": {
+    "preview.jpg": {
+      "sha256": "1b411fbfb4455404ad1190b92b6b9e4b2647b06e7ce45ada2c2a7e3eaccb56b5",
+      "bytes": 76221
+    },
+    "stock.jpg": {
+      "sha256": "cfb79f5c1d583d70cdc910df55f7a02f5116336c96fb53e635814a592c4090c9",
+      "bytes": 117649
+    }
+  },
+  "assetRepo": "dinkuskit/dinkus-pr-assets",
+  "assetCommit": "27d41b7657bda1e4e86cba3e99e04dd2eab736ba",
+  "branch": "codex/inventory-merchant-setup-20261006",
+  "urls": {
+    "preview.jpg": "https://raw.githubusercontent.com/dinkuskit/dinkus-pr-assets/27d41b7657bda1e4e86cba3e99e04dd2eab736ba/inventory/merchant-setup-20261006/1316ab408621c5d2b4e1bca21237347ab688036d7389dfaba877453eb02b578a/preview.jpg",
+    "stock.jpg": "https://raw.githubusercontent.com/dinkuskit/dinkus-pr-assets/27d41b7657bda1e4e86cba3e99e04dd2eab736ba/inventory/merchant-setup-20261006/1316ab408621c5d2b4e1bca21237347ab688036d7389dfaba877453eb02b578a/stock.jpg"
+  }
+}
