@@ -1,7 +1,8 @@
 import { WorkerEntrypoint } from "cloudflare:workers";
 import { z } from "zod";
-import { connectInputSchema, type AccountPrincipal } from "../features/hosted-onboarding/index.ts";
+import { connectInputSchema, unavailableAccountOverview, type AccountPrincipal } from "../features/hosted-onboarding/index.ts";
 import { createAccountAuthenticator } from "./account-auth.ts";
+import { createAccountOverviewVerifier, type AccountOverviewPrincipal } from "./account-overview-auth.ts";
 import { InventoryAccount } from "./account-connections.ts";
 import { InventoryPool } from "./worker.ts";
 export { InventoryAccount, InventoryPool };
@@ -140,11 +141,16 @@ async function readBoundedJson(request: Request, maxBytes = 8192): Promise<{ tex
 	return { text };
 }
 
-export function createHostedInventoryHandler(env: HostedInventoryEnv, authenticate?: (request: Request) => Promise<AccountPrincipal>) {
+export function createHostedInventoryHandler(
+	env: HostedInventoryEnv,
+	authenticate?: (request: Request) => Promise<AccountPrincipal>,
+	authenticateOverview?: (request: Request) => Promise<AccountOverviewPrincipal>,
+) {
 	return async (request: Request): Promise<Response> => {
 		const url = new URL(request.url);
 		const path = url.pathname;
 		const allowedPaths = [
+			"/v1/account-overview",
 			"/v1/connect",
 			"/v1/status",
 			"/v1/operations",
@@ -161,6 +167,27 @@ export function createHostedInventoryHandler(env: HostedInventoryEnv, authentica
 		];
 		if (!allowedPaths.includes(path)) return new Response("Not Found", { status: 404 });
 		const respond = (body: unknown, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
+		if (path === "/v1/account-overview") {
+			if (request.method !== "GET") return respond({ error: "method_not_allowed" }, 405);
+			if ([...url.searchParams.keys()].length > 0) return respond({ error: "invalid_request" }, 400);
+			if (!authenticateOverview && (!env.ACCOUNT_ISSUER || !env.ACCOUNT_JWKS_URL)) {
+				return respond({ error: "account_service_unconfigured", overview: unavailableAccountOverview(new Date().toISOString(), "service_unconfigured") }, 503);
+			}
+			let principal: AccountOverviewPrincipal;
+			try {
+				const verify = authenticateOverview ?? createAccountOverviewVerifier({ issuer: env.ACCOUNT_ISSUER!, jwksUrl: env.ACCOUNT_JWKS_URL! });
+				principal = await verify(request);
+			} catch { return respond({ error: "unauthorized" }, 401); }
+			try {
+				const overview = await env.INVENTORY_ACCOUNTS.getByName(principal.accountId).readOverview();
+				if (overview.metadata.availability !== "available") {
+					return respond({ organizationId: principal.organizationId, overview }, 503);
+				}
+				return respond({ organizationId: principal.organizationId, overview });
+			} catch {
+				return respond({ organizationId: principal.organizationId, overview: unavailableAccountOverview(new Date().toISOString(), "read_unavailable") }, 503);
+			}
+		}
 		if (!authenticate && (!env.ACCOUNT_ISSUER || !env.ACCOUNT_JWKS_URL || !env.ACCOUNT_AUDIENCE)) return respond({ error: "account_service_unconfigured" }, 503);
 		let principal: AccountPrincipal;
 		try {

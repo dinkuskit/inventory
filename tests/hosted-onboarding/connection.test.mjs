@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createAccountConnections } from "../../src/features/hosted-onboarding/index.ts";
+import { createAccountConnections, projectAccountOverview } from "../../src/features/hosted-onboarding/index.ts";
 
 function fixture(provision = async op => ({ outcome: "committed", locationId: `loc_${op.operationId}` })) {
 	const operations = new Map(), sites = new Map(), requests = new Map();
 	let ids = 0;
-	const store = { transaction: fn => fn({ getOperation: id => operations.get(id) ?? null, putOperation: op => operations.set(op.operationId, op), listOperations: () => [...operations.values()], getSite: id => sites.get(id) ?? null, putSite: (id, value) => sites.set(id, value), getRequest: id => requests.get(id) ?? null, putRequest: (id, value) => requests.set(id, value) }) };
+	const store = { transaction: fn => fn({ getOperation: id => operations.get(id) ?? null, putOperation: op => operations.set(op.operationId, op), listOperations: () => [...operations.values()], listSites: () => [...sites.entries()].map(([siteId, connection]) => ({ siteId, connection })), getSite: id => sites.get(id) ?? null, putSite: (id, value) => sites.set(id, value), getRequest: id => requests.get(id) ?? null, putRequest: (id, value) => requests.set(id, value) }) };
 	return { api: createAccountConnections({ store, newId: () => `op_${++ids}`, provision }), operations, sites };
 }
 const principal = { accountId: "fixture-account", siteId: "fixture-site" };
@@ -60,4 +60,57 @@ test("delayed unknown response cannot regress a ready concurrent result", async 
 });
 test("ownership, pool, site and account fields are rejected from browser input", async () => {
 	for (const field of ["accountId", "siteId", "poolId", "principal"]) await assert.rejects(fixture().api.connect(principal, { ...input, [field]: "untrusted" }));
+});
+
+test("projects shared and separate pools deterministically without stock semantics", () => {
+	const operation = (operationId, poolId, originSiteId, status = "ready") => ({ operationId, poolId, locationName: "private", locationId: "private", commandId: `command-${operationId}`, originSiteId, status, failureCode: null });
+	const overview = projectAccountOverview({
+		operations: [
+			operation("op-b", "pool-b", "site-b"),
+			operation("op-a", "pool-a", "site-a"),
+		],
+		sites: [
+			{ siteId: "site-z", connection: { operationId: "op-b", intent: "private" } },
+			{ siteId: "site-a", connection: { operationId: "op-a", intent: "private" } },
+			{ siteId: "site-b", connection: { operationId: "op-b", intent: "private" } },
+		],
+	}, () => "2026-10-07T02:30:00.000Z");
+	assert.equal(overview.metadata.availability, "available");
+	assert.deepEqual(overview.counts, { pools: 2, sites: 3 });
+	assert.deepEqual(overview.pools, [
+		{ poolId: "pool-a", siteCount: 1, provisioning: "ready" },
+		{ poolId: "pool-b", siteCount: 2, provisioning: "ready" },
+	]);
+	assert.deepEqual(overview.sites.map(site => site.siteId), ["site-a", "site-b", "site-z"]);
+});
+
+test("invalid metadata is typed unavailable with null rows and counts", () => {
+	const overview = projectAccountOverview({
+		operations: [{
+			operationId: "op-a", poolId: "pool-a", locationName: "private", locationId: null,
+			commandId: "command-a", originSiteId: "site-a", status: "pending", failureCode: null,
+		}],
+		sites: [{ siteId: "site-a", connection: { operationId: "missing", intent: "private" } }],
+	}, () => "2026-10-07T02:30:00.000Z");
+	assert.deepEqual(overview.metadata, { availability: "unavailable", reason: "invalid_metadata" });
+	assert.equal(overview.counts, null);
+	assert.equal(overview.pools, null);
+	assert.equal(overview.sites, null);
+});
+
+test("unknown statuses and duplicate metadata IDs are unavailable", () => {
+	const operation = {
+		operationId: "op-a", poolId: "pool-a", locationName: "private", locationId: null,
+		commandId: "command-a", originSiteId: "site-a", status: "unknown", failureCode: null,
+	};
+	for (const metadata of [
+		{ operations: [operation], sites: [{ siteId: "site-a", connection: { operationId: "op-a", intent: "private" } }] },
+		{ operations: [{ ...operation, status: "ready" }, { ...operation, operationId: "op-b", commandId: "command-b", status: "ready" }], sites: [{ siteId: "site-a", connection: { operationId: "op-a", intent: "private" } }] },
+	]) {
+		const overview = projectAccountOverview(metadata, () => "2026-10-07T02:30:00.000Z");
+		assert.deepEqual(overview.metadata, { availability: "unavailable", reason: "invalid_metadata" });
+		assert.equal(overview.counts, null);
+		assert.equal(overview.pools, null);
+		assert.equal(overview.sites, null);
+	}
 });

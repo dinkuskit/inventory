@@ -636,3 +636,17 @@ proposed start `expires_at` field, and still fail-closes merchant-session
 lost-token recovery remain unagreed. Inventory fails closed on unexpected
 website responses and retries the original Inventory provisioning identity. See
 [store connection](implementation/store-connect.md).
+
+## account-overview-metadata-009 and account-overview-read-token-010 (locked)
+
+Inventory supplies one read-only organization metadata overview from retained
+account control records: distinct pools, retained site relationships, provisioning
+readiness and truthful observation/availability. Products, SKUs, stock quantities,
+catalog and contacts are excluded. Website owns verified origins and access state.
+
+Human-confirmed transport is a short-lived metadata-only signed token for exactly
+one organization. Independent caller identity is separate from the signed stable
+organization authority. A dedicated audience and sole scope prevent merchant
+credentials or browser selectors from acquiring this read. Website must authorize
+issuance independently; this lock grants no live operator access, deployment,
+publication or stock authority. See [account overview](implementation/account-overview.md).
