@@ -102,54 +102,7 @@ jobs:
           with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
               out.write(f'requested=true\npr_number={number}\nbase_sha={base}\nhead_sha={head}\npublish={publish}\n')
           PYBIND
-      - name: Mint the pickup token
-        id: pickup-token
-        if: ${{ steps.live.outputs.requested == 'true' && vars.CLAWSWEEPER_APP_CLIENT_ID != '' }}
-        continue-on-error: true
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1
-        with:
-          client-id: ${{ vars.CLAWSWEEPER_APP_CLIENT_ID }}
-          private-key: ${{ secrets.CLAWSWEEPER_APP_PRIVATE_KEY }}
-          owner: dinkuskit
-          repositories: inventory
-          permission-issues: write
-          permission-pull-requests: write
-      - name: Post the pickup comment
-        if: ${{ steps.live.outputs.requested == 'true' && steps.pickup-token.outputs.token != '' }}
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ steps.pickup-token.outputs.token }}
-          TARGET_REPO: dinkuskit/inventory
-          PR_NUMBER: ${{ steps.live.outputs.pr_number }}
-          HEAD_SHA: ${{ steps.live.outputs.head_sha }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 -I - <<'PYPICKUP'
-          import json, os, re, subprocess
-          repo = os.environ['TARGET_REPO']
-          pr = os.environ['PR_NUMBER']
-          head = os.environ['HEAD_SHA']
-          if not re.fullmatch(r'[1-9][0-9]*', pr) or not re.fullmatch(r'[0-9a-f]{40}', head):
-              raise SystemExit(0)
-          marker = f'<!-- clawsweeper-pickup item={pr} -->'
-          body = (
-              '\U0001F440 ClawSweeper picked this up and is waiting for a review slot.\n\n'
-              f'Head: `{head}`.\n\n'
-              'This is a progress receipt, not review clearance. The final review is published separately.\n\n'
-              + marker
-          )
-          payload = json.dumps({'body': body}).encode()
-          raw = subprocess.check_output(['gh', 'api', '--paginate', f'repos/{repo}/issues/{pr}/comments?per_page=100'])
-          comments = json.loads(raw.decode() or '[]')
-          if not isinstance(comments, list):
-              comments = [comments]
-          existing = next((c.get('id') for c in comments if isinstance(c, dict) and marker in (c.get('body') or '')), None)
-          if existing:
-              subprocess.check_call(['gh', 'api', '-X', 'PATCH', f'repos/{repo}/issues/comments/{existing}', '--input', '-'], input=payload)
-          else:
-              subprocess.check_call(['gh', 'api', '-X', 'POST', f'repos/{repo}/issues/{pr}/comments', '--input', '-'], input=payload)
-          PYPICKUP
+      # The native receiver owns pickup, started, and terminal receipts.
 
   review:
     needs: bind
