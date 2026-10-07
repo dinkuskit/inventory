@@ -113,6 +113,8 @@ export function bootstrapCleanInstall({ repoRoot, siteDir, runDir, databasePath,
 		throw new Error(`Migration status target ${statusReport.target.label} is not ${databasePath}`);
 	}
 	const pendingBefore = Array.isArray(statusReport.pending) ? statusReport.pending.length : null;
+	const alreadyApplied = Array.isArray(statusReport.knownApplied) ? statusReport.knownApplied.length : null;
+	if (pendingBefore === null || alreadyApplied === null) throw new Error("Migration status did not return migration lists");
 
 	const apply = run("migrate-apply", [
 		emdashCli,
@@ -132,7 +134,8 @@ export function bootstrapCleanInstall({ repoRoot, siteDir, runDir, databasePath,
 	const pendingAfter = Array.isArray(applyReport.pending) ? applyReport.pending.length : null;
 	const appliedCount = Array.isArray(applyReport.knownApplied) ? applyReport.knownApplied.length : null;
 	if (pendingAfter !== 0) throw new Error("Migrations still pending after apply");
-	if (appliedCount !== 88) throw new Error(`Expected 88 applied migrations, got ${appliedCount}`);
+	const expectedApplied = alreadyApplied + pendingBefore;
+	if (appliedCount !== expectedApplied) throw new Error(`Expected ${expectedApplied} applied migrations from status, got ${appliedCount}`);
 
 	const after = preserved.map(stampPreserved);
 	const drifted = after.filter((entry, index) => JSON.stringify(entry) !== JSON.stringify(before[index]));

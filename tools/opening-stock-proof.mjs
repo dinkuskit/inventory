@@ -1,3 +1,4 @@
+import { installedProofVersions } from "./emdash-proof-versions.mjs";
 // Local dispatcher/workerd opening-stock proof; synthetic auth, identity only, no seeded balance.
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -16,6 +17,7 @@ const PROOF_SERVICE_ORIGIN = "https://dinkuskit.com";
 
 const root = process.cwd();
 const proofDir = resolve(root, process.env.EMDASH_OPENING_PROOF_RUN_DIR ?? ".grilltrack/work/merchant-setup-20261006/runtime");
+const { emdash: emdashVersion, sandbox: sandboxVersion } = installedProofVersions();
 await mkdir(proofDir, { recursive: true });
 
 process.env.EMDASH_ENCRYPTION_KEY = `emdash_enc_v1_${randomBytes(32).toString("base64url")}`;
@@ -91,6 +93,7 @@ async function transport(url, init) {
 			headers: request.headers,
 			body: requestBody,
 		});
+		console.log(`Synthetic service ${request.method} ${target.pathname}: HTTP ${res.status}`);
 		if (target.pathname === "/v1/stock/opening/confirm" && originalConfirmResult === null) {
 			originalConfirmResult = await res.clone().json();
 		}
@@ -105,7 +108,7 @@ async function transport(url, init) {
 }
 
 // 1. Inspect package and manifest
-const tarballPath = resolve(root, "plugins/emdash-inventory/dist/dinkus-inventory-0.0.0.tar.gz");
+const tarballPath = resolve(root, process.env.EMDASH_PROOF_TARBALL ?? "plugins/emdash-inventory/dist/dinkus-inventory-0.0.0.tar.gz");
 const tarballBytes = await readFile(tarballPath);
 const tarballSha256 = createHash("sha256").update(tarballBytes).digest("hex");
 console.log(`Plugin tarball: ${tarballPath}`);
@@ -159,7 +162,7 @@ const adminUser = {
 async function dispatchAdmin(body, user = adminUser) {
 	const req = new Request("http://localhost:4321/_emdash/api/plugins/dinkus-inventory/admin", {
 		method: "POST",
-		headers: { "Content-Type": "application/json" },
+		headers: { "Content-Type": "application/json", "X-EmDash-Request": "1" },
 		body: JSON.stringify(body),
 	});
 	const res = await dispatchPluginApiRequest({
@@ -170,6 +173,7 @@ async function dispatchAdmin(body, user = adminUser) {
 		tokenScopes: ["admin", "plugins:manage"],
 		request: req,
 	});
+	if (!res.ok) throw new Error(`Installed admin dispatch failed: HTTP ${res.status}`);
 	return res.json();
 }
 
@@ -199,7 +203,7 @@ function unchanged(before, after, label) {
 
 const blocksOf = response => response.data?.blocks ?? response.blocks ?? [];
 const headers = { Authorization: `Bearer ${serviceToken}`, 'X-Inventory-Site': principal.siteId, 'Content-Type': 'application/json' };
-const proof = { qualification: 'published_dispatcher_workerd_component_with_synthetic_auth_and_local_authority_variant', openingSeeded: false, registryTransport: false, hostedIssuance: false, checkpoints: {} };
+const proof = { qualification: 'published_dispatcher_workerd_component_with_synthetic_auth_and_local_authority_variant', emdash: emdashVersion, sandboxRunner: `@emdash-cms/sandbox-workerd@${sandboxVersion}`, openingSeeded: false, registryTransport: false, hostedIssuance: false, checkpoints: {} };
 try {
  const connected = await mf.dispatchFetch('https://inventory.dinkuskit.invalid/v1/connect', { method: 'POST', headers, body: JSON.stringify({ type: 'create', requestId: 'req_opening_component', locationName: 'Synthetic Opening Depot' }) });
  const { operation } = await connected.json();
@@ -215,7 +219,8 @@ try {
  const initial = await canonicalSnapshot(locationId, skuId);
  if (initial.balance !== null) throw new Error('Proof must begin without seeded stock');
  const first = blocksOf(await dispatchAdmin({ type: 'page_load', page: '/inventory' }));
- if (!JSON.stringify(first).includes('preview_opening_balance')) throw new Error('Actual sandbox did not offer initial stock');
+ if (!JSON.stringify(first).includes('preview_opening_balance')) await writeFile(resolve(proofDir, "initial-block-summary.json"), JSON.stringify(first.map(b => ({ type: b.type, title: b.title, block_id: b.block_id })), null, 2));
+ if (!JSON.stringify(first).includes('preview_opening_balance')) throw new Error(`Actual sandbox did not offer initial stock (${first.length} blocks)`);
  proof.checkpoints.initial = first;
  const previewBlocks = blocksOf(await dispatchAdmin({ type: 'form_submit', action_id: 'preview_opening_balance', values: { location_id: locationId, sku_id: skuId, quantity_value: '7' } }));
  const commandId = previewBlocks.find(b => b.type === 'actions')?.elements.find(e => e.action_id === 'confirm_opening_balance')?.value;
@@ -265,6 +270,6 @@ try {
  await writeFile(resolve(proofDir, 'verification.json'), JSON.stringify(proof, null, 2));
 } finally {
  globalThis.fetch = originalFetch; uninstallProofTransport();
- try { await runtime.shutdown(); } finally { await mf.dispose(); }
+ try { await runtime.shutdown(); await runner.terminateAll(); } finally { await mf.dispose(); await runtime.db.destroy(); }
  console.log('PASS: owned dispatcher and canonical service shut down normally.');
 }

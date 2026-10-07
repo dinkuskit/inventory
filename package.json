@@ -10,7 +10,7 @@
     "url": "git+https://github.com/dinkuskit/inventory.git"
   },
   "engines": {
-    "node": ">=22.12.0"
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
   },
   "scripts": {
     "test": "npm run test:node && npm run test:cloudflare",
@@ -40,10 +40,10 @@
   "devDependencies": {
     "@cloudflare/vitest-plugin": "1.1.1",
     "@cloudflare/workers-types": "5.20260828.1",
-    "@emdash-cms/blocks": "1.0.1",
-    "@emdash-cms/plugin-cli": "0.13.1",
-    "@emdash-cms/sandbox-workerd": "0.9.1",
-    "emdash": "1.0.1",
+    "@emdash-cms/blocks": "1.2.0",
+    "@emdash-cms/plugin-cli": "0.13.3",
+    "@emdash-cms/sandbox-workerd": "0.9.3",
+    "emdash": "1.2.0",
     "typescript": "7.0.2",
     "vitest": "4.1.11",
     "wrangler": "4.127.0"
@@ -51,5 +51,14 @@
   "dependencies": {
     "jose": "6.2.12",
     "zod": "4.5.4"
+  },
+  "overrides": {
+    "astro": "7.2.9",
+    "@astrojs/react": "6.0.4",
+    "vite": {
+      ".": "8.2.2",
+      "rolldown": "1.2.6"
+    },
+    "@codemirror/language": "6.12.4"
   }
 }

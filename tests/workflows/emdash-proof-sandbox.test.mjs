@@ -6,7 +6,7 @@ test("finite test bridge rejects foreign authority, unsupported routes and query
 	let calls = 0;
 	const uninstall = installInventoryProofTransport(async () => { calls++; return new Response("ok"); });
 	try {
-		for (const url of ["http://dinkuskit.com/v1/status", "https://foreign.invalid/v1/status", "https://dinkuskit.com:8443/v1/status", "https://dinkuskit.com/v1/status?x=1", "https://dinkuskit.com/v1/status#x", "https://dinkuskit.com/v1/other", "https://dinkuskit.com/v1/stock?sku_id=s&location_id=l&sku_id=extra"]) {
+		for (const url of ["http://dinkuskit.com/v1/status", "https://foreign.invalid/v1/status", "https://dinkuskit.com:8443/v1/status", "https://dinkuskit.com/v1/status?x=1", "https://dinkuskit.com/v1/status#x", "https://dinkuskit.com/v1/other", "https://dinkuskit.com/v1/skus?pool_id=foreign", "https://dinkuskit.com/v1/stock?sku_id=s&location_id=l&sku_id=extra"]) {
 			await assert.rejects(inventoryProofFetch(url), /Proof .* rejected/);
 		}
 		await assert.rejects(inventoryProofFetch("https://dinkuskit.com/v1/status", { method: "POST" }), /route rejected/);
@@ -28,5 +28,6 @@ test("valid synthetic bridge preserves request method, bytes and headers", async
 		assert.equal(response.status, 409);
 		assert.equal(await response.text(), "unchanged");
 		assert.equal((await inventoryProofFetch("https://dinkuskit.com/v1/stock?sku_id=s&location_id=l")).status, 409);
+		assert.equal((await inventoryProofFetch("https://dinkuskit.com/v1/skus")).status, 409);
 	} finally { uninstall(); }
 });

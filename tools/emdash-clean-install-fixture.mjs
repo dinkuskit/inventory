@@ -11,10 +11,16 @@ import { CLEAN_INSTALL_HOST_PORT, CLEAN_INSTALL_RESERVED_PEER_PORT } from "./emd
 import { bootstrapCleanInstall } from "./emdash-clean-install-bootstrap.mjs";
 
 const repoRoot = resolve(import.meta.dirname, "..");
-const runDir = resolve(repoRoot, "runs/emdash-install-proof-runs/20260930");
-const repairDir = resolve(runDir, "helper-repair");
+const runDir = process.env.EMDASH_CLEAN_INSTALL_RUN_DIR
+	? resolve(process.env.EMDASH_CLEAN_INSTALL_RUN_DIR)
+	: resolve(repoRoot, "runs/emdash-install-proof-runs/20260930");
+const repairDir = process.env.EMDASH_CLEAN_INSTALL_FIXTURE_DIR
+	? resolve(process.env.EMDASH_CLEAN_INSTALL_FIXTURE_DIR)
+	: resolve(runDir, "helper-repair");
 const siteDir = resolve(repairDir, "site");
-const cleanSite = resolve(runDir, "clean-site");
+const cleanSite = process.env.EMDASH_CLEAN_INSTALL_SOURCE_DIR
+	? resolve(process.env.EMDASH_CLEAN_INSTALL_SOURCE_DIR)
+	: resolve(runDir, "clean-site");
 const pluginDir = resolve(repoRoot, "plugins/emdash-inventory");
 const previousTarball = resolve(cleanSite, "dinkuskit-emdash-inventory-0.0.0.tgz");
 
@@ -46,7 +52,10 @@ function treeHash(paths) {
 }
 
 function readPackageVersion(name) {
-	const path = resolve(cleanSite, "node_modules", name, "package.json");
+	const packageRoot = process.env.EMDASH_CLEAN_INSTALL_PACKAGE_ROOT
+		? resolve(process.env.EMDASH_CLEAN_INSTALL_PACKAGE_ROOT)
+		: cleanSite;
+	const path = resolve(packageRoot, "node_modules", name, "package.json");
 	return JSON.parse(readFileSync(path, "utf8")).version;
 }
 
@@ -72,8 +81,8 @@ const before = {
 	manifest: sha256File(resolve(pluginDir, "emdash-plugin.jsonc")),
 	package: sha256File(resolve(pluginDir, "package.json")),
 	private: JSON.parse(readFileSync(resolve(pluginDir, "package.json"), "utf8")).private === true,
-	previousTarballSha256: sha256File(previousTarball),
-	previousTarballBytes: statSync(previousTarball).size,
+	previousTarballSha256: existsSync(previousTarball) ? sha256File(previousTarball) : null,
+	previousTarballBytes: existsSync(previousTarball) ? statSync(previousTarball).size : null,
 };
 
 mkdirSync(repairDir, { recursive: true });
@@ -101,7 +110,9 @@ const packedName = (pack.stdout || "").trim().split("\n").filter(Boolean).at(-1)
 const packedPath = resolve(repairDir, packedName);
 const packedSha = sha256File(packedPath);
 const packedBytes = statSync(packedPath).size;
-const correspondence = packedSha === before.previousTarballSha256 ? "matches_previous_npm_tarball" : "repacked_from_current_source";
+const correspondence = before.previousTarballSha256 && packedSha === before.previousTarballSha256
+	? "matches_previous_npm_tarball"
+	: "repacked_from_current_source";
 
 assertPortFree(CLEAN_INSTALL_HOST_PORT);
 assertPortFree(CLEAN_INSTALL_RESERVED_PEER_PORT);
@@ -157,9 +168,12 @@ mkdirSync(resolve(siteDir, "src/pages/_proof"), { recursive: true });
 writeFileSync(resolve(siteDir, "src/pages/_proof/login.mjs"), `export { GET } from "../../../emdash-clean-install-login.mjs";
 `);
 
-const cloned = spawnSync("cp", ["-cR", resolve(cleanSite, "node_modules"), resolve(siteDir, "node_modules")], { encoding: "utf8" });
+const packageRoot = process.env.EMDASH_CLEAN_INSTALL_PACKAGE_ROOT
+	? resolve(process.env.EMDASH_CLEAN_INSTALL_PACKAGE_ROOT)
+	: cleanSite;
+const cloned = spawnSync("cp", ["-cR", resolve(packageRoot, "node_modules"), resolve(siteDir, "node_modules")], { encoding: "utf8" });
 if (cloned.status !== 0) {
-	cpSync(resolve(cleanSite, "node_modules"), resolve(siteDir, "node_modules"), { recursive: true });
+	cpSync(resolve(packageRoot, "node_modules"), resolve(siteDir, "node_modules"), { recursive: true });
 }
 rmSync(resolve(siteDir, "node_modules/@dinkuskit"), { recursive: true, force: true });
 const install = spawnSync("npm", ["install", "--offline", "--ignore-scripts", "--no-audit", "--no-fund", "--no-save", packedName], {
