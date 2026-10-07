@@ -1410,13 +1410,21 @@
       "rationale": "Confirmed initial metadata boundary; preserve current account isolation and sole Inventory stock authority.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": "proof/account-overview-20261006/PARENT-REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-10-07T02:45:32+00:00",
+          "source_identity": "git:6f52ae1ad07595009bd02658bbf965a1728b20fb"
+        }
+      ],
+      "review_ref": "proof/account-overview-20261006/PARENT-REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "git:6f52ae1ad07595009bd02658bbf965a1728b20fb",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-10-07T02:45:21+00:00",
+      "updated_at": "2026-10-07T02:45:32+00:00",
       "verification_ref": "proof/account-overview-20261006/VERIFICATION.md"
     },
     {
@@ -1481,13 +1489,21 @@
       "rationale": "Human selected signed token for one organization; platform admission and issuance remain Website-owned.",
       "repair_required": false,
       "review_classifications": [],
-      "review_history": [],
-      "review_ref": null,
-      "review_result": null,
-      "review_source_identity": null,
+      "review_history": [
+        {
+          "classifications": [],
+          "ref": "proof/account-overview-20261006/PARENT-REVIEW.md",
+          "result": "clean",
+          "reviewed_at": "2026-10-07T02:45:32+00:00",
+          "source_identity": "git:6f52ae1ad07595009bd02658bbf965a1728b20fb"
+        }
+      ],
+      "review_ref": "proof/account-overview-20261006/PARENT-REVIEW.md",
+      "review_result": "clean",
+      "review_source_identity": "git:6f52ae1ad07595009bd02658bbf965a1728b20fb",
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-10-07T02:45:21+00:00",
+      "updated_at": "2026-10-07T02:45:32+00:00",
       "verification_ref": "proof/account-overview-20261006/VERIFICATION.md"
     }
   ],
@@ -1511,5 +1527,5 @@
   "status": "active",
   "title": "Inventory store-connect polling repair and current-main integration",
   "track_id": "gt-join-42f7bb6da7a34ed32ceed850c064516d",
-  "updated_at": "2026-10-07T02:45:21+00:00"
+  "updated_at": "2026-10-07T02:45:32+00:00"
 }
