@@ -1,0 +1,27 @@
+import { registerHooks } from 'node:module';
+import { readFileSync, writeFileSync } from 'node:fs';
+registerHooks({resolve(s,c,n){if(s==='virtual:emdash/config')return {url:'data:text/javascript,export default {}',shortCircuit:true};return n(s,c);},load(u,c,n){if(u.includes('/node_modules/emdash/dist/')&&u.endsWith('.mjs')){const source=readFileSync(new URL(u),'utf8');if(source.includes('import.meta.env'))return {format:'module',source:source.replaceAll('import.meta.env',"({DEV:false,PROD:true,SSR:true,BASE_URL:'/'})"),shortCircuit:true};}return n(u,c);}});
+const {EmDashRuntime,dispatchPluginApiRequest}=await import('emdash/internal/plugin-test-runtime');
+const {createSettingsAccess,OptionsRepository}=await import('emdash');
+const {sqlite}=await import('emdash/db');const {createDialect}=await import('emdash/db/sqlite');
+const {WorkerdSandboxRunner}=await import('@emdash-cms/sandbox-workerd');
+const {createHash,randomBytes}=await import('node:crypto');const assert=(await import('node:assert/strict')).default;
+const root=new URL('../../../',import.meta.url),manifest=JSON.parse(readFileSync(new URL('plugins/emdash-inventory/dist/manifest.json',root),'utf8')),code=readFileSync(new URL('plugins/emdash-inventory/dist/plugin.mjs',root),'utf8');
+const hash=createHash('sha256').update('did:plc:syntheticinventorypublisher\ndinkus-inventory').digest();let bits=0,value=0,out='';for(const byte of hash){value=(value<<8)|byte;bits+=8;while(bits>=5){bits-=5;out+='abcdefghijklmnopqrstuvwxyz234567'[(value>>>bits)&31];}}const id='r_'+out.slice(0,16);
+process.env.EMDASH_ENCRYPTION_KEY='emdash_enc_v1_'+randomBytes(32).toString('base64url');
+let captured,runner;
+const transport=async(input,init)=>{const req=new Request(input,init);const url=new URL(req.url);assert.equal(url.origin,'https://accounts.dinkuskit.invalid');assert.equal(url.pathname,'/api/store-connections');const body=await req.json();captured={siteOrigin:body.site_origin,callbackUri:body.callback_uri,clientId:body.client_id};return Response.json({error:'synthetic_unavailable'},{status:503});};
+const originalFetch=globalThis.fetch;globalThis.fetch=async(input,init)=>{const url=new URL(typeof input==='string'?input:input.url??input.href);if(url.hostname==='cloudflare-dns.com'&&url.searchParams.get('name')==='accounts.dinkuskit.invalid')return Response.json({Status:0,Answer:url.searchParams.get('type')==='A'?[{type:1,data:'93.184.216.34'}]:[]});return originalFetch(input,init);};
+const runtime=await EmDashRuntime.create({config:{database:sqlite({url:':memory:'})},plugins:[],createDialect,createStorage:null,sandboxEnabled:true,sandboxedPluginEntries:[{...manifest,id,options:{},code,adminPages:manifest.admin.pages,settingsSchema:manifest.admin.settingsSchema}],siteInfo:{name:'Synthetic registry context',url:'http://localhost:4339',locale:'en'},createSandboxRunner:options=>{runner=new WorkerdSandboxRunner({...options,httpFetch:transport});return runner;}});
+const user={id:'usr_registry_proof',email:'proof@example.invalid',name:'Synthetic Admin',role:50,createdAt:new Date().toISOString()};
+async function dispatch(pluginId,body,userOverride=user){return dispatchPluginApiRequest({runtime,pluginId,path:'admin',user:userOverride,request:new Request(`http://localhost:4339/_emdash/api/plugins/${pluginId}/admin`,{method:'POST',headers:{'Content-Type':'application/json','X-EmDash-Request':'1'},body:JSON.stringify(body)})});}
+try{
+ const admin=await dispatch(id,{type:'page_load',page:'/inventory'});assert.equal(admin.status,200);assert.match(JSON.stringify(await admin.json()),/Connect Inventory/);
+ const anonymous=await dispatch(id,{type:'page_load',page:'/inventory'},null);assert.equal(anonymous.status,401);
+ const slug=await dispatch('dinkus-inventory',{type:'page_load',page:'/inventory'});assert.equal(slug.status,404);
+ const connect=await dispatch(id,{type:'block_action',action_id:'connect'});assert.equal(connect.status,200);assert.ok(captured);assert.equal(captured.callbackUri,'http://localhost:4339/_emdash/admin/plugins/dinkus-inventory/inventory');
+ const settings=createSettingsAccess(new OptionsRepository(runtime.db),id,manifest.admin.settingsSchema);await settings.set('connectionSession','synthetic-registry-marker');assert.equal(await settings.get('connectionSession'),'synthetic-registry-marker');
+ const foreign=createSettingsAccess(new OptionsRepository(runtime.db),'dinkus-inventory',manifest.admin.settingsSchema);assert.equal(await foreign.get('connectionSession'),null);
+ const namespaces=await runtime.db.selectFrom('_plugin_storage').select('plugin_id').distinct().execute();assert.ok(namespaces.every(row=>row.plugin_id===id));
+ const result={qualification:'local_opaque_registry_id_context_only',emdash:'1.2.0',sandbox:'0.9.3',pluginId:id,productionCodeSha256:createHash('sha256').update(code).digest('hex'),admin:admin.status,anonymous:anonymous.status,slugAlias:slug.status,settingsAndKvIsolated:true,captured,callbackMatchesInstalledId:false,registryDelivery:false,disposition:'Pre-existing slug-bound Website callback/proof protocol prevents qualifying signed Registry onboarding. Config-managed npm route remains the qualified migration target. No publication or Website protocol change performed.'};writeFileSync(new URL('REGISTRY-CONTEXT-PROOF.json', new URL('file:'+process.env.EMDASH_MIGRATION_PROOF_RUN_DIR+'/')),JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result));
+}finally{globalThis.fetch=originalFetch;await runtime.shutdown();await runner.terminateAll();await runtime.db.destroy();}

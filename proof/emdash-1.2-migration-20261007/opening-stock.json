@@ -1,0 +1,54 @@
+{
+  "qualification": "published_dispatcher_workerd_component_with_synthetic_auth_and_local_authority_variant",
+  "emdash": "1.2.0",
+  "sandboxRunner": "@emdash-cms/sandbox-workerd@0.9.3",
+  "openingSeeded": false,
+  "registryTransport": false,
+  "hostedIssuance": false,
+  "canonicalRestartSameReceipt": true,
+  "poolId": "pool_0a21bd18-7199-4ebc-b071-dafcf053ca95",
+  "locationId": "location_0a21bd18-7199-4ebc-b071-dafcf053ca95",
+  "skuId": "sku_opening_component",
+  "balance": {
+    "poolId": "pool_0a21bd18-7199-4ebc-b071-dafcf053ca95",
+    "locationId": "location_0a21bd18-7199-4ebc-b071-dafcf053ca95",
+    "skuId": "sku_opening_component",
+    "onHand": {
+      "value": "7",
+      "unit": "each"
+    },
+    "reserved": {
+      "value": "0",
+      "unit": "each"
+    },
+    "outgoingTransferCommitted": {
+      "value": "0",
+      "unit": "each"
+    },
+    "available": {
+      "value": "7",
+      "unit": "each"
+    },
+    "expected": {
+      "value": "0",
+      "unit": "each"
+    },
+    "inTransit": {
+      "value": "0",
+      "unit": "each"
+    },
+    "version": "1",
+    "hasStockHistory": true
+  },
+  "receiptId": "b60b3333-aa1b-4ef6-a8bd-7e12aee671e0",
+  "exactReplay": true,
+  "previewNoMovement": true,
+  "foreignAdminMutationCalls": 0,
+  "lostAckReloadOriginalIntent": true,
+  "bundle": {
+    "sha256": "47505f278b1eeb19c95ff7a961ca88e02b6b1c19693da0ffb2b6be3fea47a061",
+    "bytes": 33713,
+    "originalCodeSha256": "e468e720d5239066769608f8cf21c92c74c4272a38eb6408fa723a289bf805e3",
+    "runningCodeSha256": "7831562c80aa7e4f6f2d1bf73e76e683b8d2d0112b9804a5a20a648e22900b68"
+  }
+}

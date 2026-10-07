@@ -1,0 +1,37 @@
+{
+  "schema": "dinkuskit.inventory.migration-source/v1",
+  "base": "b9ae464692eb0cc5d113e9db9285429af73dc736",
+  "implementationHead": "d9cb2f8acc2864b842e6be7ebd0772f020a691c1",
+  "files": {
+    ".github/workflows/repo-contract.yml": "bd323cf1c898e25b7c20f749f0fd85d195f76b5c06fa2849ea6fd5c90bcfcd72",
+    "package-lock.json": "6ee7a90d89b3199cba179831c234ac854923792f9dd3447ef7cb248477a6a1ef",
+    "package.json": "f415eba9daa2b08a4d78777b89912be2c13e446fcfaac7f49cea7c732e80733e",
+    "plugins/emdash-inventory/emdash-plugin.jsonc": "35da26dcff8144b960c632ce6bfe644f44c7cdb6bfb91c1889af271e8ff086fb",
+    "tests/workflows/emdash-proof-provenance.test.mjs": "f5b701420f94825f0c9ec5fb7035cfbc752d38aa6b797f6a4be6e96bc6b15939",
+    "tests/workflows/emdash-proof-sandbox.test.mjs": "00bf1e182e19b9e175316150615145429cf15ca70357225e1e64b528dbcd3e59",
+    "tests/workflows/toolchain-contract.test.mjs": "153cc95937cb8790fc6bfe70d7e9516dc745d8ced437b72bb79f33c52d62b4d6",
+    "tools/emdash-clean-install-bootstrap.mjs": "e4c50986c6fd8a0b5aefe466e91b27b0a398ff4efefcf0b478878a14dd35c43a",
+    "tools/emdash-clean-install-fixture.mjs": "080fc66f79870cfa2199a00117e047178026836c2da451b92e8cd759bd323b6f",
+    "tools/emdash-proof-sandbox.mjs": "5ac59c24466acf129d32f0e8ed21990cd253afc11771f9463a8cd40a6a18d28d",
+    "tools/emdash-proof-versions.mjs": "350a29badb26e9e8a94fa1e0d0dfda32f7348f95d1fead8215859f69dd4d66dc",
+    "tools/hosted-onboarding-proof.mjs": "5bddef17bd018c96000bcf31e486d92ada3385bda1ca2eb848c8db2be862be67",
+    "tools/opening-stock-proof.mjs": "fc33fcb45936a5b320907a02e20c949f9a34b899a13b022b07a0cf23180e9ac0"
+  },
+  "runtime": {
+    "plugin.mjs": {
+      "sha256": "e468e720d5239066769608f8cf21c92c74c4272a38eb6408fa723a289bf805e3",
+      "bytes": 130968,
+      "installedNonSymlinkBytesMatch": true
+    },
+    "index.mjs": {
+      "sha256": "58424ca1ff970101bea3827f41ef0dbb23759443b4576488c9515a7f6e4c66a8",
+      "bytes": 1098,
+      "installedNonSymlinkBytesMatch": true
+    },
+    "manifest.json": {
+      "sha256": "d5e19bd18036cbdbf51202739227c319000f1bcfcc324c668d34b8250a045a6a",
+      "bytes": 988,
+      "installedNonSymlinkBytesMatch": true
+    }
+  }
+}

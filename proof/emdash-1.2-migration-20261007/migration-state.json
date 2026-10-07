@@ -1,0 +1,22 @@
+{
+  "qualification": "actual_1.0.1_to_1.2.0_config_migration_with_synthetic_state",
+  "baseline": {
+    "version": "1.0.1",
+    "applied": 88
+  },
+  "upgrade": {
+    "version": "1.2.0",
+    "pendingBefore": 2,
+    "applied": 90,
+    "pendingAfter": 0
+  },
+  "sameDatabaseFingerprint": true,
+  "preservedState": {
+    "sha256": "82d07dfbf67318422f82ffaff0baeae892f2ebaccce24c228c03499a086bf980",
+    "cmsRows": 1,
+    "settingsRows": 1,
+    "kvRows": 1
+  },
+  "reseed": false,
+  "oldProofDatabasesTouched": false
+}

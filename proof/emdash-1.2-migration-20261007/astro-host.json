@@ -1,0 +1,32 @@
+{
+  "qualification": "actual_config_managed_unsigned_npm_install_astro_emdash_1_2",
+  "hostedIssuance": false,
+  "registryDelivery": false,
+  "productionPluginBytes": true,
+  "health": {
+    "status": 200,
+    "version": "1.2.0"
+  },
+  "permissions": {
+    "anonymous": 401,
+    "editor": 403
+  },
+  "blockKit": {
+    "status": 200,
+    "count": 4,
+    "connectInventory": true
+  },
+  "settings": {
+    "put": 200,
+    "get": 200,
+    "secretReturned": false
+  },
+  "restart": {
+    "adminStatus": 200,
+    "sameCms": true,
+    "samePluginKv": true,
+    "sameSettingsNamespace": true,
+    "reseed": false,
+    "sessionRewrite": false
+  }
+}
