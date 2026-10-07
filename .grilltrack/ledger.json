@@ -1388,6 +1388,20 @@
           "review_source_identity": null,
           "to": "implemented",
           "verification_ref": null
+        },
+        {
+          "at": "2026-10-07T02:45:21+00:00",
+          "choice": "Account/org pool counts, connected site relationships/counts, provisioning readiness and snapshot freshness only. Exclude products, SKUs, stock quantities, contacts, stock details, mutations, new topology and operator grants. Inventory returns retained authoritative site IDs; Website overlays verified origins and its grant/membership state. Prepare the service-owned projection without admitting a new operator HTTP caller before its signed organization/scope contract is confirmed.",
+          "from": "implemented",
+          "implementation_ref": "file:src/cloudflare/account-connections.ts;file:src/features/hosted-onboarding/connection.ts;file:tests/hosted-runtime/account-provisioning.test.mjs;file:.grilltrack/work/account-overview-20261006/IMPLEMENTATION-HANDOFF.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
         }
       ],
       "id": "account-overview-metadata-009",
@@ -1400,10 +1414,10 @@
       "review_ref": null,
       "review_result": null,
       "review_source_identity": null,
-      "status": "implemented",
+      "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-10-07T02:24:47+00:00",
-      "verification_ref": null
+      "updated_at": "2026-10-07T02:45:21+00:00",
+      "verification_ref": "proof/account-overview-20261006/VERIFICATION.md"
     },
     {
       "baseline_ref": "git:c565c984d4635bdb6a20194d58a39bd74b3f50fe",
@@ -1431,10 +1445,38 @@
           "review_source_identity": null,
           "to": "locked",
           "verification_ref": null
+        },
+        {
+          "at": "2026-10-07T02:45:21+00:00",
+          "choice": "Use a short-lived signed metadata-only token selecting exactly one organization. Trusted Website issuer/JWKS validates independent caller subject, signed organization identity and stable authority subject; dedicated audience and exact read-only scope, maximum300seconds. Inventory derives the existing account key from the signed organization authority subject and never accepts browser account/pool/organization authority. Reject merchant/admin tokens and metadata-token mutations. No new operator principal/grant, Website issuance, key/default activation, deploy or stock detail.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-10-07T02:45:21+00:00",
+          "choice": "Use a short-lived signed metadata-only token selecting exactly one organization. Trusted Website issuer/JWKS validates independent caller subject, signed organization identity and stable authority subject; dedicated audience and exact read-only scope, maximum300seconds. Inventory derives the existing account key from the signed organization authority subject and never accepts browser account/pool/organization authority. Reject merchant/admin tokens and metadata-token mutations. No new operator principal/grant, Website issuance, key/default activation, deploy or stock detail.",
+          "from": "implemented",
+          "implementation_ref": "git:6f52ae1ad07595009bd02658bbf965a1728b20fb;file:docs/implementation/account-overview.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
         }
       ],
       "id": "account-overview-read-token-010",
-      "implementation_ref": null,
+      "implementation_ref": "git:6f52ae1ad07595009bd02658bbf965a1728b20fb;file:docs/implementation/account-overview.md",
       "question": "How does an operator caller read one organization Inventory metadata without merchant impersonation?",
       "rationale": "Human selected signed token for one organization; platform admission and issuance remain Website-owned.",
       "repair_required": false,
@@ -1443,10 +1485,10 @@
       "review_ref": null,
       "review_result": null,
       "review_source_identity": null,
-      "status": "locked",
+      "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-10-07T02:31:19+00:00",
-      "verification_ref": null
+      "updated_at": "2026-10-07T02:45:21+00:00",
+      "verification_ref": "proof/account-overview-20261006/VERIFICATION.md"
     }
   ],
   "last_activation": {
@@ -1469,5 +1511,5 @@
   "status": "active",
   "title": "Inventory store-connect polling repair and current-main integration",
   "track_id": "gt-join-42f7bb6da7a34ed32ceed850c064516d",
-  "updated_at": "2026-10-07T02:31:19+00:00"
+  "updated_at": "2026-10-07T02:45:21+00:00"
 }
