@@ -3,7 +3,7 @@
 import { createSandboxRunner as standardRunner } from "@emdash-cms/sandbox-workerd/sandbox";
 
 const registry = Symbol.for("dinkuskit.inventory.proof.httpFetch");
-const reads = new Set(["/v1/status", "/v1/operations", "/v1/locations", "/v1/stock/opening/eligibility"]);
+const reads = new Set(["/v1/status", "/v1/operations", "/v1/locations", "/v1/skus", "/v1/stock/opening/eligibility"]);
 const writes = new Set(["/v1/connect", "/v1/stock/adjust/preview", "/v1/stock/adjust/confirm", "/v1/stock/opening/preview", "/v1/stock/opening/confirm"]);
 
 export function installInventoryProofTransport(dispatch) {

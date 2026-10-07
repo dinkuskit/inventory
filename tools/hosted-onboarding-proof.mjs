@@ -1,3 +1,4 @@
+import { installedProofVersions } from "./emdash-proof-versions.mjs";
 import assert from "node:assert/strict";
 import { createHash, randomBytes } from "node:crypto";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
@@ -15,8 +16,9 @@ import { validateBlockResponse } from "@emdash-cms/blocks/server";
 import { pkceMatches } from "../src/features/store-connect/index.ts";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-const run = resolve(root, ".grilltrack/work/store-connect");
+const run = resolve(root, process.env.EMDASH_HOSTED_PROOF_RUN_DIR ?? ".grilltrack/work/store-connect");
 await mkdir(run, { recursive: true });
+const { emdash: emdashVersion, sandbox: sandboxVersion } = installedProofVersions();
 process.env.EMDASH_ENCRYPTION_KEY = `emdash_enc_v1_${randomBytes(32).toString("base64url")}`;
 const keys = await generateKeyPair("ES256");
 const publicJwk = { ...await exportJWK(keys.publicKey), alg: "ES256" };
@@ -387,8 +389,8 @@ async function automatedProof() {
 	accountUnavailable = false;
 	await reinstall();
 	await writeFile(resolve(run, "sandbox-flow.json"), JSON.stringify({
-		emdash: "1.0.1",
-		runner: "@emdash-cms/sandbox-workerd@0.9.1",
+		emdash: emdashVersion,
+		runner: `@emdash-cms/sandbox-workerd@${sandboxVersion}`,
 		identity: "SYNTHETIC website/account transport only — not live Better Auth or hosted ownership",
 		service: "local workerd SQLite DOs",
 		anonymousStatus: 401, csrfStatus: 403, editorStatus: 403,
@@ -396,7 +398,7 @@ async function automatedProof() {
 		concurrentStart: { winnerId, loserId: loser.connectionId, published: published.length },
 		firstReady, traces, transportEvents,
 	}, null, 2));
-	console.log("PASS: EmDash 1.0.1 private route dispatch, public store-proof, real sandbox bundle, labeled website simulation, local DO provisioning, retry/reinstall/reconnect and authorization boundaries.");
+	console.log(`PASS: EmDash ${emdashVersion} private route dispatch, public store-proof, real sandbox bundle, labeled website simulation, local DO provisioning, retry/reinstall/reconnect and authorization boundaries.`);
 }
 async function cleanup() { globalThis.fetch = originalFetch; await runtime.shutdown(); await runner.terminateAll(); await service.dispose(); await runtime.db.destroy(); }
 try {

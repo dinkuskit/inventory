@@ -1,0 +1,38 @@
+{
+  "schema": "dinkuskit.inventory.emdash12-verification/v1",
+  "implementationHead": "d9cb2f8acc2864b842e6be7ebd0772f020a691c1",
+  "node": "22.23.2",
+  "fullGate": {
+    "exit": 0,
+    "nodeTests": 258,
+    "cloudflareTests": 29,
+    "hostedTests": 12,
+    "typechecks": 2,
+    "architecture": "pass",
+    "bundle": "pass"
+  },
+  "installedVersions": {
+    "node_modules/@astrojs/react": "6.0.4",
+    "node_modules/@emdash-cms/admin": "1.2.0",
+    "node_modules/@emdash-cms/auth": "1.2.0",
+    "node_modules/@emdash-cms/blocks": "1.2.0",
+    "node_modules/@emdash-cms/plugin-cli": "0.13.3",
+    "node_modules/@emdash-cms/plugin-types": "0.6.0",
+    "node_modules/@emdash-cms/registry-client": "0.7.0",
+    "node_modules/@emdash-cms/registry-lexicons": "0.7.0",
+    "node_modules/@emdash-cms/registry-verification": "0.3.4",
+    "node_modules/@emdash-cms/sandbox-workerd": "0.9.3",
+    "node_modules/astro": "7.2.9",
+    "node_modules/emdash": "1.2.0",
+    "node_modules/rolldown": "1.2.6",
+    "node_modules/vite": "8.2.2"
+  },
+  "npmTarball": {
+    "sha256": "ef7597a99154e8c76659ae4b563299ead5f1bc4202a4752478e5f69747749155",
+    "bytes": 82701,
+    "nonSymlink": true
+  },
+  "installedRegistryDelivery": false,
+  "hostedIdentityIssuance": false,
+  "accountReadBoundary": "signed_metadata_only_single_organization_token"
+}

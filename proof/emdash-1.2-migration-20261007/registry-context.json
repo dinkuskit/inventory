@@ -1,0 +1,19 @@
+{
+  "qualification": "local_opaque_registry_id_context_only",
+  "emdash": "1.2.0",
+  "sandbox": "0.9.3",
+  "pluginId": "r_ut2uaizhjmoytoya",
+  "productionCodeSha256": "e468e720d5239066769608f8cf21c92c74c4272a38eb6408fa723a289bf805e3",
+  "admin": 200,
+  "anonymous": 401,
+  "slugAlias": 404,
+  "settingsAndKvIsolated": true,
+  "captured": {
+    "siteOrigin": "http://localhost:4339",
+    "callbackUri": "http://localhost:4339/_emdash/admin/plugins/dinkus-inventory/inventory",
+    "clientId": "dinkus-inventory-emdash"
+  },
+  "callbackMatchesInstalledId": false,
+  "registryDelivery": false,
+  "disposition": "Pre-existing slug-bound Website callback/proof protocol prevents qualifying signed Registry onboarding. Config-managed npm route remains the qualified migration target. No publication or Website protocol change performed."
+}

@@ -15,5 +15,5 @@
 		"pages": [{ "path": "/inventory", "label": "Inventory", "icon": "package" }],
 		"settingsSchema": { "connectionSession": { "type": "secret", "label": "Inventory session (managed automatically)" } }
 	},
-	"release": { "requires": { "env:emdash": "1.0.1" } }
+	"release": { "requires": { "env:emdash": "1.2.0" } }
 }

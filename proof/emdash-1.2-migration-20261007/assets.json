@@ -1,0 +1,18 @@
+{
+  "sourceRepository": "dinkuskit/inventory",
+  "implementationHead": "d9cb2f8acc2864b842e6be7ebd0772f020a691c1",
+  "runtimeSha256": "e468e720d5239066769608f8cf21c92c74c4272a38eb6408fa723a289bf805e3",
+  "releaseUrl": "https://github.com/dinkuskit/dinkus-pr-assets/releases/tag/inventory-emdash12-d9cb2f8",
+  "assets": [
+    {
+      "name": "astro-admin-1.2.png",
+      "url": "https://github.com/dinkuskit/dinkus-pr-assets/releases/download/inventory-emdash12-d9cb2f8/astro-admin-1.2.png",
+      "sha256": "d3873663fc78f197fa3580eecded5be79f55fe771e38c7a783c4e1173cf8f146",
+      "bytes": 61652,
+      "claim": "Actual local installed EmDash 1.2.0 admin renders Inventory Connect Block Kit page after host restart.",
+      "captureDate": "2026-10-07",
+      "redaction": "Visually reviewed; only synthetic admin and loopback origin. No secrets or customer data.",
+      "githubSizeAndDigestVerified": true
+    }
+  ]
+}
