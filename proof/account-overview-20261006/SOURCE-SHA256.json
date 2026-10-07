@@ -1,0 +1,16 @@
+{
+  "source": "6f52ae1ad07595009bd02658bbf965a1728b20fb",
+  "files": {
+    "FEATURE_MAP.md": "2a6ec8cd10826d63f2b32e4bb39dacb2413ed9062d3e8e8ffd789bbe51a6c9fe",
+    "docs/CHARTER.md": "880437f2cdb8725e15e3d2560c158686bd6b662ffbdbc78e16f86c15536dded1",
+    "docs/implementation/account-overview.md": "5ce20090bacd0c7834600e697db32f544cf88fbeed6e367ff2ca65e52c282086",
+    "proof/account-overview-20261006/VERIFICATION.md": "a531f5c5a6eea9f901b0c3a9dc1f72536e2df7a04d2569ee335346dd346d885c",
+    "src/cloudflare/account-connections.ts": "99820253288ed5a64b75265dbfa44b6ae1de43bd017fc2849b09fc2363318bbd",
+    "src/cloudflare/account-overview-auth.ts": "9c24cc5ec057de02f336280da933631925a2e06c71e2504f2cd604100ddb2ee4",
+    "src/cloudflare/hosted-worker.ts": "370cdbd8362969584fb06500ad285007979fce0535abbd0668824c0ad62b5370",
+    "src/features/hosted-onboarding/connection.ts": "e0bd02fbe6bf6e38c082cc62c1544f2893aa11f1374065c8888e2609c66c85ef",
+    "tests/hosted-onboarding/account-overview-auth.test.mjs": "64b9f594392768f704dd62fbbe7010c31a84300950abe0aa5de2b227b1ff850b",
+    "tests/hosted-onboarding/connection.test.mjs": "f133496d2a02ea0dc738dda1b63596e15a2c18978a680ff91d3e3c36e2d525c5",
+    "tests/hosted-runtime/account-provisioning.test.mjs": "3a1e6f611e68ce4de46aa9328f5b23f176e6350a6de2a08787c4fd276417e474"
+  }
+}
