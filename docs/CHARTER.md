@@ -63,6 +63,11 @@ considered.
 
 ## operating-model-003 — shared pool and exact locations (locked)
 
+- One Inventory account may own multiple pools. Each new store receives its own
+  pool by default. The merchant may explicitly join an existing pool only after
+  the server verifies ownership within the same account. Different customers
+  remain isolated; browser-supplied identifiers never grant authority. Joining
+  does not silently merge or migrate a populated pool.
 - One physical inventory pool may serve multiple EmDash sites and channels.
 - Each physical location has exact on-hand, reserved-for-orders,
   outgoing-transfer-committed, available, expected, and in-transit quantities

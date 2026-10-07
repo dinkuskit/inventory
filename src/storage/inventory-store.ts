@@ -185,6 +185,10 @@ export type ReadManagedSkuQuery = Readonly<{
 	skuId: string;
 }>;
 
+export type ListManagedSkusQuery = Readonly<{
+	poolId: string;
+}>;
+
 export type ActiveLocationBalanceSnapshot = Readonly<{
 	location: LocationRecord;
 	balance: BalanceRecord | null;
@@ -246,6 +250,7 @@ export interface InventoryStore {
 	): Promise<T>;
 	readBalance(key: SkuLocationKey): Promise<BalanceRecord | null>;
 	readManagedSku(query: ReadManagedSkuQuery): Promise<ManagedSkuRecord | null>;
+	listManagedSkus(query: ListManagedSkusQuery): Promise<readonly ManagedSkuRecord[]>;
 	readStockTransfer(query: ReadStockTransferInput): Promise<StockTransferRecord | null>;
 	listStockTransfers(
 		query: ListStockTransfersQuery,

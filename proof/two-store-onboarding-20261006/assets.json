@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "source_repository": "dinkuskit/inventory",
+  "pr_url": "https://github.com/dinkuskit/inventory/pull/42",
+  "source_head": "3ed9152d49a9385e9d439f32ddbf59a47b1a7843",
+  "source_manifest": "proof/two-store-onboarding-20261006/source-manifest.json",
+  "authoritative_claim_map": "proof/two-store-onboarding-20261006/PROOF.md",
+  "asset_repository": "dinkuskit/dinkus-pr-assets",
+  "release_tag": "inventory-pr-42-3ed9152d49a9",
+  "release_url": "https://github.com/dinkuskit/dinkus-pr-assets/releases/tag/inventory-pr-42-3ed9152d49a9",
+  "assets": [
+    {
+      "name": "store-a-stock-after-restart.jpg",
+      "url": "https://github.com/dinkuskit/dinkus-pr-assets/releases/download/inventory-pr-42-3ed9152d49a9/store-a-stock-after-restart.jpg",
+      "bytes": 113772,
+      "sha256": "623dae9acdebf5ee21e0116fa097ae9e92f0f629f488fecb314c2f6cce91d14f",
+      "claim": "Store A stock view after scoped host restart: seven each, version 1.",
+      "capture_date": "2026-10-06",
+      "provenance": "Actual local installed EmDash/qualified Website UI; capture bytes unchanged; source content is preserved by source-manifest.json in Inventory proof.",
+      "redaction": {
+        "status": "visually-reviewed-public-neutral; no redaction needed",
+        "visible_data": "Synthetic SKU/location names, synthetic UUIDs and local loopback test origin only; no customer, credential, cookie, token or private operating data."
+      }
+    },
+    {
+      "name": "store-b-stock-after-restart.jpg",
+      "url": "https://github.com/dinkuskit/dinkus-pr-assets/releases/download/inventory-pr-42-3ed9152d49a9/store-b-stock-after-restart.jpg",
+      "bytes": 113367,
+      "sha256": "23e8ceb7251689edc100b10c971cbd8277c8621f8a3bab929c4c7f5629ec1d77",
+      "claim": "Store B stock view after scoped host restart: eleven each, version 1.",
+      "capture_date": "2026-10-06",
+      "provenance": "Actual local installed EmDash/qualified Website UI; capture bytes unchanged; source content is preserved by source-manifest.json in Inventory proof.",
+      "redaction": {
+        "status": "visually-reviewed-public-neutral; no redaction needed",
+        "visible_data": "Synthetic SKU/location names, synthetic UUIDs and local loopback test origin only; no customer, credential, cookie, token or private operating data."
+      }
+    },
+    {
+      "name": "store-a-receipt-after-restart.jpg",
+      "url": "https://github.com/dinkuskit/dinkus-pr-assets/releases/download/inventory-pr-42-3ed9152d49a9/store-a-receipt-after-restart.jpg",
+      "bytes": 50809,
+      "sha256": "835945ab1074e901ec7baf38d3fcc05dc9907558451e4fedfb02abc6e4c8b434",
+      "claim": "Store A retains original receipt a13a6955-70b3-4fa0-be28-b47d5554ecdb after restart.",
+      "capture_date": "2026-10-06",
+      "provenance": "Actual local installed EmDash/qualified Website UI; capture bytes unchanged; source content is preserved by source-manifest.json in Inventory proof.",
+      "redaction": {
+        "status": "visually-reviewed-public-neutral; no redaction needed",
+        "visible_data": "Synthetic SKU/location names, synthetic UUIDs and local loopback test origin only; no customer, credential, cookie, token or private operating data."
+      }
+    },
+    {
+      "name": "store-b-receipt-after-restart.jpg",
+      "url": "https://github.com/dinkuskit/dinkus-pr-assets/releases/download/inventory-pr-42-3ed9152d49a9/store-b-receipt-after-restart.jpg",
+      "bytes": 50856,
+      "sha256": "c7c2937d4ad418d6d264d40e158494ecf4918b1780daa52ecb7195c80e47509a",
+      "claim": "Store B retains original receipt 393a6d75-c53b-4344-b46e-24b5026d3743 after restart.",
+      "capture_date": "2026-10-06",
+      "provenance": "Actual local installed EmDash/qualified Website UI; capture bytes unchanged; source content is preserved by source-manifest.json in Inventory proof.",
+      "redaction": {
+        "status": "visually-reviewed-public-neutral; no redaction needed",
+        "visible_data": "Synthetic SKU/location names, synthetic UUIDs and local loopback test origin only; no customer, credential, cookie, token or private operating data."
+      }
+    },
+    {
+      "name": "store-b-grant-revoked.jpg",
+      "url": "https://github.com/dinkuskit/dinkus-pr-assets/releases/download/inventory-pr-42-3ed9152d49a9/store-b-grant-revoked.jpg",
+      "bytes": 54276,
+      "sha256": "81ed4cef002e16348e6ed2f9f07ad23885e57a3fd40b88deb75662dd61005d8f",
+      "claim": "Qualified local Website controller shows store B Inventory grant revoked.",
+      "capture_date": "2026-10-06",
+      "provenance": "Actual local installed EmDash/qualified Website UI; capture bytes unchanged; source content is preserved by source-manifest.json in Inventory proof.",
+      "redaction": {
+        "status": "visually-reviewed-public-neutral; no redaction needed",
+        "visible_data": "Synthetic SKU/location names, synthetic UUIDs and local loopback test origin only; no customer, credential, cookie, token or private operating data."
+      }
+    }
+  ],
+  "selection": {
+    "captured": 6,
+    "published": 5,
+    "omitted": "store-a-after-other-revocation.jpg is byte-identical to store-a-stock-after-restart.jpg; the recorded later read reuses that content, without treating duplicate bytes as independent timing evidence."
+  },
+  "limits": [
+    "Local component proof only; no hosted deployment or Registry publication.",
+    "Host restart includes verified task-owned native-child cleanup and a guarded second-instance port adapter.",
+    "No immediate invalidation of already-issued JWTs is claimed.",
+    "Private asset shelf: media URLs require authorized access; public text remains the authoritative claim map.",
+    "Publishing preserves original capture/source provenance; no new behavior or screenshots were generated."
+  ]
+}

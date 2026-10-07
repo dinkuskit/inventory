@@ -1,0 +1,117 @@
+{
+  "qualification": "local installed EmDash component proof; no hosted deployment or Registry publication",
+  "emdash": "1.0.1",
+  "node": "22.23.2",
+  "inventoryServices": 1,
+  "websiteTestControllers": 2,
+  "websiteSource": "git:7502dc83424902c442da1eaaa5980fd250ff6aa8",
+  "canonicalIssuer": "https://dinkuskit.com/account",
+  "canonicalAudience": "inventory",
+  "stockSeeded": false,
+  "merchantSessionInjected": false,
+  "syntheticHostAdmin": true,
+  "browserConsent": true,
+  "overlappingSku": "HAT-BLACK",
+  "overlappingLocationName": "Shared Depot",
+  "receipts": [
+    {
+      "store": "store-a",
+      "quantity": "7",
+      "siteId": "a66156da-8c12-449c-820f-59f1a94b0634",
+      "poolId": "pool_d855346e-21bf-44e4-b247-e03d6c95a396",
+      "skuId": "inventory_sku_6e2c9915-ed39-4b35-8b89-19a48ee1bb4e",
+      "receiptId": "a13a6955-70b3-4fa0-be28-b47d5554ecdb",
+      "subject": "5372fd05-423b-42f5-abb7-f227dcc878df"
+    },
+    {
+      "store": "store-b",
+      "quantity": "11",
+      "siteId": "7c4818ce-817d-40bb-ac60-6d3666a48611",
+      "poolId": "pool_dab58464-9493-41ea-870e-e4e34195beec",
+      "skuId": "inventory_sku_4ace006e-336b-4723-b2f7-e6991a49e449",
+      "receiptId": "393a6d75-c53b-4344-b46e-24b5026d3743",
+      "subject": "6e19f229-b03c-4a9e-b487-df9a201d0572"
+    }
+  ],
+  "installed": [
+    {
+      "label": "store-a",
+      "port": 47631,
+      "websitePort": 47632,
+      "qualification": "unsigned config-managed local npm authority variant; no Registry or hosted deployment",
+      "freshDatabase": true,
+      "symlink": false,
+      "tarball": "c8de01ecd9cf8a86bb6aa77b869de3cc397a51afae70fcb0a741b105e5fc1cc2",
+      "code": "967e22aecf478baf10ab0fd497a3378ef117aa9b835ae20ac06dbbac90104406",
+      "descriptor": "2e206e8f5d02f4eeb7431c14d3fc0026aad69b604a7eaa2a6099b417f22b12c6",
+      "variantSource": "ea8be27e0ec37c5068f7d962159d7c783a369c7253679ae27ab8581f2b6ae265",
+      "source": "d97e8ca46a51dbaef81f07c159745186cf49073216d9a2eaff51275c63b586e0",
+      "bootstrap": {
+        "fingerprint": "ea0c6b2be67e4acdf2fcc74cb7410122e6ecd5102def5f1da6dd1b02a8dcbe84",
+        "pendingBefore": 88,
+        "pendingAfter": 0,
+        "appliedCount": 88,
+        "exits": {
+          "build": 0,
+          "status": 0,
+          "apply": 0
+        },
+        "preservedUnchanged": true,
+        "database": "fresh independent ignored CMS SQLite database"
+      },
+      "standaloneSandboxPort": 18788
+    },
+    {
+      "label": "store-b",
+      "port": 47633,
+      "websitePort": 47634,
+      "qualification": "unsigned config-managed local npm authority variant; no Registry or hosted deployment",
+      "freshDatabase": true,
+      "symlink": false,
+      "tarball": "5ecf6172dc2fc7ff0ade11deab2d200f081d09820817a7210837d0f3112d6682",
+      "code": "66e525a0a58cfeaf9567f0e597a1880b97759e2c8ab437e56824db6b9a8d99e4",
+      "descriptor": "2e206e8f5d02f4eeb7431c14d3fc0026aad69b604a7eaa2a6099b417f22b12c6",
+      "variantSource": "d73ef19a0a42cd1c2b03c2c7ce86ec0cfe4677aa15a48ae754a2d11d8d639a7a",
+      "source": "d97e8ca46a51dbaef81f07c159745186cf49073216d9a2eaff51275c63b586e0",
+      "bootstrap": {
+        "fingerprint": "50bf4317fc90c1419959cd6219808dc616cc1ba73a4da3a87daff7b21d3f90ca",
+        "pendingBefore": 88,
+        "pendingAfter": 0,
+        "appliedCount": 88,
+        "exits": {
+          "build": 0,
+          "status": 0,
+          "apply": 0
+        },
+        "preservedUnchanged": true,
+        "database": "fresh independent ignored CMS SQLite database"
+      },
+      "standaloneSandboxPort": 18790
+    }
+  ],
+  "revocation": {
+    "site": "store-b",
+    "websiteGrant": "revoked through actual local GUI",
+    "otherStoreRead": "7 each at version1 after revocation",
+    "immediateIssuedTokenRevocationProved": false,
+    "note": "Resource-server JWT verification uses expiry; Website test tokens last five minutes. No immediate grant introspection claim."
+  },
+  "restart": {
+    "sameOriginalReceipts": true,
+    "sameBalancesAndVersion": true,
+    "consentRenewal": "same original subjects and owned pool bindings",
+    "fixtureLimit": "Standalone npm workerd wrapper leaves a native child after termination. Exact task-owned native children were retired using verified process group and executable paths; no unrelated processes were touched."
+  },
+  "originalCaptureHashes": {
+    "store-a-receipt-after-restart.jpg": "835945ab1074e901ec7baf38d3fcc05dc9907558451e4fedfb02abc6e4c8b434",
+    "store-b-receipt-after-restart.jpg": "c7c2937d4ad418d6d264d40e158494ecf4918b1780daa52ecb7195c80e47509a",
+    "store-a-stock-after-restart.jpg": "623dae9acdebf5ee21e0116fa097ae9e92f0f629f488fecb314c2f6cce91d14f",
+    "store-b-stock-after-restart.jpg": "23e8ceb7251689edc100b10c971cbd8277c8621f8a3bab929c4c7f5629ec1d77",
+    "store-b-grant-revoked.jpg": "81ed4cef002e16348e6ed2f9f07ad23885e57a3fd40b88deb75662dd61005d8f",
+    "store-a-after-other-revocation.jpg": "623dae9acdebf5ee21e0116fa097ae9e92f0f629f488fecb314c2f6cce91d14f"
+  },
+  "mediaManifest": "assets.json",
+  "mediaRelease": "https://github.com/dinkuskit/dinkus-pr-assets/releases/tag/inventory-pr-42-3ed9152d49a9",
+  "mediaSourceHead": "3ed9152d49a9385e9d439f32ddbf59a47b1a7843",
+  "mediaPlacement": "Five selected unchanged captures published as immutable release assets; six raw captures preserved locally. Duplicate store-a-after-other-revocation.jpg was omitted from publication."
+}
