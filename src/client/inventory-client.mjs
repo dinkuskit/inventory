@@ -15,6 +15,15 @@ export function resolveConnection(ctx) {
 	if (!token) {
 		throw new CliError("missing_credential", `Set ${TOKEN_ENV} to an Inventory access token for this site.`, { exit: EXIT.blocked });
 	}
+	// A project config file comes with the working directory, so it must not
+	// decide which host receives the token.
+	if (ctx.config.source("endpoint") === "project") {
+		throw new CliError(
+			"untrusted_endpoint",
+			`Refusing to send ${TOKEN_ENV} to an endpoint from project config. Pass --endpoint or set DINKUS_INVENTORY_ENDPOINT.`,
+			{ exit: EXIT.blocked },
+		);
+	}
 	return { endpoint: validateEndpoint(endpointText), siteId, token };
 }
 

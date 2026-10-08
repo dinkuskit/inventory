@@ -4,11 +4,11 @@
   "current_focus": {
     "cadence": "sequential",
     "confirmed": true,
-    "confirmed_at": "2026-10-08T13:42:40+00:00",
-    "domain": "Move hats between locations in the Inventory admin",
-    "started_at": "2026-10-08T13:42:40+00:00",
+    "confirmed_at": "2026-10-08T23:44:59+00:00",
+    "domain": "dinkus-inventory CLI token destination",
+    "started_at": "2026-10-08T23:44:59+00:00",
     "status": "confirmed",
-    "summary": "Expose the existing stock-transfer kernel in the sandboxed Inventory admin. The clerk names the from location, the to location, the SKU, and the quantity. Create, dispatch, and whole receipt stay the kernel commands. No partial receipt, no new kernel command, no Ship or Commerce order buttons."
+    "summary": "The project owner (GitHub saariuslystoned) chose 'Apply it' on 2026-10-08 when asked whether to stop the inventory CLI from sending its token to an endpoint set in project config. Project config travels with the working directory, so it may still set site and read context but no longer the token's destination. No publication, deployment or merge is authorized by this choice."
   },
   "decisions": [
     {
@@ -51,6 +51,75 @@
       "superseded_by": null,
       "updated_at": "2026-10-08T13:42:40+00:00",
       "verification_ref": null
+    },
+    {
+      "baseline_ref": null,
+      "candidate_refs": [],
+      "choice": "No. The token goes only to an endpoint from --endpoint, DINKUS_INVENTORY_ENDPOINT, or user config (including a user-config profile). An endpoint from project config, directly or through a profile, exits 4 with untrusted_endpoint before any request. Project config may still set site and read context. commands resolve replays to the endpoint saved in the local pending record. This amends the locked v1 docs/CLI-SPEC.md.",
+      "context_ref": null,
+      "created_at": "2026-10-08T23:44:59+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [],
+      "domain": "dinkus-inventory CLI token destination",
+      "history": [
+        {
+          "at": "2026-10-08T23:44:59+00:00",
+          "choice": "No. The token goes only to an endpoint from --endpoint, DINKUS_INVENTORY_ENDPOINT, or user config (including a user-config profile). An endpoint from project config, directly or through a profile, exits 4 with untrusted_endpoint before any request. Project config may still set site and read context. commands resolve replays to the endpoint saved in the local pending record. This amends the locked v1 docs/CLI-SPEC.md.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-10-08T23:44:59+00:00",
+          "choice": "No. The token goes only to an endpoint from --endpoint, DINKUS_INVENTORY_ENDPOINT, or user config (including a user-config profile). An endpoint from project config, directly or through a profile, exits 4 with untrusted_endpoint before any request. Project config may still set site and read context. commands resolve replays to the endpoint saved in the local pending record. This amends the locked v1 docs/CLI-SPEC.md.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-10-08T23:45:24+00:00",
+          "choice": "No. The token goes only to an endpoint from --endpoint, DINKUS_INVENTORY_ENDPOINT, or user config (including a user-config profile). An endpoint from project config, directly or through a profile, exits 4 with untrusted_endpoint before any request. Project config may still set site and read context. commands resolve replays to the endpoint saved in the local pending record. This amends the locked v1 docs/CLI-SPEC.md.",
+          "from": "implemented",
+          "implementation_ref": "file:src/client/inventory-client.mjs file:docs/CLI-SPEC.md file:skills/inventory-cli/SKILL.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "inventory-cli-token-endpoint-001",
+      "implementation_ref": "file:src/client/inventory-client.mjs file:docs/CLI-SPEC.md file:skills/inventory-cli/SKILL.md",
+      "question": "May dinkus-inventory send DINKUS_INVENTORY_TOKEN to an endpoint that came from project config (.dinkuskit/inventory.json)?",
+      "rationale": "Same rule as the Commerce and Payments CLIs after the ClawSweeper credential-routing finding: a cloned repository's config must not choose which host receives the bearer token.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-10-08T23:45:24+00:00",
+      "verification_ref": "file:tests/cli/dinkus-inventory.test.mjs"
     }
   ],
   "last_activation": {
@@ -65,5 +134,5 @@
   "status": "active",
   "title": "Inventory admin location move",
   "track_id": "gt-20261008134240-a94728",
-  "updated_at": "2026-10-08T13:42:40+00:00"
+  "updated_at": "2026-10-08T23:45:24+00:00"
 }

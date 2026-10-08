@@ -304,7 +304,7 @@ Human prose is not a parsing interface.
 | `1` | Stable business rejection or ordinary command failure with no mutation. |
 | `2` | Invalid usage, missing argument, invalid non-secret configuration, malformed input, or client-side validation error. |
 | `3` | Service/dependency/network unavailable, or an authoritative mutation has an unknown transport outcome. |
-| `4` | Authentication/authorization/confirmation/human gate blocked the action. |
+| `4` | Authentication/authorization/confirmation/human gate blocked the action, including an endpoint from project config (`untrusted_endpoint`). |
 | `5` | Service response violated the advertised contract or required behavior could not be verified safely. |
 
 If Ctrl-C arrives before submission, the CLI sends no command and exits `4`.
@@ -330,6 +330,16 @@ Supported sources:
   platform-equivalent user config directory; and
 - built-ins: output and timeout defaults only, never an inferred production
   endpoint, pool, or location.
+
+The token is sent only to an endpoint from `--endpoint`,
+`DINKUS_INVENTORY_ENDPOINT`, or user config, including a user-config profile.
+Project config comes with the working directory (a cloned repository, for
+example), so when it supplies the endpoint, directly or through a profile, the
+command exits `4` with `untrusted_endpoint` before sending anything. Project
+config may still supply the site and read context. `commands resolve` replays
+to the endpoint saved in the local pending record, which passed this check when
+the command was first sent. GrillTrack decision
+`inventory-cli-token-endpoint-001` added this rule to the locked v1 contract.
 
 V1 service authentication uses a bearer credential supplied through the fixed
 `DINKUS_INVENTORY_TOKEN` environment variable by the caller's secret manager or

@@ -131,6 +131,36 @@ test("config files are non-secret and profiles select read context", async () =>
 	assert.match(secret.stderr, /non-secret/);
 });
 
+test("the token is never sent to an endpoint from project config", async () => {
+	const cwd = mkdtempSync(join(tmpdir(), "dinkus-inventory-project-"));
+	mkdirSync(join(cwd, ".dinkuskit"));
+	const projectConfigs = [
+		[{ site: "site_demo", endpoint: "https://config.example.invalid" }, ["status", "--json"]],
+		[{ site: "site_demo", profiles: { demo: { endpoint: "https://config.example.invalid" } } }, ["--profile", "demo", "status", "--json"]],
+	];
+	for (const [config, argv] of projectConfigs) {
+		writeFileSync(join(cwd, ".dinkuskit", "inventory.json"), JSON.stringify(config));
+		const refused = await run(argv, { cwd, env: { DINKUS_INVENTORY_ENDPOINT: "" } });
+		assert.equal(refused.code, EXIT.blocked, argv.join(" "));
+		assert.equal(refused.calls.length, 0, "nothing is sent to the project-config host");
+		assert.equal(oneJsonDocument(refused.stdout).error.code, "untrusted_endpoint");
+	}
+
+	const fromEnv = await run(["status", "--json"], { cwd });
+	assert.equal(fromEnv.code, EXIT.ok, fromEnv.stderr);
+	assert.equal(fromEnv.calls[0].url.origin, ENDPOINT);
+
+	const fromFlag = await run(["--endpoint", ENDPOINT, "status", "--json"], { cwd, env: { DINKUS_INVENTORY_ENDPOINT: "" } });
+	assert.equal(fromFlag.code, EXIT.ok, fromFlag.stderr);
+
+	const userConfig = mkdtempSync(join(tmpdir(), "dinkus-inventory-xdg-"));
+	mkdirSync(join(userConfig, "dinkuskit", "inventory"), { recursive: true });
+	writeFileSync(join(userConfig, "dinkuskit", "inventory", "config.json"), JSON.stringify({ endpoint: ENDPOINT }));
+	const fromUser = await run(["--site", "site_demo", "status", "--json"], { env: { DINKUS_INVENTORY_ENDPOINT: "", XDG_CONFIG_HOME: userConfig } });
+	assert.equal(fromUser.code, EXIT.ok, fromUser.stderr);
+	assert.equal(fromUser.calls.length, 1);
+});
+
 test("plain output is one escaped record per line", async () => {
 	const result = await run(["--site", "site_demo", "locations", "list", "--plain"]);
 	assert.equal(result.code, EXIT.ok);

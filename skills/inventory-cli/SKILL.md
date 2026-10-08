@@ -13,6 +13,9 @@ codes. Do not rebuild those with `curl` or ad hoc scripts. The contract is
 
 The caller's environment must already provide `DINKUS_INVENTORY_TOKEN`. Never
 print, paste, or write the token anywhere, and never put it in a profile.
+Set the endpoint with `--endpoint`, `DINKUS_INVENTORY_ENDPOINT` or user
+config: the CLI refuses (exit `4`, `untrusted_endpoint`) to send the token to
+an endpoint from the working directory's `.dinkuskit/inventory.json`.
 
 ## Reading
 
