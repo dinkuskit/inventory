@@ -28,15 +28,16 @@ configuration or Astro routes) is a developer and test setup only. It may not
 offer features the Registry build lacks, except temporary gaps listed here with
 the work that closes them. The project owner set this rule on 2026-10-08.
 
-Inventory's installable plugin is the sandboxed Block Kit plugin in
-`plugins/emdash-inventory/`, backed by the hosted Inventory service. It has no
-native entry and no native-only features.
+Inventory's plugin is the sandboxed Block Kit plugin in
+`plugins/emdash-inventory/`, backed by the hosted Inventory service. It is not
+yet installable or published; Status below says what remains. It has no native
+entry and no native-only features.
 
 ## v1 boundary
 
 - Built for EmDash: a platform-neutral inventory kernel plus one generic
   standard-format sandboxed EmDash plugin with a real host-rendered Block Kit
-  admin GUI. The same installable artifact is proven in SmokyClub; no
+  admin GUI. v1 has to prove that same artifact in SmokyClub, with no
   storefront-shaped base code or site-specific plugin fork.
 - Canonical production truth lives behind an Inventory-owned service. The
   Cloudflare adapter uses one SQLite-backed Durable Object per physical pool;
