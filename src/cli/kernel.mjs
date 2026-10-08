@@ -265,15 +265,19 @@ export async function loadConfig(spec, { flags, env, cwd }) {
 	if (profile && !project.found && !user.found) {
 		throw usageError(`Profile "${profile}" was not found in ${files.project} or ${files.user}.`, "unknown_profile");
 	}
-	const resolve = (key) => {
-		if (flags[key] !== undefined) return flags[key];
+	const lookup = (key) => {
+		if (flags[key] !== undefined) return { value: flags[key], source: "flag" };
 		const envName = spec.envMap?.[key];
-		if (envName && env[envName] !== undefined && env[envName] !== "") return env[envName];
-		if (project.values[key] !== undefined) return project.values[key];
-		if (user.values[key] !== undefined) return user.values[key];
-		return spec.defaults?.[key];
+		if (envName && env[envName] !== undefined && env[envName] !== "") return { value: env[envName], source: "env" };
+		if (project.values[key] !== undefined) return { value: project.values[key], source: "project" };
+		if (user.values[key] !== undefined) return { value: user.values[key], source: "user" };
+		if (spec.defaults?.[key] !== undefined) return { value: spec.defaults[key], source: "default" };
+		return { value: undefined, source: undefined };
 	};
-	return { profile, files, resolve };
+	// source() lets a command refuse a value from the project file when that
+	// value decides where a credential is sent: the project file travels with
+	// whatever directory the operator happens to run in.
+	return { profile, files, resolve: (key) => lookup(key).value, source: (key) => lookup(key).source };
 }
 
 export function validateEndpoint(text, flagName = "--endpoint") {
