@@ -563,7 +563,7 @@ async function executeStockConfirm(
 		const parsedError = z.object({ error: z.string(), message: z.string().optional() }).safeParse(body);
 		if (parsedError.success && CONFIRMATION_FAILURE_CODES.has(parsedError.data.error) && revision) {
 			await ctx.kv.compareAndSet(key, revision, {
-				status: "rejected", initiatingAdminId: frozen.initiatingAdminId, commandId: frozen.commandId, code: parsedError.data.error, message: parsedError.data.message,
+				status: "rejected", initiatingAdminId: frozen.initiatingAdminId, commandId: frozen.command.commandId, code: parsedError.data.error, message: parsedError.data.message,
 			});
 		}
 	}

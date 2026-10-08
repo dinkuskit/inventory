@@ -363,7 +363,10 @@ export function createHostedInventoryHandler(
 				if (rawCommand.type !== "transfer.create" && rawCommand.type !== "transfer.dispatch" && rawCommand.type !== "transfer.receive") {
 					return respond({ error: "invalid_request" }, 400);
 				}
-				// Server-fill site and pool from authenticated principal. Do not trust caller-supplied site or pool.
+				const suppliedContext = rawCommand.context;
+				if (suppliedContext && (suppliedContext.siteId !== principal.siteId || suppliedContext.poolId !== statusResult.operation.poolId)) {
+					return respond({ error: "unauthorized_context" }, 403);
+				}
 				const command = {
 					...rawCommand,
 					context: {
