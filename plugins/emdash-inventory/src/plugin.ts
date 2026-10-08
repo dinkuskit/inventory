@@ -741,7 +741,7 @@ async function render(ctx: PluginContext, adminId: string): Promise<BlockRespons
 		const openingParsed = openingIntentSchema.safeParse(openingRaw.value);
 		if (!openingParsed.success) return notice("Opening stock requires its originating administrator", "This opening-stock request is preserved safely.");
 		const opening = openingParsed.data;
-		if (opening.initiatingAdminId !== adminId) return notice("Opening stock belongs to another administrator", "Only the administrator who created it can confirm, retry, cancel, clear, or replace it.");
+		if (opening.initiatingAdminId !== adminId) return notice("Opening stock belongs to another administrator", "Only that administrator can change it.");
 		if (opening.status === "preview") return page([
 			{ type: "banner", variant: "alert", title: "Confirm initial stock", description: `SKU: ${opening.preview.effect.skuId} | Location: ${opening.preview.context.locationId} | On hand: ${opening.preview.effect.onHandDelta.value} ${opening.preview.effect.onHandDelta.unit}` },
 			{ type: "section", text: `${opening.preview.warning} Reason: ${opening.preview.reason.note}` },
@@ -758,9 +758,9 @@ twoButtons("confirm_opening_balance", "Confirm initial stock", opening.command.c
 	const moveRaw = await ctx.kv.getVersioned<any>(LOC_MOVE_KEY);
 	if (moveRaw) {
 		const moveParsed = locationMoveIntentSchema.safeParse(moveRaw.value);
-		if (!moveParsed.success) return notice("Location move requires its originating administrator", "This location-move request is preserved safely.");
+		if (!moveParsed.success) return notice("Location move requires its originating administrator", "This move is preserved.");
 		const move = moveParsed.data;
-		if (move.initiatingAdminId !== adminId) return notice("Location move belongs to another administrator", "Only the administrator who created it can confirm, retry, cancel, clear, or replace it.");
+		if (move.initiatingAdminId !== adminId) return notice("Location move belongs to another administrator", "Only that administrator can change it.");
 		if (move.status === "preview") {
 			if (move.expiresAt <= Date.now()) {
 				await ctx.kv.compareAndDelete(LOC_MOVE_KEY, moveRaw.revision);
@@ -773,10 +773,10 @@ twoButtons("confirm_opening_balance", "Confirm initial stock", opening.command.c
 			]);
 		}
 		if (move.status === "pending") return page([
-			{ type: "banner", variant: "alert", title: "Location move outcome unknown / pending", description: `Command ${move.commandId} was sent but the outcome is unconfirmed. Retry safely.` },
-			button("retry_location_move", "Retry location move", move.commandId),
+			{ type: "banner", variant: "alert", title: "Location move outcome unknown / pending", description: `Command ${move.commandId} is unconfirmed. Retry.` },
+			button("retry_location_move", "Retry move", move.commandId),
 		]);
-		if (move.status === "committed") return terminalPage("Location move committed", `Moved ${move.quantity.value} ${move.quantity.unit} to ${move.destinationLocationName}. Receipt: ${move.receipt.receiptId}.`, "clear_location_move_result", move.commandId);
+		if (move.status === "committed") return terminalPage("Location move committed", `Moved ${move.quantity.value} ${move.quantity.unit} to ${move.destinationLocationName}. Receipt ${move.receipt.receiptId}.`, "clear_location_move_result", move.commandId);
 		return terminalPage("Location move rejected", `Rejected code: ${move.code}. ${move.message ?? ""}`, "clear_location_move_result", move.commandId, true);
 	}
 
@@ -1219,12 +1219,16 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 			if (a === "clear_location_move_result") { await clearIntentIfMatching(ctx, LOC_MOVE_KEY, adminId, v, ["committed", "rejected"]); return render(ctx, adminId); }
 		}
 
-		if (interaction.type === "form_submit" || (interaction.type === "block_action" && interaction.action_id === "retry")) {
+		if ((interaction.type === "form_submit" && (interaction.action_id === "create" || interaction.action_id === "reconnect")) || (interaction.type === "block_action" && interaction.action_id === "retry")) {
 			const stored = await readSession(ctx);
 			if (!stored || stored.session.phase !== "token" || stored.session.expiresAt <= Date.now()) return render(ctx, adminId);
 			let intent = await ctx.kv.get<unknown>(CONN_INTENT_KEY);
 			if (interaction.type === "form_submit") {
-				const candidate = interaction.action_id === "create" ? { type: "create", requestId: crypto.randomUUID(), locationName: interaction.values.location_name } : { type: "reconnect", requestId: crypto.randomUUID(), operationId: interaction.values.operation_id };
+				const values = interaction.values ?? {};
+				const locationName = typeof values.location_name === "string" ? values.location_name.trim() : "";
+				const operationId = typeof values.operation_id === "string" ? values.operation_id.trim() : "";
+				if (interaction.action_id === "create" ? locationName.length < 1 || locationName.length > 200 : operationId.length < 1) return render(ctx, adminId);
+				const candidate = interaction.action_id === "create" ? { type: "create", requestId: crypto.randomUUID(), locationName } : { type: "reconnect", requestId: crypto.randomUUID(), operationId };
 				if (!intent) { await ctx.kv.compareAndSet(CONN_INTENT_KEY, null, candidate); intent = await ctx.kv.get(CONN_INTENT_KEY); }
 				else {
 					const previous = intentSchema.parse(intent);

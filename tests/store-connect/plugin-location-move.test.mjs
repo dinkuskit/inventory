@@ -273,6 +273,15 @@ test("location move: full flow through create -> dispatch -> receive whole trans
 	assert.equal(await ctx.kv.get("state:location-move-intent"), null);
 });
 
+test("unknown form action does not start a connection", async () => {
+	const ctx = createTestCtx({ fetchHandler: defaultFetchHandler([]) });
+	await plugin.routes.admin.handler({
+		input: { type: "form_submit", action_id: "not_a_real_action", values: { operation_id: "op_evil" } },
+		user: { id: ADMIN_A },
+	}, ctx);
+	assert.equal(await ctx.kv.get("state:connection-intent"), null);
+});
+
 test("location move: a foreign command id does not advance the saved intent", async () => {
 	const calls = [];
 	const ctx = createTestCtx({
