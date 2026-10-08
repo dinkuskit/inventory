@@ -18,9 +18,23 @@ human-operable EmDash store first. Commerce and Inventory are crucial launch
 pieces and launch side by side. This repository's contracts and status below
 describe its own scope; the roadmap is not a claim of release readiness.
 
+## Install type
+
+DinkusKit plugins ship as EmDash Registry plugins: sandboxed and installed
+from the plugin Registry, which is how most EmDash sites add plugins. The
+Registry build is the supported product, and features are designed, tested and
+documented for it first. A native entry (code a site registers in its own
+configuration or Astro routes) is a developer and test setup only. It may not
+offer features the Registry build lacks, except temporary gaps listed here with
+the work that closes them. The project owner set this rule on 2026-10-08.
+
+Inventory's installable plugin is the sandboxed Block Kit plugin in
+`plugins/emdash-inventory/`, backed by the hosted Inventory service. It has no
+native entry and no native-only features.
+
 ## v1 boundary
 
-- EmDash-native: a platform-neutral inventory kernel plus one generic
+- Built for EmDash: a platform-neutral inventory kernel plus one generic
   standard-format sandboxed EmDash plugin with a real host-rendered Block Kit
   admin GUI. The same installable artifact is proven in SmokyClub; no
   storefront-shaped base code or site-specific plugin fork.

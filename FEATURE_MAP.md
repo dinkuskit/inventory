@@ -45,6 +45,9 @@ behavior-preserving migration cycles are confirmed.
 
 ## Boundary rules
 
+- Install type: the sandboxed Registry plugin is the supported product. A
+  native entry is a developer and test setup with no features the Registry
+  build lacks, except gaps the README lists (owner rule, 2026-10-08).
 - A migrated feature may import its own files, declared shared dependencies,
   and another migrated feature only through that feature's `index.ts`.
 - Files outside a migrated feature may reach it only through its `index.ts`.
