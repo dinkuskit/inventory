@@ -136,7 +136,11 @@ test('only authoritative confirmation failures terminate; uncertain/mismatched s
   const frozen = structuredClone(await kv.getVersioned('state:opening-balance-intent'));
   const c = ctx(async req => new URL(req.url).pathname === '/v1/stock/opening/confirm' ? Response.json(body, { status }) : readyResponse(req), kv);
   await plugin.routes.admin.handler({ input: { type: 'block_action', action_id: 'retry_opening_balance', value: 'cmd_1' }, user: { id: 'admin_a' } }, c);
-  if (terminal) assert.equal((await kv.get('state:opening-balance-intent')).status, 'rejected');
+  if (terminal) {
+   const rejected = await kv.get('state:opening-balance-intent');
+   assert.equal(rejected.status, 'rejected');
+   assert.equal(rejected.commandId, 'cmd_1');
+  }
   else assert.deepEqual(await kv.getVersioned('state:opening-balance-intent'), frozen);
  }
 });

@@ -38,6 +38,7 @@ import {
 	type PreviewOpeningBalanceExecution,
 } from "../application/preview-confirm-opening-balance.ts";
 import type {
+	CommandPrincipal,
 	OpeningBalancePreviewV1,
 	OpeningBalanceResult,
 	PreviewOpeningBalanceInputV1,
@@ -48,6 +49,11 @@ import {
 	type RegisterManagedSkuCommandV1,
 	type RegisterManagedSkuResult,
 } from "../features/managed-sku/index.ts";
+import {
+	createExecuteStockTransferCommand,
+	type StockTransferCommandV1,
+	type StockTransferResult,
+} from "../features/stock-transfer/index.ts";
 import { createCloudflareSqliteInventoryStore } from "../storage/cloudflare-sqlite-inventory-store.ts";
 import {
 	initializeCloudflareInventorySchema,
@@ -232,6 +238,24 @@ export class InventoryPool extends DurableObject<InventoryWorkerEnv> {
 			}
 			throw error;
 		}
+	}
+
+	async executeStockTransfer(
+		command: StockTransferCommandV1,
+		execution: { principal: CommandPrincipal },
+	): Promise<StockTransferResult> {
+		const store = createCloudflareSqliteInventoryStore({
+			storage: this.ctx.storage,
+			poolId: command.context.poolId,
+		});
+		const execute = createExecuteStockTransferCommand({
+			store,
+			now: () => new Date(),
+			createTransferId: () => "transfer_" + crypto.randomUUID().replace(/-/g, ""),
+			createTransferReference: () => "ST-" + crypto.randomUUID().slice(0, 8).toUpperCase(),
+			createReceiptId: () => "rcpt_transfer_" + crypto.randomUUID().replace(/-/g, ""),
+		});
+		return execute(command, execution);
 	}
 
 	async readReceiptHistory(input: {
