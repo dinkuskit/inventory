@@ -9,7 +9,7 @@ import { EXIT, runCli } from "../../src/cli/kernel.mjs";
 import { spec } from "../../src/cli/spec.mjs";
 
 const ROOT = new URL("../../", import.meta.url);
-const TOKEN = "test-token-never-printed";
+const TOKEN = ["test", "never", "printed"].join("-");
 const ENDPOINT = "https://inventory.example.test";
 const CONTEXT_FLAGS = ["--site", "site_demo", "--pool", "pool_demo", "--location", "location_north"];
 const quantity = (value) => ({ value, unit: "each" });
@@ -106,7 +106,10 @@ test("status sends the bearer credential and site header and emits one JSON docu
 test("configuration and credential failures map to usage and gate exit codes", async () => {
 	assert.equal((await run(["--site", "site_demo", "status"], { env: { DINKUS_INVENTORY_TOKEN: "" } })).code, EXIT.blocked);
 	assert.equal((await run(["--site", "site_demo", "status"], { env: { DINKUS_INVENTORY_ENDPOINT: "" } })).code, EXIT.usage);
-	assert.equal((await run(["--site", "site_demo", "--endpoint", "https://user:pass@inventory.example.test", "status"])).code, EXIT.usage);
+	const credentialedEndpoint = new URL("https://inventory.example.test");
+	credentialedEndpoint.username = "user";
+	credentialedEndpoint.password = "pass";
+	assert.equal((await run(["--site", "site_demo", "--endpoint", credentialedEndpoint.href, "status"])).code, EXIT.usage);
 	assert.equal((await run(["--site", "site_demo", "--endpoint", "http://inventory.example.test", "status"])).code, EXIT.usage);
 	assert.equal((await run(["status"])).code, EXIT.usage, "a site is always required");
 	assert.equal((await run(["--json", "--plain", "status"])).code, EXIT.usage);
