@@ -7,6 +7,14 @@ here. Assume every committed line eventually publishes; business rationale
 lives in the operator's private planning repo and is cross-referenced by
 issue or path only.
 
+## Running GrillTrack
+
+Run `./scripts/agent-skills` first; it installs the pinned SaariusSkills
+skills into ignored `.cursor/skills/`. Use
+`./scripts/grilltrack --project . validate` or `show` for ledger reads.
+The CLI-only ledger rule remains in force. SmokySkills is enabled only after
+maintainer access and an immutable commit pin are supplied.
+
 ## Source priority
 
 1. This file.

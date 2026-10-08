@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+set -euo pipefail
+SAARIUS_REPO="https://github.com/saariuslystoned/SaariusSkills.git"
+SAARIUS_SHA="1c914f7905cec0be1854c437ba39d3a78ffc3ced"
+SKILL_NAMES=(grilltrack emdash-sites building-emdash-site creating-plugins emdash-cli upgrading-emdash)
+ROOT="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+SKILLS_DIR="${CURSOR_SKILLS_DIR:-$ROOT/.cursor/skills}"
+CACHE_DIR="${AGENT_SKILLS_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/dinkuskit-agent-skills}"
+SAARIUS_DIR="$CACHE_DIR/saarius-$SAARIUS_SHA"
+die() { printf 'agent-skills: %s\n' "$*" >&2; exit 2; }
+python_bin="${PYTHON:-python3}"
+command -v "$python_bin" >/dev/null 2>&1 || die "Python 3.10+ is required"
+"$python_bin" -c 'import sys; assert sys.version_info >= (3, 10), sys.version' || die "Python 3.10+ is required"
+install_saarius() {
+  mkdir -p "$CACHE_DIR"
+  lock="$CACHE_DIR/.saarius-$SAARIUS_SHA.lock"
+  while ! mkdir "$lock" 2>/dev/null; do sleep 1; done
+  trap 'rm -rf "$lock"' EXIT
+  if [ ! -f "$SAARIUS_DIR/skills/grilltrack/scripts/grilltrack_ledger.py" ]; then
+    tmp="$CACHE_DIR/.saarius-$$"; trap 'rm -rf "$tmp" "$lock"' EXIT
+    git clone --quiet --filter=blob:none --no-checkout "$SAARIUS_REPO" "$tmp"
+    git -C "$tmp" fetch --quiet --depth 1 origin "$SAARIUS_SHA"
+    git -C "$tmp" sparse-checkout set "${SKILL_NAMES[@]/#/skills/}"
+    git -C "$tmp" checkout --quiet "$SAARIUS_SHA"
+    rm -rf "$SAARIUS_DIR"; mv "$tmp" "$SAARIUS_DIR"; trap - EXIT
+  fi
+  mkdir -p "$SKILLS_DIR"
+  for skill_name in "${SKILL_NAMES[@]}"; do
+    rm -rf "$SKILLS_DIR/$skill_name"
+    cp -R "$SAARIUS_DIR/skills/$skill_name" "$SKILLS_DIR/$skill_name"
+  done
+  rm -rf "$lock"; trap - EXIT
+}
+find_cli() {
+  for candidate in "${GRILLTRACK_SKILL_DIR:-}/scripts/grilltrack_ledger.py" "$HOME/.codex/skills/grilltrack/scripts/grilltrack_ledger.py" "$SKILLS_DIR/grilltrack/scripts/grilltrack_ledger.py" "$SAARIUS_DIR/skills/grilltrack/scripts/grilltrack_ledger.py"; do
+    [ -n "$candidate" ] && [ -f "$candidate" ] && { printf '%s\n' "$candidate"; return; }
+  done
+}
+if [ "${1:-}" = "--grilltrack" ]; then
+  shift; cli="$(find_cli || true)"; [ -n "$cli" ] || { install_saarius; cli="$(find_cli)"; }
+  exec "$python_bin" "$cli" "$@"
+fi
+install_saarius
+install_smoky() {
+  smoky_dir="$CACHE_DIR/smoky-$SMOKY_SKILLS_SHA"
+  if [ ! -d "$smoky_dir/skills" ]; then
+    mkdir -p "$CACHE_DIR"; tmp="$CACHE_DIR/.smoky-$$"; trap 'rm -rf "$tmp"' EXIT
+    git clone --quiet --filter=blob:none --no-checkout "$SMOKY_SKILLS_REPO" "$tmp"
+    git -C "$tmp" fetch --quiet --depth 1 origin "$SMOKY_SKILLS_SHA"
+    git -C "$tmp" sparse-checkout set skills
+    git -C "$tmp" checkout --quiet "$SMOKY_SKILLS_SHA"
+    rm -rf "$smoky_dir"; mv "$tmp" "$smoky_dir"; trap - EXIT
+  fi
+  mkdir -p "$SKILLS_DIR"
+  for skill in "$smoky_dir"/skills/*; do
+    [ -d "$skill" ] || continue
+    rm -rf "$SKILLS_DIR/$(basename "$skill")"
+    cp -R "$skill" "$SKILLS_DIR/$(basename "$skill")"
+  done
+}
+printf 'agent-skills: installed SaariusSkills GrillTrack and EmDash skills at %s.\n' "$SAARIUS_SHA" >&2
