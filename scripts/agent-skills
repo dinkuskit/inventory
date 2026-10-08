@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+SAARIUS_REPO="https://github.com/saariuslystoned/SaariusSkills.git"
+SAARIUS_SHA="4397e4481a1ee4cce28a516dd32c1d7202fcf124"
+ROOT="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+SKILLS_DIR="${CURSOR_SKILLS_DIR:-$ROOT/.cursor/skills}"
+CACHE_DIR="${AGENT_SKILLS_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/dinkuskit-agent-skills}"
+SAARIUS_DIR="$CACHE_DIR/saarius-$SAARIUS_SHA"
+die() { printf 'agent-skills: %s\n' "$*" >&2; exit 2; }
+python_bin="${PYTHON:-python3}"
+command -v "$python_bin" >/dev/null 2>&1 || die "Python 3.10+ is required"
+"$python_bin" -c 'import sys; assert sys.version_info >= (3, 10), sys.version' || die "Python 3.10+ is required"
+install_saarius() {
+  if [ ! -f "$SAARIUS_DIR/skills/grilltrack/scripts/grilltrack_ledger.py" ]; then
+    mkdir -p "$CACHE_DIR"; tmp="$CACHE_DIR/.saarius-$$"; trap 'rm -rf "$tmp"' EXIT
+    git clone --quiet --filter=blob:none --no-checkout "$SAARIUS_REPO" "$tmp"
+    git -C "$tmp" fetch --quiet --depth 1 origin "$SAARIUS_SHA"
+    git -C "$tmp" sparse-checkout set skills/grilltrack
+    git -C "$tmp" checkout --quiet "$SAARIUS_SHA"
+    rm -rf "$SAARIUS_DIR"; mv "$tmp" "$SAARIUS_DIR"; trap - EXIT
+  fi
+  mkdir -p "$SKILLS_DIR"; rm -rf "$SKILLS_DIR/grilltrack"
+  cp -R "$SAARIUS_DIR/skills/grilltrack" "$SKILLS_DIR/grilltrack"
+}
+find_cli() {
+  for candidate in "${GRILLTRACK_SKILL_DIR:-}/scripts/grilltrack_ledger.py" "$HOME/.codex/skills/grilltrack/scripts/grilltrack_ledger.py" "$SKILLS_DIR/grilltrack/scripts/grilltrack_ledger.py" "$SAARIUS_DIR/skills/grilltrack/scripts/grilltrack_ledger.py"; do
+    [ -n "$candidate" ] && [ -f "$candidate" ] && { printf '%s\n' "$candidate"; return; }
+  done
+}
+if [ "${1:-}" = "--grilltrack" ]; then
+  shift; cli="$(find_cli || true)"; [ -n "$cli" ] || { install_saarius; cli="$(find_cli)"; }
+  exec "$python_bin" "$cli" "$@"
+fi
+install_saarius
+if [ -z "${SMOKY_SKILLS_REPO:-}" ] || [ -z "${SMOKY_SKILLS_SHA:-}" ]; then
+  printf 'agent-skills: GrillTrack installed; SmokySkills unavailable here (set its repo and immutable SHA when access is provided).\n' >&2
+else
+  printf 'agent-skills: SmokySkills bootstrap is not enabled until its catalog/install contract is provided.\n' >&2
+fi
