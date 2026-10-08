@@ -635,10 +635,13 @@ async function executeLocationMoveConfirm(ctx: PluginContext, adminId: string, t
 	const headers = await apiHeaders(ctx, token);
 	const send = async (type: string, suffix: string, payload: any, expectedVersions: any[]) => {
 		try {
+			const commandId = `${frozen.commandId}:${suffix}`;
 			const { response: res, body } = await fetchJson(ctx, SERVICE + "/v1/transfers", {
 				method: "POST", headers,
-				body: JSON.stringify({ command: { schema: CMD_SCHEMA, commandId: `${frozen.commandId}:${suffix}`, type, payload, references: [], expectedVersions } }),
+				body: JSON.stringify({ command: { schema: CMD_SCHEMA, commandId, type, payload, references: [], expectedVersions } }),
 			});
+			const raw = body as { commandId?: string };
+			if (raw?.commandId !== commandId) return null;
 			return { ok: res.ok, raw: body as any };
 		} catch { return null; }
 	};

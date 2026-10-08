@@ -273,6 +273,30 @@ test("location move: full flow through create -> dispatch -> receive whole trans
 	assert.equal(await ctx.kv.get("state:location-move-intent"), null);
 });
 
+test("location move: a foreign command id does not advance the saved intent", async () => {
+	const calls = [];
+	const ctx = createTestCtx({
+		fetchHandler: async (req) => {
+			const url = new URL(req.url);
+			if (url.pathname !== "/v1/transfers") return defaultFetchHandler(calls)(req);
+			return Response.json({ outcome: "committed", commandId: "someone-else", transfer: { transferId: "xfer_foreign", version: "1" } });
+		},
+	});
+	await plugin.routes.admin.handler({
+		input: { type: "form_submit", action_id: "preview_location_move", values: { from_location_id: "loc_main", to_location_id: "loc_front", sku_id: "sku_hat_1", quantity_value: "2" } },
+		user: { id: ADMIN_A },
+	}, ctx);
+	const intent = await ctx.kv.get("state:location-move-intent");
+	const res = await plugin.routes.admin.handler({
+		input: { type: "block_action", action_id: "confirm_location_move", value: intent.commandId },
+		user: { id: ADMIN_A },
+	}, ctx);
+	assert.match(JSON.stringify(res), /outcome unknown|pending/);
+	const saved = await ctx.kv.get("state:location-move-intent");
+	assert.equal(saved.status, "pending");
+	assert.equal(saved.transferId, undefined);
+});
+
 test("location move: admin isolation prevents foreign admin from confirming, retrying, canceling, or clearing", async () => {
 	const ctx = createTestCtx({ fetchHandler: defaultFetchHandler() });
 
@@ -420,9 +444,10 @@ test("location move: kernel rejection records rejected terminal state", async ()
 	const fetchHandler = async (req) => {
 		const url = new URL(req.url);
 		if (url.pathname === "/v1/transfers") {
+			const cmd = (await req.json()).command;
 			return Response.json({
 				outcome: "rejected",
-				commandId: "cmd_rejected",
+				commandId: cmd.commandId,
 				code: "insufficient_available_stock",
 				message: "Not enough stock at origin",
 			});
