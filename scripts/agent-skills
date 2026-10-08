@@ -32,8 +32,25 @@ if [ "${1:-}" = "--grilltrack" ]; then
   exec "$python_bin" "$cli" "$@"
 fi
 install_saarius
+install_smoky() {
+  smoky_dir="$CACHE_DIR/smoky-$SMOKY_SKILLS_SHA"
+  if [ ! -d "$smoky_dir/skills" ]; then
+    mkdir -p "$CACHE_DIR"; tmp="$CACHE_DIR/.smoky-$$"; trap 'rm -rf "$tmp"' EXIT
+    git clone --quiet --filter=blob:none --no-checkout "$SMOKY_SKILLS_REPO" "$tmp"
+    git -C "$tmp" fetch --quiet --depth 1 origin "$SMOKY_SKILLS_SHA"
+    git -C "$tmp" sparse-checkout set skills
+    git -C "$tmp" checkout --quiet "$SMOKY_SKILLS_SHA"
+    rm -rf "$smoky_dir"; mv "$tmp" "$smoky_dir"; trap - EXIT
+  fi
+  mkdir -p "$SKILLS_DIR"
+  for skill in "$smoky_dir"/skills/*; do
+    [ -d "$skill" ] || continue
+    rm -rf "$SKILLS_DIR/$(basename "$skill")"
+    cp -R "$skill" "$SKILLS_DIR/$(basename "$skill")"
+  done
+}
 if [ -z "${SMOKY_SKILLS_REPO:-}" ] || [ -z "${SMOKY_SKILLS_SHA:-}" ]; then
   printf 'agent-skills: GrillTrack installed; SmokySkills unavailable here (set its repo and immutable SHA when access is provided).\n' >&2
 else
-  printf 'agent-skills: SmokySkills bootstrap is not enabled until its catalog/install contract is provided.\n' >&2
+  install_smoky
 fi
