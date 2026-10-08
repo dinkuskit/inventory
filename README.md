@@ -182,7 +182,9 @@ Incompatible shapes fail closed without a partial upgrade. Workerd runtime
 tests prove those transitions, but this is not a deployment or live-database
 claim. Inventory mutations are not remotely exposed, no
 storefront traffic is bound, and no physical stock cutover has happened. There
-is still no installable plugin, executable CLI, or published npm package. The
+is still no installable plugin or published npm package. An unpublished
+`dinkus-inventory` CLI scaffold calls the hosted API; what it covers is listed
+under "Implementation status" in [docs/CLI-SPEC.md](docs/CLI-SPEC.md). The
 package manifest remains private at `0.0.0` to prevent accidental publication.
 
 Scaffold development is pinned to exact `emdash@0.41.0` with a lockfile. This
