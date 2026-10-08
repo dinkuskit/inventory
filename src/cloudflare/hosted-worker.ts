@@ -115,6 +115,19 @@ const openingConfirmInputSchema = z.object({
 	}).strict(),
 }).strict();
 
+const packBodySchema = z.object({
+	commandId: z.string().trim().min(1).max(200),
+	type: z.enum(["stock.pack", "stock.pack_all"]),
+	reservationId: z.string().trim().min(1).max(200).optional(),
+	reservationIds: z.array(z.string().trim().min(1).max(200)).min(1).max(100).optional(),
+	context: z.object({
+		siteId: z.string().trim().min(1).max(200).optional(),
+		poolId: z.string().trim().min(1).max(200).optional(),
+	}).strict().optional(),
+	siteId: z.string().trim().min(1).max(200).optional(),
+	poolId: z.string().trim().min(1).max(200).optional(),
+}).strict();
+
 const registerSkuInputSchema = z.object({
 	commandId: z.string().trim().min(1).max(200),
 	sku: z.string().trim().min(1).max(200),
@@ -164,6 +177,7 @@ export function createHostedInventoryHandler(
 			"/v1/stock/opening/preview",
 			"/v1/stock/opening/confirm",
 			"/v1/receipts",
+			"/v1/stock/pack",
 			"/v1/transfers",
 			"/v1/stock/transfers",
 		];
@@ -346,6 +360,77 @@ export function createHostedInventoryHandler(
 				};
 				const result = await env.INVENTORY_POOLS.getByName(statusResult.operation.poolId).registerManagedSku(command, principal);
 				return respond(result, result.outcome === "rejected" ? 409 : 200);
+			}
+
+			if (path === "/v1/stock/pack") {
+				if (request.method !== "POST") return respond({ error: "method_not_allowed" }, 405);
+				const statusResult = await account.status(principal.siteId);
+				if (statusResult.status !== "ready") return respond({ error: "inventory_not_ready", connection: statusResult }, 409);
+				const bodyRead = await readBoundedJson(request, 8192);
+				if ("error" in bodyRead) return respond({ error: bodyRead.error }, bodyRead.error === "request_too_large" ? 413 : 400);
+				let rawBody: unknown;
+				try { rawBody = JSON.parse(bodyRead.text); } catch { return respond({ error: "invalid_request" }, 400); }
+				if (!rawBody || typeof rawBody !== "object" || Array.isArray(rawBody)) return respond({ error: "invalid_request" }, 400);
+				const rawRecord = rawBody as Record<string, unknown>;
+				const suppliedContext = rawRecord.context;
+				if (suppliedContext && typeof suppliedContext === "object" && !Array.isArray(suppliedContext)) {
+					const context = suppliedContext as Record<string, unknown>;
+					if (
+						(context.siteId !== undefined && context.siteId !== principal.siteId) ||
+						(context.poolId !== undefined && context.poolId !== statusResult.operation.poolId)
+					) {
+						return respond({ error: "unauthorized_context" }, 403);
+					}
+				}
+				if (
+					(rawRecord.siteId !== undefined && rawRecord.siteId !== principal.siteId) ||
+					(rawRecord.poolId !== undefined && rawRecord.poolId !== statusResult.operation.poolId)
+				) {
+					return respond({ error: "unauthorized_context" }, 403);
+				}
+				let parsed;
+				try { parsed = packBodySchema.parse(rawRecord); } catch { return respond({ error: "invalid_request" }, 400); }
+				const payload = parsed.type === "stock.pack"
+					? (parsed.reservationId && !parsed.reservationIds ? { reservationId: parsed.reservationId } : null)
+					: (parsed.reservationIds && !parsed.reservationId && new Set(parsed.reservationIds).size === parsed.reservationIds.length
+						? { reservationIds: parsed.reservationIds }
+						: null);
+				if (!payload) return respond({ error: "invalid_request" }, 400);
+				const context = {
+					siteId: principal.siteId,
+					poolId: statusResult.operation.poolId,
+				};
+				const command = parsed.type === "stock.pack"
+					? {
+						schema: "dinkuskit.inventory.command/v1" as const,
+						commandId: parsed.commandId,
+						type: "stock.pack" as const,
+						context,
+						payload: { reservationId: parsed.reservationId as string },
+						references: [],
+					}
+					: {
+						schema: "dinkuskit.inventory.command/v1" as const,
+						commandId: parsed.commandId,
+						type: "stock.pack_all" as const,
+						context,
+						payload: { reservationIds: parsed.reservationIds as string[] },
+						references: [],
+					};
+				const pool = env.INVENTORY_POOLS.getByName(statusResult.operation.poolId);
+				let packResult;
+				try {
+					packResult = await pool.executeStockPack(command, {
+						principal: { kind: "human", id: principal.accountId, displayName: "Site Administrator", surface: "emdash" },
+					});
+				} catch (err: any) {
+					return respond({ error: "invalid_command", message: err?.message ?? "Invalid pack command" }, 400);
+				}
+				if (packResult.outcome === "rejected") return respond(packResult, 409);
+				if (packResult.outcome !== "packed" && packResult.outcome !== "packed_all") {
+					return respond({ error: "invalid_request" }, 400);
+				}
+				return respond(packResult, 200);
 			}
 
 			if (path === "/v1/transfers" || path === "/v1/stock/transfers") {

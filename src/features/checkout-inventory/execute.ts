@@ -747,7 +747,14 @@ export function createCheckoutInventoryPort(
 		async reserve(request) {
 			try {
 				const result = await reserveBasket(request, execution);
-				if (result.outcome === "reserved") return "reserved";
+				if (result.outcome === "reserved") {
+					return {
+						outcome: "reserved",
+						ticketIds: result.reservations.map(
+							(hold) => hold.reservationId,
+						),
+					};
+				}
 				if (result.outcome === "rejected") return "rejected";
 				return "unknown";
 			} catch (error) {

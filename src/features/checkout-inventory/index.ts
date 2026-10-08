@@ -15,6 +15,7 @@ export {
 export type {
 	CheckoutInventoryPort,
 	CheckoutInventoryReceiptV2,
+	CheckoutReservePortResult,
 	CheckoutInventoryRejectionCode,
 	CheckoutInventoryResult,
 	InventoryProviderBinding,

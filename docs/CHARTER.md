@@ -574,9 +574,29 @@ fulfillment machinery. There is no independent TTL release. Schema versions and
 ordinary named-hold reservation semantics are unchanged.
 
 This lock is the Inventory adapter contract only. Live Commerce/Payments
-transport and integration, Worker HTTP, GUI, CLI, onboarding, store-connect,
-Otta adapters, cross-pool fanout, backorder fulfillment, independent expiry,
-and deploy remain deferred.
+transport and integration, GUI, CLI, onboarding, store-connect, Otta
+adapters, cross-pool fanout, backorder fulfillment, independent expiry, and
+deploy remain deferred. The hosted pack route is `commerce-pack-route-001`.
+
+## commerce-pack-route-001 — ticket ids Commerce can pack (locked)
+
+A successful `CheckoutInventoryPort.reserve` returns the tickets Inventory
+already minted for that basket. Commerce persists exactly:
+
+```json
+{ "outcome": "reserved", "ticketIds": ["<ticket id>"] }
+```
+
+One basket line is one ticket. Three hats on one line is one ticket id, not
+three. Hats and shirts are two ids, in line order. Replay of the same reserve
+returns those same ids and does not mint another ticket. `"rejected"` and
+`"unknown"` stay strings. Inventory does not store a Commerce order number.
+
+`POST /v1/stock/pack` accepts `stock.pack` and `stock.pack_all` only. The body
+names the command id and those ticket ids. The server fills site and pool from
+the signed-in account. A mismatched site or pool is `403 unauthorized_context`
+before pool I/O. The route packs those tickets. It does not mark them Delivered
+and it does not buy a label.
 
 ## Next focused grill
 

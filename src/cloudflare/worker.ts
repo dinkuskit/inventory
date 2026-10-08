@@ -50,6 +50,13 @@ import {
 	type RegisterManagedSkuResult,
 } from "../features/managed-sku/index.ts";
 import {
+	createPackAllStock,
+	createPackStock,
+	type PackAllStockCommandV1,
+	type PackStockCommandV1,
+	type StockReservationResult,
+} from "../features/stock-reservation/index.ts";
+import {
 	createExecuteStockTransferCommand,
 	type StockTransferCommandV1,
 	type StockTransferResult,
@@ -238,6 +245,25 @@ export class InventoryPool extends DurableObject<InventoryWorkerEnv> {
 			}
 			throw error;
 		}
+	}
+
+	async executeStockPack(
+		command: PackStockCommandV1 | PackAllStockCommandV1,
+		execution: { principal: CommandPrincipal },
+	): Promise<StockReservationResult> {
+		const store = createCloudflareSqliteInventoryStore({
+			storage: this.ctx.storage,
+			poolId: command.context.poolId,
+		});
+		const dependencies = {
+			store,
+			now: () => new Date(),
+			createReceiptId: () => crypto.randomUUID(),
+		};
+		if (command.type === "stock.pack") {
+			return createPackStock(dependencies)(command, execution);
+		}
+		return createPackAllStock(dependencies)(command, execution);
 	}
 
 	async executeStockTransfer(

@@ -288,7 +288,10 @@ test("lost reserve response after SQLite commit recovers the original durable ho
 		principal,
 		siteId: "site_test",
 	});
-	assert.equal(await replayPort.reserve(request), "reserved");
+	assert.deepEqual(await replayPort.reserve(request), {
+		outcome: "reserved",
+		ticketIds: loss.captured.reservations.map((hold) => hold.reservationId),
+	});
 	const replayed = await createReserveCheckoutBasket(
 		factories(reopened, { binding: configuredBinding }),
 	)(request, { principal, siteId: "site_test" });
@@ -458,7 +461,11 @@ test("configured binding mismatch rejects on first call and after factory restar
 		operationId: "op_bound_checkout",
 		binding: configured,
 	});
-	assert.equal(await firstPort.reserve(matched), "reserved");
+	const heldTickets = await firstPort.reserve(matched);
+	assert.deepEqual(heldTickets, {
+		outcome: "reserved",
+		ticketIds: ["rsv_checkout_001", "rsv_checkout_002"],
+	});
 	assert.equal((await balances(store)).hat.reserved.value, "3");
 	await store.close();
 
@@ -469,7 +476,7 @@ test("configured binding mismatch rejects on first call and after factory restar
 		siteId: "site_test",
 	});
 	assert.equal(await restarted.reserve(mismatched), "rejected");
-	assert.equal(await restarted.reserve(matched), "reserved");
+	assert.deepEqual(await restarted.reserve(matched), heldTickets);
 	assert.equal((await balances(reopened)).hat.reserved.value, "3");
 	assert.equal((await balances(reopened)).shirt.reserved.value, "2");
 });
@@ -1004,8 +1011,12 @@ test("the public port maps durable results and rejects malformed requests", asyn
 		principal,
 		siteId: "site_test",
 	});
-	assert.equal(await port.reserve(stockRequest()), "reserved");
-	assert.equal(await port.reserve(stockRequest()), "reserved");
+	const reserved = {
+		outcome: "reserved",
+		ticketIds: ["rsv_checkout_001", "rsv_checkout_002"],
+	};
+	assert.deepEqual(await port.reserve(stockRequest()), reserved);
+	assert.deepEqual(await port.reserve(stockRequest()), reserved);
 	assert.equal(await port.release(stockRequest()), "released");
 	assert.equal(await port.reserve(stockRequest()), "rejected");
 	assert.equal(await port.reserve({}), "rejected");

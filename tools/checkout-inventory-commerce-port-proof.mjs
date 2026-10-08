@@ -71,7 +71,7 @@ const tsconfig = join(work, "tsconfig.json");
 await writeFile(
 	proof,
 	`import type {
-	CheckoutInventoryPort as InventoryPort,
+	CheckoutReservePortResult,
 	StockRequest as InventoryStockRequest,
 } from ${JSON.stringify(join(root, "src/features/checkout-inventory/index.ts"))};
 
@@ -81,15 +81,14 @@ ${request}
 ${port}
 
 type Assert<T extends true> = T;
-type _Port = Assert<InventoryPort extends CheckoutInventoryPort ? true : false>;
-type _PortBack = Assert<CheckoutInventoryPort extends InventoryPort ? true : false>;
 type _Request = Assert<InventoryStockRequest extends StockRequest ? true : false>;
 type _RequestBack = Assert<StockRequest extends InventoryStockRequest ? true : false>;
+type Reserved = Extract<CheckoutReservePortResult, { outcome: "reserved" }>;
+type _Tickets = Assert<Reserved["ticketIds"] extends readonly string[] ? true : false>;
+type _TicketFields = Assert<keyof Reserved extends "outcome" | "ticketIds" ? true : false>;
+type _Predecessor = Assert<CheckoutInventoryPort["reserve"] extends (request: StockRequest) => Promise<"reserved" | "rejected" | "unknown"> ? true : false>;
 
-export const proof: CheckoutInventoryPort = {
-	reserve: async (_request: StockRequest) => "reserved",
-	release: async (_request: StockRequest) => "released",
-};
+export const commerceStillPublishesStringReserve: "reserved" | "rejected" | "unknown" = "reserved";
 `,
 );
 await writeFile(

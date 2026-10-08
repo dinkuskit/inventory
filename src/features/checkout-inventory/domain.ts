@@ -33,10 +33,22 @@ export interface StockRequest {
 	requirements: StockRequirement[];
 }
 
+/**
+ * Success names the tickets this reserve already minted, one per basket line.
+ * Commerce persists that object. Rejection and an unknown outcome stay strings.
+ */
+export type CheckoutReservePortResult =
+	| Readonly<{
+			outcome: "reserved";
+			ticketIds: readonly string[];
+	  }>
+	| "rejected"
+	| "unknown";
+
 /** Durable whole-basket operation. Never substitute a local stock ledger. */
 export interface CheckoutInventoryPort {
 	/** Same operation/request forever; terminal rejection has no holds and cannot later succeed. */
-	reserve(request: StockRequest): Promise<"reserved" | "rejected" | "unknown">;
+	reserve(request: StockRequest): Promise<CheckoutReservePortResult>;
 	/** Idempotent terminal fence, including an in-flight reserve. No subsequent reacquisition. */
 	release(request: StockRequest): Promise<"released" | "unknown">;
 }
