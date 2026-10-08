@@ -27,12 +27,29 @@ import {
 	tokenSuccessSchema,
 	type StoreConnectSession,
 } from "../../../src/features/store-connect/index.ts";
+const LOC_MOVE_KEY = "state:location-move-intent";
+const ADJ_KEY = "state:stock-adjustment-intent";
+const OPEN_KEY = "state:opening-balance-intent";
+const SKU_REG_KEY = "state:sku-registration-intent";
+const CONN_INTENT_KEY = "state:connection-intent";
+const CMD_SCHEMA = "dinkuskit.inventory.command/v1";
+const APP_JSON = "application/json";
+
 
 // Reserved non-routable defaults until DinkusKit configures the website and Inventory service.
 // The proof host maps these declared origins to local fixtures; shop owners never configure them.
 const SERVICE = "https://inventory.dinkuskit.invalid";
 const WEBSITE = "https://accounts.dinkuskit.invalid";
 const id = z.string().min(1).max(200);
+const qty = z.object({ value: z.string(), unit: z.string() });
+const locationsSchema = z.object({ locations: z.array(z.object({ name: z.string(), locationId: id })) });
+const cmdContext = z.object({ siteId: z.string(), poolId: z.string(), locationId: z.string() });
+const cmdRefs = z.array(z.object({ kind: z.string(), id: z.string() })).default([]);
+const cmdExpected = z.array(z.object({ skuId: z.string(), locationId: z.string(), version: z.string() }));
+const cmdReason = z.object({ code: z.string(), note: z.string() });
+const cmdConfirm = z.object({ value: z.string(), expiresAt: z.string() });
+const receiptSchema = z.object({ receiptId: z.string(), committedAt: z.string() });
+
 
 const intentSchema = z.discriminatedUnion("type", [
 	z.object({ type: z.literal("create"), requestId: id, locationName: z.string().trim().min(1).max(200) }).strict(),
@@ -50,19 +67,9 @@ class InventoryApiError extends Error {
 	constructor(code: string) { super("Inventory request rejected"); this.code = code; }
 }
 
-const previewEffectBalanceSchema = z.object({
-	onHand: z.object({ value: z.string(), unit: z.string() }).strict(),
-	reserved: z.object({ value: z.string(), unit: z.string() }).strict(),
-	available: z.object({ value: z.string(), unit: z.string() }).strict(),
-	version: z.string(),
-}).strict();
+const previewEffectBalanceSchema = z.object({ onHand: qty, reserved: qty, available: qty, version: z.string() });
 
-const adjustmentWarningSchema = z.object({
-	code: z.literal("negative_available"),
-	reserved: z.object({ value: z.string(), unit: z.string() }).strict(),
-	oversoldBy: z.object({ value: z.string(), unit: z.string() }).strict(),
-	message: z.string(),
-}).strict();
+const adjustmentWarningSchema = z.object({ code: z.literal("negative_available"), reserved: qty, oversoldBy: qty, message: z.string() });
 
 const adjustmentPreviewSchema = z.object({
 	schema: z.literal("dinkuskit.inventory.stock-adjustment-preview/v1"),
@@ -75,8 +82,8 @@ const adjustmentPreviewSchema = z.object({
 	effect: z.object({
 		skuId: z.string(),
 		locationId: z.string(),
-		onHandDelta: z.object({ value: z.string(), unit: z.string() }).strict(),
-		reservedDelta: z.object({ value: z.string(), unit: z.string() }).strict(),
+		onHandDelta: qty,
+		reservedDelta: qty,
 		balanceBefore: previewEffectBalanceSchema,
 		balanceAfter: previewEffectBalanceSchema,
 	}).strict(),
@@ -92,7 +99,7 @@ const adjustmentPreviewSchema = z.object({
 type AdjustmentPreview = z.infer<typeof adjustmentPreviewSchema>;
 
 const stockCommandSchema = z.object({
-	schema: z.literal("dinkuskit.inventory.command/v1"),
+	schema: z.literal(CMD_SCHEMA),
 	commandId: z.string(),
 	type: z.literal("stock.adjust"),
 	context: z.object({
@@ -207,10 +214,7 @@ const canonicalStockAdjustmentResultSchema = z.discriminatedUnion("outcome", [
 		schema: z.literal("dinkuskit.inventory.command-result/v1").optional(),
 		outcome: z.literal("committed"),
 		commandId: z.string(),
-		receipt: z.object({
-			receiptId: z.string(),
-			committedAt: z.string(),
-		}).passthrough(),
+		receipt: receiptSchema,
 	}),
 	z.object({
 		schema: z.literal("dinkuskit.inventory.command-result/v1").optional(),
@@ -221,6 +225,28 @@ const canonicalStockAdjustmentResultSchema = z.discriminatedUnion("outcome", [
 	}),
 ]);
 
+const moveDataSchema = z.object({
+	initiatingAdminId: id,
+	commandId: id,
+	originLocationId: id,
+	originLocationName: z.string(),
+	destinationLocationId: id,
+	destinationLocationName: z.string(),
+	skuId: id,
+	skuDisplayName: z.string(),
+	quantity: qty,
+	expiresAt: z.number(),
+	transferId: z.string().optional(),
+	transferVersion: z.number().optional(),
+});
+const locationMoveIntentSchema = z.discriminatedUnion("status", [
+	moveDataSchema.extend({ status: z.literal("preview") }),
+	moveDataSchema.extend({ status: z.literal("pending") }),
+	moveDataSchema.extend({ status: z.literal("committed"), receipt: receiptSchema }),
+	adjustmentIntentSchema.options[3],
+]);
+type LocationMoveIntent = z.infer<typeof locationMoveIntentSchema>;
+
 const CONFIRMATION_FAILURE_CODES = new Set([
 	"confirmation_expired",
 	"confirmation_mismatch",
@@ -230,81 +256,20 @@ const CONFIRMATION_FAILURE_CODES = new Set([
 
 const interactionSchema = z.union([
 	z.object({ type: z.literal("page_load"), page: z.literal("/inventory") }),
-	z.object({
-		type: z.literal("block_action"),
-		action_id: z.enum([
-			"connect",
-			"check_sign_in",
-			"retry",
-			"refresh",
-			"confirm_adjustment",
-			"cancel_adjustment",
-			"retry_adjustment",
-			"clear_adjustment_result",
-			"confirm_opening_balance",
-			"cancel_opening_balance",
-			"retry_opening_balance",
-			"clear_opening_balance_result",
-			"retry_registration",
-			"clear_registration_result",
-		]),
-		block_id: z.string().optional(),
-		value: z.unknown().optional(),
-	}),
-	z.object({
-		type: z.literal("form_submit"),
-		action_id: z.literal("create"),
-		block_id: z.string().optional(),
-		values: z.object({ location_name: z.string().trim().min(1).max(200) }).strict(),
-	}),
-	z.object({
-		type: z.literal("form_submit"),
-		action_id: z.literal("reconnect"),
-		block_id: z.string().optional(),
-		values: z.object({ operation_id: id }).strict(),
-	}),
-	z.object({
-		type: z.literal("form_submit"),
-		action_id: z.literal("select_stock"),
-		block_id: z.string().optional(),
-		values: z.object({
-			location_id: id,
-			sku_id: z.string().trim().min(1).max(200),
-		}).strict(),
-	}),
-	z.object({
-		type: z.literal("form_submit"),
-		action_id: z.literal("register_sku"),
-		block_id: z.string().optional(),
-		values: z.object({ sku: z.string().trim().min(1).max(200), display_name: z.string().trim().min(1).max(200) }).strict(),
-	}),
-	z.object({
-		type: z.literal("form_submit"),
-		action_id: z.literal("preview_adjustment"),
-		block_id: z.string().optional(),
-		values: z.object({
-			location_id: id.optional(),
-			sku_id: z.string().trim().min(1).max(200),
-			delta_value: z.string().trim().min(1).max(50),
-			note: z.string().trim().min(1).max(500),
-		}).strict(),
-	}),
-	z.object({
-		type: z.literal("form_submit"),
-		action_id: z.literal("preview_opening_balance"),
-		block_id: z.string().optional(),
-		values: z.object({
-			location_id: id,
-			sku_id: z.string().trim().min(1).max(200),
-			quantity_value: z.string().trim().regex(/^\d+(?:\.\d+)?$/u).max(50),
-		}).strict(),
-	}),
+	z.object({ type: z.literal("block_action"), action_id: z.string(), block_id: z.string().optional(), value: z.unknown().optional() }),
+	z.object({ type: z.literal("form_submit"), action_id: z.string(), block_id: z.string().optional(), values: z.any() }),
 ]);
 
-const button = (action_id: string, label: string, value?: unknown): Block => ({
-	type: "actions",
-	elements: [{ type: "button", action_id, label, value: value !== undefined ? value : undefined }],
-});
+const btn = (action_id: string, label: string, value?: unknown) => ({ type: "button" as const, action_id, label, value: value !== undefined ? value : undefined });
+const button = (action_id: string, label: string, value?: unknown): Block => ({ type: "actions", elements: [btn(action_id, label, value)] });
+const twoButtons = (a1: string, l1: string, v1: unknown, a2: string, l2: string, v2: unknown): Block => ({ type: "actions", elements: [btn(a1, l1, v1), btn(a2, l2, v2)] });
+const terminalPage = (title: string, desc: string, clearAction: string, cmdId: string, alert?: boolean) => page([
+	{ type: "banner", ...(alert ? { variant: "alert" } : {}), title, description: desc },
+	twoButtons(clearAction, "Back to Inventory", cmdId, "refresh", "Refresh Inventory", undefined),
+]);
+const selectField = (action_id: string, label: string, options: any[], initial_value?: string) => ({ type: "select" as const, action_id, label, options, initial_value });
+const textField = (action_id: string, label: string) => ({ type: "text_input" as const, action_id, label });
+
 const page = (blocks: Block[]): BlockResponse => ({ blocks: [{ type: "header", text: "Inventory" }, ...blocks] });
 const notice = (title: string, description: string) => page([{ type: "banner", variant: "alert", title, description }]);
 const trial: Block = { type: "context", text: "Start your Inventory trial. No payment details are needed to connect or begin use." };
@@ -395,14 +360,12 @@ async function fetchJson(ctx: PluginContext, url: string, init?: RequestInit) {
 	return { response, body: await response.json() as unknown };
 }
 
+const apiHeaders = async (ctx: PluginContext, token: string) => ({ Authorization: `Bearer ${token}`, "X-Inventory-Site": await siteId(ctx), "Content-Type": APP_JSON });
+
 async function api(ctx: PluginContext, token: string, path: string, input?: unknown) {
 	const { response, body } = await fetchJson(ctx, SERVICE + path, {
 		method: input ? "POST" : "GET",
-		headers: {
-			Authorization: `Bearer ${token}`,
-			"X-Inventory-Site": await siteId(ctx),
-			"Content-Type": "application/json",
-		},
+		headers: await apiHeaders(ctx, token),
 		body: input ? JSON.stringify(input) : undefined,
 	});
 	if (!response.ok) {
@@ -443,7 +406,7 @@ async function startStoreConnect(ctx: PluginContext, adminId: string) {
 		code_challenge_method: "S256",
 	});
 	const { response, body } = await fetchJson(ctx, WEBSITE + "/api/store-connections", {
-		method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(request),
+		method: "POST", headers: { "Content-Type": APP_JSON }, body: JSON.stringify(request),
 	});
 	if (!response.ok) throw new StoreConnectError("unexpected_website_response");
 	const started = startResponseSchema.parse(body);
@@ -500,7 +463,7 @@ async function pollStoreConnect(ctx: PluginContext, adminId: string) {
 	let terminal = false;
 	try {
 		const { response, body } = await fetchJson(ctx, WEBSITE + "/api/store-connections/token", {
-			method: "POST", headers: { "Content-Type": "application/json" },
+			method: "POST", headers: { "Content-Type": APP_JSON },
 			body: JSON.stringify({ client_id: STORE_CONNECT_CLIENT_ID, connection_id: session.connectionId, code_verifier: session.codeVerifier }),
 		});
 		if (!response.ok) {
@@ -541,198 +504,74 @@ async function pollStoreConnect(ctx: PluginContext, adminId: string) {
 	}
 }
 
-async function executeAdjustmentConfirm(
+async function executeStockConfirm(
 	ctx: PluginContext,
 	adminId: string,
 	token: string,
 	targetCommandId: unknown,
+	type: "adjustment" | "opening",
 ): Promise<BlockResponse> {
-	if (typeof targetCommandId !== "string" || targetCommandId.trim() === "") {
-		return render(ctx, adminId);
-	}
-
-	const intentRecord = await ctx.kv.getVersioned<unknown>("state:stock-adjustment-intent");
-	if (!intentRecord) return render(ctx, adminId);
-	const intentParsed = adjustmentIntentSchema.safeParse(intentRecord.value);
-	if (!intentParsed.success) return render(ctx, adminId);
-	const intent = intentParsed.data;
+	if (typeof targetCommandId !== "string" || !targetCommandId.trim()) return render(ctx, adminId);
+	const key = type === "adjustment" ? ADJ_KEY : OPEN_KEY;
+	const schema = type === "adjustment" ? adjustmentIntentSchema : openingIntentSchema;
+	const path = type === "adjustment" ? "/v1/stock/adjust/confirm" : "/v1/stock/opening/confirm";
+	const record = await ctx.kv.getVersioned<unknown>(key);
+	if (!record) return render(ctx, adminId);
+	const parsed = schema.safeParse(record.value);
+	if (!parsed.success) return render(ctx, adminId);
+	const intent = parsed.data as any;
 	requireOriginatingAdministrator(intent.initiatingAdminId, adminId);
-
-	if (intent.status !== "preview" && intent.status !== "pending") {
-		return render(ctx, adminId);
-	}
-
-	if (intent.command.commandId !== targetCommandId) {
-		return render(ctx, adminId);
-	}
-
-	let capturedRevision: string | null = null;
-	let frozenIntent: { initiatingAdminId: string; preview: AdjustmentPreview; command: StockCommand; expiresAt: number };
-
+	if ((intent.status !== "preview" && intent.status !== "pending") || intent.command.commandId !== targetCommandId) return render(ctx, adminId);
+	let revision: string | null = record.revision;
+	let frozen: any;
 	if (intent.status === "preview") {
 		if (intent.expiresAt <= Date.now()) {
-			await ctx.kv.compareAndDelete("state:stock-adjustment-intent", intentRecord.revision);
-			return notice("Preview expired", "The adjustment preview has expired. Please prepare the adjustment again.");
+			await ctx.kv.compareAndDelete(key, record.revision);
+			return notice("Preview expired", "The preview has expired. Prepare it again.");
 		}
-		const pendingIntent: AdjustmentIntent = {
-			status: "pending",
-			initiatingAdminId: intent.initiatingAdminId,
-			preview: intent.preview,
-			command: intent.command,
-			expiresAt: intent.expiresAt,
-		};
-		const casResult = await ctx.kv.compareAndSet("state:stock-adjustment-intent", intentRecord.revision, pendingIntent);
-		if (!casResult.applied) {
-			// CAS failed: concurrent modification! Do not send to service.
-			return render(ctx, adminId);
-		}
-		capturedRevision = (casResult as { applied: boolean; revision?: string | null }).revision ?? null;
-		frozenIntent = pendingIntent;
-	} else {
-		capturedRevision = intentRecord.revision;
-		frozenIntent = intent;
-	}
-
-	let confirmRes: { response: Response; body: unknown };
-	try {
-		confirmRes = await fetchJson(ctx, SERVICE + "/v1/stock/adjust/confirm", {
-			method: "POST",
-			headers: {
-				Authorization: `Bearer ${token}`,
-				"X-Inventory-Site": await siteId(ctx),
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({
-				confirmation: frozenIntent.preview.confirmation.value,
-				command: frozenIntent.command,
-			}),
-		});
-	} catch (_error) {
-		// Network transport error or unavailable service:
-		// Preserve pending intent in KV for safe idempotent retry!
-		return render(ctx, adminId);
-	}
-
-	const { response, body } = confirmRes;
-
-	// Confirm-specific response parser:
-	// 1. Consume matching canonical authoritative outcomes (committed at 200, rejected at 409)
-	const canonicalResult = canonicalStockAdjustmentResultSchema.safeParse(body);
-	if (canonicalResult.success) {
-		const res = canonicalResult.data;
-		// Must strictly match the frozen commandId before terminalizing!
-		if (res.commandId !== frozenIntent.command.commandId) {
-			// Foreign command evidence: preserve pending intent!
-			return render(ctx, adminId);
-		}
-
-		if (res.outcome === "committed") {
-			const committedIntent: AdjustmentIntent = {
-				status: "committed",
-			initiatingAdminId: frozenIntent.initiatingAdminId,
-				commandId: res.commandId,
-				receipt: {
-					receiptId: res.receipt.receiptId,
-					committedAt: res.receipt.committedAt,
-				},
-			};
-			if (capturedRevision) {
-				await ctx.kv.compareAndSet("state:stock-adjustment-intent", capturedRevision, committedIntent);
-			}
-			return await render(ctx, adminId);
-		} else {
-			// Canonical rejected outcome (e.g. stale_version, command_id_conflict, etc.)
-			const rejectedIntent: AdjustmentIntent = {
-				status: "rejected",
-				initiatingAdminId: frozenIntent.initiatingAdminId,
-				commandId: res.commandId,
-				code: res.code,
-				message: res.message,
-			};
-			if (capturedRevision) {
-				await ctx.kv.compareAndSet("state:stock-adjustment-intent", capturedRevision, rejectedIntent);
-			}
-			return await render(ctx, adminId);
-		}
-	}
-
-	// 2. Non-canonical result or error response:
-	if (!response.ok) {
-		// Check for true confirmation failures
-		const parsedError = z.object({ error: z.string(), message: z.string().optional() }).safeParse(body);
-		if (parsedError.success && CONFIRMATION_FAILURE_CODES.has(parsedError.data.error)) {
-			const rejectedIntent: AdjustmentIntent = {
-				status: "rejected",
-				initiatingAdminId: frozenIntent.initiatingAdminId,
-				commandId: frozenIntent.command.commandId,
-				code: parsedError.data.error,
-				message: parsedError.data.message,
-			};
-			if (capturedRevision) {
-				await ctx.kv.compareAndSet("state:stock-adjustment-intent", capturedRevision, rejectedIntent);
-			}
-			return await render(ctx, adminId);
-		}
-
-		// Non-authoritative access/readiness/transport/malformed errors:
-		// (e.g. inventory_not_ready, unauthorized_context, unauthorized, invalid_request, request_too_large, 500, 503)
-		// These do not resolve the original outcome!
-		// Preserve pending intent and captured revision for safe retry.
-		return render(ctx, adminId);
-	}
-
-	// Unexpected 2xx response not conforming to canonical result: preserve pending!
-	return render(ctx, adminId);
-}
-
-async function executeOpeningConfirm(ctx: PluginContext, adminId: string, token: string, targetCommandId: unknown): Promise<BlockResponse> {
-	if (typeof targetCommandId !== "string" || targetCommandId.trim() === "") return render(ctx, adminId);
-	const record = await ctx.kv.getVersioned<unknown>("state:opening-balance-intent");
-	if (!record) return render(ctx, adminId);
-	const parsed = openingIntentSchema.safeParse(record.value);
-	if (!parsed.success) return render(ctx, adminId);
-	const intent = parsed.data;
-	requireOriginatingAdministrator(intent.initiatingAdminId, adminId);
-	if (intent.status !== "preview" && intent.status !== "pending" || intent.command.commandId !== targetCommandId) return render(ctx, adminId);
-	let revision: string | null = record.revision;
-	let frozen: Extract<OpeningIntent, { status: "pending" }>;
-	if (intent.status === "preview") {
-		if (intent.expiresAt <= Date.now()) return notice("Preview expired", "The opening-stock preview expired. Prepare it again.");
-		const pending: Extract<OpeningIntent, { status: "pending" }> = { ...intent, status: "pending" };
-		const cas = await ctx.kv.compareAndSet("state:opening-balance-intent", record.revision, pending);
+		const pending = { ...intent, status: "pending" };
+		const cas = await ctx.kv.compareAndSet(key, record.revision, pending);
 		if (!cas.applied) return render(ctx, adminId);
-		revision = cas.revision ?? null;
+		revision = (cas as { revision?: string }).revision ?? null;
 		frozen = pending;
-	} else frozen = intent;
+	} else {
+		frozen = intent;
+	}
 	let response: Response;
 	let body: unknown;
 	try {
-		({ response, body } = await fetchJson(ctx, SERVICE + "/v1/stock/opening/confirm", {
+		({ response, body } = await fetchJson(ctx, SERVICE + path, {
 			method: "POST",
-			headers: { Authorization: `Bearer ${token}`, "X-Inventory-Site": await siteId(ctx), "Content-Type": "application/json" },
+			headers: await apiHeaders(ctx, token),
 			body: JSON.stringify({ confirmation: frozen.preview.confirmation.value, command: frozen.command }),
 		}));
 	} catch {
 		return render(ctx, adminId);
 	}
-	const result = canonicalStockAdjustmentResultSchema.safeParse(body);
-	if (!result.success || result.data.commandId !== frozen.command.commandId) {
-		const parsedError = z.object({ error: z.string(), message: z.string().optional() }).safeParse(body);
-		if (response.status === 409 && parsedError.success && CONFIRMATION_FAILURE_CODES.has(parsedError.data.error) && revision) {
-			await ctx.kv.compareAndSet("state:opening-balance-intent", revision, {
-				status: "rejected", initiatingAdminId: frozen.initiatingAdminId,
-				commandId: frozen.command.commandId, code: parsedError.data.error, message: parsedError.data.message,
-			} satisfies OpeningIntent);
-		}
-		return render(ctx, adminId);
+	const canonical = canonicalStockAdjustmentResultSchema.safeParse(body);
+	if (canonical.success) {
+		const res = canonical.data;
+		if (res.commandId !== frozen.command.commandId) return render(ctx, adminId);
+		if (response.status !== (res.outcome === "committed" ? 200 : 409)) return render(ctx, adminId);
+		const terminal = res.outcome === "committed"
+			? { status: "committed", initiatingAdminId: frozen.initiatingAdminId, commandId: res.commandId, receipt: { receiptId: res.receipt.receiptId, committedAt: res.receipt.committedAt } }
+			: { status: "rejected", initiatingAdminId: frozen.initiatingAdminId, commandId: res.commandId, code: res.code, message: res.message };
+		if (revision) await ctx.kv.compareAndSet(key, revision, terminal);
+		return await render(ctx, adminId);
 	}
-	if (response.status !== (result.data.outcome === "committed" ? 200 : 409)) return render(ctx, adminId);
-	const terminal: OpeningIntent = result.data.outcome === "committed"
-		? { status: "committed", initiatingAdminId: frozen.initiatingAdminId, commandId: result.data.commandId, receipt: { receiptId: result.data.receipt.receiptId, committedAt: result.data.receipt.committedAt } }
-		: { status: "rejected", initiatingAdminId: frozen.initiatingAdminId, commandId: result.data.commandId, code: result.data.code, message: result.data.message };
-	if (revision) await ctx.kv.compareAndSet("state:opening-balance-intent", revision, terminal);
+	if (response.status === 409) {
+		const parsedError = z.object({ error: z.string(), message: z.string().optional() }).safeParse(body);
+		if (parsedError.success && CONFIRMATION_FAILURE_CODES.has(parsedError.data.error) && revision) {
+			await ctx.kv.compareAndSet(key, revision, {
+				status: "rejected", initiatingAdminId: frozen.initiatingAdminId, commandId: frozen.commandId, code: parsedError.data.error, message: parsedError.data.message,
+			});
+		}
+	}
 	return render(ctx, adminId);
 }
+
+const executeAdjustmentConfirm = (ctx: PluginContext, adminId: string, token: string, id: unknown) => executeStockConfirm(ctx, adminId, token, id, "adjustment");
+const executeOpeningConfirm = (ctx: PluginContext, adminId: string, token: string, id: unknown) => executeStockConfirm(ctx, adminId, token, id, "opening");
 
 async function executeRegistration(
 	ctx: PluginContext,
@@ -740,7 +579,7 @@ async function executeRegistration(
 	token: string,
 	targetCommandId: string,
 ): Promise<BlockResponse> {
-	const record = await ctx.kv.getVersioned<unknown>("state:sku-registration-intent");
+	const record = await ctx.kv.getVersioned<unknown>(SKU_REG_KEY);
 	if (!record) return render(ctx, adminId);
 	const parsed = registrationIntentSchema.safeParse(record.value);
 	if (!parsed.success || parsed.data.status !== "pending" || parsed.data.commandId !== targetCommandId) return render(ctx, adminId);
@@ -750,7 +589,7 @@ async function executeRegistration(
 	try {
 		({ response, body } = await fetchJson(ctx, SERVICE + "/v1/skus/register", {
 			method: "POST",
-			headers: { Authorization: `Bearer ${token}`, "X-Inventory-Site": await siteId(ctx), "Content-Type": "application/json" },
+			headers: { Authorization: `Bearer ${token}`, "X-Inventory-Site": await siteId(ctx), "Content-Type": APP_JSON },
 			body: JSON.stringify({
 				commandId: parsed.data.commandId,
 				sku: parsed.data.sku,
@@ -766,7 +605,82 @@ async function executeRegistration(
 	const next: RegistrationIntent = canonical.data.outcome === "rejected"
 		? { status: "rejected", initiatingAdminId: parsed.data.initiatingAdminId, commandId: canonical.data.commandId, code: canonical.data.code, message: canonical.data.message }
 		: { status: "committed", initiatingAdminId: parsed.data.initiatingAdminId, commandId: canonical.data.commandId, inventorySku: canonical.data.inventorySku };
-	await ctx.kv.compareAndSet("state:sku-registration-intent", record.revision, next);
+	await ctx.kv.compareAndSet(SKU_REG_KEY, record.revision, next);
+	return render(ctx, adminId);
+}
+
+async function executeLocationMoveConfirm(ctx: PluginContext, adminId: string, token: string, targetCommandId: unknown): Promise<BlockResponse> {
+	if (typeof targetCommandId !== "string" || !targetCommandId.trim()) return render(ctx, adminId);
+	const record = await ctx.kv.getVersioned<any>(LOC_MOVE_KEY);
+	if (!record) return render(ctx, adminId);
+	const parsed = locationMoveIntentSchema.safeParse(record.value);
+	if (!parsed.success) return render(ctx, adminId);
+	const intent = parsed.data;
+	requireOriginatingAdministrator(intent.initiatingAdminId, adminId);
+	if ((intent.status !== "preview" && intent.status !== "pending") || intent.commandId !== targetCommandId) return render(ctx, adminId);
+
+	let revision: string | null = record.revision;
+	let frozen = intent;
+	if (intent.status === "preview") {
+		if (intent.expiresAt <= Date.now()) {
+			await ctx.kv.compareAndDelete(LOC_MOVE_KEY, record.revision);
+			return notice("Preview expired", "The preview expired. Prepare it again.");
+		}
+		frozen = { ...intent, status: "pending" };
+		const cas = await ctx.kv.compareAndSet(LOC_MOVE_KEY, record.revision, frozen);
+		if (!cas.applied) return render(ctx, adminId);
+		revision = (cas as { revision?: string }).revision ?? null;
+	}
+
+	const headers = await apiHeaders(ctx, token);
+	const send = async (type: string, suffix: string, payload: any, expectedVersions: any[]) => {
+		try {
+			const { response: res, body } = await fetchJson(ctx, SERVICE + "/v1/transfers", {
+				method: "POST", headers,
+				body: JSON.stringify({ command: { schema: CMD_SCHEMA, commandId: `${frozen.commandId}:${suffix}`, type, payload, references: [], expectedVersions } }),
+			});
+			return { ok: res.ok, raw: body as any };
+		} catch { return null; }
+	};
+
+	let tid = frozen.transferId;
+	let tver = frozen.transferVersion ?? 1;
+
+	const updateKv = async (val: any) => {
+		if (revision) {
+			const cas = await ctx.kv.compareAndSet(LOC_MOVE_KEY, revision, val);
+			if (cas.applied && cas.revision) revision = cas.revision;
+		}
+	};
+	const fail = async (raw: any, fallback: string) => {
+		await updateKv({ status: "rejected", initiatingAdminId: frozen.initiatingAdminId, commandId: frozen.commandId, code: raw?.code ?? fallback, message: raw?.message });
+		return render(ctx, adminId);
+	};
+
+	if (!tid) {
+		const res = await send("transfer.create", "create", { originLocationId: frozen.originLocationId, destinationLocationId: frozen.destinationLocationId, lines: [{ skuId: frozen.skuId, quantity: frozen.quantity }] }, []);
+		if (!res) return render(ctx, adminId);
+		if (!res.ok || res.raw?.outcome === "rejected") return fail(res.raw, "transfer_create_failed");
+		tid = res.raw?.transfer?.transferId;
+		tver = res.raw?.transfer?.version ?? 1;
+		if (!tid) return render(ctx, adminId);
+		await updateKv({ ...frozen, transferId: tid, transferVersion: tver });
+	}
+
+	for (const [step, ver] of [["dispatch", 1], ["receive", 2]] as const) {
+		if (tver === ver) {
+			const res = await send(`transfer.${step}`, step, { transferId: tid }, [{ transferId: tid, version: ver }]);
+			if (!res) return render(ctx, adminId);
+			if (!res.ok || res.raw?.outcome === "rejected") return fail(res.raw, `transfer_${step}_failed`);
+			if (step === "receive") {
+				const r = res.raw?.receipt;
+				if (r) await updateKv({ ...frozen, status: "committed", receipt: { receiptId: r.receiptId, committedAt: r.committedAt } });
+				return render(ctx, adminId);
+			}
+			tver = res.raw?.transfer?.version ?? (ver + 1);
+			await updateKv({ ...frozen, transferId: tid, transferVersion: tver });
+		}
+	}
 	return render(ctx, adminId);
 }
 
@@ -796,7 +710,7 @@ async function render(ctx: PluginContext, adminId: string): Promise<BlockRespons
 		]);
 	}
 
-	const registrationRaw = await ctx.kv.getVersioned<unknown>("state:sku-registration-intent");
+	const registrationRaw = await ctx.kv.getVersioned<unknown>(SKU_REG_KEY);
 	if (registrationRaw) {
 		const registrationParsed = registrationIntentSchema.safeParse(registrationRaw.value);
 		if (!registrationParsed.success) return notice("SKU registration requires its originating administrator", "The saved request is invalid. Contact support.");
@@ -806,17 +720,11 @@ async function render(ctx: PluginContext, adminId: string): Promise<BlockRespons
 			{ type: "banner", variant: "alert", title: "SKU registration outcome unknown / pending", description: `Command ${registration.commandId} has an unconfirmed outcome. Retry safely.` },
 			button("retry_registration", "Retry SKU registration", registration.commandId),
 		]);
-		if (registration.status === "committed") return page([
-			{ type: "banner", title: "SKU registered", description: `${registration.inventorySku.displayName} (${registration.inventorySku.sku}) is registered. Stock was unchanged.` },
-			button("clear_registration_result", "Back to Inventory", registration.commandId),
-		]);
-		return page([
-			{ type: "banner", variant: "alert", title: "SKU registration rejected", description: `Rejected code: ${registration.code}.` },
-			button("clear_registration_result", "Back to Inventory", registration.commandId),
-		]);
+		if (registration.status === "committed") return terminalPage("SKU registered", `${registration.inventorySku.displayName} (${registration.inventorySku.sku}) is registered. Stock was unchanged.`, "clear_registration_result", registration.commandId);
+		return terminalPage("SKU registration rejected", `Rejected code: ${registration.code}.`, "clear_registration_result", registration.commandId, true);
 	}
 
-	const openingRaw = await ctx.kv.getVersioned<unknown>("state:opening-balance-intent");
+	const openingRaw = await ctx.kv.getVersioned<unknown>(OPEN_KEY);
 	if (openingRaw) {
 		const openingParsed = openingIntentSchema.safeParse(openingRaw.value);
 		if (!openingParsed.success) return notice("Opening stock requires its originating administrator", "This opening-stock request is preserved safely.");
@@ -825,27 +733,43 @@ async function render(ctx: PluginContext, adminId: string): Promise<BlockRespons
 		if (opening.status === "preview") return page([
 			{ type: "banner", variant: "alert", title: "Confirm initial stock", description: `SKU: ${opening.preview.effect.skuId} | Location: ${opening.preview.context.locationId} | On hand: ${opening.preview.effect.onHandDelta.value} ${opening.preview.effect.onHandDelta.unit}` },
 			{ type: "section", text: `${opening.preview.warning} Reason: ${opening.preview.reason.note}` },
-			{ type: "actions", elements: [
-				{ type: "button", action_id: "confirm_opening_balance", label: "Confirm initial stock", value: opening.command.commandId },
-				{ type: "button", action_id: "cancel_opening_balance", label: "Cancel", value: opening.command.commandId },
-			] },
+twoButtons("confirm_opening_balance", "Confirm initial stock", opening.command.commandId, "cancel_opening_balance", "Cancel", opening.command.commandId),
 		]);
 		if (opening.status === "pending") return page([
 			{ type: "banner", variant: "alert", title: "Initial stock outcome unknown / pending", description: `Command ${opening.command.commandId} was sent but the outcome is unconfirmed. Retry the original command safely.` },
 			button("retry_opening_balance", "Retry initial stock", opening.command.commandId),
 		]);
-		if (opening.status === "committed") return page([
-			{ type: "banner", title: "Initial stock committed", description: `Receipt: ${opening.receipt.receiptId}.` },
-			button("clear_opening_balance_result", "Back to Inventory", opening.commandId),
+		if (opening.status === "committed") return terminalPage("Initial stock committed", `Receipt: ${opening.receipt.receiptId}.`, "clear_opening_balance_result", opening.commandId);
+		return terminalPage("Initial stock rejected", `Rejected code: ${opening.code}.`, "clear_opening_balance_result", opening.commandId, true);
+	}
+
+	const moveRaw = await ctx.kv.getVersioned<any>(LOC_MOVE_KEY);
+	if (moveRaw) {
+		const moveParsed = locationMoveIntentSchema.safeParse(moveRaw.value);
+		if (!moveParsed.success) return notice("Location move requires its originating administrator", "This location-move request is preserved safely.");
+		const move = moveParsed.data;
+		if (move.initiatingAdminId !== adminId) return notice("Location move belongs to another administrator", "Only the administrator who created it can confirm, retry, cancel, clear, or replace it.");
+		if (move.status === "preview") {
+			if (move.expiresAt <= Date.now()) {
+				await ctx.kv.compareAndDelete(LOC_MOVE_KEY, moveRaw.revision);
+				return await render(ctx, adminId);
+			}
+			return page([
+				{ type: "banner", variant: "alert", title: "Confirm location move", description: `SKU: ${move.skuDisplayName} (${move.skuId}) | Quantity: ${move.quantity.value} ${move.quantity.unit}` },
+				{ type: "section", text: `Move ${move.quantity.value} ${move.quantity.unit} from ${move.originLocationName} to ${move.destinationLocationName}.` },
+				twoButtons("confirm_location_move", "Confirm location move", move.commandId, "cancel_location_move", "Cancel", move.commandId),
+			]);
+		}
+		if (move.status === "pending") return page([
+			{ type: "banner", variant: "alert", title: "Location move outcome unknown / pending", description: `Command ${move.commandId} was sent but the outcome is unconfirmed. Retry safely.` },
+			button("retry_location_move", "Retry location move", move.commandId),
 		]);
-		return page([
-			{ type: "banner", variant: "alert", title: "Initial stock rejected", description: `Rejected code: ${opening.code}.` },
-			button("clear_opening_balance_result", "Back to Inventory", opening.commandId),
-		]);
+		if (move.status === "committed") return terminalPage("Location move committed", `Moved ${move.quantity.value} ${move.quantity.unit} to ${move.destinationLocationName}. Receipt: ${move.receipt.receiptId}.`, "clear_location_move_result", move.commandId);
+		return terminalPage("Location move rejected", `Rejected code: ${move.code}. ${move.message ?? ""}`, "clear_location_move_result", move.commandId, true);
 	}
 
 	// Check for active stock adjustment intent first
-	const intentRaw = await ctx.kv.getVersioned<unknown>("state:stock-adjustment-intent");
+	const intentRaw = await ctx.kv.getVersioned<unknown>(ADJ_KEY);
 	if (intentRaw) {
 		const intentParsed = adjustmentIntentSchema.safeParse(intentRaw.value);
 		if (!intentParsed.success) {
@@ -857,7 +781,7 @@ async function render(ctx: PluginContext, adminId: string): Promise<BlockRespons
 		}
 		if (intent.status === "preview") {
 			if (intent.expiresAt <= Date.now()) {
-				const cleared = await ctx.kv.compareAndDelete("state:stock-adjustment-intent", intentRaw.revision);
+				const cleared = await ctx.kv.compareAndDelete(ADJ_KEY, intentRaw.revision);
 				if (!cleared.applied) return notice("Preview changed", "Reload Inventory to inspect the current adjustment.");
 				return await render(ctx, adminId);
 			} else {
@@ -903,42 +827,30 @@ async function render(ctx: PluginContext, adminId: string): Promise<BlockRespons
 				button("retry_adjustment", "Retry adjustment", intent.command.commandId),
 			]);
 		} else if (intent.status === "committed") {
-			return page([
-				{
-					type: "banner",
-					title: "Stock adjustment committed",
-					description: `Receipt: ${intent.receipt.receiptId}. Committed at: ${intent.receipt.committedAt}.`,
-				},
-				button("clear_adjustment_result", "Adjust stock again", intent.commandId),
-				button("refresh", "Refresh Inventory"),
-			]);
+			return terminalPage("Stock adjustment committed", `Receipt: ${intent.receipt.receiptId}. Committed at: ${intent.receipt.committedAt}.`, "clear_adjustment_result", intent.commandId);
 		} else if (intent.status === "rejected") {
-			return page([
-				{
-					type: "banner",
-					variant: "alert",
-					title: "Stock adjustment rejected",
-					description: `Rejected code: ${intent.code}.`,
-				},
-				button("clear_adjustment_result", "Adjust stock again", intent.commandId),
-				button("refresh", "Refresh Inventory"),
-			]);
+			return terminalPage("Stock adjustment rejected", `Rejected code: ${intent.code}.`, "clear_adjustment_result", intent.commandId, true);
 		}
 	}
 
-	const result = statusSchema.parse(await api(ctx, session.token, "/v1/status"));
+	let result: z.infer<typeof statusSchema>;
+	try {
+		result = statusSchema.parse(await api(ctx, session.token, "/v1/status"));
+	} catch {
+		return page([{ type: "banner", variant: "alert", title: "Connection could not be confirmed", description: "Account or Inventory service is unavailable. Reload or retry safely; your original connection is preserved." }, button("refresh", "Check status"), button("retry", "Retry connection")]);
+	}
 	if (result.status === "unconnected") {
-		const saved = await ctx.kv.get<unknown>("state:connection-intent");
+		const saved = await ctx.kv.get<unknown>(CONN_INTENT_KEY);
 		if (saved) return page([{ type: "banner", variant: "alert", title: "Connection outcome unknown", description: "Check or retry the original connection. Its Inventory operation will be preserved." }, button("retry", "Retry connection")]);
 		const { operations } = z.object({ operations: z.array(operationSchema) }).parse(await api(ctx, session.token, "/v1/operations"));
-		const blocks: Block[] = [trial, { type: "form", block_id: "first-location", fields: [{ type: "text_input", action_id: "location_name", label: "Name your first stock location" }], submit: { label: "Create Inventory", action_id: "create" } }];
+		const blocks: Block[] = [trial, { type: "form", block_id: "first-location", fields: [textField("location_name", "Name your first stock location")], submit: { label: "Create Inventory", action_id: "create" } }];
 		if (operations.length) blocks.push({ type: "form", block_id: "existing-operation", fields: [{ type: "select", action_id: "operation_id", label: "Connect an existing Inventory operation", options: operations.map(op => ({ label: `${op.locationName} (${op.status})`, value: op.operationId })) }], submit: { label: "Connect selected operation", action_id: "reconnect" } });
 		return page(blocks);
 	}
 	if (result.status === "pending") return page([{ type: "banner", variant: "alert", title: "Inventory provisioning pending", description: "The outcome is not confirmed. Retry safely to check the same operation." }, button("retry", "Retry provisioning")]);
 	if (result.status === "failed") return notice("Inventory setup failed", `Provisioning was rejected (${result.operation.failureCode}). Your original operation is preserved. Contact DinkusKit support.`);
 
-	const locations = z.object({ locations: z.array(z.object({ name: z.string(), locationId: id })) }).parse(await api(ctx, session.token, "/v1/locations"));
+	const locations = locationsSchema.parse(await api(ctx, session.token, "/v1/locations"));
 	if (locations.locations.length === 0) {
 		return page([{ type: "banner", title: "Inventory connected", description: "No stock locations found." }, button("refresh", "Refresh Inventory")]);
 	}
@@ -965,29 +877,10 @@ async function render(ctx: PluginContext, adminId: string): Promise<BlockRespons
 
 	if (selectedSkuId && activeLocation) {
 		try {
-			const stockRes = await api(ctx, session.token, `/v1/stock?sku_id=${encodeURIComponent(selectedSkuId)}&location_id=${encodeURIComponent(activeLocation.locationId)}`);
-			const parsedStock = z.object({
-				ok: z.literal(true),
-				balance: z.discriminatedUnion("outcome", [
-					z.object({
-						outcome: z.literal("found"),
-						balance: z.object({
-							onHand: z.object({ value: z.string(), unit: z.string() }),
-							reserved: z.object({ value: z.string(), unit: z.string() }),
-							outgoingTransferCommitted: z.object({ value: z.string(), unit: z.string() }).optional(),
-							available: z.object({ value: z.string(), unit: z.string() }),
-							expected: z.object({ value: z.string(), unit: z.string() }).optional(),
-							inTransit: z.object({ value: z.string(), unit: z.string() }).optional(),
-							version: z.string(),
-							hasStockHistory: z.boolean(),
-						}),
-					}),
-					z.object({ outcome: z.literal("not_found") }),
-				]),
-			}).safeParse(stockRes);
-			if (parsedStock.success && parsedStock.data.balance.outcome === "found") {
-				const b = parsedStock.data.balance.balance;
-				if (b.hasStockHistory) stockBalance = {
+			const stockRaw: any = await api(ctx, session.token, `/v1/stock?sku_id=${encodeURIComponent(selectedSkuId)}&location_id=${encodeURIComponent(activeLocation.locationId)}`);
+			if (stockRaw?.ok && stockRaw?.balance?.outcome === "found") {
+				const b = stockRaw.balance.balance;
+				if (b?.hasStockHistory) stockBalance = {
 					onHand: `${b.onHand.value} ${b.onHand.unit}`,
 					reserved: `${b.reserved.value} ${b.reserved.unit}`,
 					outgoingTransferCommitted: `${b.outgoingTransferCommitted?.value ?? "0"} ${b.onHand.unit}`,
@@ -997,9 +890,7 @@ async function render(ctx: PluginContext, adminId: string): Promise<BlockRespons
 					version: b.version,
 				};
 			}
-		} catch {
-			// Stock endpoint unavailable or uninitialized
-		}
+		} catch {}
 	}
 
  if (selectedSkuId && activeLocation && !stockBalance) {
@@ -1012,31 +903,13 @@ async function render(ctx: PluginContext, adminId: string): Promise<BlockRespons
 	const blocks: Block[] = [
 		{ type: "banner", title: "Inventory connected", description: "Your Inventory operation is ready." },
 		{ type: "section", text: `Active stock locations: ${locations.locations.map(l => l.name).join(", ")}` },
-		{ type: "form", block_id: "register-sku", fields: [
-			{ type: "text_input", action_id: "sku", label: "Visible Commerce SKU" },
-			{ type: "text_input", action_id: "display_name", label: "Display name" },
-		], submit: { label: "Register SKU for Inventory", action_id: "register_sku" } },
+		{ type: "form", block_id: "register-sku", fields: [textField("sku", "Visible Commerce SKU"), textField("display_name", "Display name")], submit: { label: "Register SKU for Inventory", action_id: "register_sku" } },
 	];
 
 	if (skuOptions.length > 0) blocks.push({
 		type: "form",
 		block_id: "select-stock-view",
-		fields: [
-			{
-				type: "select",
-				action_id: "location_id",
-				label: "Active location",
-				options: locationOptions,
-				initial_value: activeLocation ? activeLocation.locationId : undefined,
-			},
-			{
-				type: "select",
-				action_id: "sku_id",
-				label: "Registered SKU",
-				options: skuOptions,
-				initial_value: selectedSku?.inventorySkuId,
-			},
-		],
+		fields: [selectField("location_id", "Active location", locationOptions, activeLocation?.locationId), selectField("sku_id", "Registered SKU", skuOptions, selectedSku?.inventorySkuId)],
 		submit: { label: "View stock", action_id: "select_stock" },
 	});
 
@@ -1049,12 +922,7 @@ async function render(ctx: PluginContext, adminId: string): Promise<BlockRespons
 			blocks.push({
 				type: "form",
 				block_id: "adjust-stock",
-				fields: [
-					{ type: "select", action_id: "location_id", label: "Active location", options: locationOptions, initial_value: activeLocation.locationId },
-					{ type: "select", action_id: "sku_id", label: "Registered SKU", options: skuOptions, initial_value: selectedSkuId },
-					{ type: "text_input", action_id: "delta_value", label: "Signed quantity delta (e.g. -2 or 5)" },
-					{ type: "text_input", action_id: "note", label: "Reason note" },
-				],
+				fields: [selectField("location_id", "Active location", locationOptions, activeLocation.locationId), selectField("sku_id", "Registered SKU", skuOptions, selectedSkuId), textField("delta_value", "Signed quantity delta (e.g. -2 or 5)"), textField("note", "Reason note")],
 				submit: { label: "Preview stock adjustment", action_id: "preview_adjustment" },
 			});
 		} else {
@@ -1068,18 +936,36 @@ async function render(ctx: PluginContext, adminId: string): Promise<BlockRespons
 				blocks.push({
 					type: "form",
 					block_id: "opening-stock",
-					fields: [
-						{ type: "select", action_id: "location_id", label: "Active location", options: locationOptions, initial_value: activeLocation.locationId },
-						{ type: "select", action_id: "sku_id", label: "Registered SKU", options: skuOptions, initial_value: selectedSkuId },
-						{ type: "text_input", action_id: "quantity_value", label: "Initial quantity (non-negative)" },
-					],
+					fields: [selectField("location_id", "Active location", locationOptions, activeLocation.locationId), selectField("sku_id", "Registered SKU", skuOptions, selectedSkuId), textField("quantity_value", "Initial quantity (non-negative)")],
 					submit: { label: "Preview initial stock", action_id: "preview_opening_balance" },
 				});
 			}
 		}
 	}
+	if (locations.locations.length >= 2 && skuOptions.length > 0) {
+		const defaultFrom = activeLocation?.locationId ?? locations.locations[0].locationId;
+		const defaultTo = (locations.locations.find(l => l.locationId !== defaultFrom) ?? locations.locations[1]).locationId;
+		blocks.push({
+			type: "form",
+			block_id: "location-move",
+			fields: [selectField("from_location_id", "From location", locationOptions, defaultFrom), selectField("to_location_id", "To location", locationOptions, defaultTo), selectField("sku_id", "Registered SKU", skuOptions, selectedSkuId ?? skuOptions[0].value), textField("quantity_value", "Quantity")],
+			submit: { label: "Preview location move", action_id: "preview_location_move" },
+		});
+	}
+
 	blocks.push(button("refresh", "Refresh Inventory"));
 	return page(blocks);
+}
+
+async function clearIntentIfMatching(ctx: PluginContext, key: string, adminId: string, commandId: unknown, validStatuses: string[]) {
+	if (typeof commandId !== "string" || !commandId.trim()) return;
+	const record = await ctx.kv.getVersioned<unknown>(key);
+	if (!record || !record.value || typeof record.value !== "object") return;
+	const v = record.value as any;
+	if (!validStatuses.includes(v.status)) return;
+	requireOriginatingAdministrator(v.initiatingAdminId, adminId);
+	const cmdId = v.commandId ?? v.command?.commandId;
+	if (cmdId === commandId) await ctx.kv.compareAndDelete(key, record.revision);
 }
 
 async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } }, ctx: PluginContext): Promise<BlockResponse> {
@@ -1105,10 +991,60 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 			return await render(ctx, adminId);
 		}
 
+		if (interaction.type === "form_submit" && interaction.action_id === "preview_location_move") {
+			const stored = await readSession(ctx);
+			if (!stored || stored.session.phase !== "token" || stored.session.expiresAt <= Date.now()) return render(ctx, adminId);
+
+			const existingIntentRecord = await ctx.kv.getVersioned<any>(LOC_MOVE_KEY);
+			if (existingIntentRecord) {
+				const existingParsed = locationMoveIntentSchema.safeParse(existingIntentRecord.value);
+				if (!existingParsed.success) return notice("Location move requires originating administrator", "Resolve preserved request first.");
+				requireOriginatingAdministrator(existingParsed.data.initiatingAdminId, adminId);
+				if (existingParsed.data.status === "pending") return notice("Location move pending", "Move is pending. Resolve or retry first.");
+			}
+
+			const fromId = interaction.values.from_location_id;
+			const toId = interaction.values.to_location_id;
+			const skuVal = interaction.values.sku_id;
+			const qtyVal = interaction.values.quantity_value?.trim();
+
+			if (!fromId || !toId || !skuVal || !qtyVal) return notice("Invalid move parameters", "All fields are required.");
+			if (fromId === toId) return notice("Locations must be distinct", "Locations must differ.");
+			const numQty = Number(qtyVal);
+			if (isNaN(numQty) || numQty <= 0) return notice("Invalid quantity", "Quantity must be positive.");
+
+			const locationsData = locationsSchema.parse(await api(ctx, stored.session.token, "/v1/locations"));
+			const fromLoc = locationsData.locations.find(l => l.locationId === fromId);
+			const toLoc = locationsData.locations.find(l => l.locationId === toId);
+			if (!fromLoc || !toLoc) return notice("Location not found", "Location not active.");
+
+			const skuList = managedSkuListSchema.parse(await api(ctx, stored.session.token, "/v1/skus"));
+			const foundSku = skuList.skus.find(s => s.inventorySkuId === skuVal);
+			if (!foundSku) return notice("SKU not registered", "SKU not registered.");
+
+			const moveIntent: LocationMoveIntent = {
+				status: "preview",
+				initiatingAdminId: adminId,
+				commandId: crypto.randomUUID(),
+				originLocationId: fromId,
+				originLocationName: fromLoc.name,
+				destinationLocationId: toId,
+				destinationLocationName: toLoc.name,
+				skuId: skuVal,
+				skuDisplayName: foundSku.displayName,
+				quantity: { value: qtyVal, unit: "each" },
+				expiresAt: Date.now() + 5 * 60 * 1000,
+			};
+
+			const cas = await ctx.kv.compareAndSet(LOC_MOVE_KEY, existingIntentRecord?.revision ?? null, moveIntent);
+			if (!cas.applied) return notice("Location move changed", "Reload to prepare move.");
+			return await render(ctx, adminId);
+		}
+
 		if (interaction.type === "form_submit" && interaction.action_id === "register_sku") {
 			const stored = await readSession(ctx);
 			if (!stored || stored.session.phase !== "token" || stored.session.expiresAt <= Date.now()) return render(ctx, adminId);
-			const existing = await ctx.kv.getVersioned<unknown>("state:sku-registration-intent");
+			const existing = await ctx.kv.getVersioned<unknown>(SKU_REG_KEY);
 			if (existing) {
 				const prior = registrationIntentSchema.safeParse(existing.value);
 				if (!prior.success) return notice("SKU registration requires its originating administrator", "Resolve the preserved registration request first.");
@@ -1122,7 +1058,7 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 				sku: interaction.values.sku,
 				displayNameIfNew: interaction.values.display_name,
 			};
-			const saved = await ctx.kv.compareAndSet("state:sku-registration-intent", null, pending);
+			const saved = await ctx.kv.compareAndSet(SKU_REG_KEY, null, pending);
 			if (!saved.applied) return render(ctx, adminId);
 			return await executeRegistration(ctx, adminId, stored.session.token, pending.commandId);
 		}
@@ -1130,7 +1066,7 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 		if (interaction.type === "form_submit" && interaction.action_id === "preview_opening_balance") {
 			const stored = await readSession(ctx);
 			if (!stored || stored.session.phase !== "token" || stored.session.expiresAt <= Date.now()) return render(ctx, adminId);
-			const existing = await ctx.kv.getVersioned<unknown>("state:opening-balance-intent");
+			const existing = await ctx.kv.getVersioned<unknown>(OPEN_KEY);
 			const admittedRevision = existing?.revision ?? null;
 			if (existing) {
 				const prior = openingIntentSchema.safeParse(existing.value);
@@ -1138,7 +1074,7 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 				requireOriginatingAdministrator(prior.data.initiatingAdminId, adminId);
 				if (prior.data.status === "pending") return notice("Initial stock pending", "Retry or resolve the existing initial-stock command first.");
 			}
-			const locationsData = z.object({ locations: z.array(z.object({ name: z.string(), locationId: id })) }).parse(await api(ctx, stored.session.token, "/v1/locations"));
+			const locationsData = locationsSchema.parse(await api(ctx, stored.session.token, "/v1/locations"));
 			if (!locationsData.locations.some(l => l.locationId === interaction.values.location_id)) return notice("Location not found", "The selected location is not active in this inventory operation.");
 			const eligibility = openingEligibilitySchema.parse(await api(ctx, stored.session.token, "/v1/stock/opening/eligibility?sku_id=" + encodeURIComponent(interaction.values.sku_id) + "&location_id=" + encodeURIComponent(interaction.values.location_id)));
 			if (eligibility.key.skuId !== interaction.values.sku_id || eligibility.key.locationId !== interaction.values.location_id || eligibility.location.locationId !== interaction.values.location_id) return notice("Initial stock unavailable", "The authoritative SKU or location identity did not match the request.");
@@ -1151,7 +1087,7 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 				references: [],
 			}));
 			const command: OpeningCommand = {
-				schema: "dinkuskit.inventory.command/v1",
+				schema: CMD_SCHEMA,
 				commandId: crypto.randomUUID(),
 				type: "stock.opening_balance",
 				context: preview.context,
@@ -1161,7 +1097,7 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 				expectedVersions: [{ skuId: preview.effect.skuId, locationId: preview.context.locationId, version: preview.effect.balanceBefore.version }],
 			};
 			const next: OpeningIntent = { status: "preview", initiatingAdminId: adminId, preview, command, expiresAt: Date.parse(preview.confirmation.expiresAt) };
-			await ctx.kv.compareAndSet("state:opening-balance-intent", admittedRevision, next);
+			await ctx.kv.compareAndSet(OPEN_KEY, admittedRevision, next);
 			return await render(ctx, adminId);
 		}
 
@@ -1171,7 +1107,7 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 			if (!stored || stored.session.phase !== "token" || stored.session.expiresAt <= Date.now()) return render(ctx, adminId);
 
 			// Check if an adjustment is already pending
-			const existingIntentRecord = await ctx.kv.getVersioned<unknown>("state:stock-adjustment-intent");
+			const existingIntentRecord = await ctx.kv.getVersioned<unknown>(ADJ_KEY);
 			if (existingIntentRecord) {
 				const existingParsed = adjustmentIntentSchema.safeParse(existingIntentRecord.value);
 				if (!existingParsed.success) return notice("Adjustment requires its originating administrator", "This adjustment is preserved safely. Resolve the existing legacy state before preparing another.");
@@ -1182,7 +1118,7 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 			const locId = interaction.values.location_id ?? (await ctx.kv.get<string>("state:selected-location"));
 			if (!locId) return notice("Location required", "Explicit active stock location is required.");
 
-			const locationsData = z.object({ locations: z.array(z.object({ name: z.string(), locationId: id })) }).parse(await api(ctx, stored.session.token, "/v1/locations"));
+			const locationsData = locationsSchema.parse(await api(ctx, stored.session.token, "/v1/locations"));
 			const targetLocation = locationsData.locations.find(l => l.locationId === locId);
 			if (!targetLocation) return notice("Location not found", "The selected location is not active in this inventory operation.");
 
@@ -1206,7 +1142,7 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 			const preview = adjustmentPreviewSchema.parse(previewRaw);
 			const commandId = crypto.randomUUID();
 			const command: StockCommand = {
-				schema: "dinkuskit.inventory.command/v1",
+				schema: CMD_SCHEMA,
 				commandId,
 				type: "stock.adjust",
 				context: {
@@ -1235,7 +1171,7 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 				command,
 				expiresAt: Date.parse(preview.confirmation.expiresAt),
 			};
-			const latestIntent = await ctx.kv.getVersioned<unknown>("state:stock-adjustment-intent");
+			const latestIntent = await ctx.kv.getVersioned<unknown>(ADJ_KEY);
 			if (latestIntent) {
 				const latestParsed = adjustmentIntentSchema.safeParse(latestIntent.value);
 				if (!latestParsed.success) return notice("Adjustment requires its originating administrator", "This adjustment is preserved safely. Resolve the existing legacy state before preparing another.");
@@ -1243,114 +1179,41 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 				if (latestParsed.data.status === "pending") {
 					return notice("Adjustment pending", "An adjustment is currently pending confirmation.");
 				}
-				await ctx.kv.compareAndSet("state:stock-adjustment-intent", latestIntent.revision, intent);
+				await ctx.kv.compareAndSet(ADJ_KEY, latestIntent.revision, intent);
 			} else {
-				await ctx.kv.compareAndSet("state:stock-adjustment-intent", null, intent);
+				await ctx.kv.compareAndSet(ADJ_KEY, null, intent);
 			}
 			return await render(ctx, adminId);
 		}
 
-		// Handle confirm stock adjustment action
-		if (interaction.type === "block_action" && interaction.action_id === "confirm_adjustment") {
-			const stored = await readSession(ctx);
-			if (!stored || stored.session.phase !== "token" || stored.session.expiresAt <= Date.now()) return render(ctx, adminId);
-			return await executeAdjustmentConfirm(ctx, adminId, stored.session.token, interaction.value);
-		}
-
-		// Handle retry stock adjustment action
-		if (interaction.type === "block_action" && interaction.action_id === "retry_adjustment") {
-			const stored = await readSession(ctx);
-			if (!stored || stored.session.phase !== "token" || stored.session.expiresAt <= Date.now()) return render(ctx, adminId);
-			return await executeAdjustmentConfirm(ctx, adminId, stored.session.token, interaction.value);
-		}
-
-		if (interaction.type === "block_action" && (interaction.action_id === "confirm_opening_balance" || interaction.action_id === "retry_opening_balance")) {
-			const stored = await readSession(ctx);
-			if (!stored || stored.session.phase !== "token" || stored.session.expiresAt <= Date.now()) return render(ctx, adminId);
-			return await executeOpeningConfirm(ctx, adminId, stored.session.token, interaction.value);
-		}
-
-		if (interaction.type === "block_action" && interaction.action_id === "retry_registration") {
-			const stored = await readSession(ctx);
-			if (!stored || stored.session.phase !== "token" || stored.session.expiresAt <= Date.now() || typeof interaction.value !== "string") return render(ctx, adminId);
-			return await executeRegistration(ctx, adminId, stored.session.token, interaction.value);
-		}
-
-		if (interaction.type === "block_action" && interaction.action_id === "clear_registration_result") {
-			if (typeof interaction.value !== "string" || !interaction.value.trim()) return render(ctx, adminId);
-			const record = await ctx.kv.getVersioned<unknown>("state:sku-registration-intent");
-			const parsed = record && registrationIntentSchema.safeParse(record.value);
-			if (!record || !parsed || !parsed.success || parsed.data.status === "pending") return render(ctx, adminId);
-			requireOriginatingAdministrator(parsed.data.initiatingAdminId, adminId);
-			if (parsed.data.commandId === interaction.value) await ctx.kv.compareAndDelete("state:sku-registration-intent", record.revision);
-			return await render(ctx, adminId);
-		}
-
-		if (interaction.type === "block_action" && interaction.action_id === "cancel_opening_balance") {
-			if (typeof interaction.value !== "string" || !interaction.value.trim()) return render(ctx, adminId);
-			const record = await ctx.kv.getVersioned<unknown>("state:opening-balance-intent");
-			const parsed = record && openingIntentSchema.safeParse(record.value);
-			if (!record || !parsed || !parsed.success || parsed.data.status !== "preview") return render(ctx, adminId);
-			requireOriginatingAdministrator(parsed.data.initiatingAdminId, adminId);
-			if (parsed.data.command.commandId === interaction.value) await ctx.kv.compareAndDelete("state:opening-balance-intent", record.revision);
-			return await render(ctx, adminId);
-		}
-
-		if (interaction.type === "block_action" && interaction.action_id === "clear_opening_balance_result") {
-			if (typeof interaction.value !== "string" || !interaction.value.trim()) return render(ctx, adminId);
-			const record = await ctx.kv.getVersioned<unknown>("state:opening-balance-intent");
-			const parsed = record && openingIntentSchema.safeParse(record.value);
-			if (!record || !parsed || !parsed.success || (parsed.data.status !== "committed" && parsed.data.status !== "rejected")) return render(ctx, adminId);
-			requireOriginatingAdministrator(parsed.data.initiatingAdminId, adminId);
-			if (parsed.data.commandId === interaction.value) await ctx.kv.compareAndDelete("state:opening-balance-intent", record.revision);
-			return await render(ctx, adminId);
-		}
-
-		// Handle cancel adjustment (only cancels unsubmitted preview)
-		if (interaction.type === "block_action" && interaction.action_id === "cancel_adjustment") {
-			if (typeof interaction.value !== "string" || interaction.value.trim() === "") {
-				return render(ctx, adminId);
-			}
-			const intentRecord = await ctx.kv.getVersioned<unknown>("state:stock-adjustment-intent");
-			if (!intentRecord) return render(ctx, adminId);
-			const intentParsed = adjustmentIntentSchema.safeParse(intentRecord.value);
-			if (!intentParsed.success || intentParsed.data.status !== "preview") {
-				return render(ctx, adminId);
-			}
-			requireOriginatingAdministrator(intentParsed.data.initiatingAdminId, adminId);
-			if (intentParsed.data.command.commandId !== interaction.value) {
-				return render(ctx, adminId);
-			}
-			await ctx.kv.compareAndDelete("state:stock-adjustment-intent", intentRecord.revision);
-			return await render(ctx, adminId);
-		}
-
-		// Handle clear adjustment result (only clears committed or rejected terminal state)
-		if (interaction.type === "block_action" && interaction.action_id === "clear_adjustment_result") {
-			if (typeof interaction.value !== "string" || interaction.value.trim() === "") {
-				return render(ctx, adminId);
-			}
-			const intentRecord = await ctx.kv.getVersioned<unknown>("state:stock-adjustment-intent");
-			if (!intentRecord) return render(ctx, adminId);
-			const intentParsed = adjustmentIntentSchema.safeParse(intentRecord.value);
-			if (!intentParsed.success || (intentParsed.data.status !== "committed" && intentParsed.data.status !== "rejected")) {
-				return render(ctx, adminId);
-			}
-			requireOriginatingAdministrator(intentParsed.data.initiatingAdminId, adminId);
-			if (intentParsed.data.commandId !== interaction.value) {
-				return render(ctx, adminId);
-			}
-			await ctx.kv.compareAndDelete("state:stock-adjustment-intent", intentRecord.revision);
-			return await render(ctx, adminId);
+		if (interaction.type === "block_action") {
+			const a = interaction.action_id;
+			const v = interaction.value;
+			const withToken = async (fn: (token: string) => Promise<BlockResponse>) => {
+				const s = await readSession(ctx);
+				if (!s || s.session.phase !== "token" || s.session.expiresAt <= Date.now()) return render(ctx, adminId);
+				return await fn(s.session.token);
+			};
+			if (a === "confirm_adjustment" || a === "retry_adjustment") return await withToken(t => executeAdjustmentConfirm(ctx, adminId, t, v));
+			if (a === "cancel_adjustment") { await clearIntentIfMatching(ctx, ADJ_KEY, adminId, v, ["preview"]); return render(ctx, adminId); }
+			if (a === "clear_adjustment_result") { await clearIntentIfMatching(ctx, ADJ_KEY, adminId, v, ["committed", "rejected"]); return render(ctx, adminId); }
+			if (a === "confirm_opening_balance" || a === "retry_opening_balance") return await withToken(t => executeOpeningConfirm(ctx, adminId, t, v));
+			if (a === "cancel_opening_balance") { await clearIntentIfMatching(ctx, OPEN_KEY, adminId, v, ["preview"]); return render(ctx, adminId); }
+			if (a === "clear_opening_balance_result") { await clearIntentIfMatching(ctx, OPEN_KEY, adminId, v, ["committed", "rejected"]); return render(ctx, adminId); }
+			if (a === "retry_registration") return await withToken(t => typeof v === "string" ? executeRegistration(ctx, adminId, t, v) : render(ctx, adminId));
+			if (a === "clear_registration_result") { await clearIntentIfMatching(ctx, SKU_REG_KEY, adminId, v, ["committed", "rejected"]); return render(ctx, adminId); }
+			if (a === "confirm_location_move" || a === "retry_location_move") return await withToken(t => executeLocationMoveConfirm(ctx, adminId, t, v));
+			if (a === "cancel_location_move") { await clearIntentIfMatching(ctx, LOC_MOVE_KEY, adminId, v, ["preview"]); return render(ctx, adminId); }
+			if (a === "clear_location_move_result") { await clearIntentIfMatching(ctx, LOC_MOVE_KEY, adminId, v, ["committed", "rejected"]); return render(ctx, adminId); }
 		}
 
 		if (interaction.type === "form_submit" || (interaction.type === "block_action" && interaction.action_id === "retry")) {
 			const stored = await readSession(ctx);
 			if (!stored || stored.session.phase !== "token" || stored.session.expiresAt <= Date.now()) return render(ctx, adminId);
-			let intent = await ctx.kv.get<unknown>("state:connection-intent");
+			let intent = await ctx.kv.get<unknown>(CONN_INTENT_KEY);
 			if (interaction.type === "form_submit") {
 				const candidate = interaction.action_id === "create" ? { type: "create", requestId: crypto.randomUUID(), locationName: interaction.values.location_name } : { type: "reconnect", requestId: crypto.randomUUID(), operationId: interaction.values.operation_id };
-				if (!intent) { await ctx.kv.compareAndSet("state:connection-intent", null, candidate); intent = await ctx.kv.get("state:connection-intent"); }
+				if (!intent) { await ctx.kv.compareAndSet(CONN_INTENT_KEY, null, candidate); intent = await ctx.kv.get(CONN_INTENT_KEY); }
 				else {
 					const previous = intentSchema.parse(intent);
 					if (previous.type !== candidate.type || JSON.stringify({ ...previous, requestId: "" }) !== JSON.stringify({ ...candidate, requestId: "" })) return notice("Connection already started", "Use Retry to resolve your original connection before changing the setup.");
@@ -1358,8 +1221,8 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 			} else if (!intent) {
 				const result = statusSchema.parse(await api(ctx, stored.session.token, "/v1/status"));
 				if (result.status === "unconnected") return render(ctx, adminId);
-				await ctx.kv.compareAndSet("state:connection-intent", null, { type: "reconnect", requestId: crypto.randomUUID(), operationId: result.operation.operationId });
-				intent = await ctx.kv.get("state:connection-intent");
+				await ctx.kv.compareAndSet(CONN_INTENT_KEY, null, { type: "reconnect", requestId: crypto.randomUUID(), operationId: result.operation.operationId });
+				intent = await ctx.kv.get(CONN_INTENT_KEY);
 			}
 			const frozen = intentSchema.parse(intent);
 			activeRequestId = frozen.requestId;
@@ -1368,7 +1231,7 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 		return await render(ctx, adminId);
 	} catch (error) {
 		if (error instanceof StoreConnectError) {
-			if (error.code === "wrong_originating_admin" && ((parsed.data.type === "form_submit" && ["preview_adjustment", "preview_opening_balance", "register_sku"].includes(parsed.data.action_id)) || (parsed.data.type === "block_action" && ["confirm_adjustment", "retry_adjustment", "cancel_adjustment", "clear_adjustment_result", "confirm_opening_balance", "retry_opening_balance", "cancel_opening_balance", "clear_opening_balance_result", "retry_registration", "clear_registration_result"].includes(parsed.data.action_id)))) {
+			if (error.code === "wrong_originating_admin" && ((parsed.data.type === "form_submit" && ["preview_adjustment", "preview_opening_balance", "register_sku", "preview_location_move"].includes(parsed.data.action_id)) || (parsed.data.type === "block_action" && ["confirm_adjustment", "retry_adjustment", "cancel_adjustment", "clear_adjustment_result", "confirm_opening_balance", "retry_opening_balance", "cancel_opening_balance", "clear_opening_balance_result", "retry_registration", "clear_registration_result", "confirm_location_move", "retry_location_move", "cancel_location_move", "clear_location_move_result"].includes(parsed.data.action_id)))) {
 				return notice("Request belongs to another administrator", "Only the administrator who created this request can continue or change it.");
 			}
 			if (error.code === "wrong_originating_admin" || error.code === "connection_in_progress") {
@@ -1381,8 +1244,8 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 		}
 		if (error instanceof InventoryApiError) {
 			if (error.code === "operation_not_found") {
-				const saved = await ctx.kv.getVersioned<unknown>("state:connection-intent");
-				if (saved && intentSchema.parse(saved.value).requestId === activeRequestId) await ctx.kv.compareAndDelete("state:connection-intent", saved.revision);
+				const saved = await ctx.kv.getVersioned<unknown>(CONN_INTENT_KEY);
+				if (saved && intentSchema.parse(saved.value).requestId === activeRequestId) await ctx.kv.compareAndDelete(CONN_INTENT_KEY, saved.revision);
 				return notice("Operation unavailable", "The selected operation is not owned by this account. Reload Inventory to select an owned operation or create a new one.");
 			}
 			if (error.code === "opening_balance_required") {
@@ -1424,7 +1287,7 @@ const plugin: SandboxedPlugin = { routes: {
 		handler: async (routeCtx, ctx) => {
 			const connectionId = z.object({ connection_id: z.string().trim().min(1).max(200) }).safeParse(routeCtx.input);
 			if (!connectionId.success) {
-				return pluginResponse({ status: 404, headers: { "content-type": "application/json" }, body: { kind: "text", value: JSON.stringify({ error: "not_found" }) } });
+				return pluginResponse({ status: 404, headers: { "content-type": APP_JSON }, body: { kind: "text", value: JSON.stringify({ error: "not_found" }) } });
 			}
 			const receipt = await readProof(ctx, connectionId.data.connection_id);
 			const active = await inspectSession(ctx);
@@ -1440,11 +1303,11 @@ const plugin: SandboxedPlugin = { routes: {
 				&& active.expiresAt === receipt.expires_at;
 			const published = bound ? publicProofFor(receipt, connectionId.data.connection_id, Date.now()) : null;
 			if (!published) {
-				return pluginResponse({ status: 404, headers: { "content-type": "application/json" }, body: { kind: "text", value: JSON.stringify({ error: "not_found" }) } });
+				return pluginResponse({ status: 404, headers: { "content-type": APP_JSON }, body: { kind: "text", value: JSON.stringify({ error: "not_found" }) } });
 			}
 			return pluginResponse({
 				status: 200,
-				headers: { "content-type": "application/json" },
+				headers: { "content-type": APP_JSON },
 				body: { kind: "text", value: JSON.stringify(published) },
 			});
 		},

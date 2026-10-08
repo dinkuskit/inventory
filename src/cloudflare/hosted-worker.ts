@@ -164,6 +164,8 @@ export function createHostedInventoryHandler(
 			"/v1/stock/opening/preview",
 			"/v1/stock/opening/confirm",
 			"/v1/receipts",
+			"/v1/transfers",
+			"/v1/stock/transfers",
 		];
 		if (!allowedPaths.includes(path)) return new Response("Not Found", { status: 404 });
 		const respond = (body: unknown, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
@@ -344,6 +346,38 @@ export function createHostedInventoryHandler(
 				};
 				const result = await env.INVENTORY_POOLS.getByName(statusResult.operation.poolId).registerManagedSku(command, principal);
 				return respond(result, result.outcome === "rejected" ? 409 : 200);
+			}
+
+			if (path === "/v1/transfers" || path === "/v1/stock/transfers") {
+				if (request.method !== "POST") return respond({ error: "method_not_allowed" }, 405);
+				const statusResult = await account.status(principal.siteId);
+				if (statusResult.status !== "ready") return respond({ error: "inventory_not_ready", connection: statusResult }, 409);
+				const bodyRead = await readBoundedJson(request, 8192);
+				if ("error" in bodyRead) return respond({ error: bodyRead.error }, bodyRead.error === "request_too_large" ? 413 : 400);
+				let rawBody: any;
+				try { rawBody = JSON.parse(bodyRead.text); } catch { return respond({ error: "invalid_request" }, 400); }
+				const rawCommand = rawBody.command ?? rawBody;
+				if (!rawCommand || typeof rawCommand !== "object" || !rawCommand.type) {
+					return respond({ error: "invalid_request" }, 400);
+				}
+				// Server-fill site and pool from authenticated principal. Do not trust caller-supplied site or pool.
+				const command = {
+					...rawCommand,
+					context: {
+						siteId: principal.siteId,
+						poolId: statusResult.operation.poolId,
+					},
+				};
+				const pool = env.INVENTORY_POOLS.getByName(statusResult.operation.poolId);
+				let transferResult;
+				try {
+					transferResult = await pool.executeStockTransfer(command, {
+						principal: { kind: "human", id: principal.accountId, displayName: "Site Administrator", surface: "emdash" },
+					});
+				} catch (err: any) {
+					return respond({ error: "invalid_command", message: err?.message ?? "Invalid transfer command" }, 400);
+				}
+				return respond(transferResult, transferResult.outcome === "rejected" ? 409 : 200);
 			}
 
 			if (request.method !== "GET") return respond({ error: "method_not_allowed" }, 405);
