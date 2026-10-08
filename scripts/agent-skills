@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 SAARIUS_REPO="https://github.com/saariuslystoned/SaariusSkills.git"
-SAARIUS_SHA="4397e4481a1ee4cce28a516dd32c1d7202fcf124"
+SAARIUS_SHA="1c914f7905cec0be1854c437ba39d3a78ffc3ced"
+SKILL_NAMES=(grilltrack emdash-sites building-emdash-site creating-plugins emdash-cli upgrading-emdash)
 ROOT="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 SKILLS_DIR="${CURSOR_SKILLS_DIR:-$ROOT/.cursor/skills}"
 CACHE_DIR="${AGENT_SKILLS_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/dinkuskit-agent-skills}"
@@ -19,12 +20,15 @@ install_saarius() {
     tmp="$CACHE_DIR/.saarius-$$"; trap 'rm -rf "$tmp" "$lock"' EXIT
     git clone --quiet --filter=blob:none --no-checkout "$SAARIUS_REPO" "$tmp"
     git -C "$tmp" fetch --quiet --depth 1 origin "$SAARIUS_SHA"
-    git -C "$tmp" sparse-checkout set skills/grilltrack
+    git -C "$tmp" sparse-checkout set "${SKILL_NAMES[@]/#/skills/}"
     git -C "$tmp" checkout --quiet "$SAARIUS_SHA"
     rm -rf "$SAARIUS_DIR"; mv "$tmp" "$SAARIUS_DIR"; trap - EXIT
   fi
-  mkdir -p "$SKILLS_DIR"; rm -rf "$SKILLS_DIR/grilltrack"
-  cp -R "$SAARIUS_DIR/skills/grilltrack" "$SKILLS_DIR/grilltrack"
+  mkdir -p "$SKILLS_DIR"
+  for skill_name in "${SKILL_NAMES[@]}"; do
+    rm -rf "$SKILLS_DIR/$skill_name"
+    cp -R "$SAARIUS_DIR/skills/$skill_name" "$SKILLS_DIR/$skill_name"
+  done
   rm -rf "$lock"; trap - EXIT
 }
 find_cli() {
@@ -54,8 +58,4 @@ install_smoky() {
     cp -R "$skill" "$SKILLS_DIR/$(basename "$skill")"
   done
 }
-if [ -z "${SMOKY_SKILLS_REPO:-}" ] || [ -z "${SMOKY_SKILLS_SHA:-}" ]; then
-  printf 'agent-skills: GrillTrack installed; SmokySkills unavailable here (set its repo and immutable SHA when access is provided).\n' >&2
-else
-  install_smoky
-fi
+printf 'agent-skills: installed SaariusSkills GrillTrack and EmDash skills at %s.\n' "$SAARIUS_SHA" >&2
