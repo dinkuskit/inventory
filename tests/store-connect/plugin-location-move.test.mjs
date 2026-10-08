@@ -91,7 +91,8 @@ const mockSkus = [
 function defaultFetchHandler(calls) {
 	return async (req) => {
 		const url = new URL(req.url);
-		calls?.push({ method: req.method, path: url.pathname, headers: Object.fromEntries(req.headers.entries()) });
+		const body = req.method === "POST" ? await req.json().catch(() => null) : null;
+		calls?.push({ method: req.method, path: url.pathname, headers: Object.fromEntries(req.headers.entries()), body });
 
 		if (url.pathname === "/v1/status") {
 			return Response.json({
@@ -124,20 +125,19 @@ function defaultFetchHandler(calls) {
 			return Response.json({ outcome: "ineligible", reason: "has_history" });
 		}
 		if (url.pathname === "/v1/transfers") {
-			const body = await req.json();
 			const cmd = body.command;
 			if (cmd.type === "transfer.create") {
 				return Response.json({
 					outcome: "committed",
 					commandId: cmd.commandId,
-					transfer: { transferId: "xfer_100", version: 1 },
+					transfer: { transferId: "xfer_100", version: "1" },
 				});
 			}
 			if (cmd.type === "transfer.dispatch") {
 				return Response.json({
 					outcome: "committed",
 					commandId: cmd.commandId,
-					transfer: { transferId: "xfer_100", version: 2 },
+					transfer: { transferId: "xfer_100", version: "2" },
 				});
 			}
 			if (cmd.type === "transfer.receive") {
@@ -247,6 +247,15 @@ test("location move: full flow through create -> dispatch -> receive whole trans
 	// Verify the 3 transfer calls were made with server headers
 	const transferCalls = calls.filter(c => c.path === "/v1/transfers");
 	assert.equal(transferCalls.length, 3);
+	const create = transferCalls[0].body.command;
+	assert.equal(create.type, "transfer.create");
+	assert.equal(create.payload.reference, null);
+	assert.equal(create.payload.note, null);
+	assert.match(create.payload.expectedDispatchDate, /^\d{4}-\d{2}-\d{2}$/);
+	assert.equal(create.payload.expectedArrivalDate, create.payload.expectedDispatchDate);
+	assert.deepEqual(create.expectedVersions, []);
+	assert.deepEqual(transferCalls[1].body.command.expectedVersions, [{ transferId: "xfer_100", version: "1" }]);
+	assert.deepEqual(transferCalls[2].body.command.expectedVersions, [{ transferId: "xfer_100", version: "2" }]);
 	for (const call of transferCalls) {
 		assert.equal(call.headers["authorization"], "Bearer tok_test_123");
 		assert.ok(call.headers["x-inventory-site"]);

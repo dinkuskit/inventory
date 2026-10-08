@@ -237,7 +237,7 @@ const moveDataSchema = z.object({
 	quantity: qty,
 	expiresAt: z.number(),
 	transferId: z.string().optional(),
-	transferVersion: z.number().optional(),
+	transferVersion: z.string().optional(),
 });
 const locationMoveIntentSchema = z.discriminatedUnion("status", [
 	moveDataSchema.extend({ status: z.literal("preview") }),
@@ -644,7 +644,7 @@ async function executeLocationMoveConfirm(ctx: PluginContext, adminId: string, t
 	};
 
 	let tid = frozen.transferId;
-	let tver = frozen.transferVersion ?? 1;
+	let tver = frozen.transferVersion ?? "1";
 
 	const updateKv = async (val: any) => {
 		if (revision) {
@@ -658,16 +658,25 @@ async function executeLocationMoveConfirm(ctx: PluginContext, adminId: string, t
 	};
 
 	if (!tid) {
-		const res = await send("transfer.create", "create", { originLocationId: frozen.originLocationId, destinationLocationId: frozen.destinationLocationId, lines: [{ skuId: frozen.skuId, quantity: frozen.quantity }] }, []);
+		const today = new Date().toISOString().slice(0, 10);
+		const res = await send("transfer.create", "create", {
+			reference: null,
+			originLocationId: frozen.originLocationId,
+			destinationLocationId: frozen.destinationLocationId,
+			lines: [{ skuId: frozen.skuId, quantity: frozen.quantity }],
+			note: null,
+			expectedDispatchDate: today,
+			expectedArrivalDate: today,
+		}, []);
 		if (!res) return render(ctx, adminId);
 		if (!res.ok || res.raw?.outcome === "rejected") return fail(res.raw, "transfer_create_failed");
 		tid = res.raw?.transfer?.transferId;
-		tver = res.raw?.transfer?.version ?? 1;
+		tver = String(res.raw?.transfer?.version ?? "1");
 		if (!tid) return render(ctx, adminId);
 		await updateKv({ ...frozen, transferId: tid, transferVersion: tver });
 	}
 
-	for (const [step, ver] of [["dispatch", 1], ["receive", 2]] as const) {
+	for (const [step, ver] of [["dispatch", "1"], ["receive", "2"]] as const) {
 		if (tver === ver) {
 			const res = await send(`transfer.${step}`, step, { transferId: tid }, [{ transferId: tid, version: ver }]);
 			if (!res) return render(ctx, adminId);
@@ -677,7 +686,7 @@ async function executeLocationMoveConfirm(ctx: PluginContext, adminId: string, t
 				if (r) await updateKv({ ...frozen, status: "committed", receipt: { receiptId: r.receiptId, committedAt: r.committedAt } });
 				return render(ctx, adminId);
 			}
-			tver = res.raw?.transfer?.version ?? (ver + 1);
+			tver = String(res.raw?.transfer?.version ?? "2");
 			await updateKv({ ...frozen, transferId: tid, transferVersion: tver });
 		}
 	}

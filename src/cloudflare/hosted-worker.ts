@@ -360,6 +360,9 @@ export function createHostedInventoryHandler(
 				if (!rawCommand || typeof rawCommand !== "object" || !rawCommand.type) {
 					return respond({ error: "invalid_request" }, 400);
 				}
+				if (rawCommand.type !== "transfer.create" && rawCommand.type !== "transfer.dispatch" && rawCommand.type !== "transfer.receive") {
+					return respond({ error: "invalid_request" }, 400);
+				}
 				// Server-fill site and pool from authenticated principal. Do not trust caller-supplied site or pool.
 				const command = {
 					...rawCommand,
