@@ -28,9 +28,10 @@ configuration or Astro routes) is a developer and test setup only. It may not
 offer features the Registry build lacks, except temporary gaps listed here with
 the work that closes them. The project owner set this rule on 2026-10-08.
 
-Inventory's installable plugin is the sandboxed Block Kit plugin in
-`plugins/emdash-inventory/`, backed by the hosted Inventory service. It has no
-native entry and no native-only features.
+Inventory's plugin is the sandboxed Block Kit plugin in
+`plugins/emdash-inventory/`, backed by the hosted Inventory service. It is not
+yet installable or published; Status below says what remains. It has no native
+entry and no native-only features.
 
 ## v1 boundary
 
