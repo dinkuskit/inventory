@@ -33,8 +33,8 @@
     "proof:stock-adjustment:real": "bin/prove-stock-adjustment-real",
     "proof:stock-reservation:real": "bin/prove-stock-reservation-real",
     "test:hosted": "vitest run --config vitest.hosted.config.ts",
-    "build:plugin": "emdash-plugin build --dir plugins/emdash-inventory",
-    "bundle:plugin": "emdash-plugin bundle --dir plugins/emdash-inventory",
+    "build:plugin": "cd plugins/emdash-inventory && emdash-plugin build",
+    "bundle:plugin": "cd plugins/emdash-inventory && emdash-plugin bundle",
     "typecheck:plugin": "tsc --project tsconfig.plugin.json"
   },
   "devDependencies": {

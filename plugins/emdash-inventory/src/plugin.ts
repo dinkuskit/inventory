@@ -2,7 +2,7 @@ import type { SandboxedPlugin } from "emdash/plugin";
 import { pluginResponse } from "emdash/plugin";
 import type { PluginContext } from "emdash";
 import type { Block, BlockResponse } from "@emdash-cms/blocks/server";
-import { z } from "zod";
+import * as z from "zod/mini";
 import {
 	STORE_CONNECT_CALLBACK_PATH,
 	STORE_CONNECT_CLIENT_ID,
@@ -40,11 +40,11 @@ const APP_JSON = "application/json";
 // The proof host maps these declared origins to local fixtures; shop owners never configure them.
 const SERVICE = "https://inventory.dinkuskit.invalid";
 const WEBSITE = "https://accounts.dinkuskit.invalid";
-const id = z.string().min(1).max(200);
+const id = z.string().check(z.minLength(1), z.maxLength(200));
 const qty = z.object({ value: z.string(), unit: z.string() });
 const locationsSchema = z.object({ locations: z.array(z.object({ name: z.string(), locationId: id })) });
 const cmdContext = z.object({ siteId: z.string(), poolId: z.string(), locationId: z.string() });
-const cmdRefs = z.array(z.object({ kind: z.string(), id: z.string() })).default([]);
+const cmdRefs = z._default(z.array(z.object({ kind: z.string(), id: z.string() })), []);
 const cmdExpected = z.array(z.object({ skuId: z.string(), locationId: z.string(), version: z.string() }));
 const cmdReason = z.object({ code: z.string(), note: z.string() });
 const cmdConfirm = z.object({ value: z.string(), expiresAt: z.string() });
@@ -52,14 +52,14 @@ const receiptSchema = z.object({ receiptId: z.string(), committedAt: z.string() 
 
 
 const intentSchema = z.discriminatedUnion("type", [
-	z.object({ type: z.literal("create"), requestId: id, locationName: z.string().trim().min(1).max(200) }).strict(),
-	z.object({ type: z.literal("reconnect"), requestId: id, operationId: id }).strict(),
+	z.strictObject({ type: z.literal("create"), requestId: id, locationName: z.string().check(z.trim(), z.minLength(1), z.maxLength(200)) }),
+	z.strictObject({ type: z.literal("reconnect"), requestId: id, operationId: id }),
 ]);
-const operationSchema = z.object({ operationId: id, poolId: id, locationName: z.string(), locationId: z.string().nullable(), status: z.enum(["pending", "ready", "failed"]), failureCode: z.string().nullable() });
+const operationSchema = z.object({ operationId: id, poolId: id, locationName: z.string(), locationId: z.nullable(z.string()), status: z.enum(["pending", "ready", "failed"]), failureCode: z.nullable(z.string()) });
 const statusSchema = z.discriminatedUnion("status", [z.object({ status: z.literal("unconnected") }), z.object({ status: z.enum(["pending", "ready", "failed"]), operation: operationSchema })]);
-const managedSkuIdentitySchema = z.object({ inventorySkuId: id, sku: z.string(), displayName: z.string() }).strict();
-const managedSkuSchema = managedSkuIdentitySchema.extend({ unit: z.literal("each") });
-const managedSkuListSchema = z.object({ skus: z.array(managedSkuSchema) }).strict();
+const managedSkuIdentitySchema = z.strictObject({ inventorySkuId: id, sku: z.string(), displayName: z.string() });
+const managedSkuSchema = z.extend(managedSkuIdentitySchema, { unit: z.literal("each") });
+const managedSkuListSchema = z.strictObject({ skus: z.array(managedSkuSchema) });
 type Session = StoreConnectSession;
 
 class InventoryApiError extends Error {
@@ -71,73 +71,73 @@ const previewEffectBalanceSchema = z.object({ onHand: qty, reserved: qty, availa
 
 const adjustmentWarningSchema = z.object({ code: z.literal("negative_available"), reserved: qty, oversoldBy: qty, message: z.string() });
 
-const adjustmentPreviewSchema = z.object({
+const adjustmentPreviewSchema = z.strictObject({
 	schema: z.literal("dinkuskit.inventory.stock-adjustment-preview/v1"),
 	type: z.literal("stock.adjust"),
-	context: z.object({
+	context: z.strictObject({
 		siteId: z.string(),
 		poolId: z.string(),
 		locationId: z.string(),
-	}).strict(),
-	effect: z.object({
+	}),
+	effect: z.strictObject({
 		skuId: z.string(),
 		locationId: z.string(),
 		onHandDelta: qty,
 		reservedDelta: qty,
 		balanceBefore: previewEffectBalanceSchema,
 		balanceAfter: previewEffectBalanceSchema,
-	}).strict(),
-	reason: z.object({ note: z.string() }).strict(),
-	references: z.array(z.object({ kind: z.string(), id: z.string() }).strict()).default([]),
-	warnings: z.array(adjustmentWarningSchema).default([]),
-	confirmation: z.object({
+	}),
+	reason: z.strictObject({ note: z.string() }),
+	references: z._default(z.array(z.strictObject({ kind: z.string(), id: z.string() })), []),
+	warnings: z._default(z.array(adjustmentWarningSchema), []),
+	confirmation: z.strictObject({
 		value: z.string(),
 		expiresAt: z.string(),
-	}).strict(),
-}).strict();
+	}),
+});
 
 type AdjustmentPreview = z.infer<typeof adjustmentPreviewSchema>;
 
-const stockCommandSchema = z.object({
+const stockCommandSchema = z.strictObject({
 	schema: z.literal(CMD_SCHEMA),
 	commandId: z.string(),
 	type: z.literal("stock.adjust"),
-	context: z.object({
+	context: z.strictObject({
 		siteId: z.string(),
 		poolId: z.string(),
 		locationId: z.string(),
-	}).strict(),
+	}),
 	payload: z.object({
 		skuId: z.string(),
-		delta: z.object({ value: z.string(), unit: z.string() }).strict(),
+		delta: z.strictObject({ value: z.string(), unit: z.string() }),
 	}),
-	reason: z.object({ note: z.string() }).strict(),
-	references: z.array(z.object({ kind: z.string(), id: z.string() }).strict()).default([]),
-	expectedVersions: z.array(z.object({
+	reason: z.strictObject({ note: z.string() }),
+	references: z._default(z.array(z.strictObject({ kind: z.string(), id: z.string() })), []),
+	expectedVersions: z.array(z.strictObject({
 		skuId: z.string(),
 		locationId: z.string(),
 		version: z.string(),
-	}).strict()).min(1),
-}).strict();
+	})).check(z.minLength(1)),
+});
 
 type StockCommand = z.infer<typeof stockCommandSchema>;
 
 const adjustmentIntentSchema = z.discriminatedUnion("status", [
-	z.object({
+	z.strictObject({
 		status: z.literal("preview"),
 		initiatingAdminId: id,
 		preview: adjustmentPreviewSchema,
 		command: stockCommandSchema,
 		expiresAt: z.number(),
-	}).strict(),
-	z.object({
+	}),
+	z.strictObject({
 		status: z.literal("pending"),
 		initiatingAdminId: id,
 		preview: adjustmentPreviewSchema,
 		command: stockCommandSchema,
 		expiresAt: z.number(),
-	}).strict(),
-	z.object({
+	}),
+	z.strictObject({
 		status: z.literal("committed"),
 		initiatingAdminId: id,
 		commandId: z.string(),
@@ -145,28 +145,29 @@ const adjustmentIntentSchema = z.discriminatedUnion("status", [
 			receiptId: z.string(),
 			committedAt: z.string(),
 		}),
-	}).strict(),
-	z.object({
+	}),
+	z.strictObject({
 		status: z.literal("rejected"),
 		initiatingAdminId: id,
 		commandId: z.string(),
 		code: z.string(),
-		message: z.string().optional(),
-	}).strict(),
+		message: z.optional(z.string()),
+	}),
 ]);
 
 type AdjustmentIntent = z.infer<typeof adjustmentIntentSchema>;
 
-const openingEffectBalanceSchema = previewEffectBalanceSchema.extend({
+const openingEffectBalanceSchema = z.strictObject({
+ ...previewEffectBalanceSchema.shape,
  outgoingTransferCommitted: z.object({ value: z.string(), unit: z.string() }),
  expected: z.object({ value: z.string(), unit: z.string() }),
  inTransit: z.object({ value: z.string(), unit: z.string() }),
-}).strict();
-const openingPreviewSchema = adjustmentPreviewSchema.omit({ warnings: true }).extend({
+});
+const openingPreviewSchema = z.extend(z.omit(adjustmentPreviewSchema, { warnings: true }), {
  schema: z.literal("dinkuskit.inventory.opening-balance-preview/v1"),
  type: z.literal("stock.opening_balance"),
- effect: adjustmentPreviewSchema.shape.effect.extend({ balanceBefore: openingEffectBalanceSchema, balanceAfter: openingEffectBalanceSchema }),
- reason: z.object({ code: z.string(), note: z.string() }).strict(),
+ effect: z.extend(adjustmentPreviewSchema.shape.effect, { balanceBefore: openingEffectBalanceSchema, balanceAfter: openingEffectBalanceSchema }),
+ reason: z.strictObject({ code: z.string(), note: z.string() }),
  warning: z.string(),
 });
 type OpeningPreview = z.infer<typeof openingPreviewSchema>;
@@ -176,52 +177,52 @@ const openingEligibilitySchema = z.object({
 	key: z.object({ poolId: z.string(), skuId: z.string(), locationId: z.string() }),
 	eligibility: z.enum(["eligible", "history_exists"]),
 	location: z.object({ locationId: z.string(), status: z.literal("active") }),
-	balance: openingEffectBalanceSchema.extend({ hasStockHistory: z.boolean() }).passthrough().nullable(),
+	balance: z.nullable(z.catchall(z.extend(openingEffectBalanceSchema, { hasStockHistory: z.boolean() }), z.unknown())),
 	hasStockHistory: z.boolean(),
 });
 
-const openingCommandSchema = stockCommandSchema.extend({
+const openingCommandSchema = z.extend(stockCommandSchema, {
  type: z.literal("stock.opening_balance"),
- payload: z.object({ skuId: z.string(), quantity: z.object({ value: z.string(), unit: z.string() }).strict() }).strict(),
+ payload: z.strictObject({ skuId: z.string(), quantity: z.strictObject({ value: z.string(), unit: z.string() }) }),
  reason: openingPreviewSchema.shape.reason,
- expectedVersions: stockCommandSchema.shape.expectedVersions.length(1),
+ expectedVersions: stockCommandSchema.shape.expectedVersions.check(z.length(1)),
 });
 type OpeningCommand = z.infer<typeof openingCommandSchema>;
-const openingProgressSchema = z.object({ initiatingAdminId: id, preview: openingPreviewSchema, command: openingCommandSchema, expiresAt: z.number() }).strict();
+const openingProgressSchema = z.strictObject({ initiatingAdminId: id, preview: openingPreviewSchema, command: openingCommandSchema, expiresAt: z.number() });
 const openingIntentSchema = z.discriminatedUnion("status", [
- openingProgressSchema.extend({ status: z.literal("preview") }),
- openingProgressSchema.extend({ status: z.literal("pending") }),
- adjustmentIntentSchema.options[2],
- adjustmentIntentSchema.options[3],
+ z.extend(openingProgressSchema, { status: z.literal("preview") }),
+ z.extend(openingProgressSchema, { status: z.literal("pending") }),
+ adjustmentIntentSchema.def.options[2],
+ adjustmentIntentSchema.def.options[3],
 ]);
 type OpeningIntent = z.infer<typeof openingIntentSchema>;
 
 const registrationBaseSchema = z.object({ initiatingAdminId: id, commandId: id });
-const registrationResultBaseSchema = z.object({ schema: z.literal("dinkuskit.inventory.command-result/v1").optional(), commandId: id });
+const registrationResultBaseSchema = z.object({ schema: z.optional(z.literal("dinkuskit.inventory.command-result/v1")), commandId: id });
 const registrationResultSchema = z.discriminatedUnion("outcome", [
- registrationResultBaseSchema.extend({ outcome: z.enum(["registered", "existing"]), inventorySku: managedSkuIdentitySchema }),
- registrationResultBaseSchema.extend({ outcome: z.literal("rejected"), code: z.string(), message: z.string().optional() }),
+ z.extend(registrationResultBaseSchema, { outcome: z.enum(["registered", "existing"]), inventorySku: managedSkuIdentitySchema }),
+ z.extend(registrationResultBaseSchema, { outcome: z.literal("rejected"), code: z.string(), message: z.optional(z.string()) }),
 ]);
 const registrationIntentSchema = z.discriminatedUnion("status", [
- registrationBaseSchema.extend({ status: z.literal("pending"), sku: z.string(), displayNameIfNew: z.string() }).strict(),
- registrationBaseSchema.extend({ status: z.literal("committed"), inventorySku: managedSkuIdentitySchema }).strict(),
- registrationBaseSchema.extend({ status: z.literal("rejected"), code: z.string(), message: z.string().optional() }).strict(),
+ z.strictObject({ ...registrationBaseSchema.shape, status: z.literal("pending"), sku: z.string(), displayNameIfNew: z.string() }),
+ z.strictObject({ ...registrationBaseSchema.shape, status: z.literal("committed"), inventorySku: managedSkuIdentitySchema }),
+ z.strictObject({ ...registrationBaseSchema.shape, status: z.literal("rejected"), code: z.string(), message: z.optional(z.string()) }),
 ]);
 type RegistrationIntent = z.infer<typeof registrationIntentSchema>;
 
 const canonicalStockAdjustmentResultSchema = z.discriminatedUnion("outcome", [
 	z.object({
-		schema: z.literal("dinkuskit.inventory.command-result/v1").optional(),
+		schema: z.optional(z.literal("dinkuskit.inventory.command-result/v1")),
 		outcome: z.literal("committed"),
 		commandId: z.string(),
 		receipt: receiptSchema,
 	}),
 	z.object({
-		schema: z.literal("dinkuskit.inventory.command-result/v1").optional(),
+		schema: z.optional(z.literal("dinkuskit.inventory.command-result/v1")),
 		outcome: z.literal("rejected"),
 		commandId: z.string(),
 		code: z.string(),
-		message: z.string().optional(),
+		message: z.optional(z.string()),
 	}),
 ]);
 
@@ -236,14 +237,14 @@ const moveDataSchema = z.object({
 	skuDisplayName: z.string(),
 	quantity: qty,
 	expiresAt: z.number(),
-	transferId: z.string().optional(),
-	transferVersion: z.string().optional(),
+	transferId: z.optional(z.string()),
+	transferVersion: z.optional(z.string()),
 });
 const locationMoveIntentSchema = z.discriminatedUnion("status", [
-	moveDataSchema.extend({ status: z.literal("preview") }),
-	moveDataSchema.extend({ status: z.literal("pending") }),
-	moveDataSchema.extend({ status: z.literal("committed"), receipt: receiptSchema }),
-	adjustmentIntentSchema.options[3],
+	z.extend(moveDataSchema, { status: z.literal("preview") }),
+	z.extend(moveDataSchema, { status: z.literal("pending") }),
+	z.extend(moveDataSchema, { status: z.literal("committed"), receipt: receiptSchema }),
+	adjustmentIntentSchema.def.options[3],
 ]);
 type LocationMoveIntent = z.infer<typeof locationMoveIntentSchema>;
 
@@ -256,8 +257,8 @@ const CONFIRMATION_FAILURE_CODES = new Set([
 
 const interactionSchema = z.union([
 	z.object({ type: z.literal("page_load"), page: z.literal("/inventory") }),
-	z.object({ type: z.literal("block_action"), action_id: z.string(), block_id: z.string().optional(), value: z.unknown().optional() }),
-	z.object({ type: z.literal("form_submit"), action_id: z.string(), block_id: z.string().optional(), values: z.any() }),
+	z.object({ type: z.literal("block_action"), action_id: z.string(), block_id: z.optional(z.string()), value: z.optional(z.unknown()) }),
+	z.object({ type: z.literal("form_submit"), action_id: z.string(), block_id: z.optional(z.string()), values: z.any() }),
 ]);
 
 const btn = (action_id: string, label: string, value?: unknown) => ({ type: "button" as const, action_id, label, value: value !== undefined ? value : undefined });
@@ -370,7 +371,7 @@ async function api(ctx: PluginContext, token: string, path: string, input?: unkn
 	});
 	if (!response.ok) {
 		if (response.status === 401) throw new Error("sign_in_required");
-		const rejected = z.object({ error: z.string(), message: z.string().optional() }).safeParse(body);
+		const rejected = z.object({ error: z.string(), message: z.optional(z.string()) }).safeParse(body);
 		if (rejected.success && [400, 403, 404, 409].includes(response.status)) throw new InventoryApiError(rejected.data.error);
 		throw new Error("Inventory request unavailable");
 	}
@@ -560,7 +561,7 @@ async function executeStockConfirm(
 		return await render(ctx, adminId);
 	}
 	if (response.status === 409) {
-		const parsedError = z.object({ error: z.string(), message: z.string().optional() }).safeParse(body);
+		const parsedError = z.object({ error: z.string(), message: z.optional(z.string()) }).safeParse(body);
 		if (parsedError.success && CONFIRMATION_FAILURE_CODES.has(parsedError.data.error) && revision) {
 			await ctx.kv.compareAndSet(key, revision, {
 				status: "rejected", initiatingAdminId: frozen.initiatingAdminId, commandId: frozen.command.commandId, code: parsedError.data.error, message: parsedError.data.message,
@@ -1301,7 +1302,7 @@ const plugin: SandboxedPlugin = { routes: {
 		response: "raw",
 		cacheControl: "no-store",
 		handler: async (routeCtx, ctx) => {
-			const connectionId = z.object({ connection_id: z.string().trim().min(1).max(200) }).safeParse(routeCtx.input);
+			const connectionId = z.object({ connection_id: z.string().check(z.trim(), z.minLength(1), z.maxLength(200)) }).safeParse(routeCtx.input);
 			if (!connectionId.success) {
 				return pluginResponse({ status: 404, headers: { "content-type": APP_JSON }, body: { kind: "text", value: JSON.stringify({ error: "not_found" }) } });
 			}
