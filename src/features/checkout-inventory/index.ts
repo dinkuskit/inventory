@@ -25,6 +25,7 @@ export type {
 	StockRequirement,
 } from "./domain.ts";
 export {
+	checkoutTicketSiteId,
 	createCheckoutInventoryPort,
 	createReleaseCheckoutBasket,
 	createReserveCheckoutBasket,

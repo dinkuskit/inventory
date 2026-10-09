@@ -598,7 +598,10 @@ returns those same ids and does not mint another ticket. `"rejected"` and
 `POST /v1/stock/pack` accepts `stock.pack` and `stock.pack_all` only. The body
 names the command id and those ticket ids. The server fills site and pool from
 the signed-in account. A mismatched site or pool is `403 unauthorized_context`
-before pool I/O. The route packs those tickets. It does not mark them Delivered
+before pool I/O. Every named ticket must have been minted by a checkout
+reserve for the signed-in site; a ticket another site reserved in a shared pool,
+or one no checkout reserve minted, is `403 unauthorized_ticket` and nothing is
+packed. The route packs those tickets. It does not mark them Delivered
 and it does not buy a label.
 
 ## Next focused grill

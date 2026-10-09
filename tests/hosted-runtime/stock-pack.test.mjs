@@ -229,4 +229,83 @@ describe("hosted pack route", () => {
 			{ reservation_id: "ticket_shirt", status: "packed" },
 		]);
 	});
+	it("refuses tickets another site reserved in the same pool and packs nothing", async () => {
+		const principal = { accountId: "acct_pack_shared", siteId: "site_pack_shared" };
+		const handler = createHostedInventoryHandler(env, async () => principal);
+		const connected = await env.INVENTORY_ACCOUNTS.getByName(principal.accountId).connectAccount(principal, {
+			type: "create",
+			requestId: "req_pack_shared",
+			locationName: "Main",
+		});
+		expect(connected.status).toBe("ready");
+		const pool = env.INVENTORY_POOLS.getByName(connected.operation.poolId);
+		const binding = {
+			providerRef: "dinkuskit.inventory",
+			poolId: connected.operation.poolId,
+			defaultFulfillmentLocationId: connected.operation.locationId,
+		};
+		const actor = { kind: "human", id: principal.accountId, displayName: "Site Administrator", surface: "emdash" };
+		await runInDurableObject(pool, async (_instance, state) => {
+			const store = createCloudflareSqliteInventoryStore({ storage: state.storage, poolId: connected.operation.poolId });
+			await createFixtureManagedSku(store, { poolId: connected.operation.poolId, skuId: "sku_hat" });
+			const opening = await createSetOpeningBalance({
+				store,
+				now: () => new Date("2026-10-08T15:00:00.000Z"),
+				createReceiptId: () => "rcpt_opening_shared",
+			})({
+				schema: "dinkuskit.inventory.command/v1",
+				commandId: "cmd_opening_shared",
+				type: "stock.opening_balance",
+				context: { siteId: principal.siteId, poolId: connected.operation.poolId, locationId: connected.operation.locationId },
+				payload: { skuId: "sku_hat", quantity: { value: "10", unit: "each" } },
+				reason: { code: "opening_balance", note: "Set Initial Stock" },
+				references: [],
+				expectedVersions: [{ skuId: "sku_hat", locationId: connected.operation.locationId, version: "0" }],
+			}, { principal: actor });
+			if (opening.outcome !== "committed") throw new Error(opening.code);
+			for (const [siteId, ticket] of [[principal.siteId, "ticket_own_hat"], ["site_other_shop", "ticket_other_hat"]]) {
+				const port = createCheckoutInventoryPort({
+					store,
+					binding,
+					now: () => new Date("2026-10-08T16:00:00.000Z"),
+					createReservationId: () => ticket,
+					createReceiptId: () => `rcpt_reserve_${ticket}`,
+					principal: actor,
+					siteId,
+				});
+				const held = await port.reserve({
+					operationId: `op_${ticket}`,
+					binding,
+					requirements: [{ skuId: "sku_hat", quantity: 1, allowBackorders: false }],
+				});
+				if (held.outcome !== "reserved") throw new Error("reserve failed");
+			}
+		});
+
+		const foreignOne = await handler(packRequest({ commandId: "pack_other_hat", type: "stock.pack", reservationId: "ticket_other_hat" }));
+		expect(foreignOne.status).toBe(403);
+		expect(await foreignOne.json()).toEqual({ error: "unauthorized_ticket" });
+
+		const mixed = await handler(packRequest({
+			commandId: "pack_own_and_other",
+			type: "stock.pack_all",
+			reservationIds: ["ticket_own_hat", "ticket_other_hat"],
+		}));
+		expect(mixed.status).toBe(403);
+		expect(await mixed.json()).toEqual({ error: "unauthorized_ticket" });
+
+		const rows = await runInDurableObject(pool, async (_instance, state) =>
+			state.storage.sql.exec(
+				"SELECT reservation_id, status FROM inventory_reservations ORDER BY reservation_id",
+			).toArray(),
+		);
+		expect(rows).toEqual([
+			{ reservation_id: "ticket_other_hat", status: "not_shipped" },
+			{ reservation_id: "ticket_own_hat", status: "not_shipped" },
+		]);
+
+		const own = await handler(packRequest({ commandId: "pack_own_hat", type: "stock.pack", reservationId: "ticket_own_hat" }));
+		expect(own.status).toBe(200);
+		expect((await own.json()).reservation.status).toBe("packed");
+	});
 });

@@ -61,6 +61,7 @@ import {
 	type StockTransferCommandV1,
 	type StockTransferResult,
 } from "../features/stock-transfer/index.ts";
+import { checkoutTicketSiteId } from "../features/checkout-inventory/index.ts";
 import { createCloudflareSqliteInventoryStore } from "../storage/cloudflare-sqlite-inventory-store.ts";
 import {
 	initializeCloudflareInventorySchema,
@@ -264,6 +265,32 @@ export class InventoryPool extends DurableObject<InventoryWorkerEnv> {
 			return createPackStock(dependencies)(command, execution);
 		}
 		return createPackAllStock(dependencies)(command, execution);
+	}
+
+	/**
+	 * Hosted Commerce Pack: every named ticket that exists must have been minted
+	 * by a checkout reserve for the signed-in site, so a site sharing this pool
+	 * cannot pack another site's tickets. Ownership is fixed at reserve time.
+	 */
+	async executeCheckoutTicketPack(
+		command: PackStockCommandV1 | PackAllStockCommandV1,
+		execution: { principal: CommandPrincipal },
+	): Promise<StockReservationResult | { outcome: "unauthorized_ticket" }> {
+		const store = createCloudflareSqliteInventoryStore({
+			storage: this.ctx.storage,
+			poolId: command.context.poolId,
+		});
+		const ticketIds = command.type === "stock.pack"
+			? [command.payload.reservationId]
+			: command.payload.reservationIds;
+		const foreign = await store.runTransaction(command.context.poolId, (transaction) =>
+			ticketIds.some((ticketId) => {
+				const siteId = checkoutTicketSiteId(transaction, ticketId);
+				return siteId !== undefined && siteId !== command.context.siteId;
+			}),
+		);
+		if (foreign) return { outcome: "unauthorized_ticket" };
+		return this.executeStockPack(command, execution);
 	}
 
 	async executeStockTransfer(

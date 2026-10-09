@@ -24,6 +24,7 @@ import {
 	type StockReservationBalanceEffect,
 } from "../stock-reservation/index.ts";
 import {
+	CHECKOUT_OPERATION_LINE_KIND,
 	CHECKOUT_RELEASE_TYPE,
 	CHECKOUT_RESERVE_TYPE,
 	InvalidCheckoutInventoryRequestError,
@@ -732,6 +733,33 @@ export function createReleaseCheckoutBasket(
 			),
 		);
 	};
+}
+
+/**
+ * The site whose checkout reserve minted this ticket, read from that reserve's
+ * committed receipt. `undefined` when no such reservation exists; `null` when
+ * it is not a checkout ticket or its reserve receipt cannot be found.
+ */
+export function checkoutTicketSiteId(
+	transaction: InventoryTransaction,
+	reservationId: string,
+): string | null | undefined {
+	const reservation = transaction.getReservation(reservationId);
+	if (reservation === null) return undefined;
+	if (reservation.orderLine.kind !== CHECKOUT_OPERATION_LINE_KIND) return null;
+	let operationId: unknown;
+	try {
+		[operationId] = JSON.parse(reservation.orderLine.id) as unknown[];
+	} catch {
+		return null;
+	}
+	if (typeof operationId !== "string") return null;
+	const stored = transaction.getCommand<CheckoutInventoryResult>(
+		checkoutReserveCommandId(operationId),
+	);
+	const receipt = stored?.result.outcome === "reserved" ? stored.result.receipt : null;
+	if (!receipt?.holds.some((hold) => hold.after.reservationId === reservationId)) return null;
+	return receipt.context.siteId;
 }
 
 /**

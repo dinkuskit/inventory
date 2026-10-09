@@ -420,12 +420,13 @@ export function createHostedInventoryHandler(
 				const pool = env.INVENTORY_POOLS.getByName(statusResult.operation.poolId);
 				let packResult;
 				try {
-					packResult = await pool.executeStockPack(command, {
+					packResult = await pool.executeCheckoutTicketPack(command, {
 						principal: { kind: "human", id: principal.accountId, displayName: "Site Administrator", surface: "emdash" },
 					});
 				} catch (err: any) {
 					return respond({ error: "invalid_command", message: err?.message ?? "Invalid pack command" }, 400);
 				}
+				if (packResult.outcome === "unauthorized_ticket") return respond({ error: "unauthorized_ticket" }, 403);
 				if (packResult.outcome === "rejected") return respond(packResult, 409);
 				if (packResult.outcome !== "packed" && packResult.outcome !== "packed_all") {
 					return respond({ error: "invalid_request" }, 400);
