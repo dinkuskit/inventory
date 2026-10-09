@@ -4,3 +4,4 @@
 {"action": "decision_locked", "at": "2026-10-08T13:42:40+00:00", "data": {"decision_id": "location-move-admin-001"}, "event_id": "67f45f6c-1f8e-47f8-aae8-f32bea79d188"}
 {"action": "shared_understanding_confirmed", "at": "2026-10-08T13:42:40+00:00", "data": {"summary": "Expose the existing stock-transfer kernel in the sandboxed Inventory admin. The clerk names the from location, the to location, the SKU, and the quantity. Create, dispatch, and whole receipt stay the kernel commands. No partial receipt, no new kernel command, no Ship or Commerce order buttons."}, "event_id": "db2d45cd-82c6-4d28-80ab-4c7d98030d38"}
 {"action": "decision_proposed", "at": "2026-10-09T21:35:25+00:00", "data": {"decision_id": "registry-plugin-validation-001"}, "event_id": "2210119d-8061-4ee3-8965-0a73840a1711"}
+{"action": "decision_locked", "at": "2026-10-09T22:08:13+00:00", "data": {"decision_id": "registry-plugin-validation-001"}, "event_id": "5b66907f-dae8-4f9c-80b1-d3ed9109b844"}

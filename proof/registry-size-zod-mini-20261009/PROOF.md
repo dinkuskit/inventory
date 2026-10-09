@@ -74,4 +74,4 @@ hashes, ids and timestamps. That failure predates this change and is not
 fixed here.
 
 No product behaviour, API, stock rule or Registry manifest changed.
-GrillTrack: proposed decision `registry-plugin-validation-001`.
+GrillTrack: decision `registry-plugin-validation-001` locked on 2026-10-09 after owner approval.
