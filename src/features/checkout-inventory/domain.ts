@@ -34,8 +34,10 @@ export interface StockRequest {
 }
 
 /**
- * Success names the tickets this reserve already minted, one per basket line.
- * Commerce persists that object. Rejection and an unknown outcome stay strings.
+ * Success names the tickets this reserve already minted: one per stock line
+ * (distinct SKU; same-SKU lines are merged into one hold), in the order each
+ * SKU first appears in the request. Commerce persists that object. Rejection
+ * and an unknown outcome stay strings.
  */
 export type CheckoutReservePortResult =
 	| Readonly<{

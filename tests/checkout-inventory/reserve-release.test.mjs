@@ -1023,6 +1023,38 @@ test("the public port maps durable results and rejects malformed requests", asyn
 	assert.equal(await port.release({}), "unknown");
 });
 
+test("reserved ticket ids follow the request's stock-line order and merge same-SKU lines", async (t) => {
+	const store = createLocalSqliteTestStore({
+		filePath: await databasePath(t, "port-order"),
+	});
+	await seedBasket(store);
+	const port = createCheckoutInventoryPort({
+		...factories(store),
+		principal,
+		siteId: "site_test",
+	});
+	const shirtFirst = stockRequest({
+		operationId: "op_checkout_shirt_hat",
+		requirements: [
+			{ skuId: "sku_shirt", quantity: 2, allowBackorders: false },
+			{ skuId: "sku_hat", quantity: 1, allowBackorders: false },
+			{ skuId: "sku_hat", quantity: 2, allowBackorders: false },
+		],
+	});
+	const reserved = await port.reserve(shirtFirst);
+	assert.equal(reserved.outcome, "reserved");
+	assert.equal(reserved.ticketIds.length, 2);
+	const holds = await store.runTransaction(binding.poolId, (transaction) =>
+		reserved.ticketIds.map((id) => transaction.getReservation(id)),
+	);
+	assert.deepEqual(holds.map((hold) => [hold.skuId, hold.quantity.value]), [
+		["sku_shirt", "2"],
+		["sku_hat", "3"],
+	]);
+	assert.deepEqual(await port.reserve(shirtFirst), reserved);
+	await store.close();
+});
+
 test("release racing reserve cannot leave reacquireable stock", async (t) => {
 	const filePath = await databasePath(t, "race-release");
 	const setup = createLocalSqliteTestStore({ filePath });

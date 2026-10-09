@@ -734,6 +734,26 @@ export function createReleaseCheckoutBasket(
 	};
 }
 
+/**
+ * One ticket per stock line (distinct SKU; same-SKU lines were merged by
+ * normalization), returned in the order each SKU first appears in the
+ * caller's request rather than the SKU-sorted order holds were minted in.
+ */
+function ticketIdsInStockLineOrder(
+	request: StockRequest,
+	reservations: readonly ReservationRecord[],
+): string[] {
+	const bySku = new Map(reservations.map((hold) => [hold.skuId, hold.reservationId]));
+	const ordered: string[] = [];
+	for (const requirement of request.requirements) {
+		const ticketId = bySku.get(requirement.skuId);
+		if (ticketId === undefined) continue;
+		ordered.push(ticketId);
+		bySku.delete(requirement.skuId);
+	}
+	return [...ordered, ...bySku.values()];
+}
+
 export function createCheckoutInventoryPort(
 	dependencies: CheckoutInventoryDependencies & CheckoutInventoryExecution,
 ): CheckoutInventoryPort {
@@ -750,9 +770,7 @@ export function createCheckoutInventoryPort(
 				if (result.outcome === "reserved") {
 					return {
 						outcome: "reserved",
-						ticketIds: result.reservations.map(
-							(hold) => hold.reservationId,
-						),
+						ticketIds: ticketIdsInStockLineOrder(request, result.reservations),
 					};
 				}
 				if (result.outcome === "rejected") return "rejected";

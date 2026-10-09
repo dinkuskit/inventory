@@ -587,8 +587,11 @@ already minted for that basket. Commerce persists exactly:
 { "outcome": "reserved", "ticketIds": ["<ticket id>"] }
 ```
 
-One basket line is one ticket. Three hats on one line is one ticket id, not
-three. Hats and shirts are two ids, in line order. Replay of the same reserve
+One stock line is one ticket. Three hats on one line is one ticket id, not
+three. Two request lines for the same SKU are merged into one hold and one
+ticket (Commerce already merges same-SKU lines before it reserves, so it sends
+one line per SKU). Hats and shirts are two ids, in the order each SKU first
+appears in the request. Replay of the same reserve
 returns those same ids and does not mint another ticket. `"rejected"` and
 `"unknown"` stay strings. Inventory does not store a Commerce order number.
 
