@@ -11,11 +11,10 @@ const commerceRoot = resolve(
 );
 /**
  * Accepted Commerce revision whose CheckoutInventoryPort.reserve may return
- * `{ outcome: "reserved", ticketIds }`. Currently the dinkuskit/commerce#78
- * head; bump to the Commerce main merge commit that contains #78 before
- * this proof is treated as final.
+ * `{ outcome: "reserved", ticketIds }`: the Commerce main merge commit of
+ * dinkuskit/commerce#78.
  */
-export const COMMERCE_PORT_SHA = "a979d510504a7634c293b06e6c75111926a8dad3";
+export const COMMERCE_PORT_SHA = "31427206f834418ac4573f3fccca1771e27dbc42";
 
 function extract(source, name) {
 	const match =
