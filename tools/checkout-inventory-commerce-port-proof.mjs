@@ -9,14 +9,31 @@ const commerceRoot = resolve(
 	process.env.DINKUSKIT_COMMERCE_CHECKOUT_ROOT ??
 		join(root, "..", "commerce-checkout-experience"),
 );
-const expectedSha = "1cb55c756ef746bcb042b9679dc43b57e67bcb0d";
+/**
+ * Accepted Commerce revision whose CheckoutInventoryPort.reserve may return
+ * `{ outcome: "reserved", ticketIds }`: the Commerce main merge commit of
+ * dinkuskit/commerce#78.
+ */
+export const COMMERCE_PORT_SHA = "31427206f834418ac4573f3fccca1771e27dbc42";
 
 function extract(source, name) {
-	const match = source.match(
-		new RegExp(`export interface ${name} \\{[\\s\\S]*?\\n\\}`, "u"),
-	);
+	const match =
+		source.match(new RegExp(`export interface ${name} \\{[^\\n]*\\}`, "u")) ??
+		source.match(
+			new RegExp(`export interface ${name} \\{[\\s\\S]*?\\n\\}`, "u"),
+		);
 	if (!match) {
 		throw new Error(`Commerce source is missing ${name}.`);
+	}
+	return match[0];
+}
+
+function extractType(source, name) {
+	const match = source.match(
+		new RegExp(`export type ${name} =[\\s\\S]*?;\\n`, "u"),
+	);
+	if (!match) {
+		throw new Error(`Commerce source is missing type ${name}.`);
 	}
 	return match[0];
 }
@@ -33,10 +50,14 @@ const bindingSource = await readFile(
 const binding = extract(bindingSource, "InventoryProviderBinding");
 const requirement = extract(checkoutSource, "StockRequirement");
 const request = extract(checkoutSource, "StockRequest");
+const reserveResult = extractType(checkoutSource, "CheckoutReserveResult");
 const port = extract(checkoutSource, "CheckoutInventoryPort");
 
-if (!port.includes('reserve(request: StockRequest): Promise<"reserved" | "rejected" | "unknown">')) {
+if (!port.includes("reserve(request: StockRequest): Promise<CheckoutReserveResult>")) {
 	throw new Error("Commerce CheckoutInventoryPort reserve shape changed.");
+}
+if (!/outcome: "reserved"/u.test(reserveResult) || !/ticketIds: readonly string\[\]/u.test(reserveResult)) {
+	throw new Error("Commerce CheckoutReserveResult no longer carries ticket ids.");
 }
 if (!port.includes('release(request: StockRequest): Promise<"released" | "unknown">')) {
 	throw new Error("Commerce CheckoutInventoryPort release shape changed.");
@@ -59,9 +80,9 @@ if (sha.status !== 0) {
 	throw new Error("Unable to read Commerce HEAD.");
 }
 const actualSha = sha.stdout.trim();
-if (actualSha !== expectedSha) {
+if (actualSha !== COMMERCE_PORT_SHA) {
 	throw new Error(
-		`Commerce source SHA ${actualSha} is not the accepted ${expectedSha}.`,
+		`Commerce source SHA ${actualSha} is not the accepted ${COMMERCE_PORT_SHA}.`,
 	);
 }
 
@@ -72,22 +93,48 @@ await writeFile(
 	proof,
 	`import type {
 	CheckoutInventoryPort as InventoryPort,
+	CheckoutReservePortResult,
 	StockRequest as InventoryStockRequest,
 } from ${JSON.stringify(join(root, "src/features/checkout-inventory/index.ts"))};
 
 ${binding}
 ${requirement}
 ${request}
+${reserveResult}
 ${port}
 
 type Assert<T extends true> = T;
-type _Port = Assert<InventoryPort extends CheckoutInventoryPort ? true : false>;
-type _PortBack = Assert<CheckoutInventoryPort extends InventoryPort ? true : false>;
+type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
+
+// Request shape is identical in both directions.
 type _Request = Assert<InventoryStockRequest extends StockRequest ? true : false>;
 type _RequestBack = Assert<StockRequest extends InventoryStockRequest ? true : false>;
 
+// Inventory's port is a drop-in Commerce port.
+type _Port = Assert<InventoryPort extends CheckoutInventoryPort ? true : false>;
+
+// Commerce's port, minus only the legacy ticketless "reserved" string it still
+// accepts from older providers, is exactly Inventory's port.
+interface CommerceTicketPort {
+	reserve(request: StockRequest): Promise<Exclude<CheckoutReserveResult, "reserved">>;
+	release: CheckoutInventoryPort["release"];
+}
+type _PortBack = Assert<CommerceTicketPort extends InventoryPort ? true : false>;
+type _PortForward = Assert<InventoryPort extends CommerceTicketPort ? true : false>;
+type _ResultExact = Assert<Same<Exclude<CheckoutReserveResult, "reserved">, CheckoutReservePortResult>>;
+type _LegacyOnly = Assert<Same<Exclude<CheckoutReserveResult, CheckoutReservePortResult>, "reserved">>;
+type _Release = Assert<Same<Awaited<ReturnType<CheckoutInventoryPort["release"]>>, Awaited<ReturnType<InventoryPort["release"]>>>>;
+
+// Ticket-id fields Commerce consumes.
+type Reserved = Extract<CheckoutReservePortResult, { outcome: "reserved" }>;
+type CommerceReserved = Extract<CheckoutReserveResult, { outcome: "reserved" }>;
+type _Tickets = Assert<Reserved["ticketIds"] extends readonly string[] ? true : false>;
+type _TicketFields = Assert<Same<keyof Reserved, "outcome" | "ticketIds">>;
+type _CommerceTicketFields = Assert<Same<keyof CommerceReserved, keyof Reserved>>;
+type _ReservedBoth = Assert<Same<Reserved, CommerceReserved>>;
+
 export const proof: CheckoutInventoryPort = {
-	reserve: async (_request: StockRequest) => "reserved",
+	reserve: async (_request: StockRequest) => ({ outcome: "reserved", ticketIds: [] }),
 	release: async (_request: StockRequest) => "released",
 };
 `,
@@ -132,6 +179,7 @@ process.stdout.write(
 				"InventoryProviderBinding",
 				"StockRequirement",
 				"StockRequest",
+				"CheckoutReserveResult",
 				"CheckoutInventoryPort",
 			],
 		},
