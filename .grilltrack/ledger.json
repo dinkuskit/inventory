@@ -51,6 +51,47 @@
       "superseded_by": null,
       "updated_at": "2026-10-08T13:42:40+00:00",
       "verification_ref": null
+    },
+    {
+      "baseline_ref": "fd2df02",
+      "candidate_refs": [],
+      "choice": "Use zod/mini (zod's small edition, same validation core) in the plugin and the Store Connect protocol it imports; build the bundle from the plugin directory so zod/mini is bundled. Hosted service keeps full zod. Hand-written checks rejected: a few KB smaller but means rewriting every rule by hand with no guarantee of identical behaviour.",
+      "context_ref": "proof/registry-size-zod-mini-20261009/PROOF.md",
+      "created_at": "2026-10-09T21:35:25+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [],
+      "domain": "Move hats between locations in the Inventory admin",
+      "history": [
+        {
+          "at": "2026-10-09T22:08:13+00:00",
+          "choice": "Use zod/mini (zod's small edition, same validation core) in the plugin and the Store Connect protocol it imports; build the bundle from the plugin directory so zod/mini is bundled. Hosted service keeps full zod. Hand-written checks rejected: a few KB smaller but means rewriting every rule by hand with no guarantee of identical behaviour.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        }
+      ],
+      "id": "registry-plugin-validation-001",
+      "implementation_ref": null,
+      "question": "How should the EmDash Registry plugin validate data so it stays under the Registry's 128 KiB file limit?",
+      "rationale": "Approved by Ronald (owner, Bobby) on 2026-10-09 22:07 UTC via decision card in the project thread.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "locked",
+      "superseded_by": null,
+      "updated_at": "2026-10-09T22:08:13+00:00",
+      "verification_ref": null
     }
   ],
   "last_activation": {
@@ -65,5 +106,5 @@
   "status": "active",
   "title": "Inventory admin location move",
   "track_id": "gt-20261008134240-a94728",
-  "updated_at": "2026-10-08T13:42:40+00:00"
+  "updated_at": "2026-10-09T22:08:13+00:00"
 }
