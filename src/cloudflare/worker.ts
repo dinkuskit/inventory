@@ -268,7 +268,7 @@ export class InventoryPool extends DurableObject<InventoryWorkerEnv> {
 	}
 
 	/**
-	 * Hosted Commerce Pack: every named ticket that exists must have been minted
+	 * Hosted Commerce Pack: every named ticket must exist and have been minted
 	 * by a checkout reserve for the signed-in site, so a site sharing this pool
 	 * cannot pack another site's tickets. Ownership is fixed at reserve time.
 	 */
@@ -284,10 +284,9 @@ export class InventoryPool extends DurableObject<InventoryWorkerEnv> {
 			? [command.payload.reservationId]
 			: command.payload.reservationIds;
 		const foreign = await store.runTransaction(command.context.poolId, (transaction) =>
-			ticketIds.some((ticketId) => {
-				const siteId = checkoutTicketSiteId(transaction, ticketId);
-				return siteId !== undefined && siteId !== command.context.siteId;
-			}),
+			ticketIds.some(
+				(ticketId) => checkoutTicketSiteId(transaction, ticketId) !== command.context.siteId,
+			),
 		);
 		if (foreign) return { outcome: "unauthorized_ticket" };
 		return this.executeStockPack(command, execution);

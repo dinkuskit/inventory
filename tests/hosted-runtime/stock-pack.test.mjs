@@ -294,11 +294,29 @@ describe("hosted pack route", () => {
 		expect(mixed.status).toBe(403);
 		expect(await mixed.json()).toEqual({ error: "unauthorized_ticket" });
 
+		const missing = await handler(packRequest({ commandId: "pack_missing_hat", type: "stock.pack", reservationId: "ticket_never_minted" }));
+		expect(missing.status).toBe(403);
+		expect(await missing.json()).toEqual({ error: "unauthorized_ticket" });
+
+		const ownAndMissing = await handler(packRequest({
+			commandId: "pack_own_and_missing",
+			type: "stock.pack_all",
+			reservationIds: ["ticket_own_hat", "ticket_never_minted"],
+		}));
+		expect(ownAndMissing.status).toBe(403);
+		expect(await ownAndMissing.json()).toEqual({ error: "unauthorized_ticket" });
+
 		const rows = await runInDurableObject(pool, async (_instance, state) =>
 			state.storage.sql.exec(
 				"SELECT reservation_id, status FROM inventory_reservations ORDER BY reservation_id",
 			).toArray(),
 		);
+		const refusedCommands = await runInDurableObject(pool, async (_instance, state) =>
+			state.storage.sql.exec(
+				"SELECT command_id FROM inventory_command_results WHERE command_id LIKE 'pack_%'",
+			).toArray(),
+		);
+		expect(refusedCommands).toEqual([]);
 		expect(rows).toEqual([
 			{ reservation_id: "ticket_other_hat", status: "not_shipped" },
 			{ reservation_id: "ticket_own_hat", status: "not_shipped" },
