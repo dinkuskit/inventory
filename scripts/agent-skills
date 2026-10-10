@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 SAARIUS_REPO="https://github.com/saariuslystoned/SaariusSkills.git"
-SAARIUS_SHA="1c914f7905cec0be1854c437ba39d3a78ffc3ced"
-SKILL_NAMES=(grilltrack emdash-sites building-emdash-site creating-plugins emdash-cli upgrading-emdash)
+SAARIUS_SHA="5c8476507b0a83e4aef6b54f2e5dfdca2105b6db"
+SKILL_NAMES=(grilltrack emdash-sites building-emdash-site creating-plugins emdash-cli upgrading-emdash emdash-commerce emdash-ci-deploy)
 ROOT="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 SKILLS_DIR="${CURSOR_SKILLS_DIR:-$ROOT/.cursor/skills}"
 CACHE_DIR="${AGENT_SKILLS_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/dinkuskit-agent-skills}"
