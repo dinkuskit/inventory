@@ -14,6 +14,7 @@ const CURRENT_MAIN_DEVICE_SESSION = {
 };
 
 const VALID_CHALLENGE_SESSION = {
+	protocolVersion: 2,
 	phase: "challenge",
 	connectionId: "conn-valid",
 	challenge: "chal-valid",
@@ -30,7 +31,7 @@ const VALID_CHALLENGE_SESSION = {
 };
 
 const VALID_PROOF_RECEIPT = {
-	version: 1,
+	version: 2,
 	connection_id: "conn-valid",
 	challenge: "chal-valid",
 	client_id: "dinkus-inventory-emdash",
@@ -136,7 +137,7 @@ function createCtx(settings, kv) {
 	};
 }
 
-test("page load clears a current-main device session and shows Connect", async () => {
+test("page load preserves an obsolete device session and offers explicit discard", async () => {
 	const settings = createSettings(CURRENT_MAIN_DEVICE_SESSION);
 	const ctx = {
 		site: { url: "https://shop.example.com" },
@@ -156,10 +157,16 @@ test("page load clears a current-main device session and shows Connect", async (
 		ctx,
 	);
 	const text = JSON.stringify(result);
-	assert.equal(settings.snapshot(), null);
-	assert.match(text, /Connect Inventory/);
+	assert.ok(settings.snapshot());
+	assert.match(text, /Reconnect required/);
+	assert.match(text, /Discard obsolete connection/);
 	assert.doesNotMatch(text, /Connection could not be confirmed/);
-	assert.doesNotMatch(text, /WDJB-MJHT/);
+	const discarded = await plugin.routes.admin.handler(
+		{ input: { type: "block_action", action_id: "discard_obsolete_connection" }, user: { id: "admin-1" } },
+		ctx,
+	);
+	assert.equal(settings.snapshot(), null);
+	assert.match(JSON.stringify(discarded), /Connect Inventory/);
 });
 
 test("public store-proof GET leaves legacy device session and settings/KV untouched and returns 404", async () => {

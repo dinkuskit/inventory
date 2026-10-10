@@ -3,7 +3,9 @@ import * as z from "zod/mini";
 export const STORE_CONNECT_CLIENT_ID = "dinkus-inventory-emdash";
 export const STORE_CONNECT_SERVICE = "inventory";
 export const STORE_CONNECT_MAX_LIFETIME_SECONDS = 600;
-export const STORE_CONNECT_PROOF_VERSION = 1;
+export const STORE_CONNECT_PROTOCOL_VERSION = 2;
+export const STORE_CONNECT_PROOF_VERSION = 2;
+export const STORE_CONNECT_TOKEN_TTL_SECONDS = 300;
 export const STORE_CONNECT_CALLBACK_PATH = "/_emdash/admin/plugins/dinkus-inventory/inventory";
 export const STORE_CONNECT_PROOF_PATH = "/_emdash/api/plugins/dinkus-inventory/store-proof";
 export const STORE_CONNECT_VERIFICATION_PATH = "/account/connect";
@@ -18,6 +20,7 @@ export class StoreConnectError extends Error {
 		| "connection_in_progress"
 		| "challenge_expired"
 		| "proof_unavailable"
+		| "obsolete_connection"
 		| "unexpected_website_response";
 	constructor(code: StoreConnectError["code"]) {
 		super(code);
@@ -40,9 +43,9 @@ export const proofReceiptSchema = z.strictObject({
 export type ProofReceipt = z.infer<typeof proofReceiptSchema>;
 
 export const startRequestSchema = z.strictObject({
+	protocol_version: z.literal(STORE_CONNECT_PROTOCOL_VERSION),
 	client_id: z.literal(STORE_CONNECT_CLIENT_ID),
 	service: z.literal(STORE_CONNECT_SERVICE),
-	site_id: z.string().check(z.trim(), z.minLength(1), z.maxLength(200)),
 	site_origin: z.string().check(z.url()),
 	callback_uri: z.string().check(z.url()),
 	code_challenge: z.string().check(z.trim(), z.minLength(1), z.maxLength(200)),
@@ -51,8 +54,10 @@ export const startRequestSchema = z.strictObject({
 export type StoreConnectStartRequest = z.infer<typeof startRequestSchema>;
 
 export const startResponseSchema = z.strictObject({
+	protocol_version: z.literal(STORE_CONNECT_PROTOCOL_VERSION),
 	connection_id: z.string().check(z.trim(), z.minLength(1), z.maxLength(200)),
 	challenge: z.string().check(z.trim(), z.minLength(1), z.maxLength(200)),
+	site_id: z.string().check(z.trim(), z.minLength(1), z.maxLength(200)),
 	verification_uri: z.url(),
 	expires_in: z.number().check(z.int(), z.positive(), z.maximum(STORE_CONNECT_MAX_LIFETIME_SECONDS)),
 	expires_at: z.number().check(z.int(), z.positive()),
@@ -192,6 +197,7 @@ export function assertStartResponseBounds(response: StoreConnectStartResponse, n
 }
 
 export const challengeSessionSchema = z.strictObject({
+	protocolVersion: z.literal(STORE_CONNECT_PROTOCOL_VERSION),
 	phase: z.literal("challenge"),
 	connectionId: z.string().check(z.minLength(1)),
 	challenge: z.string().check(z.minLength(1)),
@@ -209,7 +215,9 @@ export const challengeSessionSchema = z.strictObject({
 
 export const tokenSessionSchema = z.strictObject({
 	phase: z.literal("token"),
+	protocolVersion: z.literal(STORE_CONNECT_PROTOCOL_VERSION),
 	token: z.string().check(z.minLength(1)),
+	siteId: z.string().check(z.minLength(1), z.maxLength(200)),
 	expiresAt: z.number().check(z.int(), z.positive()),
 });
 
@@ -230,13 +238,14 @@ export const legacyDeviceSessionSchema = z.object({
 
 export type StoredConnectionSession =
 	| { kind: "current"; session: StoreConnectSession }
-	| { kind: "legacy-device" }
+	| { kind: "obsolete" }
 	| { kind: "invalid" };
 
 export function interpretStoredConnectionSession(raw: unknown): StoredConnectionSession {
 	const current = storeConnectSessionSchema.safeParse(raw);
 	if (current.success) return { kind: "current", session: current.data };
-	if (legacyDeviceSessionSchema.safeParse(raw).success) return { kind: "legacy-device" };
+	if (legacyDeviceSessionSchema.safeParse(raw).success) return { kind: "obsolete" };
+	if (raw && typeof raw === "object" && "phase" in raw) return { kind: "obsolete" };
 	return { kind: "invalid" };
 }
 

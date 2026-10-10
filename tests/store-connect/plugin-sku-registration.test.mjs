@@ -29,8 +29,8 @@ function context(fetchHandler, kv = mockKv()) {
 		url: path => `https://shop.example.com${path}`,
 		http: { fetch: async (url, init) => fetchHandler(new Request(url, init)) },
 		settings: {
-			async getVersioned() { return { value: JSON.stringify({ phase: "token", token: "token", expiresAt: Date.now() + 600000 }), revision: "s1" }; },
-			async get() { return JSON.stringify({ phase: "token", token: "token", expiresAt: Date.now() + 600000 }); },
+			async getVersioned() { return { value: JSON.stringify({ protocolVersion: 2, phase: "token", token: "token", siteId: "sim-site-1", expiresAt: Date.now() + 300000 }), revision: "s1" }; },
+			async get() { return JSON.stringify({ protocolVersion: 2, phase: "token", token: "token", siteId: "sim-site-1", expiresAt: Date.now() + 300000 }); },
 		},
 	};
 }

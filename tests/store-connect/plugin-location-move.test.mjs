@@ -73,9 +73,11 @@ function createTestCtx({ fetchHandler, kv, settings, sessionAdminId = ADMIN_A })
 		},
 		kv: kv ?? createMockKv(),
 		settings: settings ?? createMockSettings({
+			protocolVersion: 2,
 			phase: "token",
 			token: "tok_test_123",
-			expiresAt: Date.now() + 3600000,
+			siteId: "sim-site-1",
+			expiresAt: Date.now() + 300000,
 		}),
 	};
 }

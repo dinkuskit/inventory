@@ -116,8 +116,10 @@ async function proofAvailability(ctx, connectionId) {
 
 function startBody(connectionId, now) {
 	return {
+		protocol_version: 2,
 		connection_id: connectionId,
 		challenge: `chal-${connectionId}`,
+		site_id: "sim-site-1",
 		verification_uri: `${WEBSITE}/account/connect?connection_id=${connectionId}`,
 		expires_in: 600,
 		expires_at: now + 60_000,
@@ -127,6 +129,7 @@ function startBody(connectionId, now) {
 
 function sessionOf(connectionId, now, adminId, expiresAt = now + 60_000) {
 	return {
+		protocolVersion: 2,
 		phase: "challenge",
 		connectionId,
 		challenge: `chal-${connectionId}`,
@@ -148,7 +151,7 @@ async function seedChallenge(settings, kv, now, connectionId, adminId, expiresAt
 	const session = sessionOf(connectionId, now, adminId, expiresAt);
 	await settings.compareAndSet("connectionSession", null, JSON.stringify(session));
 	await kv.compareAndSet(`state:store-proof:${connectionId}`, null, {
-		version: 1,
+		version: 2,
 		connection_id: connectionId,
 		challenge: session.challenge,
 		client_id: "dinkus-inventory-emdash",
@@ -273,7 +276,7 @@ test("delayed SUCCESS response longer than polling interval retains token and pe
 						json: async () => ({
 							access_token: "simulated-token",
 							token_type: "Bearer",
-							expires_in: 3600,
+							expires_in: 300,
 							site_id: "sim-site-1",
 						}),
 					};
@@ -347,7 +350,7 @@ test("simultaneous same-CAS poll requests result in exactly one exchange and fin
 						json: async () => ({
 							access_token: "simulated-token",
 							token_type: "Bearer",
-							expires_in: 3600,
+							expires_in: 300,
 							site_id: "sim-site-1",
 						}),
 					};
@@ -421,7 +424,7 @@ test("pending authorization response permits next poll after interval without we
 	}
 });
 
-test("unexpected fetch error restores nextPoll without wedging safe permitted polling", async () => {
+test("unexpected fetch error ends the attempt without retrying a possibly consumed exchange", async () => {
 	const settings = createVersioned({ accept: false, armedOnce: true, applied: false });
 	const kv = createVersioned({ accept: false, armedOnce: true, applied: false });
 	let now = 5_000_000;
@@ -444,7 +447,7 @@ test("unexpected fetch error restores nextPoll without wedging safe permitted po
 					json: async () => ({
 						access_token: "simulated-token-2",
 						token_type: "Bearer",
-						expires_in: 3600,
+							expires_in: 300,
 						site_id: "sim-site-1",
 					}),
 				};
@@ -462,13 +465,13 @@ test("unexpected fetch error restores nextPoll without wedging safe permitted po
 		now += 1_001;
 		simulateFailure = false;
 
-		// Next poll after interval should be permitted to retry
+		// A lost response may have consumed the one-use exchange; require a fresh connection.
 		await invokeAdmin(ctx, input, ADMIN_OLD);
-		assert.equal(tokenRequests, 2, "poll after network error must be admitted without wedging");
+		assert.equal(tokenRequests, 1, "network error must not authorize another exchange");
 
 		const final = publicSession(settings.snapshot());
-		assert.equal(final.present, true, "session present after successful retry");
-		assert.equal(final.phase, "token", "successful retry saves token");
+		assert.equal(final.present, false, "ended attempt no longer holds a session");
+		assert.equal((await proofAvailability(ctx, "conn-old")).published, false);
 	} finally {
 		Date.now = originalNow;
 	}

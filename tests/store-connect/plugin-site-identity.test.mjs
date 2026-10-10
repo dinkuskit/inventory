@@ -20,7 +20,7 @@ function versionedStore() {
 	};
 }
 
-test("new installed Connect mints a persistent website-compatible plugin identity", async () => {
+test("v2 Connect omits local identity and freezes the returned canonical identity", async () => {
 	const requests = [];
 	const kv = versionedStore(), settings = versionedStore();
 	const ctx = {
@@ -28,17 +28,17 @@ test("new installed Connect mints a persistent website-compatible plugin identit
 		kv, settings,
 		http: { async fetch(url, init) {
 			requests.push(JSON.parse(init.body));
-			return Response.json({ connection_id: "connection_test_1", challenge: "challenge_test_1", verification_uri: "https://accounts.dinkuskit.invalid/account/connect?connection_id=connection_test_1", expires_in: 300, expires_at: Date.now() + 300000, interval: 5 });
+			return Response.json({ protocol_version: 2, site_id: "server-site-1", connection_id: "connection_test_1", challenge: "challenge_test_1", verification_uri: "https://accounts.dinkuskit.invalid/account/connect?connection_id=connection_test_1", expires_in: 300, expires_at: Date.now() + 300000, interval: 5 });
 		} },
 	};
 	await plugin.routes.admin.handler({ input: { type: "block_action", action_id: "connect" }, user: { id: "admin_test" } }, ctx);
 	assert.equal(requests.length, 1);
-	assert.match(requests[0].site_id, /^[A-Za-z0-9._:-]{1,200}$/);
-	assert.notEqual(requests[0].site_id, requests[0].site_origin);
+	assert.equal(requests[0].protocol_version, 2);
+	assert.equal(Object.hasOwn(requests[0], "site_id"), false);
 	assert.equal(requests[0].site_origin, "https://shop.example.com");
-	assert.equal(await kv.get("state:site-id"), requests[0].site_id);
+	assert.equal(await kv.get("state:site-id"), null);
 	// A second administrator click resumes the same challenge and identity.
 	await plugin.routes.admin.handler({ input: { type: "block_action", action_id: "connect" }, user: { id: "admin_test" } }, ctx);
 	assert.equal(requests.length, 1);
-	assert.equal(await kv.get("state:site-id"), requests[0].site_id);
+	assert.equal(await kv.get("state:site-id"), null);
 });

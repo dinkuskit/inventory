@@ -73,8 +73,10 @@ function createTestCtx({ fetchHandler, kv, settings }) {
 		},
 		kv: kv ?? createMockKv(),
 		settings: settings ?? createMockSettings({
+			protocolVersion: 2,
 			phase: "token",
 			token: "test_token_valid",
+			siteId: "sim-site-1",
 			expiresAt: Date.now() + 600000,
 		}),
 	};
@@ -115,7 +117,7 @@ function sampleCanonicalPreview({ skuId = "sku_mug", locationId = "loc_wh_2", de
 	return {
 		schema: "dinkuskit.inventory.stock-adjustment-preview/v1",
 		type: "stock.adjust",
-		context: { siteId: "https://shop.example.com", poolId: "pool_1", locationId },
+		context: { siteId: "sim-site-1", poolId: "pool_1", locationId },
 		effect: {
 			skuId,
 			locationId,
