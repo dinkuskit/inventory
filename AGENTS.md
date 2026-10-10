@@ -15,6 +15,10 @@ skills into ignored `.cursor/skills/`. Use
 The CLI-only ledger rule remains in force. SmokySkills is enabled only after
 maintainer access and an immutable commit pin are supplied.
 
+In Claude Code cloud sessions `.claude/hooks/session-start.sh` checks Node
+against the version CI pins, runs `npm ci` and `./scripts/agent-skills`, then
+reports anything missing; read that report before running project scripts.
+
 ## Source priority
 
 1. This file.
