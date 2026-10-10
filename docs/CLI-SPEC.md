@@ -1,8 +1,9 @@
 # `dinkus-inventory` CLI Specification
 
-Status: locked v1 interface specification. No executable is implemented or
-published yet; examples in this document are contract transcripts, not runtime
-proof.
+Status: locked v1 interface specification. An unpublished scaffold executable
+implements part of it against the hosted API; see
+[Implementation status](#implementation-status). Examples in this document are
+contract transcripts, not runtime proof.
 
 ## Name and purpose
 
@@ -42,7 +43,8 @@ When an executable exists, the package manifest maps:
 }
 ```
 
-This specification does not add that mapping before the executable exists.
+The scaffold executable exists, so the manifest now carries this mapping. The
+package stays private and unpublished.
 
 ## Usage
 
@@ -302,7 +304,7 @@ Human prose is not a parsing interface.
 | `1` | Stable business rejection or ordinary command failure with no mutation. |
 | `2` | Invalid usage, missing argument, invalid non-secret configuration, malformed input, or client-side validation error. |
 | `3` | Service/dependency/network unavailable, or an authoritative mutation has an unknown transport outcome. |
-| `4` | Authentication/authorization/confirmation/human gate blocked the action. |
+| `4` | Authentication/authorization/confirmation/human gate blocked the action, including an endpoint from project config (`untrusted_endpoint`). |
 | `5` | Service response violated the advertised contract or required behavior could not be verified safely. |
 
 If Ctrl-C arrives before submission, the CLI sends no command and exits `4`.
@@ -328,6 +330,16 @@ Supported sources:
   platform-equivalent user config directory; and
 - built-ins: output and timeout defaults only, never an inferred production
   endpoint, pool, or location.
+
+The token is sent only to an endpoint from `--endpoint`,
+`DINKUS_INVENTORY_ENDPOINT`, or user config, including a user-config profile.
+Project config comes with the working directory (a cloned repository, for
+example), so when it supplies the endpoint, directly or through a profile, the
+command exits `4` with `untrusted_endpoint` before sending anything. Project
+config may still supply the site and read context. `commands resolve` replays
+to the endpoint saved in the local pending record, which passed this check when
+the command was first sent. GrillTrack decision
+`inventory-cli-token-endpoint-001` added this rule to the locked v1 contract.
 
 V1 service authentication uses a bearer credential supplied through the fixed
 `DINKUS_INVENTORY_TOKEN` environment variable by the caller's secret manager or
@@ -441,3 +453,56 @@ Before this specification may be described as implemented, tests must prove:
   and malformed-response cases; and
 - no database import, direct table access, hidden fallback, or duplicated
   inventory-rule implementation in CLI modules.
+
+## Implementation status
+
+The scaffold lives in `bin/dinkus-inventory.mjs`, `src/cli/` and `src/client/`
+as dependency-free ESM so it runs without a build step. `src/cli/kernel.mjs` is
+the shared DinkusKit CLI kernel (parsing, help, output modes, config precedence,
+transport, exit codes); it is kept byte-identical with the Payments and Commerce
+CLI kernels. Tests are in `tests/cli/` and run under `npm run test:node`.
+
+| Command | State | Hosted API used |
+| --- | --- | --- |
+| `status` | Wired | `GET /v1/status` |
+| `locations list`, `locations show` | Wired | `GET /v1/locations` |
+| `skus list`, `skus show` | Wired | `GET /v1/skus` |
+| `stock show`, `stock list` | Wired | `GET /v1/stock` (list reads each managed SKU) |
+| `stock set-initial` | Wired | `POST /v1/stock/opening/preview`, `GET /v1/stock/opening/eligibility`, `POST /v1/stock/opening/confirm` |
+| `stock adjust` | Wired | `POST /v1/stock/adjust/preview`, `GET /v1/stock`, `POST /v1/stock/adjust/confirm` |
+| `receipts list` | Wired | `GET /v1/receipts` |
+| `commands show`, `commands resolve` | Wired against the local pending store | `resolve` replays the frozen bytes to the original confirm route |
+| `stock receive` | Planned | No receiving endpoint |
+| `transfers ...` | Planned | `POST /v1/transfers` has no preview/confirm binding and there is no transfer read endpoint |
+| `receipts show` | Planned | No receipt lookup endpoint |
+
+Planned commands appear in help and exit `1` with `not_implemented` without
+contacting the service.
+
+Scaffold decisions that the locked contract leaves open:
+
+- The hosted service derives the pool from the site's connection. Every command
+  except `status` first reads `/v1/status`; a mutation's `--pool` must equal
+  that bound pool or the CLI exits `4` before previewing.
+- With `--confirm`, the CLI reads the current balance version (adjustment) or
+  opening-balance eligibility (opening balance) to build `expectedVersions`. A
+  version that moved since the preview is refused by the service (confirmation
+  mismatch or `stale_version`), never retried as new.
+- Requests send `Authorization: Bearer $DINKUS_INVENTORY_TOKEN` and
+  `x-inventory-site: <site>`, which the service matches against the token.
+- After a send, a network failure, timeout, 5xx or malformed body is reported as
+  `outcome: "unknown"` (exit `3`, or `5` for a malformed body) and the frozen
+  envelope stays pending. So does a committed or rejected result that does not
+  name the frozen command ID, or arrives with a status other than `200`
+  (committed) or `409` (rejected); it exits `5` with reason `unmatched_result`.
+- On the first send, a matching result, a confirmation-gate refusal or a
+  400/401/403 closes the local record; the service had never seen the command
+  ID, so a refusal means nothing was committed.
+- On `commands resolve`, the original send's outcome is unknown, so a refusal
+  of the retry (401, 403, 400, `confirmation_mismatch`,
+  `confirmation_not_found`) keeps the record pending with `outcome: "unknown"`.
+  Only a matching result, `confirmation_expired` or
+  `confirmation_already_used` closes it: the service returns the stored result
+  for a confirmation already bound to this command ID before checking either.
+- `commands show` reads only the local record. A service-side command lookup is
+  not exposed by the hosted API yet.
