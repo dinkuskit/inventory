@@ -70,9 +70,9 @@ test("proof receipt is public-safe and expires", () => {
 
 test("start request rejects caller-supplied extras and wrong client", () => {
 	const valid = {
+		protocol_version: 2,
 		client_id: STORE_CONNECT_CLIENT_ID,
 		service: STORE_CONNECT_SERVICE,
-		site_id: "site-1",
 		site_origin: "https://shop.example.com",
 		callback_uri: "https://shop.example.com/_emdash/admin/plugins/dinkus-inventory/inventory",
 		code_challenge: "abc",
@@ -129,8 +129,10 @@ test("verification URI is frozen to /account/connect with the exact connection_i
 test("start response binds authoritative expires_at and rejects expired or too-far-future values", () => {
 	const now = 1_000_000;
 	const valid = {
+		protocol_version: 2,
 		connection_id: "conn-1",
 		challenge: "chal-1",
+		site_id: "site-1",
 		verification_uri: "https://accounts.dinkuskit.invalid/account/connect?connection_id=conn-1",
 		expires_in: 600,
 		expires_at: now + 60_000,

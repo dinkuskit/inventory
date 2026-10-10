@@ -39,8 +39,8 @@ function ctx(fetchHandler, kv = mockKv()) {
 		site: { url: "https://shop.example.com" }, url: p => `https://shop.example.com${p}`,
 		http: { fetch: async (url, init) => fetchHandler(new Request(url, init)) },
 		kv, settings: {
-			async get() { return JSON.stringify({ phase: "token", token: "token", expiresAt: Date.now() + 600_000 }); },
-			async getVersioned() { return { value: JSON.stringify({ phase: "token", token: "token", expiresAt: Date.now() + 600_000 }), revision: "s1" }; },
+			async get() { return JSON.stringify({ protocolVersion: 2, phase: "token", token: "token", siteId: "site_1", expiresAt: Date.now() + 300_000 }); },
+			async getVersioned() { return { value: JSON.stringify({ protocolVersion: 2, phase: "token", token: "token", siteId: "site_1", expiresAt: Date.now() + 300_000 }), revision: "s1" }; },
 			async compareAndSet() { return { applied: true, revision: "s2" }; },
 			async compareAndDelete() { return { applied: true }; },
 		},
