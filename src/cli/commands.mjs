@@ -13,6 +13,8 @@ const CONFIRMATION_GATE = new Set([
 	"confirmation_not_found",
 	"unauthorized_context",
 ]);
+// Gate refusals that settle a replay as well as a first send (see terminalResult).
+const REPLAY_SETTLING_GATE = new Set(["confirmation_expired", "confirmation_already_used"]);
 
 // ---------------------------------------------------------------------------
 // Formatting helpers
@@ -265,26 +267,52 @@ function previewHuman(context, preview) {
 	return lines.join("\n");
 }
 
-// Interpret the confirm response. Only 2xx/409 bodies with a known shape are
-// terminal; anything else after a send leaves the outcome unknown.
-async function terminalResult(ctx, kind, record, response) {
+// Interpret the confirm response. A record closes only on an answer that
+// settles this command: a canonical result naming record.commandId with the
+// status the service uses for it (200 committed, 409 rejected), or a refusal
+// that proves nothing was committed under that ID. Anything else after a send
+// leaves the outcome unknown and the envelope pending.
+//
+// A first send is the first time the service sees this command ID, so any
+// refusal means nothing was committed. A replay (`commands resolve`) follows a
+// send whose outcome is unknown: a refusal of the retry, such as a 401/403 from
+// another token or a confirmation_mismatch from another account, says nothing
+// about the original send. Only confirmation_expired and
+// confirmation_already_used prove the confirmation never committed this
+// command, because the service returns the stored result for a confirmation
+// already bound to this command ID before it checks either.
+async function terminalResult(ctx, kind, record, response, replay) {
 	const { json } = response;
 	const context = record.context;
-	if (response.ok && json?.outcome === "committed" && json.receipt) {
-		await closeRecord(ctx.env, record, { outcome: "committed", receiptId: json.receipt.receiptId });
-		return { outcome: "committed", context, commandId: record.commandId, receipt: json.receipt, human: `committed ${kind} ${record.commandId}\nreceipt: ${json.receipt.receiptId}` };
-	}
-	if (response.status === 409 && json?.outcome === "rejected") {
+	if (json?.outcome === "committed" || json?.outcome === "rejected") {
+		const committed = json.outcome === "committed";
+		if (json.commandId !== record.commandId || response.status !== (committed ? 200 : 409) || (committed && typeof json.receipt?.receiptId !== "string")) {
+			return unknownResult(record, "unmatched_result", EXIT.contract);
+		}
+		if (committed) {
+			await closeRecord(ctx.env, record, { outcome: "committed", receiptId: json.receipt.receiptId });
+			return { outcome: "committed", context, commandId: record.commandId, receipt: json.receipt, human: `committed ${kind} ${record.commandId}\nreceipt: ${json.receipt.receiptId}` };
+		}
 		await closeRecord(ctx.env, record, { outcome: "rejected", code: json.code });
 		return { outcome: "rejected", context, commandId: record.commandId, rejection: { code: json.code, message: json.message }, human: `rejected ${kind}: ${json.code}${json.message ? ` (${json.message})` : ""}`, exit: EXIT.failure };
 	}
-	if (json && typeof json.error === "string" && (response.status === 409 || response.status === 403) && CONFIRMATION_GATE.has(json.error)) {
-		await closeRecord(ctx.env, record, { outcome: "blocked", code: json.error });
-		throw new CliError(json.error, `Confirmation gate blocked ${kind} (${json.error}); nothing was committed. Preview again.`, { exit: EXIT.blocked, outcome: "blocked", details: { context, document: { commandId: record.commandId } } });
+	const refusal = json && typeof json.error === "string" ? json.error : undefined;
+	const gate = refusal !== undefined && (response.status === 409 || response.status === 403) && CONFIRMATION_GATE.has(refusal);
+	const refused = refusal !== undefined && [400, 401, 403].includes(response.status);
+	if (replay && (gate || refused) && !(response.status === 409 && REPLAY_SETTLING_GATE.has(refusal))) {
+		throw new CliError(refusal, `The service refused this retry of ${kind} (${refusal}). The original outcome is still unknown, so ${record.commandId} stays pending. Fix the credential or context, then run: dinkus-inventory commands resolve ${record.commandId}`, {
+			exit: response.status === 400 ? EXIT.failure : EXIT.blocked,
+			outcome: "unknown",
+			details: { context, document: { commandId: record.commandId } },
+		});
 	}
-	if (json && typeof json.error === "string" && [400, 401, 403].includes(response.status)) {
-		await closeRecord(ctx.env, record, { outcome: "refused", code: json.error });
-		throw new CliError(json.error, `The service refused ${kind} (${json.error}); nothing was committed.`, { exit: response.status === 400 ? EXIT.failure : EXIT.blocked, details: { context, document: { commandId: record.commandId } } });
+	if (gate) {
+		await closeRecord(ctx.env, record, { outcome: "blocked", code: refusal });
+		throw new CliError(refusal, `Confirmation gate blocked ${kind} (${refusal}); nothing was committed. Preview again.`, { exit: EXIT.blocked, outcome: "blocked", details: { context, document: { commandId: record.commandId } } });
+	}
+	if (refused) {
+		await closeRecord(ctx.env, record, { outcome: "refused", code: refusal });
+		throw new CliError(refusal, `The service refused ${kind} (${refusal}); nothing was committed.`, { exit: response.status === 400 ? EXIT.failure : EXIT.blocked, details: { context, document: { commandId: record.commandId } } });
 	}
 	return unknownResult(record, response.json === undefined ? "malformed_response" : `http_${response.status}`, response.json === undefined ? EXIT.contract : EXIT.unavailable);
 }
@@ -301,7 +329,7 @@ function unknownResult(record, reason, exit = EXIT.unavailable) {
 	};
 }
 
-async function send(ctx, kind, record) {
+async function send(ctx, kind, record, { replay = false } = {}) {
 	const request = createHttp({
 		baseUrl: record.endpoint,
 		headers: { authorization: `Bearer ${ctx.env[TOKEN_ENV]}`, "x-inventory-site": record.context.siteId },
@@ -319,7 +347,7 @@ async function send(ctx, kind, record) {
 	} finally {
 		ctx.lifecycle.sending = false;
 	}
-	return terminalResult(ctx, kind, record, response);
+	return terminalResult(ctx, kind, record, response, replay);
 }
 
 async function mutate(ctx, kind) {
@@ -403,5 +431,5 @@ export async function commandsResolve(ctx) {
 		throw new CliError("envelope_corrupt", `The frozen envelope for ${record.commandId} does not match its digest; refusing to replay.`, { exit: EXIT.contract });
 	}
 	if (!ctx.env[TOKEN_ENV]) throw new CliError("missing_credential", `Set ${TOKEN_ENV} to an Inventory access token for this site.`, { exit: EXIT.blocked });
-	return send(ctx, record.command, record);
+	return send(ctx, record.command, record, { replay: true });
 }

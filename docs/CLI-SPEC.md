@@ -492,7 +492,17 @@ Scaffold decisions that the locked contract leaves open:
   `x-inventory-site: <site>`, which the service matches against the token.
 - After a send, a network failure, timeout, 5xx or malformed body is reported as
   `outcome: "unknown"` (exit `3`, or `5` for a malformed body) and the frozen
-  envelope stays pending. A stored rejection, a confirmation-gate refusal or a
-  400/401/403 closes the local record because nothing was committed.
+  envelope stays pending. So does a committed or rejected result that does not
+  name the frozen command ID, or arrives with a status other than `200`
+  (committed) or `409` (rejected); it exits `5` with reason `unmatched_result`.
+- On the first send, a matching result, a confirmation-gate refusal or a
+  400/401/403 closes the local record; the service had never seen the command
+  ID, so a refusal means nothing was committed.
+- On `commands resolve`, the original send's outcome is unknown, so a refusal
+  of the retry (401, 403, 400, `confirmation_mismatch`,
+  `confirmation_not_found`) keeps the record pending with `outcome: "unknown"`.
+  Only a matching result, `confirmation_expired` or
+  `confirmation_already_used` closes it: the service returns the stored result
+  for a confirmation already bound to this command ID before checking either.
 - `commands show` reads only the local record. A service-side command lookup is
   not exposed by the hosted API yet.

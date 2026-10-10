@@ -251,7 +251,7 @@ test("--confirm freezes the envelope before sending and closes it on a committed
 });
 
 test("a stored business rejection exits 1 and a confirmation-gate refusal exits 4", async () => {
-	const rejected = fakeService({ "POST /v1/stock/adjust/confirm": () => json(409, { outcome: "rejected", code: "stale_version", message: "Balance changed." }) });
+	const rejected = fakeService({ "POST /v1/stock/adjust/confirm": (request) => json(409, { outcome: "rejected", commandId: JSON.parse(request.body).command.commandId, code: "stale_version", message: "Balance changed." }) });
 	const rejection = await run([...CONTEXT_FLAGS, ...adjust, "--no-input", "--confirm", "confirm_example", "--json"], { service: rejected });
 	assert.equal(rejection.code, EXIT.failure);
 	assert.deepEqual(oneJsonDocument(rejection.stdout).rejection, { code: "stale_version", message: "Balance changed." });
@@ -285,6 +285,85 @@ test("a lost response reports an unknown outcome and resolve replays the exact e
 	const again = await run(["commands", "resolve", document.commandId, "--json"], { service: fakeService(), env: { XDG_STATE_HOME: stateHome } });
 	assert.equal(again.code, EXIT.ok);
 	assert.equal(again.calls.length, 0, "a closed command is never resent");
+});
+
+// Leaves one adjustment pending (lost response) and returns its command ID.
+async function pendingAdjustment(stateHome) {
+	const lost = fakeService({ "POST /v1/stock/adjust/confirm": () => { throw new TypeError("socket hang up"); } });
+	const first = await run([...CONTEXT_FLAGS, ...adjust, "--no-input", "--confirm", "confirm_example", "--json"], { service: lost, env: { XDG_STATE_HOME: stateHome } });
+	assert.equal(first.code, EXIT.unavailable);
+	return oneJsonDocument(first.stdout).commandId;
+}
+
+async function localState(stateHome, commandId) {
+	const shown = await run(["commands", "show", commandId, "--json"], { env: { XDG_STATE_HOME: stateHome } });
+	return oneJsonDocument(shown.stdout).data.state;
+}
+
+test("a result that does not name the frozen command, or has the wrong status, keeps it pending", async () => {
+	const answers = [
+		() => json(200, { outcome: "committed", commandId: "cmd_someone_else", receipt: { receiptId: "rcpt_other" } }),
+		() => json(409, { outcome: "rejected", commandId: "cmd_someone_else", code: "stale_version" }),
+		(request) => json(201, { outcome: "committed", commandId: JSON.parse(request.body).command.commandId, receipt: { receiptId: "rcpt_demo" } }),
+		(request) => json(200, { outcome: "rejected", commandId: JSON.parse(request.body).command.commandId, code: "stale_version" }),
+		(request) => json(200, { outcome: "committed", commandId: JSON.parse(request.body).command.commandId }),
+	];
+	for (const answer of answers) {
+		const stateHome = mkdtempSync(join(tmpdir(), "dinkus-inventory-state-"));
+		const result = await run([...CONTEXT_FLAGS, ...adjust, "--no-input", "--confirm", "confirm_example", "--json"], {
+			service: fakeService({ "POST /v1/stock/adjust/confirm": answer }),
+			env: { XDG_STATE_HOME: stateHome },
+		});
+		assert.equal(result.code, EXIT.contract);
+		const document = oneJsonDocument(result.stdout);
+		assert.equal(document.outcome, "unknown");
+		assert.equal(document.unknown.reason, "unmatched_result");
+		assert.equal(await localState(stateHome, document.commandId), "pending");
+	}
+});
+
+test("a refused retry keeps the command pending unless the refusal proves nothing committed", async () => {
+	for (const [status, error] of [[401, "unauthorized"], [403, "unauthorized_context"], [409, "confirmation_mismatch"], [409, "confirmation_not_found"], [400, "invalid_request"]]) {
+		const stateHome = mkdtempSync(join(tmpdir(), "dinkus-inventory-state-"));
+		const commandId = await pendingAdjustment(stateHome);
+		const retry = await run(["commands", "resolve", commandId, "--json"], {
+			service: fakeService({ "POST /v1/stock/adjust/confirm": () => json(status, { error }) }),
+			env: { XDG_STATE_HOME: stateHome },
+		});
+		assert.equal(retry.code, status === 400 ? EXIT.failure : EXIT.blocked, error);
+		const document = oneJsonDocument(retry.stdout);
+		assert.equal(document.outcome, "unknown", error);
+		assert.equal(document.error.code, error);
+		assert.equal(await localState(stateHome, commandId), "pending", `${error} must not close the record`);
+
+		const recovered = await run(["commands", "resolve", commandId, "--json"], { service: fakeService(), env: { XDG_STATE_HOME: stateHome } });
+		assert.equal(recovered.code, EXIT.ok, error);
+		assert.equal(oneJsonDocument(recovered.stdout).outcome, "committed");
+	}
+
+	for (const error of ["confirmation_expired", "confirmation_already_used"]) {
+		const stateHome = mkdtempSync(join(tmpdir(), "dinkus-inventory-state-"));
+		const commandId = await pendingAdjustment(stateHome);
+		const retry = await run(["commands", "resolve", commandId, "--json"], {
+			service: fakeService({ "POST /v1/stock/adjust/confirm": () => json(409, { error }) }),
+			env: { XDG_STATE_HOME: stateHome },
+		});
+		assert.equal(retry.code, EXIT.blocked, error);
+		assert.equal(oneJsonDocument(retry.stdout).outcome, "blocked");
+		assert.equal(await localState(stateHome, commandId), "closed", `${error} settles the command`);
+	}
+});
+
+test("a refused first send closes the record because nothing was committed", async () => {
+	const stateHome = mkdtempSync(join(tmpdir(), "dinkus-inventory-state-"));
+	const result = await run([...CONTEXT_FLAGS, ...adjust, "--no-input", "--confirm", "confirm_example", "--json"], {
+		service: fakeService({ "POST /v1/stock/adjust/confirm": () => json(401, { error: "unauthorized" }) }),
+		env: { XDG_STATE_HOME: stateHome },
+	});
+	assert.equal(result.code, EXIT.blocked);
+	const document = oneJsonDocument(result.stdout);
+	assert.equal(document.error.code, "unauthorized");
+	assert.equal(await localState(stateHome, document.commandId), "closed");
 });
 
 test("resolve without a local envelope refuses to fabricate a command", async () => {

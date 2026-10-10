@@ -42,4 +42,7 @@ an endpoint from the working directory's `.dinkuskit/inventory.json`.
   human; previewing again is the only retry.
 - `3` with `outcome: "unknown"`: run `dinkus-inventory commands resolve <commandId>`.
   Never submit the change again as a new command.
+- Any exit with `outcome: "unknown"` (for example a `4` when a retry's token is
+  refused) means the command is still pending: fix what the error names, then
+  resolve the same command ID again. Never preview it again as new.
 - `5` the service broke its contract: stop and report.
