@@ -32,7 +32,7 @@ test("real checkout-inventory proof stays local and uses actual storage", async 
 	assert.match(concurrency, /createLocalSqliteTestStore\(\{ filePath \}\)/u);
 	assert.match(concurrency, /operationId/u);
 	assert.match(commerce, /CheckoutInventoryPort/u);
-	assert.match(commerce, /1cb55c756ef746bcb042b9679dc43b57e67bcb0d/u);
+	assert.match(commerce, /31427206f834418ac4573f3fccca1771e27dbc42/u);
 	assert.doesNotMatch(commerce, /from ["'].*commerce-checkout-experience.*["']/u);
 	assert.match(runner, /checkout-inventory-local-sqlite-proof/u);
 	assert.match(runner, /checkout-inventory-concurrency-proof/u);

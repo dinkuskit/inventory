@@ -8,14 +8,15 @@ consent, grants and JWT issuance.
 ## Plugin boundary
 
 Private `plugins:manage` Connect requires host-attested `routeCtx.user`. The
-plugin derives canonical site origin from `ctx.site.url`, loads or mints
-`state:site-id`, freezes the initiating administrator, and POSTs
+plugin derives canonical site origin from `ctx.site.url`, freezes the
+initiating administrator, and POSTs protocol version 2 to
 
 `/api/store-connections`
 
-with `client_id`, `service`, `site_id`, `site_origin`, frozen callback, and
+with `protocol_version`, `client_id`, `service`, `site_origin`, frozen callback, and
 PKCE S256. The start response must include an authoritative `expires_at`
-epoch-ms; the plugin binds that exact value to the public receipt and rejects
+epoch-ms and canonical `site_id`; the plugin binds those exact values to the
+private candidate and public receipt and rejects
 already-expired or more-than-10-minute future values. Verification URI must be
 exactly `/account/connect?connection_id=<id>` on the configured website origin.
 Loopback HTTP origins are allowed only when the host site URL is
@@ -31,15 +32,22 @@ Page load on the frozen callback
 originating administrator only. Another local admin cannot poll or overwrite
 an active challenge.
 
-## Website proposal
+## Reviewed website contract
 
 This repository does not own website routes. The published plugin handoff is
 this file plus the strict schemas in `src/features/store-connect/`. The website
 owner has accepted `/api/store-connections`, `/api/store-connections/token`,
 public `store-proof` fetch, the fixed callback and authoritative epoch-ms
-`expires_at` as the v1 integration target. Those schemas are the auditable
-contract; website implementation remains pending.
-These routes are not yet an implemented website claim. The plugin cannot use
+`expires_at` as the v2 integration target. Token success contains the canonical
+site ID and lasts no more than five minutes; the v2 marker is retained only in
+the private session, not added to the token response. The plugin uses
+the frozen session site ID for every `X-Inventory-Site` request; it never mints
+or rewrites site identity. The dependency is [website PR #21](https://github.com/dinkuskit/dinkuskit/pull/21),
+reviewed at `c0e871e3b2b63a511c78669cb78b29bd810c51f3`. Its native review
+retains a human merge gate. Local consumer proof does not authorize deployment.
+Only
+`authorization_pending` permits another exchange, using the returned interval;
+unknown and terminal errors fail closed. The plugin cannot use
 website cookies and does not call merchant-session `/account/tokens`. Lost token
 success is not silently replaced; the plugin retries the original
 `connection_id` and verifier. If the website returns `already_redeemed`

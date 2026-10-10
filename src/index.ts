@@ -205,6 +205,7 @@ export type {
 	CheckoutInventoryExecution,
 	CheckoutInventoryPort,
 	CheckoutInventoryReceiptV2,
+	CheckoutReservePortResult,
 	CheckoutInventoryRejectionCode,
 	CheckoutInventoryResult,
 	InventoryProviderBinding,

@@ -574,9 +574,35 @@ fulfillment machinery. There is no independent TTL release. Schema versions and
 ordinary named-hold reservation semantics are unchanged.
 
 This lock is the Inventory adapter contract only. Live Commerce/Payments
-transport and integration, Worker HTTP, GUI, CLI, onboarding, store-connect,
-Otta adapters, cross-pool fanout, backorder fulfillment, independent expiry,
-and deploy remain deferred.
+transport and integration, GUI, CLI, onboarding, store-connect, Otta
+adapters, cross-pool fanout, backorder fulfillment, independent expiry, and
+deploy remain deferred. The hosted pack route is `commerce-pack-route-001`.
+
+## commerce-pack-route-001 — ticket ids Commerce can pack (locked)
+
+A successful `CheckoutInventoryPort.reserve` returns the tickets Inventory
+already minted for that basket. Commerce persists exactly:
+
+```json
+{ "outcome": "reserved", "ticketIds": ["<ticket id>"] }
+```
+
+One stock line is one ticket. Three hats on one line is one ticket id, not
+three. Two request lines for the same SKU are merged into one hold and one
+ticket (Commerce already merges same-SKU lines before it reserves, so it sends
+one line per SKU). Hats and shirts are two ids, in the order each SKU first
+appears in the request. Replay of the same reserve
+returns those same ids and does not mint another ticket. `"rejected"` and
+`"unknown"` stay strings. Inventory does not store a Commerce order number.
+
+`POST /v1/stock/pack` accepts `stock.pack` and `stock.pack_all` only. The body
+names the command id and those ticket ids. The server fills site and pool from
+the signed-in account. A mismatched site or pool is `403 unauthorized_context`
+before pool I/O. Every named ticket must have been minted by a checkout
+reserve for the signed-in site; a ticket another site reserved in a shared pool,
+one no checkout reserve minted, or one that does not exist is
+`403 unauthorized_ticket` and nothing is packed. The route packs those tickets. It does not mark them Delivered
+and it does not buy a label.
 
 ## Next focused grill
 
@@ -616,26 +642,42 @@ provider integration, hosted deployment, Registry publication and stock admin
 screens are not claimed by its connection status. See
 [hosted onboarding](implementation/hosted-inventory-onboarding.md).
 
-## store-control-004 — Registry store-control challenge (locked)
+## store-control-004 — Registry store-control challenge (historical, superseded narrowly)
+
+The historical v1 decision is retained for lineage only. Its identity behavior
+is superseded by the reviewed shared-store v2 consumer below; it does not
+authorize a compatibility path.
+
+## store-control-005 — shared-store v2 Inventory consumer (locked)
 
 The sandboxed Inventory plugin starts Connect only for a host-attested
 `plugins:manage` site administrator. It derives canonical site origin from host
-site configuration, mints or reuses a plugin-owned `site_id`, freezes the
+site configuration, omits `site_id` from the mandatory protocol-version-2
+start request, freezes the
 initiating admin, and creates a fresh short-lived PKCE S256 challenge. A public
-proof receipt is published only after that private start succeeds. DinkusKit
+proof receipt is published only after that private start succeeds and echoes the
+server-returned canonical site ID, connection, challenge, registered client,
+service, origin, callback, PKCE challenge, and expiry with proof version 2.
+DinkusKit
 Better Auth owns merchant sessions, explicit site consent, persistent grants and
 service JWT issuance. The plugin polls a one-use website exchange and returns to
 the frozen Inventory callback. Shop owners do not configure Cloudflare, DNS, or
 infrastructure credentials. Caller-supplied site identity is rejected.
 
-The website half-contract is present and agrees on account key, JWT claims,
-and refusal of caller-supplied site identity. It has not adopted plugin-reachable
-`/api/store-connections` start/token routes, public store-proof fetch, or the
-proposed start `expires_at` field, and still fail-closes merchant-session
-`/account/tokens`. Live HTTPS origin on a deployed host, renewal, and
-lost-token recovery remain unagreed. Inventory fails closed on unexpected
-website responses and retries the original Inventory provisioning identity. See
+Token exchange retains the same client, connection, and verifier; only
+`authorization_pending` continues polling with the returned interval. Token
+success is bounded to five minutes, has no refresh or fallback, and must echo
+the canonical site ID. The private session retains the explicit v2 marker. Every Inventory request uses that frozen
+session identity as `X-Inventory-Site`; operation and command identities remain
+unchanged. See
 [store connection](implementation/store-connect.md).
+
+Obsolete development sessions are not cleared on GET and are never reused. A
+signed-in administrator may explicitly discard only the obsolete connection
+session through the reconnect UI; this does not reset Inventory authority,
+operations, pools, or identities. Ambiguous state fails closed and asks for
+reconnect. This is a local consumer contract, not a live website, Registry, or
+production transport claim.
 
 ## account-overview-metadata-009 and account-overview-read-token-010 (locked)
 

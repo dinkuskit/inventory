@@ -1,9 +1,11 @@
-import { z } from "zod";
+import * as z from "zod/mini";
 
 export const STORE_CONNECT_CLIENT_ID = "dinkus-inventory-emdash";
 export const STORE_CONNECT_SERVICE = "inventory";
 export const STORE_CONNECT_MAX_LIFETIME_SECONDS = 600;
-export const STORE_CONNECT_PROOF_VERSION = 1;
+export const STORE_CONNECT_PROTOCOL_VERSION = 2;
+export const STORE_CONNECT_PROOF_VERSION = 2;
+export const STORE_CONNECT_TOKEN_TTL_SECONDS = 300;
 export const STORE_CONNECT_CALLBACK_PATH = "/_emdash/admin/plugins/dinkus-inventory/inventory";
 export const STORE_CONNECT_PROOF_PATH = "/_emdash/api/plugins/dinkus-inventory/store-proof";
 export const STORE_CONNECT_VERIFICATION_PATH = "/account/connect";
@@ -18,6 +20,7 @@ export class StoreConnectError extends Error {
 		| "connection_in_progress"
 		| "challenge_expired"
 		| "proof_unavailable"
+		| "obsolete_connection"
 		| "unexpected_website_response";
 	constructor(code: StoreConnectError["code"]) {
 		super(code);
@@ -25,60 +28,62 @@ export class StoreConnectError extends Error {
 	}
 }
 
-export const proofReceiptSchema = z.object({
+export const proofReceiptSchema = z.strictObject({
 	version: z.literal(STORE_CONNECT_PROOF_VERSION),
-	connection_id: z.string().trim().min(1).max(200),
-	challenge: z.string().trim().min(1).max(200),
+	connection_id: z.string().check(z.trim(), z.minLength(1), z.maxLength(200)),
+	challenge: z.string().check(z.trim(), z.minLength(1), z.maxLength(200)),
 	client_id: z.literal(STORE_CONNECT_CLIENT_ID),
 	service: z.literal(STORE_CONNECT_SERVICE),
-	site_id: z.string().trim().min(1).max(200),
-	site_origin: z.string().url(),
-	callback_uri: z.string().url(),
-	code_challenge: z.string().trim().min(1).max(200),
-	expires_at: z.number().int().positive(),
-}).strict();
+	site_id: z.string().check(z.trim(), z.minLength(1), z.maxLength(200)),
+	site_origin: z.string().check(z.url()),
+	callback_uri: z.string().check(z.url()),
+	code_challenge: z.string().check(z.trim(), z.minLength(1), z.maxLength(200)),
+	expires_at: z.number().check(z.int(), z.positive()),
+});
 export type ProofReceipt = z.infer<typeof proofReceiptSchema>;
 
-export const startRequestSchema = z.object({
+export const startRequestSchema = z.strictObject({
+	protocol_version: z.literal(STORE_CONNECT_PROTOCOL_VERSION),
 	client_id: z.literal(STORE_CONNECT_CLIENT_ID),
 	service: z.literal(STORE_CONNECT_SERVICE),
-	site_id: z.string().trim().min(1).max(200),
-	site_origin: z.string().url(),
-	callback_uri: z.string().url(),
-	code_challenge: z.string().trim().min(1).max(200),
+	site_origin: z.string().check(z.url()),
+	callback_uri: z.string().check(z.url()),
+	code_challenge: z.string().check(z.trim(), z.minLength(1), z.maxLength(200)),
 	code_challenge_method: z.literal("S256"),
-}).strict();
+});
 export type StoreConnectStartRequest = z.infer<typeof startRequestSchema>;
 
-export const startResponseSchema = z.object({
-	connection_id: z.string().trim().min(1).max(200),
-	challenge: z.string().trim().min(1).max(200),
+export const startResponseSchema = z.strictObject({
+	protocol_version: z.literal(STORE_CONNECT_PROTOCOL_VERSION),
+	connection_id: z.string().check(z.trim(), z.minLength(1), z.maxLength(200)),
+	challenge: z.string().check(z.trim(), z.minLength(1), z.maxLength(200)),
+	site_id: z.string().check(z.trim(), z.minLength(1), z.maxLength(200)),
 	verification_uri: z.url(),
-	expires_in: z.number().int().positive().max(STORE_CONNECT_MAX_LIFETIME_SECONDS),
-	expires_at: z.number().int().positive(),
-	interval: z.number().int().positive().max(60),
-}).strict();
+	expires_in: z.number().check(z.int(), z.positive(), z.maximum(STORE_CONNECT_MAX_LIFETIME_SECONDS)),
+	expires_at: z.number().check(z.int(), z.positive()),
+	interval: z.number().check(z.int(), z.positive(), z.maximum(60)),
+});
 export type StoreConnectStartResponse = z.infer<typeof startResponseSchema>;
 
-export const tokenRequestSchema = z.object({
+export const tokenRequestSchema = z.strictObject({
 	client_id: z.literal(STORE_CONNECT_CLIENT_ID),
-	connection_id: z.string().trim().min(1).max(200),
-	code_verifier: z.string().trim().min(43).max(128),
-}).strict();
+	connection_id: z.string().check(z.trim(), z.minLength(1), z.maxLength(200)),
+	code_verifier: z.string().check(z.trim(), z.minLength(43), z.maxLength(128)),
+});
 
-export const tokenPendingSchema = z.object({
+export const tokenPendingSchema = z.strictObject({
 	error: z.literal("authorization_pending"),
-	interval: z.number().int().positive().max(60).optional(),
-}).strict();
+	interval: z.optional(z.number().check(z.int(), z.positive(), z.maximum(60))),
+});
 
-export const tokenSuccessSchema = z.object({
-	access_token: z.string().min(1),
+export const tokenSuccessSchema = z.strictObject({
+	access_token: z.string().check(z.minLength(1)),
 	token_type: z.literal("Bearer"),
-	expires_in: z.number().int().positive(),
-	site_id: z.string().trim().min(1).max(200),
-}).strict();
+	expires_in: z.number().check(z.int(), z.positive()),
+	site_id: z.string().check(z.trim(), z.minLength(1), z.maxLength(200)),
+});
 
-export const tokenFailureSchema = z.object({
+export const tokenFailureSchema = z.strictObject({
 	error: z.enum([
 		"access_denied",
 		"expired_token",
@@ -89,7 +94,7 @@ export const tokenFailureSchema = z.object({
 		"ownership_conflict",
 		"proof_mismatch",
 	]),
-}).strict();
+});
 
 function bytesToBase64Url(bytes: Uint8Array): string {
 	let binary = "";
@@ -191,27 +196,30 @@ export function assertStartResponseBounds(response: StoreConnectStartResponse, n
 	return response.expires_at;
 }
 
-export const challengeSessionSchema = z.object({
+export const challengeSessionSchema = z.strictObject({
+	protocolVersion: z.literal(STORE_CONNECT_PROTOCOL_VERSION),
 	phase: z.literal("challenge"),
-	connectionId: z.string().min(1),
-	challenge: z.string().min(1),
-	verificationUri: z.string().url(),
-	expiresAt: z.number().int().positive(),
-	interval: z.number().int().positive(),
-	nextPoll: z.number().int().nonnegative(),
-	codeVerifier: z.string().min(43).max(128),
-	initiatingAdminId: z.string().min(1).max(200),
-	siteId: z.string().min(1).max(200),
-	siteOrigin: z.string().url(),
-	callbackUri: z.string().url(),
-	codeChallenge: z.string().min(1),
-}).strict();
+	connectionId: z.string().check(z.minLength(1)),
+	challenge: z.string().check(z.minLength(1)),
+	verificationUri: z.string().check(z.url()),
+	expiresAt: z.number().check(z.int(), z.positive()),
+	interval: z.number().check(z.int(), z.positive()),
+	nextPoll: z.number().check(z.int(), z.nonnegative()),
+	codeVerifier: z.string().check(z.minLength(43), z.maxLength(128)),
+	initiatingAdminId: z.string().check(z.minLength(1), z.maxLength(200)),
+	siteId: z.string().check(z.minLength(1), z.maxLength(200)),
+	siteOrigin: z.string().check(z.url()),
+	callbackUri: z.string().check(z.url()),
+	codeChallenge: z.string().check(z.minLength(1)),
+});
 
-export const tokenSessionSchema = z.object({
+export const tokenSessionSchema = z.strictObject({
 	phase: z.literal("token"),
-	token: z.string().min(1),
-	expiresAt: z.number().int().positive(),
-}).strict();
+	protocolVersion: z.literal(STORE_CONNECT_PROTOCOL_VERSION),
+	token: z.string().check(z.minLength(1)),
+	siteId: z.string().check(z.minLength(1), z.maxLength(200)),
+	expiresAt: z.number().check(z.int(), z.positive()),
+});
 
 export const storeConnectSessionSchema = z.discriminatedUnion("phase", [challengeSessionSchema, tokenSessionSchema]);
 export type StoreConnectSession = z.infer<typeof storeConnectSessionSchema>;
@@ -222,7 +230,7 @@ export const legacyDeviceSessionSchema = z.object({
 	phase: z.literal("device"),
 	deviceCode: z.string(),
 	userCode: z.string(),
-	verificationUri: z.string().url(),
+	verificationUri: z.string().check(z.url()),
 	expiresAt: z.number(),
 	interval: z.number(),
 	nextPoll: z.number(),
@@ -230,13 +238,14 @@ export const legacyDeviceSessionSchema = z.object({
 
 export type StoredConnectionSession =
 	| { kind: "current"; session: StoreConnectSession }
-	| { kind: "legacy-device" }
+	| { kind: "obsolete" }
 	| { kind: "invalid" };
 
 export function interpretStoredConnectionSession(raw: unknown): StoredConnectionSession {
 	const current = storeConnectSessionSchema.safeParse(raw);
 	if (current.success) return { kind: "current", session: current.data };
-	if (legacyDeviceSessionSchema.safeParse(raw).success) return { kind: "legacy-device" };
+	if (legacyDeviceSessionSchema.safeParse(raw).success) return { kind: "obsolete" };
+	if (raw && typeof raw === "object" && "phase" in raw) return { kind: "obsolete" };
 	return { kind: "invalid" };
 }
 

@@ -4,9 +4,9 @@
   "current_focus": {
     "cadence": "sequential",
     "confirmed": true,
-    "confirmed_at": "2026-10-08T23:44:59+00:00",
+    "confirmed_at": "2026-10-10T01:50:19+00:00",
     "domain": "dinkus-inventory CLI token destination",
-    "started_at": "2026-10-08T23:44:59+00:00",
+    "started_at": "2026-10-10T01:50:19+00:00",
     "status": "confirmed",
     "summary": "The project owner (GitHub saariuslystoned) chose 'Apply it' on 2026-10-08 when asked whether to stop the inventory CLI from sending its token to an endpoint set in project config. Project config travels with the working directory, so it may still set site and read context but no longer the token's destination. No publication, deployment or merge is authorized by this choice."
   },
@@ -53,18 +53,128 @@
       "verification_ref": null
     },
     {
+      "baseline_ref": "fd2df02",
+      "candidate_refs": [],
+      "choice": "Use zod/mini (zod's small edition, same validation core) in the plugin and the Store Connect protocol it imports; build the bundle from the plugin directory so zod/mini is bundled. Hosted service keeps full zod. Hand-written checks rejected: a few KB smaller but means rewriting every rule by hand with no guarantee of identical behaviour.",
+      "context_ref": "proof/registry-size-zod-mini-20261009/PROOF.md",
+      "created_at": "2026-10-09T21:35:25+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [],
+      "domain": "Move hats between locations in the Inventory admin",
+      "history": [
+        {
+          "at": "2026-10-09T22:08:13+00:00",
+          "choice": "Use zod/mini (zod's small edition, same validation core) in the plugin and the Store Connect protocol it imports; build the bundle from the plugin directory so zod/mini is bundled. Hosted service keeps full zod. Hand-written checks rejected: a few KB smaller but means rewriting every rule by hand with no guarantee of identical behaviour.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        }
+      ],
+      "id": "registry-plugin-validation-001",
+      "implementation_ref": null,
+      "question": "How should the EmDash Registry plugin validate data so it stays under the Registry's 128 KiB file limit?",
+      "rationale": "Approved by Ronald (owner, Bobby) on 2026-10-09 22:07 UTC via decision card in the project thread.",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "locked",
+      "superseded_by": null,
+      "updated_at": "2026-10-09T22:08:13+00:00",
+      "verification_ref": null
+    },
+    {
+      "baseline_ref": null,
+      "candidate_refs": [],
+      "choice": "Use protocol v2 only: omit site_id on start, freeze the returned canonical site_id with the connection candidate, publish exact version-2 proof, exchange with the same client/connection/verifier, accept only authorization_pending polling, bind short-lived token sessions to returned site identity, and require explicit admin discard for obsolete development sessions.",
+      "context_ref": null,
+      "created_at": "2026-10-10T01:12:31+00:00",
+      "deferred_reason": null,
+      "delivery_ref": null,
+      "dependencies": [],
+      "domain": "Move hats between locations in the Inventory admin",
+      "history": [
+        {
+          "at": "2026-10-10T01:12:31+00:00",
+          "choice": "Use protocol v2 only: omit site_id on start, freeze the returned canonical site_id with the connection candidate, publish exact version-2 proof, exchange with the same client/connection/verifier, accept only authorization_pending polling, bind short-lived token sessions to returned site identity, and require explicit admin discard for obsolete development sessions.",
+          "from": "proposed",
+          "implementation_ref": null,
+          "note": "user accepted the scoped decision",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "locked",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-10-10T01:14:52+00:00",
+          "choice": "Use protocol v2 only: omit site_id on start, freeze the returned canonical site_id with the connection candidate, publish exact version-2 proof, exchange with the same client/connection/verifier, accept only authorization_pending polling, bind short-lived token sessions to returned site identity, and require explicit admin discard for obsolete development sessions.",
+          "from": "locked",
+          "implementation_ref": null,
+          "note": "bounded implementation recorded",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "implemented",
+          "verification_ref": null
+        },
+        {
+          "at": "2026-10-10T01:14:52+00:00",
+          "choice": "Use protocol v2 only: omit site_id on start, freeze the returned canonical site_id with the connection candidate, publish exact version-2 proof, exchange with the same client/connection/verifier, accept only authorization_pending polling, bind short-lived token sessions to returned site identity, and require explicit admin discard for obsolete development sessions.",
+          "from": "implemented",
+          "implementation_ref": "files:src/features/store-connect,plugins/emdash-inventory/src/plugin.ts,docs/implementation/store-connect.md",
+          "note": "verification recorded in cumulative context",
+          "repair_required": false,
+          "review_classifications": [],
+          "review_ref": null,
+          "review_result": null,
+          "review_source_identity": null,
+          "to": "verified",
+          "verification_ref": null
+        }
+      ],
+      "id": "store-control-005",
+      "implementation_ref": "files:src/features/store-connect,plugins/emdash-inventory/src/plugin.ts,docs/implementation/store-connect.md",
+      "question": "How does Inventory consume the reviewed shared-store v2 connection contract?",
+      "rationale": "",
+      "repair_required": false,
+      "review_classifications": [],
+      "review_history": [],
+      "review_ref": null,
+      "review_result": null,
+      "review_source_identity": null,
+      "status": "verified",
+      "superseded_by": null,
+      "updated_at": "2026-10-10T01:14:52+00:00",
+      "verification_ref": ".grilltrack/work/shared-store-v2/PROOF.md"
+    },
+    {
       "baseline_ref": null,
       "candidate_refs": [],
       "choice": "No. The token goes only to an endpoint from --endpoint, DINKUS_INVENTORY_ENDPOINT, or user config (including a user-config profile). An endpoint from project config, directly or through a profile, exits 4 with untrusted_endpoint before any request. Project config may still set site and read context. commands resolve replays to the endpoint saved in the local pending record. This amends the locked v1 docs/CLI-SPEC.md.",
       "context_ref": null,
-      "created_at": "2026-10-08T23:44:59+00:00",
+      "created_at": "2026-10-10T01:50:19+00:00",
       "deferred_reason": null,
       "delivery_ref": null,
       "dependencies": [],
       "domain": "dinkus-inventory CLI token destination",
       "history": [
         {
-          "at": "2026-10-08T23:44:59+00:00",
+          "at": "2026-10-10T01:50:20+00:00",
           "choice": "No. The token goes only to an endpoint from --endpoint, DINKUS_INVENTORY_ENDPOINT, or user config (including a user-config profile). An endpoint from project config, directly or through a profile, exits 4 with untrusted_endpoint before any request. Project config may still set site and read context. commands resolve replays to the endpoint saved in the local pending record. This amends the locked v1 docs/CLI-SPEC.md.",
           "from": "proposed",
           "implementation_ref": null,
@@ -78,7 +188,7 @@
           "verification_ref": null
         },
         {
-          "at": "2026-10-08T23:44:59+00:00",
+          "at": "2026-10-10T01:50:20+00:00",
           "choice": "No. The token goes only to an endpoint from --endpoint, DINKUS_INVENTORY_ENDPOINT, or user config (including a user-config profile). An endpoint from project config, directly or through a profile, exits 4 with untrusted_endpoint before any request. Project config may still set site and read context. commands resolve replays to the endpoint saved in the local pending record. This amends the locked v1 docs/CLI-SPEC.md.",
           "from": "locked",
           "implementation_ref": null,
@@ -92,7 +202,7 @@
           "verification_ref": null
         },
         {
-          "at": "2026-10-08T23:45:24+00:00",
+          "at": "2026-10-10T01:53:41+00:00",
           "choice": "No. The token goes only to an endpoint from --endpoint, DINKUS_INVENTORY_ENDPOINT, or user config (including a user-config profile). An endpoint from project config, directly or through a profile, exits 4 with untrusted_endpoint before any request. Project config may still set site and read context. commands resolve replays to the endpoint saved in the local pending record. This amends the locked v1 docs/CLI-SPEC.md.",
           "from": "implemented",
           "implementation_ref": "file:src/client/inventory-client.mjs file:docs/CLI-SPEC.md file:skills/inventory-cli/SKILL.md",
@@ -118,7 +228,7 @@
       "review_source_identity": null,
       "status": "verified",
       "superseded_by": null,
-      "updated_at": "2026-10-08T23:45:24+00:00",
+      "updated_at": "2026-10-10T01:53:41+00:00",
       "verification_ref": "file:tests/cli/dinkus-inventory.test.mjs"
     }
   ],
@@ -134,5 +244,5 @@
   "status": "active",
   "title": "Inventory admin location move",
   "track_id": "gt-20261008134240-a94728",
-  "updated_at": "2026-10-08T23:45:24+00:00"
+  "updated_at": "2026-10-10T01:53:41+00:00"
 }

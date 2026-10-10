@@ -472,14 +472,18 @@ describe("checkout inventory Cloudflare durable storage", () => {
 			).toBe("0");
 
 			const matched = request(poolId, "op_cf_bound", providerRef);
-			expect(await port.reserve(matched)).toBe("reserved");
+			const heldTickets = {
+				outcome: "reserved",
+				ticketIds: ["cf_bound_rsv_1", "cf_bound_rsv_2"],
+			};
+			expect(await port.reserve(matched)).toEqual(heldTickets);
 			const restarted = createCheckoutInventoryPort({
 				...deps(store, poolId, "cf_bound_restart", providerRef),
 				principal,
 				siteId: "site_test",
 			});
 			expect(await restarted.reserve(mismatched)).toBe("rejected");
-			expect(await restarted.reserve(matched)).toBe("reserved");
+			expect(await restarted.reserve(matched)).toEqual(heldTickets);
 			expect(
 				(
 					await read({
@@ -507,7 +511,10 @@ describe("checkout inventory Cloudflare durable storage", () => {
 			);
 			expect(
 				await port.reserve(request(otherPoolId, "op_cf_other", providerRef)),
-			).toBe("reserved");
+			).toEqual({
+				outcome: "reserved",
+				ticketIds: ["cf_other_rsv_1", "cf_other_rsv_2"],
+			});
 			const read = createReadSkuLocationBalance({ store });
 			expect(
 				(

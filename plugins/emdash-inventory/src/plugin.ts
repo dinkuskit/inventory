@@ -2,11 +2,13 @@ import type { SandboxedPlugin } from "emdash/plugin";
 import { pluginResponse } from "emdash/plugin";
 import type { PluginContext } from "emdash";
 import type { Block, BlockResponse } from "@emdash-cms/blocks/server";
-import { z } from "zod";
+import * as z from "zod/mini";
 import {
 	STORE_CONNECT_CALLBACK_PATH,
 	STORE_CONNECT_CLIENT_ID,
+	STORE_CONNECT_PROTOCOL_VERSION,
 	STORE_CONNECT_SERVICE,
+	STORE_CONNECT_TOKEN_TTL_SECONDS,
 	StoreConnectError,
 	approvedCallbackUri,
 	assertStartResponseBounds,
@@ -40,11 +42,11 @@ const APP_JSON = "application/json";
 // The proof host maps these declared origins to local fixtures; shop owners never configure them.
 const SERVICE = "https://inventory.dinkuskit.invalid";
 const WEBSITE = "https://accounts.dinkuskit.invalid";
-const id = z.string().min(1).max(200);
+const id = z.string().check(z.minLength(1), z.maxLength(200));
 const qty = z.object({ value: z.string(), unit: z.string() });
 const locationsSchema = z.object({ locations: z.array(z.object({ name: z.string(), locationId: id })) });
 const cmdContext = z.object({ siteId: z.string(), poolId: z.string(), locationId: z.string() });
-const cmdRefs = z.array(z.object({ kind: z.string(), id: z.string() })).default([]);
+const cmdRefs = z._default(z.array(z.object({ kind: z.string(), id: z.string() })), []);
 const cmdExpected = z.array(z.object({ skuId: z.string(), locationId: z.string(), version: z.string() }));
 const cmdReason = z.object({ code: z.string(), note: z.string() });
 const cmdConfirm = z.object({ value: z.string(), expiresAt: z.string() });
@@ -52,14 +54,14 @@ const receiptSchema = z.object({ receiptId: z.string(), committedAt: z.string() 
 
 
 const intentSchema = z.discriminatedUnion("type", [
-	z.object({ type: z.literal("create"), requestId: id, locationName: z.string().trim().min(1).max(200) }).strict(),
-	z.object({ type: z.literal("reconnect"), requestId: id, operationId: id }).strict(),
+	z.strictObject({ type: z.literal("create"), requestId: id, locationName: z.string().check(z.trim(), z.minLength(1), z.maxLength(200)) }),
+	z.strictObject({ type: z.literal("reconnect"), requestId: id, operationId: id }),
 ]);
-const operationSchema = z.object({ operationId: id, poolId: id, locationName: z.string(), locationId: z.string().nullable(), status: z.enum(["pending", "ready", "failed"]), failureCode: z.string().nullable() });
+const operationSchema = z.object({ operationId: id, poolId: id, locationName: z.string(), locationId: z.nullable(z.string()), status: z.enum(["pending", "ready", "failed"]), failureCode: z.nullable(z.string()) });
 const statusSchema = z.discriminatedUnion("status", [z.object({ status: z.literal("unconnected") }), z.object({ status: z.enum(["pending", "ready", "failed"]), operation: operationSchema })]);
-const managedSkuIdentitySchema = z.object({ inventorySkuId: id, sku: z.string(), displayName: z.string() }).strict();
-const managedSkuSchema = managedSkuIdentitySchema.extend({ unit: z.literal("each") });
-const managedSkuListSchema = z.object({ skus: z.array(managedSkuSchema) }).strict();
+const managedSkuIdentitySchema = z.strictObject({ inventorySkuId: id, sku: z.string(), displayName: z.string() });
+const managedSkuSchema = z.extend(managedSkuIdentitySchema, { unit: z.literal("each") });
+const managedSkuListSchema = z.strictObject({ skus: z.array(managedSkuSchema) });
 type Session = StoreConnectSession;
 
 class InventoryApiError extends Error {
@@ -71,73 +73,73 @@ const previewEffectBalanceSchema = z.object({ onHand: qty, reserved: qty, availa
 
 const adjustmentWarningSchema = z.object({ code: z.literal("negative_available"), reserved: qty, oversoldBy: qty, message: z.string() });
 
-const adjustmentPreviewSchema = z.object({
+const adjustmentPreviewSchema = z.strictObject({
 	schema: z.literal("dinkuskit.inventory.stock-adjustment-preview/v1"),
 	type: z.literal("stock.adjust"),
-	context: z.object({
+	context: z.strictObject({
 		siteId: z.string(),
 		poolId: z.string(),
 		locationId: z.string(),
-	}).strict(),
-	effect: z.object({
+	}),
+	effect: z.strictObject({
 		skuId: z.string(),
 		locationId: z.string(),
 		onHandDelta: qty,
 		reservedDelta: qty,
 		balanceBefore: previewEffectBalanceSchema,
 		balanceAfter: previewEffectBalanceSchema,
-	}).strict(),
-	reason: z.object({ note: z.string() }).strict(),
-	references: z.array(z.object({ kind: z.string(), id: z.string() }).strict()).default([]),
-	warnings: z.array(adjustmentWarningSchema).default([]),
-	confirmation: z.object({
+	}),
+	reason: z.strictObject({ note: z.string() }),
+	references: z._default(z.array(z.strictObject({ kind: z.string(), id: z.string() })), []),
+	warnings: z._default(z.array(adjustmentWarningSchema), []),
+	confirmation: z.strictObject({
 		value: z.string(),
 		expiresAt: z.string(),
-	}).strict(),
-}).strict();
+	}),
+});
 
 type AdjustmentPreview = z.infer<typeof adjustmentPreviewSchema>;
 
-const stockCommandSchema = z.object({
+const stockCommandSchema = z.strictObject({
 	schema: z.literal(CMD_SCHEMA),
 	commandId: z.string(),
 	type: z.literal("stock.adjust"),
-	context: z.object({
+	context: z.strictObject({
 		siteId: z.string(),
 		poolId: z.string(),
 		locationId: z.string(),
-	}).strict(),
+	}),
 	payload: z.object({
 		skuId: z.string(),
-		delta: z.object({ value: z.string(), unit: z.string() }).strict(),
+		delta: z.strictObject({ value: z.string(), unit: z.string() }),
 	}),
-	reason: z.object({ note: z.string() }).strict(),
-	references: z.array(z.object({ kind: z.string(), id: z.string() }).strict()).default([]),
-	expectedVersions: z.array(z.object({
+	reason: z.strictObject({ note: z.string() }),
+	references: z._default(z.array(z.strictObject({ kind: z.string(), id: z.string() })), []),
+	expectedVersions: z.array(z.strictObject({
 		skuId: z.string(),
 		locationId: z.string(),
 		version: z.string(),
-	}).strict()).min(1),
-}).strict();
+	})).check(z.minLength(1)),
+});
 
 type StockCommand = z.infer<typeof stockCommandSchema>;
 
 const adjustmentIntentSchema = z.discriminatedUnion("status", [
-	z.object({
+	z.strictObject({
 		status: z.literal("preview"),
 		initiatingAdminId: id,
 		preview: adjustmentPreviewSchema,
 		command: stockCommandSchema,
 		expiresAt: z.number(),
-	}).strict(),
-	z.object({
+	}),
+	z.strictObject({
 		status: z.literal("pending"),
 		initiatingAdminId: id,
 		preview: adjustmentPreviewSchema,
 		command: stockCommandSchema,
 		expiresAt: z.number(),
-	}).strict(),
-	z.object({
+	}),
+	z.strictObject({
 		status: z.literal("committed"),
 		initiatingAdminId: id,
 		commandId: z.string(),
@@ -145,28 +147,29 @@ const adjustmentIntentSchema = z.discriminatedUnion("status", [
 			receiptId: z.string(),
 			committedAt: z.string(),
 		}),
-	}).strict(),
-	z.object({
+	}),
+	z.strictObject({
 		status: z.literal("rejected"),
 		initiatingAdminId: id,
 		commandId: z.string(),
 		code: z.string(),
-		message: z.string().optional(),
-	}).strict(),
+		message: z.optional(z.string()),
+	}),
 ]);
 
 type AdjustmentIntent = z.infer<typeof adjustmentIntentSchema>;
 
-const openingEffectBalanceSchema = previewEffectBalanceSchema.extend({
+const openingEffectBalanceSchema = z.strictObject({
+ ...previewEffectBalanceSchema.shape,
  outgoingTransferCommitted: z.object({ value: z.string(), unit: z.string() }),
  expected: z.object({ value: z.string(), unit: z.string() }),
  inTransit: z.object({ value: z.string(), unit: z.string() }),
-}).strict();
-const openingPreviewSchema = adjustmentPreviewSchema.omit({ warnings: true }).extend({
+});
+const openingPreviewSchema = z.extend(z.omit(adjustmentPreviewSchema, { warnings: true }), {
  schema: z.literal("dinkuskit.inventory.opening-balance-preview/v1"),
  type: z.literal("stock.opening_balance"),
- effect: adjustmentPreviewSchema.shape.effect.extend({ balanceBefore: openingEffectBalanceSchema, balanceAfter: openingEffectBalanceSchema }),
- reason: z.object({ code: z.string(), note: z.string() }).strict(),
+ effect: z.extend(adjustmentPreviewSchema.shape.effect, { balanceBefore: openingEffectBalanceSchema, balanceAfter: openingEffectBalanceSchema }),
+ reason: z.strictObject({ code: z.string(), note: z.string() }),
  warning: z.string(),
 });
 type OpeningPreview = z.infer<typeof openingPreviewSchema>;
@@ -176,52 +179,52 @@ const openingEligibilitySchema = z.object({
 	key: z.object({ poolId: z.string(), skuId: z.string(), locationId: z.string() }),
 	eligibility: z.enum(["eligible", "history_exists"]),
 	location: z.object({ locationId: z.string(), status: z.literal("active") }),
-	balance: openingEffectBalanceSchema.extend({ hasStockHistory: z.boolean() }).passthrough().nullable(),
+	balance: z.nullable(z.catchall(z.extend(openingEffectBalanceSchema, { hasStockHistory: z.boolean() }), z.unknown())),
 	hasStockHistory: z.boolean(),
 });
 
-const openingCommandSchema = stockCommandSchema.extend({
+const openingCommandSchema = z.extend(stockCommandSchema, {
  type: z.literal("stock.opening_balance"),
- payload: z.object({ skuId: z.string(), quantity: z.object({ value: z.string(), unit: z.string() }).strict() }).strict(),
+ payload: z.strictObject({ skuId: z.string(), quantity: z.strictObject({ value: z.string(), unit: z.string() }) }),
  reason: openingPreviewSchema.shape.reason,
- expectedVersions: stockCommandSchema.shape.expectedVersions.length(1),
+ expectedVersions: stockCommandSchema.shape.expectedVersions.check(z.length(1)),
 });
 type OpeningCommand = z.infer<typeof openingCommandSchema>;
-const openingProgressSchema = z.object({ initiatingAdminId: id, preview: openingPreviewSchema, command: openingCommandSchema, expiresAt: z.number() }).strict();
+const openingProgressSchema = z.strictObject({ initiatingAdminId: id, preview: openingPreviewSchema, command: openingCommandSchema, expiresAt: z.number() });
 const openingIntentSchema = z.discriminatedUnion("status", [
- openingProgressSchema.extend({ status: z.literal("preview") }),
- openingProgressSchema.extend({ status: z.literal("pending") }),
- adjustmentIntentSchema.options[2],
- adjustmentIntentSchema.options[3],
+ z.extend(openingProgressSchema, { status: z.literal("preview") }),
+ z.extend(openingProgressSchema, { status: z.literal("pending") }),
+ adjustmentIntentSchema.def.options[2],
+ adjustmentIntentSchema.def.options[3],
 ]);
 type OpeningIntent = z.infer<typeof openingIntentSchema>;
 
 const registrationBaseSchema = z.object({ initiatingAdminId: id, commandId: id });
-const registrationResultBaseSchema = z.object({ schema: z.literal("dinkuskit.inventory.command-result/v1").optional(), commandId: id });
+const registrationResultBaseSchema = z.object({ schema: z.optional(z.literal("dinkuskit.inventory.command-result/v1")), commandId: id });
 const registrationResultSchema = z.discriminatedUnion("outcome", [
- registrationResultBaseSchema.extend({ outcome: z.enum(["registered", "existing"]), inventorySku: managedSkuIdentitySchema }),
- registrationResultBaseSchema.extend({ outcome: z.literal("rejected"), code: z.string(), message: z.string().optional() }),
+ z.extend(registrationResultBaseSchema, { outcome: z.enum(["registered", "existing"]), inventorySku: managedSkuIdentitySchema }),
+ z.extend(registrationResultBaseSchema, { outcome: z.literal("rejected"), code: z.string(), message: z.optional(z.string()) }),
 ]);
 const registrationIntentSchema = z.discriminatedUnion("status", [
- registrationBaseSchema.extend({ status: z.literal("pending"), sku: z.string(), displayNameIfNew: z.string() }).strict(),
- registrationBaseSchema.extend({ status: z.literal("committed"), inventorySku: managedSkuIdentitySchema }).strict(),
- registrationBaseSchema.extend({ status: z.literal("rejected"), code: z.string(), message: z.string().optional() }).strict(),
+ z.strictObject({ ...registrationBaseSchema.shape, status: z.literal("pending"), sku: z.string(), displayNameIfNew: z.string() }),
+ z.strictObject({ ...registrationBaseSchema.shape, status: z.literal("committed"), inventorySku: managedSkuIdentitySchema }),
+ z.strictObject({ ...registrationBaseSchema.shape, status: z.literal("rejected"), code: z.string(), message: z.optional(z.string()) }),
 ]);
 type RegistrationIntent = z.infer<typeof registrationIntentSchema>;
 
 const canonicalStockAdjustmentResultSchema = z.discriminatedUnion("outcome", [
 	z.object({
-		schema: z.literal("dinkuskit.inventory.command-result/v1").optional(),
+		schema: z.optional(z.literal("dinkuskit.inventory.command-result/v1")),
 		outcome: z.literal("committed"),
 		commandId: z.string(),
 		receipt: receiptSchema,
 	}),
 	z.object({
-		schema: z.literal("dinkuskit.inventory.command-result/v1").optional(),
+		schema: z.optional(z.literal("dinkuskit.inventory.command-result/v1")),
 		outcome: z.literal("rejected"),
 		commandId: z.string(),
 		code: z.string(),
-		message: z.string().optional(),
+		message: z.optional(z.string()),
 	}),
 ]);
 
@@ -236,14 +239,14 @@ const moveDataSchema = z.object({
 	skuDisplayName: z.string(),
 	quantity: qty,
 	expiresAt: z.number(),
-	transferId: z.string().optional(),
-	transferVersion: z.string().optional(),
+	transferId: z.optional(z.string()),
+	transferVersion: z.optional(z.string()),
 });
 const locationMoveIntentSchema = z.discriminatedUnion("status", [
-	moveDataSchema.extend({ status: z.literal("preview") }),
-	moveDataSchema.extend({ status: z.literal("pending") }),
-	moveDataSchema.extend({ status: z.literal("committed"), receipt: receiptSchema }),
-	adjustmentIntentSchema.options[3],
+	z.extend(moveDataSchema, { status: z.literal("preview") }),
+	z.extend(moveDataSchema, { status: z.literal("pending") }),
+	z.extend(moveDataSchema, { status: z.literal("committed"), receipt: receiptSchema }),
+	adjustmentIntentSchema.def.options[3],
 ]);
 type LocationMoveIntent = z.infer<typeof locationMoveIntentSchema>;
 
@@ -256,8 +259,8 @@ const CONFIRMATION_FAILURE_CODES = new Set([
 
 const interactionSchema = z.union([
 	z.object({ type: z.literal("page_load"), page: z.literal("/inventory") }),
-	z.object({ type: z.literal("block_action"), action_id: z.string(), block_id: z.string().optional(), value: z.unknown().optional() }),
-	z.object({ type: z.literal("form_submit"), action_id: z.string(), block_id: z.string().optional(), values: z.any() }),
+	z.object({ type: z.literal("block_action"), action_id: z.string(), block_id: z.optional(z.string()), value: z.optional(z.unknown()) }),
+	z.object({ type: z.literal("form_submit"), action_id: z.string(), block_id: z.optional(z.string()), values: z.any() }),
 ]);
 
 const btn = (action_id: string, label: string, value?: unknown) => ({ type: "button" as const, action_id, label, value: value !== undefined ? value : undefined });
@@ -283,18 +286,6 @@ async function setKvKey(ctx: PluginContext, key: string, value: unknown) {
 	}
 }
 
-async function siteId(ctx: PluginContext): Promise<string> {
-	let found = await ctx.kv.get<string>("state:site-id");
-	if (found) return found;
-	// Site origin and plugin identity are distinct protocol fields. Keep any
-	// existing binding stable; new installations mint an opaque identifier.
-	const generated = crypto.randomUUID();
-	await ctx.kv.compareAndSet("state:site-id", null, generated);
-	found = await ctx.kv.get<string>("state:site-id");
-	if (!found) throw new Error("Site identity unavailable");
-	return found;
-}
-
 function siteOrigin(ctx: PluginContext): string {
 	const host = ctx.site.url?.trim();
 	if (!host) throw new StoreConnectError("invalid_site_origin");
@@ -309,10 +300,7 @@ async function readSession(ctx: PluginContext) {
 	if (!stored) return null;
 	const interpreted = interpretStoredConnectionSession(JSON.parse(stored.value));
 	if (interpreted.kind === "current") return { session: interpreted.session, revision: stored.revision };
-	if (interpreted.kind === "legacy-device") {
-		if (!await clearSession(ctx, stored.revision)) throw new Error("Session changed; reload Inventory");
-		return null;
-	}
+	if (interpreted.kind === "obsolete") return null;
 	throw new Error("Session changed; reload Inventory");
 }
 
@@ -323,6 +311,16 @@ async function inspectSession(ctx: PluginContext): Promise<Session | null> {
 		const interpreted = interpretStoredConnectionSession(JSON.parse(stored.value));
 		if (interpreted.kind === "current") return interpreted.session;
 		return null;
+	} catch {
+		return null;
+	}
+}
+
+async function obsoleteSessionRevision(ctx: PluginContext): Promise<string | null> {
+	const stored = await ctx.settings.getVersioned<string>("connectionSession");
+	if (!stored) return null;
+	try {
+		return interpretStoredConnectionSession(JSON.parse(stored.value)).kind === "obsolete" ? stored.revision : null;
 	} catch {
 		return null;
 	}
@@ -360,17 +358,17 @@ async function fetchJson(ctx: PluginContext, url: string, init?: RequestInit) {
 	return { response, body: await response.json() as unknown };
 }
 
-const apiHeaders = async (ctx: PluginContext, token: string) => ({ Authorization: `Bearer ${token}`, "X-Inventory-Site": await siteId(ctx), "Content-Type": APP_JSON });
+const apiHeaders = (token: string, siteId: string) => ({ Authorization: `Bearer ${token}`, "X-Inventory-Site": siteId, "Content-Type": APP_JSON });
 
-async function api(ctx: PluginContext, token: string, path: string, input?: unknown) {
+async function api(ctx: PluginContext, token: string, siteId: string, path: string, input?: unknown) {
 	const { response, body } = await fetchJson(ctx, SERVICE + path, {
 		method: input ? "POST" : "GET",
-		headers: await apiHeaders(ctx, token),
+		headers: apiHeaders(token, siteId),
 		body: input ? JSON.stringify(input) : undefined,
 	});
 	if (!response.ok) {
 		if (response.status === 401) throw new Error("sign_in_required");
-		const rejected = z.object({ error: z.string(), message: z.string().optional() }).safeParse(body);
+		const rejected = z.object({ error: z.string(), message: z.optional(z.string()) }).safeParse(body);
 		if (rejected.success && [400, 403, 404, 409].includes(response.status)) throw new InventoryApiError(rejected.data.error);
 		throw new Error("Inventory request unavailable");
 	}
@@ -397,9 +395,9 @@ async function startStoreConnect(ctx: PluginContext, adminId: string) {
 	if (ctx.url(STORE_CONNECT_CALLBACK_PATH) !== callbackUri) throw new StoreConnectError("invalid_site_origin");
 	const pkce = await createPkcePair();
 	const request = startRequestSchema.parse({
+		protocol_version: STORE_CONNECT_PROTOCOL_VERSION,
 		client_id: STORE_CONNECT_CLIENT_ID,
 		service: STORE_CONNECT_SERVICE,
-		site_id: await siteId(ctx),
 		site_origin: origin,
 		callback_uri: callbackUri,
 		code_challenge: pkce.challenge,
@@ -410,13 +408,14 @@ async function startStoreConnect(ctx: PluginContext, adminId: string) {
 	});
 	if (!response.ok) throw new StoreConnectError("unexpected_website_response");
 	const started = startResponseSchema.parse(body);
+	if (started.protocol_version !== STORE_CONNECT_PROTOCOL_VERSION) throw new StoreConnectError("unexpected_website_response");
 	assertVerificationUri(started.verification_uri, WEBSITE, started.connection_id);
 	const expiresAt = assertStartResponseBounds(started, Date.now());
 	const interval = started.interval * 1000;
 	const receipt = createProofReceipt({
 		connectionId: started.connection_id,
 		challenge: started.challenge,
-		siteId: request.site_id,
+		siteId: started.site_id,
 		siteOrigin: origin,
 		callbackUri,
 		codeChallenge: pkce.challenge,
@@ -426,6 +425,7 @@ async function startStoreConnect(ctx: PluginContext, adminId: string) {
 	try {
 		await saveSession(ctx, {
 			phase: "challenge",
+			protocolVersion: STORE_CONNECT_PROTOCOL_VERSION,
 			connectionId: started.connection_id,
 			challenge: started.challenge,
 			verificationUri: started.verification_uri,
@@ -434,7 +434,7 @@ async function startStoreConnect(ctx: PluginContext, adminId: string) {
 			nextPoll: Date.now() + interval,
 			codeVerifier: pkce.verifier,
 			initiatingAdminId: adminId,
-			siteId: request.site_id,
+			siteId: started.site_id,
 			siteOrigin: origin,
 			callbackUri,
 			codeChallenge: pkce.challenge,
@@ -469,36 +469,33 @@ async function pollStoreConnect(ctx: PluginContext, adminId: string) {
 		if (!response.ok) {
 			const pending = tokenPendingSchema.safeParse(body);
 			if (pending.success) {
-				await saveSession(ctx, { ...session, nextPoll: Date.now() + session.interval }, activeRevision);
+				const interval = pending.data.interval === undefined ? session.interval : pending.data.interval * 1000;
+				await saveSession(ctx, { ...session, interval, nextPoll: Date.now() + interval }, activeRevision);
 				return;
 			}
 			const failure = tokenFailureSchema.safeParse(body);
-			if (failure.success && failure.data.error === "slow_down") {
-				const nextInterval = session.interval + 5000;
-				await saveSession(ctx, { ...session, interval: nextInterval, nextPoll: Date.now() + nextInterval }, activeRevision);
-				return;
-			}
-			if (failure.success && ["access_denied", "expired_token", "invalid_grant", "already_redeemed", "proof_mismatch", "ownership_conflict"].includes(failure.data.error)) {
-				terminal = true;
-				await deleteProof(ctx, session.connectionId);
-				await clearSession(ctx, activeRevision);
-				if (failure.data.error === "already_redeemed") throw new StoreConnectError("unexpected_website_response");
-				return;
-			}
+			terminal = true;
+			await deleteProof(ctx, session.connectionId);
+			await clearSession(ctx, activeRevision);
+			if (failure.success && failure.data.error !== "already_redeemed") return;
 			throw new StoreConnectError("unexpected_website_response");
 		}
-		const token = tokenSuccessSchema.parse(body);
-		if (token.site_id !== session.siteId) throw new StoreConnectError("unexpected_website_response");
+		const token = tokenSuccessSchema.safeParse(body);
+		if (!token.success || token.data.site_id !== session.siteId || token.data.expires_in > STORE_CONNECT_TOKEN_TTL_SECONDS) {
+			terminal = true;
+			await deleteProof(ctx, session.connectionId);
+			await clearSession(ctx, activeRevision);
+			throw new StoreConnectError("unexpected_website_response");
+		}
 		terminal = true;
-		await saveSession(ctx, { phase: "token", token: token.access_token, expiresAt: Date.now() + token.expires_in * 1000 }, activeRevision);
+		await saveSession(ctx, { phase: "token", protocolVersion: STORE_CONNECT_PROTOCOL_VERSION, token: token.data.access_token, siteId: token.data.site_id, expiresAt: Date.now() + token.data.expires_in * 1000 }, activeRevision);
 		await deleteProof(ctx, session.connectionId);
 	} catch (error) {
 		if (!terminal) {
-			try {
-				await saveSession(ctx, { ...session, nextPoll: Date.now() + session.interval }, activeRevision);
-			} catch {
-				// Ignore CAS failure if session was replaced or cleared concurrently
-			}
+			// A malformed or lost exchange response may already have consumed the
+			// one-use grant. Only explicit authorization_pending permits polling.
+			await deleteProof(ctx, session.connectionId);
+			await clearSession(ctx, activeRevision);
 		}
 		throw error;
 	}
@@ -508,6 +505,7 @@ async function executeStockConfirm(
 	ctx: PluginContext,
 	adminId: string,
 	token: string,
+	siteId: string,
 	targetCommandId: unknown,
 	type: "adjustment" | "opening",
 ): Promise<BlockResponse> {
@@ -542,7 +540,7 @@ async function executeStockConfirm(
 	try {
 		({ response, body } = await fetchJson(ctx, SERVICE + path, {
 			method: "POST",
-			headers: await apiHeaders(ctx, token),
+			headers: apiHeaders(token, siteId),
 			body: JSON.stringify({ confirmation: frozen.preview.confirmation.value, command: frozen.command }),
 		}));
 	} catch {
@@ -560,7 +558,7 @@ async function executeStockConfirm(
 		return await render(ctx, adminId);
 	}
 	if (response.status === 409) {
-		const parsedError = z.object({ error: z.string(), message: z.string().optional() }).safeParse(body);
+		const parsedError = z.object({ error: z.string(), message: z.optional(z.string()) }).safeParse(body);
 		if (parsedError.success && CONFIRMATION_FAILURE_CODES.has(parsedError.data.error) && revision) {
 			await ctx.kv.compareAndSet(key, revision, {
 				status: "rejected", initiatingAdminId: frozen.initiatingAdminId, commandId: frozen.command.commandId, code: parsedError.data.error, message: parsedError.data.message,
@@ -570,13 +568,14 @@ async function executeStockConfirm(
 	return render(ctx, adminId);
 }
 
-const executeAdjustmentConfirm = (ctx: PluginContext, adminId: string, token: string, id: unknown) => executeStockConfirm(ctx, adminId, token, id, "adjustment");
-const executeOpeningConfirm = (ctx: PluginContext, adminId: string, token: string, id: unknown) => executeStockConfirm(ctx, adminId, token, id, "opening");
+const executeAdjustmentConfirm = (ctx: PluginContext, adminId: string, token: string, siteId: string, id: unknown) => executeStockConfirm(ctx, adminId, token, siteId, id, "adjustment");
+const executeOpeningConfirm = (ctx: PluginContext, adminId: string, token: string, siteId: string, id: unknown) => executeStockConfirm(ctx, adminId, token, siteId, id, "opening");
 
 async function executeRegistration(
 	ctx: PluginContext,
 	adminId: string,
 	token: string,
+	siteId: string,
 	targetCommandId: string,
 ): Promise<BlockResponse> {
 	const record = await ctx.kv.getVersioned<unknown>(SKU_REG_KEY);
@@ -589,7 +588,7 @@ async function executeRegistration(
 	try {
 		({ response, body } = await fetchJson(ctx, SERVICE + "/v1/skus/register", {
 			method: "POST",
-			headers: { Authorization: `Bearer ${token}`, "X-Inventory-Site": await siteId(ctx), "Content-Type": APP_JSON },
+			headers: apiHeaders(token, siteId),
 			body: JSON.stringify({
 				commandId: parsed.data.commandId,
 				sku: parsed.data.sku,
@@ -609,7 +608,7 @@ async function executeRegistration(
 	return render(ctx, adminId);
 }
 
-async function executeLocationMoveConfirm(ctx: PluginContext, adminId: string, token: string, targetCommandId: unknown): Promise<BlockResponse> {
+async function executeLocationMoveConfirm(ctx: PluginContext, adminId: string, token: string, siteId: string, targetCommandId: unknown): Promise<BlockResponse> {
 	if (typeof targetCommandId !== "string" || !targetCommandId.trim()) return render(ctx, adminId);
 	const record = await ctx.kv.getVersioned<any>(LOC_MOVE_KEY);
 	if (!record) return render(ctx, adminId);
@@ -632,7 +631,7 @@ async function executeLocationMoveConfirm(ctx: PluginContext, adminId: string, t
 		revision = (cas as { revision?: string }).revision ?? null;
 	}
 
-	const headers = await apiHeaders(ctx, token);
+	const headers = apiHeaders(token, siteId);
 	const send = async (type: string, suffix: string, payload: any, expectedVersions: any[]) => {
 		try {
 			const commandId = `${frozen.commandId}:${suffix}`;
@@ -697,6 +696,12 @@ async function executeLocationMoveConfirm(ctx: PluginContext, adminId: string, t
 }
 
 async function render(ctx: PluginContext, adminId: string): Promise<BlockResponse> {
+	if (await obsoleteSessionRevision(ctx)) {
+		return page([
+			{ type: "banner", variant: "alert", title: "Reconnect required", description: "This Inventory connection is from an obsolete development protocol. It is not reused or silently cleared. Discard only this connection session, then explicitly reconnect Inventory." },
+			button("discard_obsolete_connection", "Discard obsolete connection"),
+		]);
+	}
 	const stored = await readSession(ctx);
 	if (!stored || stored.session.expiresAt <= Date.now()) {
 		if (stored?.session.phase === "challenge") await deleteProof(ctx, stored.session.connectionId);
@@ -847,14 +852,14 @@ twoButtons("confirm_opening_balance", "Confirm initial stock", opening.command.c
 
 	let result: z.infer<typeof statusSchema>;
 	try {
-		result = statusSchema.parse(await api(ctx, session.token, "/v1/status"));
+		result = statusSchema.parse(await api(ctx, session.token, session.siteId, "/v1/status"));
 	} catch {
 		return page([{ type: "banner", variant: "alert", title: "Connection could not be confirmed", description: "Account or Inventory service is unavailable. Reload or retry safely; your original connection is preserved." }, button("refresh", "Check status"), button("retry", "Retry connection")]);
 	}
 	if (result.status === "unconnected") {
 		const saved = await ctx.kv.get<unknown>(CONN_INTENT_KEY);
 		if (saved) return page([{ type: "banner", variant: "alert", title: "Connection outcome unknown", description: "Check or retry the original connection. Its Inventory operation will be preserved." }, button("retry", "Retry connection")]);
-		const { operations } = z.object({ operations: z.array(operationSchema) }).parse(await api(ctx, session.token, "/v1/operations"));
+		const { operations } = z.object({ operations: z.array(operationSchema) }).parse(await api(ctx, session.token, session.siteId, "/v1/operations"));
 		const blocks: Block[] = [trial, { type: "form", block_id: "first-location", fields: [textField("location_name", "Name your first stock location")], submit: { label: "Create Inventory", action_id: "create" } }];
 		if (operations.length) blocks.push({ type: "form", block_id: "existing-operation", fields: [{ type: "select", action_id: "operation_id", label: "Connect an existing Inventory operation", options: operations.map(op => ({ label: `${op.locationName} (${op.status})`, value: op.operationId })) }], submit: { label: "Connect selected operation", action_id: "reconnect" } });
 		return page(blocks);
@@ -862,12 +867,12 @@ twoButtons("confirm_opening_balance", "Confirm initial stock", opening.command.c
 	if (result.status === "pending") return page([{ type: "banner", variant: "alert", title: "Inventory provisioning pending", description: "The outcome is not confirmed. Retry safely to check the same operation." }, button("retry", "Retry provisioning")]);
 	if (result.status === "failed") return notice("Inventory setup failed", `Provisioning was rejected (${result.operation.failureCode}). Your original operation is preserved. Contact DinkusKit support.`);
 
-	const locations = locationsSchema.parse(await api(ctx, session.token, "/v1/locations"));
+	const locations = locationsSchema.parse(await api(ctx, session.token, session.siteId, "/v1/locations"));
 	if (locations.locations.length === 0) {
 		return page([{ type: "banner", title: "Inventory connected", description: "No stock locations found." }, button("refresh", "Refresh Inventory")]);
 	}
 
-	const skuList = managedSkuListSchema.parse(await api(ctx, session.token, "/v1/skus"));
+	const skuList = managedSkuListSchema.parse(await api(ctx, session.token, session.siteId, "/v1/skus"));
 	const selectedLocId = await ctx.kv.get<string>("state:selected-location");
 	const storedSkuId = await ctx.kv.get<string>("state:selected-sku");
 	const selectedSku = skuList.skus.find(sku => sku.inventorySkuId === storedSkuId) ?? skuList.skus[0];
@@ -889,7 +894,7 @@ twoButtons("confirm_opening_balance", "Confirm initial stock", opening.command.c
 
 	if (selectedSkuId && activeLocation) {
 		try {
-			const stockRaw: any = await api(ctx, session.token, `/v1/stock?sku_id=${encodeURIComponent(selectedSkuId)}&location_id=${encodeURIComponent(activeLocation.locationId)}`);
+			const stockRaw: any = await api(ctx, session.token, session.siteId, `/v1/stock?sku_id=${encodeURIComponent(selectedSkuId)}&location_id=${encodeURIComponent(activeLocation.locationId)}`);
 			if (stockRaw?.ok && stockRaw?.balance?.outcome === "found") {
 				const b = stockRaw.balance.balance;
 				if (b?.hasStockHistory) stockBalance = {
@@ -907,7 +912,7 @@ twoButtons("confirm_opening_balance", "Confirm initial stock", opening.command.c
 
  if (selectedSkuId && activeLocation && !stockBalance) {
   try {
-   const eligibility = openingEligibilitySchema.parse(await api(ctx, session.token, `/v1/stock/opening/eligibility?sku_id=${encodeURIComponent(selectedSkuId)}&location_id=${encodeURIComponent(activeLocation.locationId)}`));
+   const eligibility = openingEligibilitySchema.parse(await api(ctx, session.token, session.siteId, `/v1/stock/opening/eligibility?sku_id=${encodeURIComponent(selectedSkuId)}&location_id=${encodeURIComponent(activeLocation.locationId)}`));
    openingEligible = eligibility.key.poolId === result.operation.poolId && eligibility.key.skuId === selectedSkuId && eligibility.key.locationId === activeLocation.locationId && eligibility.location.locationId === activeLocation.locationId && eligibility.eligibility === "eligible" && !eligibility.hasStockHistory;
   } catch { /* Missing or unavailable authoritative eligibility offers no mutation. */ }
  }
@@ -994,6 +999,10 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 			if (stored?.session.phase === "challenge" && stored.session.initiatingAdminId === adminId) await pollStoreConnect(ctx, adminId);
 		}
 		if (interaction.type === "block_action" && interaction.action_id === "connect") await startStoreConnect(ctx, adminId);
+		if (interaction.type === "block_action" && interaction.action_id === "discard_obsolete_connection") {
+			const revision = await obsoleteSessionRevision(ctx);
+			if (!revision || !(await clearSession(ctx, revision))) return notice("Connection changed", "Reload Inventory to inspect the current connection session.");
+		}
 		if (interaction.type === "block_action" && interaction.action_id === "check_sign_in") await pollStoreConnect(ctx, adminId);
 
 		// Handle explicit stock view selection
@@ -1025,12 +1034,12 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 			const numQty = Number(qtyVal);
 			if (isNaN(numQty) || numQty <= 0) return notice("Invalid quantity", "Quantity must be positive.");
 
-			const locationsData = locationsSchema.parse(await api(ctx, stored.session.token, "/v1/locations"));
+			const locationsData = locationsSchema.parse(await api(ctx, stored.session.token, stored.session.siteId, "/v1/locations"));
 			const fromLoc = locationsData.locations.find(l => l.locationId === fromId);
 			const toLoc = locationsData.locations.find(l => l.locationId === toId);
 			if (!fromLoc || !toLoc) return notice("Location not found", "Location not active.");
 
-			const skuList = managedSkuListSchema.parse(await api(ctx, stored.session.token, "/v1/skus"));
+			const skuList = managedSkuListSchema.parse(await api(ctx, stored.session.token, stored.session.siteId, "/v1/skus"));
 			const foundSku = skuList.skus.find(s => s.inventorySkuId === skuVal);
 			if (!foundSku) return notice("SKU not registered", "SKU not registered.");
 
@@ -1072,7 +1081,7 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 			};
 			const saved = await ctx.kv.compareAndSet(SKU_REG_KEY, null, pending);
 			if (!saved.applied) return render(ctx, adminId);
-			return await executeRegistration(ctx, adminId, stored.session.token, pending.commandId);
+			return await executeRegistration(ctx, adminId, stored.session.token, stored.session.siteId, pending.commandId);
 		}
 
 		if (interaction.type === "form_submit" && interaction.action_id === "preview_opening_balance") {
@@ -1086,18 +1095,19 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 				requireOriginatingAdministrator(prior.data.initiatingAdminId, adminId);
 				if (prior.data.status === "pending") return notice("Initial stock pending", "Retry or resolve the existing initial-stock command first.");
 			}
-			const locationsData = locationsSchema.parse(await api(ctx, stored.session.token, "/v1/locations"));
+			const locationsData = locationsSchema.parse(await api(ctx, stored.session.token, stored.session.siteId, "/v1/locations"));
 			if (!locationsData.locations.some(l => l.locationId === interaction.values.location_id)) return notice("Location not found", "The selected location is not active in this inventory operation.");
-			const eligibility = openingEligibilitySchema.parse(await api(ctx, stored.session.token, "/v1/stock/opening/eligibility?sku_id=" + encodeURIComponent(interaction.values.sku_id) + "&location_id=" + encodeURIComponent(interaction.values.location_id)));
+			const eligibility = openingEligibilitySchema.parse(await api(ctx, stored.session.token, stored.session.siteId, "/v1/stock/opening/eligibility?sku_id=" + encodeURIComponent(interaction.values.sku_id) + "&location_id=" + encodeURIComponent(interaction.values.location_id)));
 			if (eligibility.key.skuId !== interaction.values.sku_id || eligibility.key.locationId !== interaction.values.location_id || eligibility.location.locationId !== interaction.values.location_id) return notice("Initial stock unavailable", "The authoritative SKU or location identity did not match the request.");
 			if (eligibility.eligibility !== "eligible" || eligibility.hasStockHistory) return notice("Initial stock unavailable", "This SKU-location has physical stock history, including zero balances. Review it as an adjustment.");
-			const preview = openingPreviewSchema.parse(await api(ctx, stored.session.token, "/v1/stock/opening/preview", {
+			const preview = openingPreviewSchema.parse(await api(ctx, stored.session.token, stored.session.siteId, "/v1/stock/opening/preview", {
 				locationId: interaction.values.location_id,
 				skuId: interaction.values.sku_id,
 				quantity: { value: interaction.values.quantity_value, unit: "each" },
 				reason: { code: "physical_count", note: "Set Initial Stock after reviewing the authoritative SKU-location history" },
 				references: [],
 			}));
+			if (preview.context.siteId !== stored.session.siteId) return notice("Inventory identity changed", "The authoritative site identity did not match this signed-in session. Reconnect Inventory.");
 			const command: OpeningCommand = {
 				schema: CMD_SCHEMA,
 				commandId: crypto.randomUUID(),
@@ -1130,7 +1140,7 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 			const locId = interaction.values.location_id ?? (await ctx.kv.get<string>("state:selected-location"));
 			if (!locId) return notice("Location required", "Explicit active stock location is required.");
 
-			const locationsData = locationsSchema.parse(await api(ctx, stored.session.token, "/v1/locations"));
+			const locationsData = locationsSchema.parse(await api(ctx, stored.session.token, stored.session.siteId, "/v1/locations"));
 			const targetLocation = locationsData.locations.find(l => l.locationId === locId);
 			if (!targetLocation) return notice("Location not found", "The selected location is not active in this inventory operation.");
 
@@ -1139,7 +1149,7 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 
 			let previewRaw: unknown;
 			try {
-				previewRaw = await api(ctx, stored.session.token, "/v1/stock/adjust/preview", {
+				previewRaw = await api(ctx, stored.session.token, stored.session.siteId, "/v1/stock/adjust/preview", {
 					locationId: locId,
 					skuId: interaction.values.sku_id,
 					delta: { value: interaction.values.delta_value, unit: "each" },
@@ -1152,13 +1162,14 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 				throw err;
 			}
 			const preview = adjustmentPreviewSchema.parse(previewRaw);
+			if (preview.context.siteId !== stored.session.siteId) return notice("Inventory identity changed", "The authoritative site identity did not match this signed-in session. Reconnect Inventory.");
 			const commandId = crypto.randomUUID();
 			const command: StockCommand = {
 				schema: CMD_SCHEMA,
 				commandId,
 				type: "stock.adjust",
 				context: {
-					siteId: await siteId(ctx),
+					siteId: stored.session.siteId,
 					poolId: preview.context.poolId,
 					locationId: preview.context.locationId,
 				},
@@ -1201,20 +1212,20 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 		if (interaction.type === "block_action") {
 			const a = interaction.action_id;
 			const v = interaction.value;
-			const withToken = async (fn: (token: string) => Promise<BlockResponse>) => {
+			const withToken = async (fn: (token: string, siteId: string) => Promise<BlockResponse>) => {
 				const s = await readSession(ctx);
 				if (!s || s.session.phase !== "token" || s.session.expiresAt <= Date.now()) return render(ctx, adminId);
-				return await fn(s.session.token);
+				return await fn(s.session.token, s.session.siteId);
 			};
-			if (a === "confirm_adjustment" || a === "retry_adjustment") return await withToken(t => executeAdjustmentConfirm(ctx, adminId, t, v));
+			if (a === "confirm_adjustment" || a === "retry_adjustment") return await withToken((t, siteId) => executeAdjustmentConfirm(ctx, adminId, t, siteId, v));
 			if (a === "cancel_adjustment") { await clearIntentIfMatching(ctx, ADJ_KEY, adminId, v, ["preview"]); return render(ctx, adminId); }
 			if (a === "clear_adjustment_result") { await clearIntentIfMatching(ctx, ADJ_KEY, adminId, v, ["committed", "rejected"]); return render(ctx, adminId); }
-			if (a === "confirm_opening_balance" || a === "retry_opening_balance") return await withToken(t => executeOpeningConfirm(ctx, adminId, t, v));
+			if (a === "confirm_opening_balance" || a === "retry_opening_balance") return await withToken((t, siteId) => executeOpeningConfirm(ctx, adminId, t, siteId, v));
 			if (a === "cancel_opening_balance") { await clearIntentIfMatching(ctx, OPEN_KEY, adminId, v, ["preview"]); return render(ctx, adminId); }
 			if (a === "clear_opening_balance_result") { await clearIntentIfMatching(ctx, OPEN_KEY, adminId, v, ["committed", "rejected"]); return render(ctx, adminId); }
-			if (a === "retry_registration") return await withToken(t => typeof v === "string" ? executeRegistration(ctx, adminId, t, v) : render(ctx, adminId));
+			if (a === "retry_registration") return await withToken((t, siteId) => typeof v === "string" ? executeRegistration(ctx, adminId, t, siteId, v) : render(ctx, adminId));
 			if (a === "clear_registration_result") { await clearIntentIfMatching(ctx, SKU_REG_KEY, adminId, v, ["committed", "rejected"]); return render(ctx, adminId); }
-			if (a === "confirm_location_move" || a === "retry_location_move") return await withToken(t => executeLocationMoveConfirm(ctx, adminId, t, v));
+			if (a === "confirm_location_move" || a === "retry_location_move") return await withToken((t, siteId) => executeLocationMoveConfirm(ctx, adminId, t, siteId, v));
 			if (a === "cancel_location_move") { await clearIntentIfMatching(ctx, LOC_MOVE_KEY, adminId, v, ["preview"]); return render(ctx, adminId); }
 			if (a === "clear_location_move_result") { await clearIntentIfMatching(ctx, LOC_MOVE_KEY, adminId, v, ["committed", "rejected"]); return render(ctx, adminId); }
 		}
@@ -1235,14 +1246,14 @@ async function handleAdmin(routeCtx: { input: unknown; user?: { id?: string } },
 					if (previous.type !== candidate.type || JSON.stringify({ ...previous, requestId: "" }) !== JSON.stringify({ ...candidate, requestId: "" })) return notice("Connection already started", "Use Retry to resolve your original connection before changing the setup.");
 				}
 			} else if (!intent) {
-				const result = statusSchema.parse(await api(ctx, stored.session.token, "/v1/status"));
+			const result = statusSchema.parse(await api(ctx, stored.session.token, stored.session.siteId, "/v1/status"));
 				if (result.status === "unconnected") return render(ctx, adminId);
 				await ctx.kv.compareAndSet(CONN_INTENT_KEY, null, { type: "reconnect", requestId: crypto.randomUUID(), operationId: result.operation.operationId });
 				intent = await ctx.kv.get(CONN_INTENT_KEY);
 			}
 			const frozen = intentSchema.parse(intent);
 			activeRequestId = frozen.requestId;
-			await api(ctx, stored.session.token, "/v1/connect", frozen);
+			await api(ctx, stored.session.token, stored.session.siteId, "/v1/connect", frozen);
 		}
 		return await render(ctx, adminId);
 	} catch (error) {
@@ -1301,7 +1312,7 @@ const plugin: SandboxedPlugin = { routes: {
 		response: "raw",
 		cacheControl: "no-store",
 		handler: async (routeCtx, ctx) => {
-			const connectionId = z.object({ connection_id: z.string().trim().min(1).max(200) }).safeParse(routeCtx.input);
+			const connectionId = z.object({ connection_id: z.string().check(z.trim(), z.minLength(1), z.maxLength(200)) }).safeParse(routeCtx.input);
 			if (!connectionId.success) {
 				return pluginResponse({ status: 404, headers: { "content-type": APP_JSON }, body: { kind: "text", value: JSON.stringify({ error: "not_found" }) } });
 			}
