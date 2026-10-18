@@ -44,7 +44,6 @@ jobs:
       base_sha: ${{ steps.live.outputs.base_sha }}
       head_sha: ${{ steps.live.outputs.head_sha }}
       publish: ${{ steps.live.outputs.publish }}
-      queue_mode: ${{ vars.CLAWSWEEPER_DO_QUEUE_MODE }}
     steps:
       - name: Bind the native event to the current PR
         id: live
@@ -120,6 +119,7 @@ jobs:
       expected_base_sha: ${{ needs.bind.outputs.base_sha }}
       expected_head_sha: ${{ needs.bind.outputs.head_sha }}
       publish: ${{ needs.bind.outputs.publish == 'true' }}
+      queue_mode: ${{ vars.CLAWSWEEPER_DO_QUEUE_MODE }}
     secrets:
       CLAWSWEEPER_DISPATCH_TOKEN: ${{ secrets.CLAWSWEEPER_DISPATCH_TOKEN }}
       CLAWSWEEPER_DO_QUEUE_SECRET: ${{ secrets.CLAWSWEEPER_DO_QUEUE_SECRET }}
