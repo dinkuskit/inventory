@@ -207,7 +207,7 @@ is the implementation target for the first standard-format plugin fixture, not
 a claim that the unimplemented plugin already has a proven runtime or minimum
 compatible version.
 
-The locked development toolchain requires Node `>=22.12.0`. Its dependency tree
+The locked development toolchain requires Node `>=24.15.0 <25` (CI pins 24.22.0). Its dependency tree
 declares third-party lifecycle scripts, including install scripts for
 `esbuild` and `workerd`. On the proof host, npm 11.13.0 does not implement `install-scripts` and did not
 print `allowScripts` coverage warnings; another npm version or operator policy
