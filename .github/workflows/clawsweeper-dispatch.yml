@@ -3,7 +3,7 @@ name: ClawSweeper dispatch
 # Native events are independent of CI and agent-owned OpenClaw review.
 on:
   pull_request_target:
-    types: [opened, reopened, edited, synchronize, ready_for_review]
+    types: [opened, reopened, edited, synchronize, ready_for_review, labeled]
   issue_comment:
     types: [created]
   workflow_dispatch:
@@ -30,8 +30,7 @@ jobs:
       (github.event_name != 'issue_comment' ||
        (github.event.issue.pull_request &&
         github.event.comment.user.type != 'Bot' &&
-        (contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) ||
-         github.event.comment.user.id == github.event.issue.user.id) &&
+        contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) &&
         contains(github.event.comment.body, '@clawsweeper')))
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -44,6 +43,7 @@ jobs:
       base_sha: ${{ steps.live.outputs.base_sha }}
       head_sha: ${{ steps.live.outputs.head_sha }}
       publish: ${{ steps.live.outputs.publish }}
+      force_label_by: ${{ steps.live.outputs.force_label_by }}
     steps:
       - name: Bind the native event to the current PR
         id: live
@@ -85,22 +85,40 @@ jobs:
           pull = get(f'repos/{target}/pulls/{number}')
           if pull['state'] != 'open' or pull['draft']: skip()
           if kind == 'issue_comment':
+              # #269: comments are maintainer-only; no author re-review tier.
               maintainer = comment.get('author_association') in {'OWNER', 'MEMBER', 'COLLABORATOR'}
-              actor = comment['user'].get('login', '').lower()
-              author = pull.get('user', {}).get('login', '').lower()
-              author_rerun = bool(actor) and actor == author and commands[0] in {'re-review', 're-run'}
-              if not maintainer and not author_rerun: skip()
+              if not maintainer: skip()
           if pull['base']['repo']['id'] != repo['id'] or pull['base']['ref'] != repo['default_branch']: skip()
+          # #269 sender trust/label policy: identical ID-verified bot
+          # allowlist across both tenants; untrusted bot PRs are not
+          # admitted until a maintainer trigger (label or comment).
+          TRUSTED_BOTS = {'smoky-agent[bot]': 343990805, 'dinkuskit-release[bot]': 342199489}
+          def bot_trusted(user):
+              expected = TRUSTED_BOTS.get((user or {}).get('login'))
+              if expected is None or (user or {}).get('id') != expected: return False
+              if user.get('login') == 'dinkuskit-release[bot]' and not target.startswith('dinkuskit/'): return False
+              return True
+          force_label_by = ''
+          if kind == 'pull_request_target' and event.get('action') == 'labeled':
+              if (event.get('label') or {}).get('name') != 'clawsweeper:review': skip()
+              sender = event.get('sender') or {}
+              if sender.get('type') != 'User' or not sender.get('login'): skip()
+              try:
+                  permission = get(f"repos/{target}/collaborators/{sender['login']}/permission")['permission']
+              except Exception: skip()
+              if permission not in ('admin', 'maintain', 'write'): skip()
+              force_label_by = sender['login']
+          elif kind == 'pull_request_target':
+              author = pull.get('user') or {}
+              if author.get('type') == 'Bot' and not bot_trusted(author): skip()
           base = get(f"repos/{target}/git/ref/heads/{repo['default_branch']}")['object']['sha']
           head = pull['head']['sha']
           if any(not re.fullmatch(r'[0-9a-f]{40}', sha) for sha in (base, head)): raise SystemExit('Invalid source tuple')
           if base != pull['base']['sha']: raise SystemExit('Base moved during admission')
           publish = 'true' if kind != 'workflow_dispatch' else os.environ['MANUAL_PUBLISH']
-          # Author-only reruns refresh evidence without publication authority.
-          if kind == 'issue_comment' and not maintainer: publish = 'false'
           if publish not in {'true', 'false'}: raise SystemExit('Invalid publication mode')
           with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
-              out.write(f'requested=true\npr_number={number}\nbase_sha={base}\nhead_sha={head}\npublish={publish}\n')
+              out.write(f'requested=true\npr_number={number}\nbase_sha={base}\nhead_sha={head}\npublish={publish}\nforce_label_by={force_label_by}\n')
           PYBIND
       # The native receiver owns pickup, started, and terminal receipts.
 
@@ -111,7 +129,7 @@ jobs:
       group: ${{ github.repository }}-clawsweeper-dispatch-${{ needs.bind.outputs.pr_number }}
       cancel-in-progress: true
     permissions: {}
-    uses: dinkuskit/clawsweeper/.github/workflows/dinkuskit-native-canary.yml@bad9d7e3204a6a93ad4da0bde97c49f4e64b6ad6
+    uses: dinkuskit/clawsweeper/.github/workflows/dinkuskit-native-canary.yml@b2dd2b5b3fe978645e954f8544612249e77e2891
     with:
       target_repository: inventory
       target_repository_id: '1307843786'
@@ -119,7 +137,7 @@ jobs:
       expected_base_sha: ${{ needs.bind.outputs.base_sha }}
       expected_head_sha: ${{ needs.bind.outputs.head_sha }}
       publish: ${{ needs.bind.outputs.publish == 'true' }}
-      queue_mode: ${{ vars.CLAWSWEEPER_DO_QUEUE_MODE }}
+      force_label_by: ${{ needs.bind.outputs.force_label_by }}
     secrets:
       CLAWSWEEPER_DISPATCH_TOKEN: ${{ secrets.CLAWSWEEPER_DISPATCH_TOKEN }}
       CLAWSWEEPER_DO_QUEUE_SECRET: ${{ secrets.CLAWSWEEPER_DO_QUEUE_SECRET }}
