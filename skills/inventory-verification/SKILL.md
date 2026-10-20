@@ -31,5 +31,6 @@ replace the canonical full gate.
 
 If Vitest or the sandbox bundler reports a missing platform-native binding,
 repeat the locked install with a compatible npm and `--include=optional`.
-This task was verified with Node 22.23.2 and npm 10 after the host npm 11
-install omitted native runtime dependencies. Preserve the lockfile and pins.
+Use the CI-pinned Node 24.22.0 with its bundled npm (a clean `npm ci` under
+it installs the native runtime dependencies); an older host npm 11 install
+once omitted them. Preserve the lockfile and pins.
