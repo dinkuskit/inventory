@@ -11,7 +11,7 @@ import { createInterface } from "node:readline";
 import { bootstrapCleanInstall, stampPreserved } from "./emdash-clean-install-bootstrap.mjs";
 
 const root = resolve(import.meta.dirname, "..");
-if (process.versions.node !== "22.23.2") throw new Error("Joint proof requires the Website-pinned Node 22.23.2");
+if (Number(process.versions.node.split(".")[0]) < 24) throw new Error("Joint proof requires Node 24+");
 const fixture = resolve(root, "runs/emdash-install-proof-runs/20260930/merchant-connect-variant");
 const argument = name => {
 	const index = process.argv.indexOf(name);
