@@ -2,11 +2,14 @@
 set -euo pipefail
 SAARIUS_REPO="https://github.com/saariuslystoned/SaariusSkills.git"
 SAARIUS_SHA="5c8476507b0a83e4aef6b54f2e5dfdca2105b6db"
-SKILL_NAMES=(grilltrack emdash-sites building-emdash-site creating-plugins emdash-cli upgrading-emdash emdash-commerce emdash-ci-deploy)
+# Keep the established bundle pin; only the research skill has a newer revision.
+EMDASH_COMMERCE_SHA="23f2bb1208b3baa7aedaa87faec00395f9bdd061"
+SKILL_NAMES=(grilltrack emdash-sites building-emdash-site creating-plugins emdash-cli upgrading-emdash emdash-ci-deploy)
 ROOT="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 SKILLS_DIR="${CURSOR_SKILLS_DIR:-$ROOT/.cursor/skills}"
 CACHE_DIR="${AGENT_SKILLS_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/dinkuskit-agent-skills}"
 SAARIUS_DIR="$CACHE_DIR/saarius-$SAARIUS_SHA"
+EMDASH_COMMERCE_DIR="$CACHE_DIR/emdash-commerce-$EMDASH_COMMERCE_SHA"
 die() { printf 'agent-skills: %s\n' "$*" >&2; exit 2; }
 python_bin="${PYTHON:-python3}"
 command -v "$python_bin" >/dev/null 2>&1 || die "Python 3.10+ is required"
@@ -31,6 +34,30 @@ install_saarius() {
   done
   rm -rf "$lock"; trap - EXIT
 }
+install_emdash_commerce() {
+  mkdir -p "$CACHE_DIR"
+  lock="$CACHE_DIR/.emdash-commerce-$EMDASH_COMMERCE_SHA.lock"
+  while ! mkdir "$lock" 2>/dev/null; do sleep 1; done
+  trap 'rm -rf "$lock"' EXIT
+  if [ ! -f "$EMDASH_COMMERCE_DIR/skills/emdash-commerce/SKILL.md" ]; then
+    tmp="$CACHE_DIR/.emdash-commerce-$$"
+    trap 'rm -rf "$tmp" "$lock"' EXIT
+    git clone --quiet --filter=blob:none --no-checkout "$SAARIUS_REPO" "$tmp"
+    git -C "$tmp" fetch --quiet --depth 1 origin "$EMDASH_COMMERCE_SHA"
+    # Copy the complete skill directory, including its referenced guidance.
+    git -C "$tmp" sparse-checkout set skills/emdash-commerce
+    git -C "$tmp" checkout --quiet "$EMDASH_COMMERCE_SHA"
+    rm -rf "$EMDASH_COMMERCE_DIR"
+    mv "$tmp" "$EMDASH_COMMERCE_DIR"
+    trap 'rm -rf "$lock"' EXIT
+  fi
+  mkdir -p "$SKILLS_DIR"
+  rm -rf "$SKILLS_DIR/emdash-commerce"
+  cp -R "$EMDASH_COMMERCE_DIR/skills/emdash-commerce" "$SKILLS_DIR/emdash-commerce"
+  rm -rf "$lock"
+  trap - EXIT
+}
+
 find_cli() {
   for candidate in "${GRILLTRACK_SKILL_DIR:-}/scripts/grilltrack_ledger.py" "$HOME/.codex/skills/grilltrack/scripts/grilltrack_ledger.py" "$SKILLS_DIR/grilltrack/scripts/grilltrack_ledger.py" "$SAARIUS_DIR/skills/grilltrack/scripts/grilltrack_ledger.py"; do
     [ -n "$candidate" ] && [ -f "$candidate" ] && { printf '%s\n' "$candidate"; return; }
@@ -41,6 +68,7 @@ if [ "${1:-}" = "--grilltrack" ]; then
   exec "$python_bin" "$cli" "$@"
 fi
 install_saarius
+install_emdash_commerce
 install_smoky() {
   smoky_dir="$CACHE_DIR/smoky-$SMOKY_SKILLS_SHA"
   if [ ! -d "$smoky_dir/skills" ]; then
@@ -58,4 +86,4 @@ install_smoky() {
     cp -R "$skill" "$SKILLS_DIR/$(basename "$skill")"
   done
 }
-printf 'agent-skills: installed SaariusSkills GrillTrack and EmDash skills at %s.\n' "$SAARIUS_SHA" >&2
+printf 'agent-skills: installed SaariusSkills bundle at %s; emdash-commerce at %s.\n' "$SAARIUS_SHA" "$EMDASH_COMMERCE_SHA" >&2

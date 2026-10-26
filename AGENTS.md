@@ -7,12 +7,28 @@ here. Assume every committed line eventually publishes; business rationale
 lives in the operator's private planning repo and is cross-referenced by
 issue or path only.
 
+## Direction and research
+
+Read the organization [vision](https://github.com/dinkuskit/.github/blob/main/VISION.md)
+and [scope and planning](https://github.com/dinkuskit/.github/blob/main/ROADMAP.md)
+with this repository's charter and current decisions. They describe direction
+and the store baseline; they do not reopen local locks or establish implemented
+capabilities.
+
+Use the installed `emdash-commerce` skill for material product or architecture
+questions and relevant grills. Its selective REA guidance distinguishes
+research, accepted design, active work and verified behavior. Reuse the owning
+issue or proposal for unresolved questions; research alone does not authorize
+implementation or expand an active release.
+
 ## Running GrillTrack
 
 Run `./scripts/agent-skills` first; it installs the pinned SaariusSkills
 skills into ignored `.cursor/skills/`. Use
 `./scripts/grilltrack --project . validate` or `show` for ledger reads.
-The CLI-only ledger rule remains in force. SmokySkills is enabled only after
+The bundle keeps its existing pin; `emdash-commerce` has a separate exact
+revision in that script, including its reference files. The CLI-only ledger
+rule remains in force. SmokySkills is enabled only after
 maintainer access and an immutable commit pin are supplied.
 
 In Claude Code cloud sessions `.claude/hooks/session-start.sh` checks Node
