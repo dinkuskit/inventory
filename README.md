@@ -20,6 +20,11 @@ describe its own scope; the roadmap is not a claim of release readiness.
 
 ## Install type
 
+See [what ships and where it runs](https://dinkuskit.com/docs/developers/contribute#what-ships-and-where-it-runs)
+for the boundaries between Registry plugins, hosted services, the template,
+the playground and developer-only test tools. Beta and stable plugin artifacts
+do not include those developer preview controls.
+
 DinkusKit plugins ship as EmDash Registry plugins: sandboxed and installed
 from the plugin Registry, which is how most EmDash sites add plugins. The
 Registry build is the supported product, and features are designed, tested and
