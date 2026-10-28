@@ -13,10 +13,14 @@ in [docs/CHARTER.md](docs/CHARTER.md).
 ## Kit direction
 
 The canonical [vision](https://github.com/dinkuskit/.github/blob/main/VISION.md)
-and [roadmap](https://github.com/dinkuskit/.github/blob/main/ROADMAP.md) put a
-human-operable EmDash store first. Commerce and Inventory are crucial launch
-pieces and launch side by side. This repository's contracts and status below
-describe its own scope; the roadmap is not a claim of release readiness.
+and [scope and planning](https://github.com/dinkuskit/.github/blob/main/ROADMAP.md)
+set the direction of independently useful, connected tools. Inventory is optional
+for the current [v1 store baseline](https://github.com/dinkuskit/.github/blob/main/ROADMAP.md#v1-store-baseline):
+a store can use Commerce's manual availability without managed stock. When
+Inventory is selected, it remains the sole physical-stock authority for its
+pool. This direction does not restart Inventory work, reopen the superseded
+WooCommerce/Katana bridge, or claim release readiness; current scope and status
+remain below.
 
 ## Install type
 
