@@ -85,3 +85,8 @@ reports anything missing; read that report before running project scripts.
 - Do not publish to npm, list in an EmDash marketplace or registry, deploy,
   merge, or mutate a production site without Bobby's explicit approval. Keep
   EmDash pre-1.0 compatibility claims bound to exact proof.
+- `api-oracle` ([saari-co/api-oracle](https://github.com/saari-co/api-oracle)) runs
+  delegated background audits, CI triage, and architecture checkpoints on API
+  credits. Prefer `oracle ask <lane>` for work a brief can carry, and read and
+  rate the briefs it announces. It gates nothing and does not replace
+  ClawSweeper review.
