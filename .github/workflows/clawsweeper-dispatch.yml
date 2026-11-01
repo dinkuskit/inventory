@@ -111,10 +111,9 @@ jobs:
           elif kind == 'pull_request_target':
               author = pull.get('user') or {}
               if author.get('type') == 'Bot' and not bot_trusted(author): skip()
-          base = get(f"repos/{target}/git/ref/heads/{repo['default_branch']}")['object']['sha']
+          base = pull['base']['sha']
           head = pull['head']['sha']
           if any(not re.fullmatch(r'[0-9a-f]{40}', sha) for sha in (base, head)): raise SystemExit('Invalid source tuple')
-          if base != pull['base']['sha']: raise SystemExit('Base moved during admission')
           publish = 'true' if kind != 'workflow_dispatch' else os.environ['MANUAL_PUBLISH']
           if publish not in {'true', 'false'}: raise SystemExit('Invalid publication mode')
           with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
