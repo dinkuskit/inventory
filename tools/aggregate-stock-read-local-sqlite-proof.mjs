@@ -5,6 +5,7 @@ import { isAbsolute } from "node:path";
 import {
 	createExecuteLocationCommand,
 	createReadSkuStock,
+	createRegisterManagedSku,
 	createSetOpeningBalance,
 } from "../src/index.ts";
 import { createLocalSqliteTestStore } from "../src/storage/local-sqlite-test-store.ts";
@@ -67,6 +68,27 @@ try {
 		assert.equal(result.outcome, "committed");
 	}
 
+	const registration = await createRegisterManagedSku({
+		store,
+		now: () => new Date("2026-08-28T20:20:30.000Z"),
+		createInventorySkuId: () => "sku_local_proof_hat",
+	})(
+		{
+			schema: "dinkuskit.inventory.command/v1",
+			commandId: "cmd_register_hat",
+			type: "sku.register",
+			context: { siteId: "site_local_proof", poolId: "pool_local_proof" },
+			payload: {
+				sku: "PROOF-HAT",
+				displayNameIfNew: "Proof Hat",
+				unit: "each",
+			},
+			references: [],
+		},
+		{ principal },
+	);
+	assert.equal(registration.outcome, "registered");
+
 	const opening = await createSetOpeningBalance({
 		store,
 		now: () => new Date("2026-08-28T20:21:00.000Z"),
@@ -115,7 +137,10 @@ try {
 	assert.deepEqual(result.stock, {
 		onHand: { value: "7.5", unit: "each" },
 		reserved: { value: "0", unit: "each" },
+		outgoingTransferCommitted: { value: "0", unit: "each" },
 		available: { value: "7.5", unit: "each" },
+		expected: { value: "0", unit: "each" },
+		inTransit: { value: "0", unit: "each" },
 	});
 
 	console.log(
