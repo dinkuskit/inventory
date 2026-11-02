@@ -42,6 +42,10 @@ behavior-preserving migration cycles are confirmed.
   production adapter surfaces. They own SQLite and Durable Object mechanics,
   not domain policy.
 - `tests/helpers/` may compose public feature entries with test-only adapters.
+- `scripts/proof-runtime.sh` owns PID-lineage shutdown for the four local
+  `bin/prove-*-real` runners. `tests/workflows/proof-runtime-cleanup.test.mjs`
+  covers restart, failure, signal, stdio and outer-process-group containment;
+  it does not substitute for the real ledger/runtime proofs.
 
 ## Boundary rules
 
