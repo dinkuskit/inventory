@@ -130,6 +130,25 @@ export type StockTransferStatus =
 	| "received"
 	| "canceled";
 
+/** Explicit legal stock-transfer state transitions enforced before every status write. */
+export const STOCK_TRANSFER_STATE_TRANSITIONS: Readonly<
+	Record<StockTransferStatus, readonly StockTransferStatus[]>
+> = {
+	created: ["created", "in_transit", "canceled"],
+	in_transit: ["received", "created"],
+	received: [],
+	canceled: [],
+};
+
+export function assertStockTransferTransition(
+	from: StockTransferStatus,
+	to: StockTransferStatus,
+): void {
+	if (!STOCK_TRANSFER_STATE_TRANSITIONS[from].includes(to)) {
+		throw new Error(`Illegal stock transfer state transition: ${from} -> ${to}.`);
+	}
+}
+
 export type StockTransferListView = "open" | "done";
 
 export type StockTransferListScope =

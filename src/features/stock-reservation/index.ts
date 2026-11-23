@@ -9,6 +9,8 @@ export {
 	UNPACK_STOCK_TYPE,
 	UNDO_DELIVER_STOCK_TYPE,
 	RESERVATION_RECORD_SCHEMA,
+	RESERVATION_STATE_TRANSITIONS,
+	assertReservationTransition,
 	digestStockReservationCommand,
 	holdIsOpen,
 	normalizeDeliverStockCommand,

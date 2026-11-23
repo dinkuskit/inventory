@@ -26,6 +26,26 @@ export type ReservationStatus =
 	| "packed"
 	| "delivered";
 
+/** Explicit legal reservation state transitions enforced before every status write. */
+export const RESERVATION_STATE_TRANSITIONS: Readonly<
+	Record<ReservationStatus, readonly ReservationStatus[]>
+> = {
+	not_shipped: ["partially_packed", "packed", "canceled"],
+	partially_packed: ["partially_packed", "packed", "not_shipped", "canceled"],
+	packed: ["not_shipped", "delivered"],
+	delivered: ["packed"],
+	canceled: [],
+};
+
+export function assertReservationTransition(
+	from: ReservationStatus,
+	to: ReservationStatus,
+): void {
+	if (!RESERVATION_STATE_TRANSITIONS[from].includes(to)) {
+		throw new Error(`Illegal reservation state transition: ${from} -> ${to}.`);
+	}
+}
+
 export function holdIsOpen(status: ReservationStatus): boolean {
 	return status === "not_shipped" || status === "partially_packed";
 }

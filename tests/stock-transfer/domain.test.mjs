@@ -3,6 +3,8 @@ import test from "node:test";
 
 import {
 	InvalidStockTransferCommandError,
+	STOCK_TRANSFER_STATE_TRANSITIONS,
+	assertStockTransferTransition,
 	normalizeStockTransferCommand,
 	normalizeStockTransferReference,
 } from "../../src/features/stock-transfer/index.ts";
@@ -187,4 +189,23 @@ test("rejects ambiguous, duplicate, negative, and invalid-date transfer contents
 			InvalidStockTransferCommandError,
 		);
 	}
+});
+
+test("explicit STOCK_TRANSFER_STATE_TRANSITIONS matrix enforces legal transitions and terminal states", () => {
+	const states = ["created", "in_transit", "received", "canceled"];
+	for (const from of states) {
+		for (const to of states) {
+			if (STOCK_TRANSFER_STATE_TRANSITIONS[from].includes(to)) {
+				assert.doesNotThrow(() => assertStockTransferTransition(from, to), `${from} -> ${to}`);
+			} else {
+				assert.throws(
+					() => assertStockTransferTransition(from, to),
+					/Illegal stock transfer state transition/,
+					`${from} -> ${to}`,
+				);
+			}
+		}
+	}
+	assert.deepEqual(STOCK_TRANSFER_STATE_TRANSITIONS.received, []);
+	assert.deepEqual(STOCK_TRANSFER_STATE_TRANSITIONS.canceled, []);
 });

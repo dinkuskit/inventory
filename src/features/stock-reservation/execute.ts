@@ -1,6 +1,7 @@
 import {
 	COMMAND_RESULT_SCHEMA,
 	RECEIPT_SCHEMA,
+	assertBalanceConservationInvariant,
 	normalizeCommandPrincipal,
 	type BalanceRecord,
 	type CommandPrincipal,
@@ -25,6 +26,7 @@ import {
 	UNPACK_STOCK_TYPE,
 	UNDO_DELIVER_STOCK_TYPE,
 	RESERVATION_RECORD_SCHEMA,
+	assertReservationTransition,
 	digestStockReservationCommand,
 	holdIsOpen,
 	normalizeDeliverStockCommand,
@@ -196,12 +198,14 @@ function applyReservedDelta(
 		subtractExactDecimal(before.onHand.value, nextReserved),
 		before.outgoingTransferCommitted.value,
 	);
-	return {
+	const next: BalanceRecord = {
 		...before,
 		reserved: { value: nextReserved, unit },
 		available: { value: nextAvailable, unit },
 		version: incrementVersion(before.version),
 	};
+	assertBalanceConservationInvariant(next);
+	return next;
 }
 
 function applyPackDelta(before: BalanceRecord, quantity: string): BalanceRecord {
@@ -212,13 +216,15 @@ function applyPackDelta(before: BalanceRecord, quantity: string): BalanceRecord 
 		subtractExactDecimal(nextOnHand, nextReserved),
 		before.outgoingTransferCommitted.value,
 	);
-	return {
+	const next: BalanceRecord = {
 		...before,
 		onHand: { value: nextOnHand, unit },
 		reserved: { value: nextReserved, unit },
 		available: { value: nextAvailable, unit },
 		version: incrementVersion(before.version),
 	};
+	assertBalanceConservationInvariant(next);
+	return next;
 }
 
 function applyUnpackDelta(before: BalanceRecord, quantity: string): BalanceRecord {
@@ -229,13 +235,15 @@ function applyUnpackDelta(before: BalanceRecord, quantity: string): BalanceRecor
 		subtractExactDecimal(nextOnHand, nextReserved),
 		before.outgoingTransferCommitted.value,
 	);
-	return {
+	const next: BalanceRecord = {
 		...before,
 		onHand: { value: nextOnHand, unit },
 		reserved: { value: nextReserved, unit },
 		available: { value: nextAvailable, unit },
 		version: incrementVersion(before.version),
 	};
+	assertBalanceConservationInvariant(next);
+	return next;
 }
 
 function zero(unit: string): ExactQuantity {
@@ -541,6 +549,7 @@ export function executeReleaseStockInTransaction(
 		`-${current.quantity.value}`,
 	);
 	const canceledAt = committedAtFrom(dependencies.now);
+	assertReservationTransition(current.status, "canceled");
 	const canceled: ReservationRecord = {
 		...current,
 		status: "canceled",
@@ -649,6 +658,7 @@ export function executePackStockInTransaction(
 
 	const after = applyPackDelta(before, current.quantity.value);
 	const packedAt = committedAtFrom(dependencies.now);
+	assertReservationTransition(current.status, "packed");
 	const packed: ReservationRecord = {
 		...current,
 		quantity: { value: "0", unit: current.quantity.unit },
@@ -784,6 +794,7 @@ export function executePackAllStockInTransaction(
 		}
 		const after = applyPackDelta(before, current.quantity.value);
 		working.set(key, after);
+		assertReservationTransition(current.status, "packed");
 		const packed: ReservationRecord = {
 			...current,
 			quantity: { value: "0", unit: current.quantity.unit },
@@ -908,6 +919,7 @@ export function executeDeliverStockInTransaction(
 	const deliveredHolds: ReservationRecord[] = [];
 	const holds: { before: ReservationRecord; after: ReservationRecord }[] = [];
 	for (const current of currents) {
+		assertReservationTransition(current.status, "delivered");
 		const delivered: ReservationRecord = {
 			...current,
 			status: "delivered",
@@ -970,6 +982,7 @@ export function executeUndoDeliverStockInTransaction(
 	if (current.status !== "delivered") {
 		return durableRejection(transaction, command.commandId, commandDigest, "reservation_not_delivered", "Only a Delivered ticket can be returned to Packed.");
 	}
+	assertReservationTransition(current.status, "packed");
 	const packed: ReservationRecord = { ...current, status: "packed", version: incrementVersion(current.version) };
 	const committedReceipt = receipt({
 		commandId: command.commandId, commandDigest, type: UNDO_DELIVER_STOCK_TYPE, committedAt: committedAtFrom(dependencies.now), principal,
@@ -1074,6 +1087,8 @@ export function executePackSomeStockInTransaction(
 	const finished = compareExactDecimal(remaining, "0") === 0;
 	const after = applyPackDelta(before, command.payload.quantity.value);
 	const packedAt = committedAtFrom(dependencies.now);
+	const nextStatus = finished ? "packed" : "partially_packed";
+	assertReservationTransition(current.status, nextStatus);
 	const next: ReservationRecord = finished
 		? {
 				...current,
@@ -1200,6 +1215,7 @@ export function executeUnpackStockInTransaction(
 
 	const after = applyUnpackDelta(before, packedQuantity);
 	const unpackedAt = committedAtFrom(dependencies.now);
+	assertReservationTransition(current.status, "not_shipped");
 	const restored: ReservationRecord = {
 		...current,
 		quantity: current.originalQuantity,

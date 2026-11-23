@@ -1,6 +1,7 @@
 import {
 	COMMAND_RESULT_SCHEMA,
 	RECEIPT_SCHEMA,
+	assertBalanceConservationInvariant,
 	normalizeCommandPrincipal,
 	type BalanceRecord,
 	type CommandPrincipal,
@@ -23,6 +24,7 @@ import {
 	REOPEN_STOCK_TRANSFER_TYPE,
 	STOCK_TRANSFER_RECORD_SCHEMA,
 	UPDATE_STOCK_TRANSFER_TYPE,
+	assertStockTransferTransition,
 	digestStockTransferCommand,
 	normalizeStockTransferCommand,
 	normalizeStockTransferReference,
@@ -296,6 +298,7 @@ function transferBalanceChanges(
 					!isZero(onHandDelta)
 				),
 		};
+		assertBalanceConservationInvariant(updated);
 		commits.push({ previous: stored, balance: updated });
 		effects.push({
 			skuId: value.skuId,
@@ -657,6 +660,10 @@ export function executeStockTransferCommandInTransaction(
 			version: incrementVersion(before!.version),
 			dispatchedDate: null,
 		};
+	}
+
+	if (before !== null) {
+		assertStockTransferTransition(before.status, after.status);
 	}
 
 	const planning = transferBalanceChanges(

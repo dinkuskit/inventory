@@ -9,7 +9,10 @@ import {
 	PACK_STOCK_TYPE,
 	RESERVE_STOCK_TYPE,
 	RELEASE_STOCK_TYPE,
+	RESERVATION_STATE_TRANSITIONS,
 	UNPACK_STOCK_TYPE,
+	assertBalanceConservationInvariant,
+	assertReservationTransition,
 	normalizeDeliverStockCommand,
 	normalizePackAllStockCommand,
 	normalizePackSomeStockCommand,
@@ -259,5 +262,68 @@ test("release command trims the reservation id", () => {
 			payload: { reservationId: "rsv_hat_001" },
 			references: [],
 		},
+	);
+});
+
+test("explicit RESERVATION_STATE_TRANSITIONS matrix enforces legal transitions and terminal canceled state", () => {
+	const states = ["not_shipped", "partially_packed", "packed", "delivered", "canceled"];
+	for (const from of states) {
+		for (const to of states) {
+			if (RESERVATION_STATE_TRANSITIONS[from].includes(to)) {
+				assert.doesNotThrow(() => assertReservationTransition(from, to), `${from} -> ${to}`);
+			} else {
+				assert.throws(
+					() => assertReservationTransition(from, to),
+					/Illegal reservation state transition/,
+					`${from} -> ${to}`,
+				);
+			}
+		}
+	}
+	assert.deepEqual(RESERVATION_STATE_TRANSITIONS.canceled, []);
+});
+
+test("assertBalanceConservationInvariant verifies exact decimal conservation and non-negative commitments", () => {
+	const base = {
+		poolId: "pool_test",
+		locationId: "loc_1",
+		skuId: "sku_hat",
+		onHand: { value: "10", unit: "each" },
+		reserved: { value: "3", unit: "each" },
+		outgoingTransferCommitted: { value: "2", unit: "each" },
+		available: { value: "5", unit: "each" },
+		expected: { value: "0", unit: "each" },
+		inTransit: { value: "0", unit: "each" },
+		version: "1",
+		hasStockHistory: true,
+	};
+	assert.doesNotThrow(() => assertBalanceConservationInvariant(base));
+	// Physical shrink / oversell with exact negative available still satisfies conservation.
+	assert.doesNotThrow(() =>
+		assertBalanceConservationInvariant({
+			...base,
+			onHand: { value: "2", unit: "each" },
+			reserved: { value: "3", unit: "each" },
+			outgoingTransferCommitted: { value: "0", unit: "each" },
+			available: { value: "-1", unit: "each" },
+		}),
+	);
+	// Drift in available violates conservation.
+	assert.throws(
+		() => assertBalanceConservationInvariant({ ...base, available: { value: "6", unit: "each" } }),
+		/Balance conservation invariant violated/,
+	);
+	// Negative reserved, outgoingTransferCommitted, expected, or inTransit violates conservation.
+	for (const field of ["reserved", "outgoingTransferCommitted", "expected", "inTransit"]) {
+		assert.throws(
+			() => assertBalanceConservationInvariant({ ...base, [field]: { value: "-1", unit: "each" } }),
+			/Balance conservation invariant violated/,
+			field,
+		);
+	}
+	// Mismatched units violate conservation.
+	assert.throws(
+		() => assertBalanceConservationInvariant({ ...base, reserved: { value: "3", unit: "box" } }),
+		/mismatched units/,
 	);
 });
