@@ -1,3 +1,5 @@
+import { compareExactDecimal, subtractExactDecimal } from "./exact-decimal.ts";
+
 export const COMMAND_SCHEMA = "dinkuskit.inventory.command/v1" as const;
 export const COMMAND_RESULT_SCHEMA =
 	"dinkuskit.inventory.command-result/v1" as const;
@@ -98,6 +100,43 @@ export type BalanceRecord = Readonly<
 		hasStockHistory: boolean;
 	}
 >;
+
+/**
+ * Verifies exact conservation (`available === onHand - reserved - outgoingTransferCommitted`)
+ * and non-negative commitment/pipeline quantities before committing a balance write.
+ * Physical shrink / oversell adjustments may still produce negative `available` when confirmed.
+ */
+export function assertBalanceConservationInvariant(balance: BalanceRecord): void {
+	const unit = balance.onHand.unit;
+	if (
+		balance.reserved.unit !== unit ||
+		balance.outgoingTransferCommitted.unit !== unit ||
+		balance.available.unit !== unit ||
+		balance.expected.unit !== unit ||
+		balance.inTransit.unit !== unit
+	) {
+		throw new Error("Balance conservation invariant violated: mismatched units.");
+	}
+	if (
+		compareExactDecimal(balance.reserved.value, "0") < 0 ||
+		compareExactDecimal(balance.outgoingTransferCommitted.value, "0") < 0 ||
+		compareExactDecimal(balance.expected.value, "0") < 0 ||
+		compareExactDecimal(balance.inTransit.value, "0") < 0
+	) {
+		throw new Error(
+			"Balance conservation invariant violated: negative commitment or pipeline quantity.",
+		);
+	}
+	const expectedAvailable = subtractExactDecimal(
+		subtractExactDecimal(balance.onHand.value, balance.reserved.value),
+		balance.outgoingTransferCommitted.value,
+	);
+	if (compareExactDecimal(balance.available.value, expectedAvailable) !== 0) {
+		throw new Error(
+			"Balance conservation invariant violated: available != onHand - reserved - outgoingTransferCommitted.",
+		);
+	}
+}
 
 export type OpeningBalancePreviewV1 = Readonly<{
 	schema: typeof OPENING_BALANCE_PREVIEW_SCHEMA;
