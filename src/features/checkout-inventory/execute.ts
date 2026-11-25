@@ -18,6 +18,7 @@ import type {
 } from "../../storage/inventory-store.ts";
 import {
 	RESERVATION_RECORD_SCHEMA,
+	assertReservationTransition,
 	holdIsOpen,
 	reservationOrderLineKey,
 	type ReservationRecord,
@@ -454,11 +455,19 @@ function evaluateRelease(
 		);
 	}
 
-	const currents = resolveReleaseHolds(
+	const resolved = resolveReleaseHolds(
 		transaction,
 		request,
 		existingReserve as StoredCheckoutCommand | null,
 	);
+	if (resolved.rejection !== null) {
+		return rejection(
+			releaseCommandId,
+			resolved.rejection.code,
+			resolved.rejection.message,
+		);
+	}
+	const currents = resolved.holds;
 
 	if (currents.length === 0) {
 		const result: CheckoutInventoryResult = {
@@ -500,6 +509,7 @@ function evaluateRelease(
 		}
 		const after = applyReservedDelta(before, `-${current.quantity.value}`);
 		working.set(key, after);
+		assertReservationTransition(current.status, "canceled");
 		const next: ReservationRecord = {
 			...current,
 			status: "canceled",
@@ -558,11 +568,21 @@ function evaluateRelease(
 	return result;
 }
 
+type ReleaseHoldResolution =
+	| Readonly<{ holds: ReservationRecord[]; rejection: null }>
+	| Readonly<{
+			holds: readonly [];
+			rejection: Readonly<{
+				code: "reservation_already_packed" | "reservation_already_delivered";
+				message: string;
+			}>;
+	  }>;
+
 function resolveReleaseHolds(
 	transaction: InventoryTransaction,
 	request: NormalizedStockRequest,
 	existingReserve: StoredCheckoutCommand | null,
-): ReservationRecord[] {
+): ReleaseHoldResolution {
 	const liveByKey = new Map<string, ReservationRecord>();
 	for (const line of request.requirements) {
 		const orderLineKey = reservationOrderLineKey(
@@ -587,11 +607,15 @@ function resolveReleaseHolds(
 				"Checkout release found an unexpected live hold for this operation.",
 			);
 		}
-		return [];
+		return { holds: [], rejection: null };
 	}
 
 	const currents: ReservationRecord[] = [];
 	const accounted = new Set<string>();
+	let fulfillmentRejection: Readonly<{
+		code: "reservation_already_packed" | "reservation_already_delivered";
+		message: string;
+	}> | null = null;
 	for (const listed of listedOpen) {
 		const current = transaction.getReservation(listed.reservationId);
 		if (current === null) {
@@ -612,12 +636,32 @@ function resolveReleaseHolds(
 					"Checkout release found a listed hold that does not match its checkout line.",
 				);
 			}
-			currents.push(current);
 			accounted.add(current.reservationId);
-		} else if (live !== undefined && live.reservationId !== current.reservationId) {
-			throw new Error(
-				"Checkout release found ambiguous reservation rows for one checkout line.",
-			);
+			if (current.status === "partially_packed") {
+				fulfillmentRejection ??= {
+					code: "reservation_already_packed",
+					message: "A checkout hold is already packed and cannot be released.",
+				};
+			} else {
+				currents.push(current);
+			}
+		} else {
+			if (live !== undefined && live.reservationId !== current.reservationId) {
+				throw new Error(
+					"Checkout release found ambiguous reservation rows for one checkout line.",
+				);
+			}
+			if (current.status === "delivered") {
+				fulfillmentRejection = {
+					code: "reservation_already_delivered",
+					message: "A checkout hold is already delivered and cannot be released.",
+				};
+			} else if (current.status === "packed") {
+				fulfillmentRejection ??= {
+					code: "reservation_already_packed",
+					message: "A checkout hold is already packed and cannot be released.",
+				};
+			}
 		}
 	}
 
@@ -628,7 +672,10 @@ function resolveReleaseHolds(
 			);
 		}
 	}
-	return currents;
+	if (fulfillmentRejection !== null) {
+		return { holds: [], rejection: fulfillmentRejection };
+	}
+	return { holds: currents, rejection: null };
 }
 
 type StoredCheckoutCommand = StoredCommandResult<CheckoutInventoryResult>;

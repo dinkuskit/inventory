@@ -76,6 +76,8 @@ export type CheckoutInventoryRejectionCode =
 	| "sku_not_registered"
 	| "sku_unit_mismatch"
 	| "checkout_released"
+	| "reservation_already_packed"
+	| "reservation_already_delivered"
 	| "invalid_request";
 
 export type CheckoutInventoryReceiptV2 = Readonly<{
