@@ -15,12 +15,16 @@ import {
 	digestCheckoutStockRequest,
 	normalizeStockRequest,
 	createCheckoutInventoryPort,
+	createDeliverStock,
+	createPackSomeStock,
+	createPackStock,
 	createReadSkuLocationBalance,
 	createReleaseCheckoutBasket,
 	createReleaseStock,
 	createReserveCheckoutBasket,
 	createReserveStock,
 	createSetOpeningBalance,
+	createUnpackStock,
 } from "../../src/index.ts";
 import { createLocalSqliteTestStore } from "../../src/storage/local-sqlite-test-store.ts";
 import { createFixtureLocation } from "../helpers/location-fixture.mjs";
@@ -1159,4 +1163,161 @@ test("two processes serialize scarce stock against one SQLite file", async (t) =
 	const reader = createLocalSqliteTestStore({ filePath });
 	assert.equal((await balances(reader)).hat.reserved.value, "3");
 	assert.equal((await balances(reader)).shirt.reserved.value, "2");
+});
+
+test("checkout release rejects packed holds so unpack cannot re-open a released checkout", async (t) => {
+	const filePath = await databasePath(t, "release-packed-unpack");
+	const store = createLocalSqliteTestStore({ filePath });
+	t.after(() => store.close());
+	await seedBasket(store, { hat: "5", shirt: "5" });
+
+	let seq = 0;
+	const nextId = (prefix) => `${prefix}_pack_fence_${++seq}`;
+	const now = () => new Date(Date.UTC(2026, 9, 30, 10, 0, seq));
+	const deps = {
+		store,
+		binding,
+		now,
+		createReservationId: () => nextId("res"),
+		createReceiptId: () => nextId("rcpt"),
+	};
+	const reserve = createReserveCheckoutBasket(deps);
+	const release = createReleaseCheckoutBasket(deps);
+	const port = createCheckoutInventoryPort({ ...deps, principal, siteId: "site_test" });
+	const pack = createPackStock({ store, now, createReceiptId: () => nextId("rcpt") });
+	const unpack = createUnpackStock({ store, now, createReceiptId: () => nextId("rcpt") });
+
+	const req = stockRequest({
+		operationId: "op_packed_then_release",
+		requirements: [{ skuId: "sku_hat", quantity: 1, allowBackorders: false }],
+	});
+	const reserved = await reserve(req, { principal, siteId: "site_test" });
+	assert.equal(reserved.outcome, "reserved");
+	const holdId = reserved.reservations[0].reservationId;
+
+	const packed = await pack(
+		{
+			schema: "dinkuskit.inventory.command/v1",
+			commandId: nextId("cmd"),
+			type: "stock.pack",
+			context: { siteId: "site_test", poolId: "pool_test" },
+			payload: { reservationId: holdId },
+			references: [],
+		},
+		{ principal },
+	);
+	assert.equal(packed.outcome, "packed");
+
+	// Release must fail closed while packed and must NOT persist a terminal release fence.
+	const blocked = await release(req, { principal, siteId: "site_test" });
+	assert.equal(blocked.outcome, "rejected");
+	assert.equal(blocked.code, "reservation_already_packed");
+	assert.equal(await port.release(req), "unknown");
+	assert.equal(await store.readCommand(checkoutReleaseCommandId(req.operationId)), null);
+
+	// After an operator unpacks back to not_shipped, checkout release can now cleanly release and fence.
+	const unpacked = await unpack(
+		{
+			schema: "dinkuskit.inventory.command/v1",
+			commandId: nextId("cmd"),
+			type: "stock.unpack",
+			context: { siteId: "site_test", poolId: "pool_test" },
+			payload: { reservationId: holdId },
+			references: [],
+		},
+		{ principal },
+	);
+	assert.equal(unpacked.outcome, "unpacked");
+	assert.equal(unpacked.reservation.status, "not_shipped");
+
+	const released = await release(req, { principal, siteId: "site_test" });
+	assert.equal(released.outcome, "released");
+	assert.equal(released.reservations.length, 1);
+	assert.equal(released.reservations[0].status, "canceled");
+	assert.equal((await balances(store)).hat.reserved.value, "0");
+	assert.equal((await balances(store)).hat.available.value, "5");
+});
+
+test("checkout release atomically rejects partially_packed and delivered holds without canceling sibling lines", async (t) => {
+	const filePath = await databasePath(t, "release-partial-delivered");
+	const store = createLocalSqliteTestStore({ filePath });
+	t.after(() => store.close());
+	await seedBasket(store, { hat: "6", shirt: "6" });
+
+	let seq = 0;
+	const nextId = (prefix) => `${prefix}_fulfill_${++seq}`;
+	const now = () => new Date(Date.UTC(2026, 9, 30, 11, 0, seq));
+	const deps = {
+		store,
+		binding,
+		now,
+		createReservationId: () => nextId("res"),
+		createReceiptId: () => nextId("rcpt"),
+	};
+	const reserve = createReserveCheckoutBasket(deps);
+	const release = createReleaseCheckoutBasket(deps);
+	const packSome = createPackSomeStock({ store, now, createReceiptId: () => nextId("rcpt") });
+	const pack = createPackStock({ store, now, createReceiptId: () => nextId("rcpt") });
+	const deliver = createDeliverStock({ store, now, createReceiptId: () => nextId("rcpt") });
+
+	const req = stockRequest({ operationId: "op_partial_and_delivered" });
+	const reserved = await reserve(req, { principal, siteId: "site_test" });
+	assert.equal(reserved.outcome, "reserved");
+	const hatHold = reserved.reservations.find((h) => h.skuId === "sku_hat");
+	const shirtHold = reserved.reservations.find((h) => h.skuId === "sku_shirt");
+
+	// Partially pack hat while shirt remains not_shipped.
+	const partial = await packSome(
+		{
+			schema: "dinkuskit.inventory.command/v1",
+			commandId: nextId("cmd"),
+			type: "stock.pack_some",
+			context: { siteId: "site_test", poolId: "pool_test" },
+			payload: { reservationId: hatHold.reservationId, quantity: { value: "1", unit: "each" } },
+			references: [],
+		},
+		{ principal },
+	);
+	assert.equal(partial.outcome, "packed_some");
+
+	const partialRelease = await release(req, { principal, siteId: "site_test" });
+	assert.equal(partialRelease.outcome, "rejected");
+	assert.equal(partialRelease.code, "reservation_already_packed");
+	// Sibling shirt hold must remain intact (all-or-none) and no release fence stored.
+	assert.equal((await balances(store)).shirt.reserved.value, "2");
+	assert.equal((await balances(store)).hat.reserved.value, "2");
+	assert.equal(await store.readCommand(checkoutReleaseCommandId(req.operationId)), null);
+
+	// Finish packing and delivering hat; release must reject with reservation_already_delivered.
+	const packedRest = await pack(
+		{
+			schema: "dinkuskit.inventory.command/v1",
+			commandId: nextId("cmd"),
+			type: "stock.pack",
+			context: { siteId: "site_test", poolId: "pool_test" },
+			payload: { reservationId: hatHold.reservationId },
+			references: [],
+		},
+		{ principal },
+	);
+	assert.equal(packedRest.outcome, "packed");
+	const delivered = await deliver(
+		{
+			schema: "dinkuskit.inventory.command/v1",
+			commandId: nextId("cmd"),
+			type: "stock.deliver",
+			context: { siteId: "site_test", poolId: "pool_test" },
+			payload: { reservationIds: [hatHold.reservationId] },
+			references: [],
+		},
+		{ principal },
+	);
+	assert.equal(delivered.outcome, "delivered");
+
+	const deliveredRelease = await release(req, { principal, siteId: "site_test" });
+	assert.equal(deliveredRelease.outcome, "rejected");
+	assert.equal(deliveredRelease.code, "reservation_already_delivered");
+	assert.equal((await balances(store)).shirt.reserved.value, "2");
+	assert.equal(await store.readCommand(checkoutReleaseCommandId(req.operationId)), null);
+	assert.ok(shirtHold.reservationId);
 });
