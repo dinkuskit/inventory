@@ -1,0 +1,46 @@
+name: Pin audit
+
+# Every external commit pin must be listed in .github/reviewed-pins.json.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pin-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.22.0
+      - name: Audit pins against the reviewed-pins manifest
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: node scripts/pin-audit.mjs --base "$BASE_SHA" --evidence "$RUNNER_TEMP/pin-audit"
+      - name: Publish the fetched source diffs
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          [ -f "$RUNNER_TEMP/pin-audit/report.md" ] || exit 0
+          cat "$RUNNER_TEMP/pin-audit/report.md" >> "$GITHUB_STEP_SUMMARY"
+          # Fetched source is untrusted: print it with workflow commands off.
+          resume="$(openssl rand -hex 16)"
+          for diff in "$RUNNER_TEMP"/pin-audit/*.diff; do
+            [ -f "$diff" ] || continue
+            echo "::group::$(basename "$diff")"
+            echo "::stop-commands::$resume"
+            cat "$diff"
+            echo
+            echo "::$resume::"
+            echo "::endgroup::"
+          done
