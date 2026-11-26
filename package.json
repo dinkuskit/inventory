@@ -47,6 +47,7 @@
     "@emdash-cms/plugin-cli": "0.13.3",
     "@emdash-cms/sandbox-workerd": "0.9.3",
     "emdash": "1.2.0",
+    "js-yaml": "4.3.2",
     "typescript": "7.0.2",
     "vitest": "4.1.11",
     "wrangler": "4.127.0"
