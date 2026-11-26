@@ -1,0 +1,7 @@
+# ClawSweeper's native doorbell needs pull_request_target, which this audit
+# rejects outright. scripts/check-workflow-secret-gates.mjs covers that file
+# instead: secrets reach a reusable workflow only behind a permission-gate step.
+rules:
+  dangerous-triggers:
+    ignore:
+      - clawsweeper-dispatch.yml
