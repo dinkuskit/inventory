@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -51,10 +51,9 @@ function sink() {
 	return { write(chunk) { text += chunk; }, get text() { return text; } };
 }
 
-async function run(argv, { service = fakeService(), env = {}, cwd, stdinIsTTY = false } = {}) {
+async function run(argv, { service = fakeService(), env = {}, cwd, stdinIsTTY = false, stateHome = mkdtempSync(join(tmpdir(), "dinkus-inventory-state-")) } = {}) {
 	const stdout = sink();
 	const stderr = sink();
-	const stateHome = mkdtempSync(join(tmpdir(), "dinkus-inventory-state-"));
 	const code = await runCli(spec, {
 		argv,
 		env: { HOME: stateHome, XDG_STATE_HOME: stateHome, XDG_CONFIG_HOME: join(stateHome, "config"), DINKUS_INVENTORY_TOKEN: TOKEN, DINKUS_INVENTORY_ENDPOINT: ENDPOINT, ...env },
@@ -73,6 +72,39 @@ function oneJsonDocument(text) {
 	assert.equal(lines.length, 1, "--json emits exactly one document");
 	return JSON.parse(lines[0]);
 }
+
+test("manifest read_only commands perform no service or local state writes", async (context) => {
+	const stateHome = mkdtempSync(join(tmpdir(), "inventory-read-only-"));
+	context.after(() => rmSync(stateHome, { recursive: true, force: true }));
+	const commandId = "cmd_12345678";
+	const directory = join(stateHome, "dinkuskit/inventory/commands");
+	const file = join(directory, `${commandId}.json`);
+	const record = JSON.stringify({ commandId, command: "stock.adjust", state: "pending" });
+	mkdirSync(directory, { recursive: true });
+	writeFileSync(file, record);
+	const files = () => readdirSync(stateHome, { recursive: true }).sort();
+	const before = files();
+	const service = fakeService({ "GET /v1/receipts": () => json(200, { receipts: [] }) });
+	const argument = { "sku-id": "sku_keychain", "location-id": "location_north", "command-id": commandId,
+		"receipt-id": "receipt_demo", "transfer-id": "transfer_demo" };
+	async function check(node, path) {
+		if (node.commands) {
+			for (const [name, child] of Object.entries(node.commands)) await check(child, [...path, name]);
+		} else if (node.read_only) {
+			const argv = [...CONTEXT_FLAGS, ...path, ...(node.args ?? []).map(({ name }) => argument[name]), "--json"];
+			const result = await run(argv, { service, stateHome });
+			const message = `${path.join(" ")}: ${result.stderr}`;
+			if (result.code !== EXIT.ok) {
+				assert.equal(result.code, EXIT.failure, message);
+				assert.equal(oneJsonDocument(result.stdout).error?.code, "not_implemented", message);
+			}
+			assert.ok(result.calls.every(({ method }) => method === "GET"), message);
+			assert.deepEqual(files(), before, message);
+			assert.equal(readFileSync(file, "utf8"), record, message);
+		}
+	}
+	await check(spec.tree, []);
+});
 
 test("help works at every depth and ignores other arguments", async () => {
 	for (const argv of [["--help"], ["stock", "--help"], ["stock", "adjust", "--help", "--not-a-flag"], ["help", "commands", "resolve"], ["transfers", "start", "-h"]]) {

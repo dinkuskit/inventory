@@ -7,6 +7,7 @@ const root = resolve(import.meta.dirname, "..");
 const scope = process.argv[2] ?? "quick";
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 const quick = [
+	[resolve(root, "tools/ci/retired_symbols_check.sh"), []],
 	[process.execPath, ["--test", "tests/workflows/repository-architecture.test.mjs"]],
 	[process.execPath, ["scripts/check-architecture.mjs"]],
 	[npm, ["run", "typecheck:cloudflare"]],
