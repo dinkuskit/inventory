@@ -25,6 +25,7 @@ const confirm = { type: "string", value: "<value>", description: "Commit only if
 const unit = { type: "string", value: "<unit>", required: true, description: "Quantity unit, such as each." };
 const note = { type: "string", value: "<text>", required: true, description: "Public-safe human reason. No customer or payment data." };
 const mutationContext = "--site <id> --pool <id> --location <id>";
+const exampleContext = "--site site_demo --pool pool_demo --location location_north";
 
 const transferPlanned = planned("the Inventory service has no transfer preview/confirm or read endpoint yet.");
 
@@ -57,11 +58,12 @@ export const spec = {
 	examples: [
 		"dinkus-inventory --profile demo status",
 		"dinkus-inventory --profile demo --location location_north stock show sku_keychain --json",
-		`dinkus-inventory ${mutationContext} stock adjust sku_keychain --delta -2 --unit each --note "Damaged in storage" --dry-run --json`,
+		`dinkus-inventory ${exampleContext} stock adjust sku_keychain --delta -2 --unit each --note "Damaged in storage" --dry-run --json`,
 	],
 	tree: {
 		commands: {
 			status: {
+				read_only: true,
 				summary: "Show client version, service connection state and bound pool.",
 				usage: "status",
 				run: status,
@@ -69,26 +71,28 @@ export const spec = {
 			locations: {
 				summary: "Read locations.",
 				commands: {
-					list: { summary: "List active locations in the site's pool.", usage: "locations list", run: locationsList },
-					show: { summary: "Show one location.", usage: "locations show <location-id>", args: [{ name: "location-id" }], run: locationsShow },
+					list: { read_only: true, summary: "List active locations in the site's pool.", usage: "locations list", run: locationsList },
+					show: { read_only: true, summary: "Show one location.", usage: "locations show <location-id>", args: [{ name: "location-id" }], run: locationsShow },
 				},
 			},
 			skus: {
 				summary: "Read Inventory SKU identity.",
 				commands: {
-					list: { summary: "List managed SKUs.", usage: "skus list", run: skusList },
-					show: { summary: "Show one SKU by Inventory SKU ID or SKU code.", usage: "skus show <sku-id>", args: [{ name: "sku-id" }], run: skusShow },
+					list: { read_only: true, summary: "List managed SKUs.", usage: "skus list", run: skusList },
+					show: { read_only: true, summary: "Show one SKU by Inventory SKU ID or SKU code.", usage: "skus show <sku-id>", args: [{ name: "sku-id" }], run: skusShow },
 				},
 			},
 			stock: {
 				summary: "Read and change stock.",
 				commands: {
 					list: {
+						read_only: true,
 						summary: "Stock for every managed SKU, optionally at one --location.",
 						usage: "stock list [--location <id>]",
 						run: stockList,
 					},
 					show: {
+						read_only: true,
 						summary: "Stock for one SKU at one --location or across all locations.",
 						usage: "stock show <sku-id> [--location <id>]",
 						args: [{ name: "sku-id" }],
@@ -109,8 +113,8 @@ export const spec = {
 							confirm,
 						},
 						examples: [
-							`dinkus-inventory ${mutationContext} stock set-initial sku_keychain --quantity 5 --unit each --reason physical_count --note "Set Initial Stock" --dry-run --json`,
-							`dinkus-inventory ${mutationContext} stock set-initial sku_keychain --quantity 5 --unit each --reason physical_count --note "Set Initial Stock" --no-input --confirm <value> --json`,
+							`dinkus-inventory ${exampleContext} stock set-initial sku_keychain --quantity 5 --unit each --reason physical_count --note "Set Initial Stock" --dry-run --json`,
+							`dinkus-inventory ${exampleContext} stock set-initial sku_keychain --quantity 5 --unit each --reason physical_count --note "Set Initial Stock" --no-input --confirm confirm_example --json`,
 						],
 						run: setInitialStock,
 					},
@@ -126,7 +130,7 @@ export const spec = {
 							"dry-run": dryRun,
 							confirm,
 						},
-						examples: [`dinkus-inventory ${mutationContext} stock adjust sku_keychain --delta -2 --unit each --note "Damaged in storage" --dry-run`],
+						examples: [`dinkus-inventory ${exampleContext} stock adjust sku_keychain --delta -2 --unit each --note "Damaged in storage" --dry-run`],
 						run: adjustStock,
 					},
 					receive: {
@@ -140,8 +144,8 @@ export const spec = {
 			transfers: {
 				summary: "Staged transfers between locations.",
 				commands: {
-					list: { summary: "List transfers (planned).", usage: "transfers list", run: transferPlanned },
-					show: { summary: "Show one transfer (planned).", usage: "transfers show <transfer-id>", args: [{ name: "transfer-id" }], run: transferPlanned },
+					list: { read_only: true, summary: "List transfers (planned).", usage: "transfers list", run: transferPlanned },
+					show: { read_only: true, summary: "Show one transfer (planned).", usage: "transfers show <transfer-id>", args: [{ name: "transfer-id" }], run: transferPlanned },
 					create: { summary: "Save a Created transfer draft (planned).", usage: "transfers create", run: transferPlanned },
 					update: { summary: "Replace a Created transfer's editable fields (planned).", usage: "transfers update <transfer-id>", args: [{ name: "transfer-id" }], run: transferPlanned },
 					cancel: { summary: "Cancel a Created transfer (planned).", usage: "transfers cancel <transfer-id>", args: [{ name: "transfer-id" }], run: transferPlanned },
@@ -153,14 +157,14 @@ export const spec = {
 			receipts: {
 				summary: "Read the canonical receipt ledger.",
 				commands: {
-					list: { summary: "Latest receipts at one --location or across the pool.", usage: "receipts list [--location <id>]", run: receiptsList },
-					show: { summary: "Show one receipt (planned).", usage: "receipts show <receipt-id>", args: [{ name: "receipt-id" }], run: planned("the Inventory service has no receipt lookup endpoint yet.") },
+					list: { read_only: true, summary: "Latest receipts at one --location or across the pool.", usage: "receipts list [--location <id>]", run: receiptsList },
+					show: { read_only: true, summary: "Show one receipt (planned).", usage: "receipts show <receipt-id>", args: [{ name: "receipt-id" }], run: planned("the Inventory service has no receipt lookup endpoint yet.") },
 				},
 			},
 			commands: {
 				summary: "Inspect and recover commands with unknown outcomes.",
 				commands: {
-					show: { summary: "Show the local record of a command.", usage: "commands show <command-id>", args: [{ name: "command-id" }], run: commandsShow },
+					show: { read_only: true, summary: "Show the local record of a command.", usage: "commands show <command-id>", args: [{ name: "command-id" }], run: commandsShow },
 					resolve: {
 						summary: "Replay the exact frozen envelope under the same command ID.",
 						usage: "commands resolve <command-id>",
